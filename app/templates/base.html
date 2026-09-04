@@ -73,5 +73,14 @@
   {% endif %}
   <main>{% block content %}{% endblock %}</main>
   {% block scripts %}{% endblock %}
+  <script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('/static/sw.js')
+        .then(reg => console.log('Service Worker registered'))
+        .catch(err => console.log('SW registration failed', err));
+    });
+  }
+</script>
 </body>
 </html>
