@@ -4,7 +4,14 @@
  <meta charset="UTF-8">
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
  <title>Knowsoft Churchgate – One Body, Synchronized</title>
- <link rel="icon" href="/static/img/knowsoft-logo.png" type="image/png">
+ <link rel="icon" href="/static/icons/icon-192.png" type="image/png">
+ <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+ <link rel="manifest" href="/static/manifest.json">
+ <meta name="theme-color" content="#0B1220">
+ <meta name="mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-capable" content="yes">
+ <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+ <meta name="apple-mobile-web-app-title" content="Churchgate">
  <script src="https://cdn.tailwindcss.com"></script>
  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,600;9..144,700&display=swap" rel="stylesheet">
  <script>
@@ -454,6 +461,19 @@ window.homeLive = function homeLive() {
     openYt(item) { this.ytId = item.video_id; this.ytOpen = true; },
     closeYt() { this.ytOpen = false; this.ytId = ""; },
   };
+}
+</script>
+
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(function (reg) { console.log('Churchgate SW ok', reg.scope); })
+      .catch(function (err) {
+        navigator.serviceWorker.register('/static/sw.js').catch(function(e){ console.warn(e); });
+      });
+  });
 }
 </script>
 

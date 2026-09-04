@@ -7,6 +7,9 @@
   <link rel="icon" href="/static/icons/icon-192.png" type="image/png">
   <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
   <link rel="manifest" href="/static/manifest.json">
+  <meta name="theme-color" content="#0B1220">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <script src="https://cdn.tailwindcss.com"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -72,5 +75,18 @@
   {% endif %}
   <main>{% block content %}{% endblock %}</main>
   {% block scripts %}{% endblock %}
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then(function (reg) { console.log('Churchgate SW ok', reg.scope); })
+      .catch(function (err) {
+        navigator.serviceWorker.register('/static/sw.js').catch(function(e){ console.warn(e); });
+      });
+  });
+}
+</script>
+
 </body>
 </html>

@@ -224,6 +224,23 @@ async def home(request: Request, user: Optional[User] = Depends(get_current_user
         "live_stats": live_stats,
     })
 
+
+@app.get("/manifest.json")
+async def root_manifest():
+    from fastapi.responses import FileResponse
+    return FileResponse(str(BASE_DIR / "app" / "static" / "manifest.json"), media_type="application/manifest+json")
+
+@app.get("/sw.js")
+async def root_sw():
+    from fastapi.responses import FileResponse, Response
+    path = BASE_DIR / "app" / "static" / "sw.js"
+    content = path.read_text(encoding="utf-8")
+    return Response(
+        content=content,
+        media_type="application/javascript; charset=utf-8",
+        headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"},
+    )
+
 @app.get("/health")
 async def health():
     return {"status": "ok", "app": "Knowsoft Churchgate"}
