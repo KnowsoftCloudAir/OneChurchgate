@@ -357,3 +357,76 @@ async def unfeature_program(
     session.add(p)
     session.commit()
     return RedirectResponse("/admin/featured-programs", status_code=303)
+
+
+# --- Music links (General Admin) ---
+from app.models import MusicLink
+
+@router.get("/music", response_class=HTMLResponse)
+async def admin_music_page(
+    request: Request,
+    user: User = Depends(require_roles(UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    links = list(session.exec(select(MusicLink).order_by(MusicLink.sort_order, MusicLink.id)).all())
+    return templates.TemplateResponse("admin/music.html", {"request": request, "user": user, "links": links})
+
+
+@router.post("/music/add")
+async def admin_music_add(
+    title: str = Form(...),
+    youtube_id: str = Form(...),
+    user: User = Depends(require_roles(UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    yid = youtube_id.strip()
+    # Accept full URL or raw id
+    if "youtu.be/" in yid:
+        yid = yid.split("youtu.be/")[-1].split("?")[0]
+    elif "v=" in yid:
+        yid = yid.split("v=")[-1].split("&")[0]
+    yid = yid.strip()[:20]
+    max_order = 0
+    for L in session.exec(select(MusicLink)).all():
+        max_order = max(max_order, L.sort_order or 0)
+    session.add(MusicLink(title=title.strip(), youtube_id=yid, is_active=True, sort_order=max_order + 1))
+    session.commit()
+    return RedirectResponse("/admin/music", status_code=303)
+
+
+@router.post("/music/{link_id}/edit")
+async def admin_music_edit(
+    link_id: int,
+    title: str = Form(...),
+    youtube_id: str = Form(...),
+    is_active: str = Form("yes"),
+    user: User = Depends(require_roles(UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    link = session.get(MusicLink, link_id)
+    if not link:
+        raise HTTPException(404)
+    yid = youtube_id.strip()
+    if "youtu.be/" in yid:
+        yid = yid.split("youtu.be/")[-1].split("?")[0]
+    elif "v=" in yid:
+        yid = yid.split("v=")[-1].split("&")[0]
+    link.title = title.strip()
+    link.youtube_id = yid.strip()[:20]
+    link.is_active = is_active == "yes"
+    session.add(link)
+    session.commit()
+    return RedirectResponse("/admin/music", status_code=303)
+
+
+@router.post("/music/{link_id}/delete")
+async def admin_music_delete(
+    link_id: int,
+    user: User = Depends(require_roles(UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    link = session.get(MusicLink, link_id)
+    if link:
+        session.delete(link)
+        session.commit()
+    return RedirectResponse("/admin/music", status_code=303)

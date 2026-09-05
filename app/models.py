@@ -99,6 +99,7 @@ class User(SQLModel, table=True):
     can_create_churches: bool = Field(default=False)  # GA grants: create child churches
     can_approve_members: bool = Field(default=False)  # GA grants: approve member registrations
     can_see_member_count: bool = Field(default=False)
+    can_broadcast: bool = Field(default=False)  # approved to broadcast to members
     can_view_church_dashboard: bool = Field(default=False)
     can_manage_focus_groups: bool = Field(default=False)  # create focus groups / message them  # sub-admin grants church dashboard to member  # see district member totals
     is_active: bool = Field(default=True)
@@ -431,3 +432,35 @@ class YoutubeChannelLink(SQLModel, table=True):
     approved_by: Optional[int] = None
     approved_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class MusicLink(SQLModel, table=True):
+    """YouTube worship tracks managed by General Admin."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str
+    youtube_id: str = Field(index=True)
+    is_active: bool = Field(default=True)
+    sort_order: int = Field(default=0)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class DistrictMessage(SQLModel, table=True):
+    """Messages between district members and district admin/pastor."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    church_id: int = Field(foreign_key="churchunit.id", index=True)  # district unit
+    sender_user_id: int = Field(foreign_key="user.id", index=True)
+    subject: Optional[str] = None
+    body: str = Field(sa_column=Column(Text))
+    is_broadcast: bool = Field(default=False)
+    # null = all members in district; else comma-separated user ids
+    recipient_user_ids: Optional[str] = Field(default=None, sa_column=Column(Text))
+    # target: members | admin | pastor
+    to_role: str = Field(default="members")  # members | admin | pastor
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class MessageRead(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    message_id: int = Field(foreign_key="districtmessage.id", index=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    read_at: datetime = Field(default_factory=datetime.utcnow)

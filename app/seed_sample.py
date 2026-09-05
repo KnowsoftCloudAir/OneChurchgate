@@ -1,7 +1,7 @@
 """Sample: Knowsoft Church — hierarchy, sub-admins, members, weekly stats."""
 from datetime import date, timedelta
 from sqlmodel import Session, select
-from app.models import (
+from app.models import MusicLink, DistrictMessage, (
     User, UserRole, ChurchUnit, ChurchLevel, ChurchMember, WeeklyStat, SpecialProgram
 )
 from app.auth import get_password_hash
@@ -394,3 +394,108 @@ def seed_knowsoft_bible_church(session: Session) -> None:
         print(f"⚠️ Sample seed error: {e}")
         import traceback
         traceback.print_exc()
+
+
+def seed_music_links(session: Session) -> None:
+    """Default YouTube worship list; General Admin can edit later."""
+    from app.models import MusicLink
+    existing = session.exec(select(MusicLink)).first()
+    if existing:
+        return
+    defaults = [
+        ("10,000 Reasons (Bless the Lord) – Matt Redman", "DXDGE_lRI0E", 0),
+        ("Way Maker – Sinach", "hH-i5QUXcp0", 1),
+        ("Reckless Love – Cory Asbury", "Sc6SSTrIEQU", 2),
+        ("The Blessing – Kari Jobe", "Zp6aygmvzM4", 3),
+        ("Gratitude – Brandon Lake", "yNkQx0AdhTE", 4),
+        ("Holy Forever – Chris Tomlin", "9R5WFa0T_y0", 5),
+        ("Firm Foundation (He Won't) – Cody Carnes", "eh9bA4S1zxs", 6),
+        ("Yet Not I But Through Christ In Me", "hwc2d1Xt8IA", 7),
+        ("Great Are You Lord", "ZZsQLb1Nm6A", 8),
+        ("Raise A Hallelujah – Bethel", "kwl2n6z4xT4", 9),
+        ("Amazing Grace (My Chains Are Gone)", "J3iB5BFs1OQ", 10),
+        ("How Great Is Our God – Chris Tomlin", "2fngvQSInoq", 11),
+        ("Oceans – Hillsong United", "00-6OyXVA0M", 12),
+        ("What A Beautiful Name – Hillsong", "zmqhqf01A-g", 13),
+        ("Build My Life – Pat Barrett", "Jbe7OruLk8I", 14),
+        ("In Christ Alone", "y8ZonPhl0-A", 15),
+        ("Goodness of God", "4_X-nLQDn4M", 16),
+        ("King of Kings – Hillsong", "GZX6_Bf1xwQ", 17),
+        ("No Longer Slaves – Bethel", "d-diB65scQU", 18),
+        ("Goodness of God – Bethel Music (live)", "n0F86oCaR14", 19),
+        ("Way Maker – Leeland live", "EXMTxftbIkw", 20),
+        ("Reckless Love – official audio/visual", "6xlpLWn8Svg", 21),
+        ("The Blessing – Elevation & Kari Jobe live", "Zp6aygmvzM4", 22),
+        ("Build My Life – Housefires", "ZLyiirWM1j8", 23),
+        ("What A Beautiful Name – Hillsong live", "r5LkSsFhG5I", 24),
+        ("Oceans – Hillsong UNITED live", "dy9nwe9_xzw", 25),
+        ("10,000 Reasons – Matt Redman live", "XswkNjAZPj4", 26),
+        ("How Great Is Our God – live", "KBDCj8DhF8M", 27),
+        ("Amazing Grace My Chains – live", "J3iB5BFs1OQ", 28),
+        ("Holy Forever – live worship", "N-6s_p_zJ1c", 29),
+    ]
+    for title, yid, order in defaults:
+        session.add(MusicLink(title=title, youtube_id=yid, is_active=True, sort_order=order))
+    session.commit()
+    print("✅ Default music links seeded")
+
+
+def seed_sample_member(session: Session) -> None:
+    """Approved sample member for testing: member@knowsoftchurch.org / Member@12345"""
+    from app.models import ChurchMember, User, UserRole, ChurchUnit, ChurchLevel
+    from app.auth import get_password_hash
+    email = "member@knowsoftchurch.org"
+    password = "Member@12345"
+    district = session.exec(
+        select(ChurchUnit).where(ChurchUnit.code == "KC-NG-LAG-IKE-ALLEN")
+    ).first()
+    if not district:
+        district = session.exec(
+            select(ChurchUnit).where(ChurchUnit.level == ChurchLevel.district)
+        ).first()
+    if not district:
+        print("⚠️ No district for sample member")
+        return
+    member = session.exec(select(ChurchMember).where(ChurchMember.email == email)).first()
+    if not member:
+        member = ChurchMember(
+            church_id=district.id,
+            full_name="Sister Faith Sample",
+            email=email,
+            sex="sister",
+            age_group="adult",
+            confession="saved",
+            status="member",
+            approval_status="approved",
+            phone="+2348000000001",
+            whatsapp="+2348000000001",
+        )
+        session.add(member)
+        session.commit()
+        session.refresh(member)
+    else:
+        member.approval_status = "approved"
+        member.church_id = district.id
+        session.add(member)
+        session.commit()
+    user = session.exec(select(User).where(User.email == email)).first()
+    if not user:
+        user = User(
+            email=email,
+            full_name="Sister Faith Sample",
+            hashed_password=get_password_hash(password),
+            role=UserRole.member,
+            is_active=True,
+            church_id=district.id,
+            member_id=member.id,
+        )
+        session.add(user)
+    else:
+        user.hashed_password = get_password_hash(password)
+        user.is_active = True
+        user.role = UserRole.member
+        user.church_id = district.id
+        user.member_id = member.id
+        session.add(user)
+    session.commit()
+    print(f"✅ Sample member ready: {email} / {password}")

@@ -287,3 +287,32 @@ async def geo_countries():
     if not p.exists():
         return []
     return json.loads(p.read_text(encoding="utf-8"))
+
+
+@router.get("/api/music-links")
+async def api_music_links(session: Session = Depends(get_session)):
+    """Active YouTube tracks for member portal (managed by General Admin)."""
+    from app.models import MusicLink
+    links = list(session.exec(
+        select(MusicLink).where(MusicLink.is_active == True).order_by(MusicLink.sort_order, MusicLink.id)
+    ).all())
+    return [{"id": L.youtube_id, "title": L.title} for L in links]
+
+
+@router.post("/member/{member_id}/toggle-broadcast")
+async def toggle_broadcast(
+    member_id: int,
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    """District/church admin may grant broadcast privilege to an approved member."""
+    from app.auth import role_val
+    if role_val(user.role) not in ("church_admin", "general_admin"):
+        raise HTTPException(403, "Admin only")
+    target = session.exec(select(User).where(User.member_id == member_id)).first()
+    if not target:
+        raise HTTPException(404, "User not found")
+    target.can_broadcast = not bool(getattr(target, "can_broadcast", False))
+    session.add(target)
+    session.commit()
+    return RedirectResponse("/district/members", status_code=303)
