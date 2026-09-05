@@ -454,8 +454,14 @@ async def church_music_page(
     links = list(session.exec(
         select(MusicLink).where(MusicLink.church_id == church.id).order_by(MusicLink.sort_order, MusicLink.id)
     ).all())
+    level_label = ""
+    try:
+        level_label = str(getattr(church.level, "value", church.level) or "")
+    except Exception:
+        level_label = ""
     return templates.TemplateResponse("district/music.html", {
         "request": request, "user": user, "church": church, "links": links,
+        "level_label": level_label,
     })
 
 

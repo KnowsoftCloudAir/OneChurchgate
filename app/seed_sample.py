@@ -291,35 +291,49 @@ def seed_knowsoft_bible_church(session: Session) -> None:
 
 
 def seed_church_music(session: Session) -> None:
-    """Sample YouTube tracks for Knowsoft Allen district (members only in that tree)."""
-    from app.models import MusicLink, ChurchUnit
+    """Sample YouTube tracks at Global level and Allen district (scoped by church_id)."""
+    from app.models import MusicLink, ChurchUnit, ChurchLevel
+    targets = []
+    global_c = session.exec(
+        select(ChurchUnit).where(ChurchUnit.code == "KC-GLOBAL")
+    ).first()
+    if not global_c:
+        global_c = session.exec(
+            select(ChurchUnit).where(ChurchUnit.level == ChurchLevel.global_church)
+        ).first()
+    if global_c:
+        targets.append((global_c, [
+            ("Global praise – Our God", "tKjZuy0EP4s"),
+            ("Global worship – Great Are You Lord", "uHz0JiD9n2E"),
+        ]))
     district = session.exec(
         select(ChurchUnit).where(ChurchUnit.code == "KC-NG-LAG-IKE-ALLEN")
     ).first()
-    if not district:
-        return
-    samples = [
-        ("Way Maker – for our church", "29yxjCzWUTs"),
-        ("Goodness of God – church choir pick", "IvSU8ZuC9sA"),
-        ("Amazing Grace (My Chains Are Gone)", "Jbe7OruLk8I"),
-    ]
-    existing = {
-        L.youtube_id for L in session.exec(
-            select(MusicLink).where(MusicLink.church_id == district.id)
-        ).all()
-    }
-    added = 0
-    for title, yid in samples:
-        if yid in existing:
-            continue
-        session.add(MusicLink(
-            title=title, youtube_id=yid, is_active=True,
-            church_id=district.id, sort_order=added,
-        ))
-        added += 1
-    if added:
+    if district:
+        targets.append((district, [
+            ("Way Maker – district church", "29yxjCzWUTs"),
+            ("Goodness of God – church choir", "IvSU8ZuC9sA"),
+        ]))
+    total = 0
+    for unit, samples in targets:
+        existing = {
+            L.youtube_id for L in session.exec(
+                select(MusicLink).where(MusicLink.church_id == unit.id)
+            ).all()
+        }
+        for i, (title, yid) in enumerate(samples):
+            if yid in existing:
+                continue
+            session.add(MusicLink(
+                title=title, youtube_id=yid, is_active=True,
+                church_id=unit.id, sort_order=i,
+            ))
+            total += 1
+    if total:
         session.commit()
-        print(f"✅ Church music sample tracks: {added}")
+        print(f"✅ Church music sample tracks (global + district): {total}")
+    else:
+        print("✅ Church music already seeded for global/district")
 
 
 def ensure_all_sample_data(session: Session) -> None:

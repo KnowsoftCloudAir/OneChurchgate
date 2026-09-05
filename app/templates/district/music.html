@@ -1,28 +1,35 @@
 {% extends "base.html" %}
-{% block title %}My church music{% endblock %}
+{% block title %}Church music – {{ church.name if church else "Church" }}{% endblock %}
 {% block content %}
 <div class="max-w-2xl mx-auto px-4 py-8">
   <a href="/dashboard" class="text-sm text-blue-700 font-medium">← Dashboard</a>
-  <h1 class="text-2xl font-bold text-navy-900 mt-2">My church music</h1>
-  <p class="text-sm text-slate-600 mt-1 mb-6">
-    Add YouTube links for <strong>{{ church.name if church else "your church" }}</strong> only.
-    Members under this church (and its branches) will see these under <em>My church music</em> on their portal.
-    Other churches will not see them.
-  </p>
+  <div class="mt-3 mb-6 rounded-2xl bg-gradient-to-r from-indigo-700 to-slate-800 text-white p-5 shadow-lg">
+    <p class="text-xs uppercase tracking-widest text-indigo-200 font-semibold">Church music library</p>
+    <h1 class="text-2xl font-bold mt-1">{{ church.name if church else "Your church" }}</h1>
+    <p class="text-sm text-indigo-100 mt-2">
+      Level:
+      <strong class="capitalize">{{ level_label or (church.level if church else "—") }}</strong>
+      {% if church and church.code %} · Code {{ church.code }}{% endif %}
+    </p>
+    <p class="text-xs text-indigo-200 mt-2">
+      Songs you add stay at <strong>this level</strong>.
+      Members of this unit and all churches under it will see them under <em>My church music</em>.
+      Other global churches will not see these tracks.
+    </p>
+  </div>
 
-  <form method="post" action="/district/music/add" class="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 mb-8 space-y-3">
-    <p class="text-xs font-semibold uppercase tracking-wide text-indigo-700">Add a song</p>
-    <input name="title" required placeholder="Song title (e.g. Sunday worship – Way Maker)"
-           class="w-full px-3 py-2.5 rounded-xl border border-indigo-200">
+  <form method="post" action="/district/music/add" class="bg-white border rounded-2xl p-5 mb-8 space-y-3 shadow-sm">
+    <p class="text-xs font-semibold uppercase tracking-wide text-indigo-700">Add YouTube song for this church only</p>
+    <input name="title" required placeholder="Song title"
+           class="w-full px-3 py-2.5 rounded-xl border">
     <input name="youtube_id" required placeholder="YouTube URL or video ID"
-           class="w-full px-3 py-2.5 rounded-xl border border-indigo-200">
-    <p class="text-xs text-slate-500">Paste a full YouTube link or just the video ID.</p>
+           class="w-full px-3 py-2.5 rounded-xl border">
     <button type="submit" class="w-full py-3 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-semibold">
-      Save for our members only
+      Save at this church level
     </button>
   </form>
 
-  <h2 class="font-semibold text-navy-900 mb-3">Songs for our members ({{ links|length }})</h2>
+  <h2 class="font-semibold text-navy-900 mb-3">Saved for {{ church.name if church else "church" }} ({{ links|length }})</h2>
   {% for L in links %}
   <div class="border rounded-xl p-3 mb-2 flex flex-wrap justify-between gap-2 items-center bg-white">
     <div class="min-w-0">
@@ -31,13 +38,13 @@
         youtube.com/watch?v={{ L.youtube_id }}
       </a>
     </div>
-    <form method="post" action="/district/music/{{ L.id }}/delete" onsubmit="return confirm('Remove this song from member list?')">
-      <button type="submit" class="text-xs text-red-600 font-semibold px-2 py-1">Delete</button>
+    <form method="post" action="/district/music/{{ L.id }}/delete" onsubmit="return confirm('Remove?')">
+      <button type="submit" class="text-xs text-red-600 font-semibold">Delete</button>
     </form>
   </div>
   {% else %}
   <div class="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">
-    No church songs yet. Add a YouTube link above — it will appear only for your members.
+    No songs at this level yet. Global / country / district admins each manage their own list.
   </div>
   {% endfor %}
 </div>

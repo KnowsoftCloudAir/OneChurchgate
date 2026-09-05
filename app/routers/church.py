@@ -786,3 +786,10 @@ async def church_logo_remove(
     session.add(church)
     session.commit()
     return RedirectResponse("/church/settings", status_code=303)
+
+
+@router.get("/music", response_class=HTMLResponse)
+async def church_level_music_redirect():
+    """Alias so Global and other levels clearly open church music at their unit."""
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse("/district/music", status_code=303)
