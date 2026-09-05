@@ -430,3 +430,18 @@ async def admin_music_delete(
         session.delete(link)
         session.commit()
     return RedirectResponse("/admin/music", status_code=303)
+
+
+@router.get("/footprints", response_class=HTMLResponse)
+async def admin_footprints(
+    request: Request,
+    user: User = Depends(require_roles(UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    from app.models import ActivityLog
+    logs = list(session.exec(
+        select(ActivityLog).order_by(ActivityLog.created_at.desc()).limit(500)
+    ).all())
+    return templates.TemplateResponse("admin/footprints.html", {
+        "request": request, "user": user, "logs": logs,
+    })

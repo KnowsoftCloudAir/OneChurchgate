@@ -18,6 +18,7 @@ from app.models import (
     FocusGroupMessage, MemberSubscription, SubscriptionSettings, DistrictMessage,
 )
 from app.auth import require_roles, require_user, role_val
+from app.activity import log_activity
 from app.routers.church import collect_descendant_ids
 
 router = APIRouter(tags=["backup"])
@@ -289,11 +290,15 @@ async def newborn_certificate(
     user: User = Depends(require_user),
     session: Session = Depends(get_session),
 ):
-    """Beautiful New Born in Christ certificate PDF."""
+    """Beautiful New Born in Christ certificate PDF with Knowsoft logo."""
     from reportlab.lib.pagesizes import A4, landscape
     from reportlab.pdfgen import canvas
     from reportlab.lib.units import mm
-    from reportlab.lib.colors import Color, HexColor
+    from reportlab.lib.colors import HexColor
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+    from reportlab.lib.utils import ImageReader
+
     member = session.get(ChurchMember, user.member_id) if user.member_id else None
     if not member:
         member = session.exec(select(ChurchMember).where(ChurchMember.email == user.email)).first()
@@ -303,39 +308,84 @@ async def newborn_certificate(
         member.confession = "saved"
         session.add(member)
         session.commit()
+    try:
+        log_activity(session, user=user, action="certificate", detail="Downloaded New Born in Christ certificate")
+    except Exception:
+        pass
+
     buf = io.BytesIO()
     c = canvas.Canvas(buf, pagesize=landscape(A4))
     w, h = landscape(A4)
-    # background
-    c.setFillColor(HexColor("#0f172a"))
+
+    # Deep navy background
+    c.setFillColor(HexColor("#0b1220"))
     c.rect(0, 0, w, h, fill=1, stroke=0)
-    c.setStrokeColor(HexColor("#fbbf24"))
-    c.setLineWidth(4)
-    c.roundRect(12 * mm, 12 * mm, w - 24 * mm, h - 24 * mm, 8 * mm, fill=0, stroke=1)
-    c.setLineWidth(1)
-    c.setStrokeColor(HexColor("#60a5fa"))
-    c.roundRect(16 * mm, 16 * mm, w - 32 * mm, h - 32 * mm, 6 * mm, fill=0, stroke=1)
+
+    # Gold outer frame
+    c.setStrokeColor(HexColor("#d4a017"))
+    c.setLineWidth(5)
+    c.roundRect(10 * mm, 10 * mm, w - 20 * mm, h - 20 * mm, 6 * mm, fill=0, stroke=1)
+    c.setStrokeColor(HexColor("#f5e6a8"))
+    c.setLineWidth(1.5)
+    c.roundRect(14 * mm, 14 * mm, w - 28 * mm, h - 28 * mm, 4 * mm, fill=0, stroke=1)
+
+    # Logo
+    logo_paths = [
+        Path("app/static/img/knowsoft-logo.png"),
+        Path("app/static/icons/icon-512.png"),
+        Path("app/static/icons/icon-192.png"),
+    ]
+    logo = next((p for p in logo_paths if p.exists()), None)
+    if logo:
+        try:
+            img = ImageReader(str(logo))
+            c.drawImage(img, w / 2 - 18 * mm, h - 42 * mm, width=36 * mm, height=36 * mm,
+                        mask="auto", preserveAspectRatio=True, anchor="c")
+        except Exception as e:
+            print("logo draw", e)
+
+    # Title - bold display style
     c.setFillColor(HexColor("#fbbf24"))
-    c.setFont("Helvetica-Bold", 22)
-    c.drawCentredString(w / 2, h - 35 * mm, "NEW BORN IN CHRIST CERTIFICATE")
+    c.setFont("Times-Bold", 26)
+    c.drawCentredString(w / 2, h - 52 * mm, "NEW BORN IN CHRIST")
+    c.setFont("Times-Bold", 18)
+    c.drawCentredString(w / 2, h - 62 * mm, "CERTIFICATE")
+
+    c.setFillColor(HexColor("#93c5fd"))
+    c.setFont("Helvetica-Bold", 11)
+    c.drawCentredString(w / 2, h - 72 * mm, "KNOWSOFT CHURCHGATE")
+
     c.setFillColor(HexColor("#e2e8f0"))
-    c.setFont("Helvetica", 12)
-    c.drawCentredString(w / 2, h - 48 * mm, "Knowsoft Churchgate")
-    c.setFont("Helvetica-Oblique", 11)
-    c.drawCentredString(w / 2, h - 62 * mm, "This is to certify that")
-    c.setFillColor(HexColor("#f8fafc"))
-    c.setFont("Helvetica-Bold", 20)
-    c.drawCentredString(w / 2, h - 78 * mm, name)
-    c.setFont("Helvetica", 12)
+    c.setFont("Times-Italic", 13)
+    c.drawCentredString(w / 2, h - 88 * mm, "This is to certify that")
+
+    # Name - large bold
+    c.setFillColor(HexColor("#ffffff"))
+    c.setFont("Times-Bold", 24)
+    # underline name
+    c.drawCentredString(w / 2, h - 105 * mm, name)
+    c.setStrokeColor(HexColor("#fbbf24"))
+    c.setLineWidth(1.2)
+    tw = c.stringWidth(name, "Times-Bold", 24)
+    c.line(w / 2 - tw / 2 - 5, h - 108 * mm, w / 2 + tw / 2 + 5, h - 108 * mm)
+
     c.setFillColor(HexColor("#cbd5e1"))
-    text = f"on this day, {today}, accepted Jesus Christ as Lord and personal Saviour."
-    c.drawCentredString(w / 2, h - 95 * mm, text)
+    c.setFont("Times-Roman", 13)
+    line1 = f"on this day, {today},"
+    line2 = "accepted Jesus Christ as Lord and personal Saviour."
+    c.drawCentredString(w / 2, h - 122 * mm, line1)
+    c.drawCentredString(w / 2, h - 130 * mm, line2)
+
     c.setFillColor(HexColor("#34d399"))
-    c.setFont("Helvetica-Bold", 14)
-    c.drawCentredString(w / 2, h - 112 * mm, "Congratulations — you are saved!")
+    c.setFont("Times-Bold", 16)
+    c.drawCentredString(w / 2, h - 148 * mm, "Congratulations — you are saved!")
+
     c.setFillColor(HexColor("#94a3b8"))
-    c.setFont("Helvetica", 9)
-    c.drawCentredString(w / 2, 28 * mm, "John 1:12 · Therefore if any man be in Christ, he is a new creature. — 2 Cor. 5:17")
+    c.setFont("Times-Italic", 9)
+    c.drawCentredString(w / 2, 28 * mm, '"Therefore if any man be in Christ, he is a new creature." — 2 Corinthians 5:17')
+    c.setFont("Helvetica", 8)
+    c.drawCentredString(w / 2, 22 * mm, "John 1:12  ·  Knowsoft Churchgate")
+
     c.save()
     buf.seek(0)
     safe = "".join(ch if ch.isalnum() else "_" for ch in name)[:40]

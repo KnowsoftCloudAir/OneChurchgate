@@ -11,6 +11,7 @@ import string
 from app.database import get_session
 from app.models import User, UserRole, ChurchUnit, ChurchLevel, ApprovalStatus, ChurchMember
 from app.auth import require_user, role_val, verify_password, get_password_hash, create_access_token, create_user_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
+from app.activity import log_activity
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
@@ -63,6 +64,7 @@ async def login(
             session.commit()
             session.refresh(user)
             token = create_user_token(user)
+            log_activity(session, user=user, action="login", detail="Pending/limited login", request=request)
             resp = RedirectResponse("/member/portal", status_code=303)
             resp.set_cookie("access_token", token, httponly=True,
                             max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60, samesite="lax", path="/")
@@ -84,6 +86,7 @@ async def login(
     session.commit()
     session.refresh(user)
     token = create_user_token(user)
+    log_activity(session, user=user, action="login", detail="Successful login", request=request)
     # Route by role — members without dashboard grant go to portal only
     rv = role_val(user.role)
     if rv == "general_admin":

@@ -12,6 +12,7 @@ from app.database import get_session
 from app.models import (
     User, UserRole, ChurchUnit, ChurchLevel, ChurchMember, ChurchLevel as CL
 )
+from app.activity import log_activity
 from app.auth import (
     get_current_user, require_user, get_password_hash, create_access_token,
     ACCESS_TOKEN_EXPIRE_MINUTES, verify_password
@@ -327,6 +328,10 @@ async def member_portal(
         print("pastor msgs:", e)
         pastor_messages = []
 
+    try:
+        log_activity(session, user=user, action="portal_view", detail="Opened member dashboard", request=request)
+    except Exception:
+        pass
     return templates.TemplateResponse("members/portal.html", {
         "request": request,
         "user": user,
@@ -505,7 +510,8 @@ async def toggle_broadcast(
     session: Session = Depends(get_session),
 ):
     """District/church admin may grant broadcast privilege to an approved member."""
-    from app.auth import role_val
+    from app.activity import log_activity
+from app.auth import role_val
     if role_val(user.role) not in ("church_admin", "general_admin"):
         raise HTTPException(403, "Admin only")
     target = session.exec(select(User).where(User.member_id == member_id)).first()
@@ -529,3 +535,25 @@ async def member_pending_page(
     return templates.TemplateResponse("members/pending_access.html", {
         "request": request, "user": user, "member": member,
     })
+
+
+@router.post("/member/api/log")
+async def member_api_log(
+    request: Request,
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    from app.activity import log_activity
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    log_activity(
+        session,
+        user=user,
+        action=str(body.get("action") or "client_event")[:64],
+        detail=str(body.get("detail") or "")[:400],
+        request=request,
+        location_hint=body.get("location"),
+    )
+    return {"ok": True}
