@@ -290,6 +290,38 @@ def seed_knowsoft_bible_church(session: Session) -> None:
         traceback.print_exc()
 
 
+def seed_church_music(session: Session) -> None:
+    """Sample YouTube tracks for Knowsoft Allen district (members only in that tree)."""
+    from app.models import MusicLink, ChurchUnit
+    district = session.exec(
+        select(ChurchUnit).where(ChurchUnit.code == "KC-NG-LAG-IKE-ALLEN")
+    ).first()
+    if not district:
+        return
+    samples = [
+        ("Way Maker – for our church", "29yxjCzWUTs"),
+        ("Goodness of God – church choir pick", "IvSU8ZuC9sA"),
+        ("Amazing Grace (My Chains Are Gone)", "Jbe7OruLk8I"),
+    ]
+    existing = {
+        L.youtube_id for L in session.exec(
+            select(MusicLink).where(MusicLink.church_id == district.id)
+        ).all()
+    }
+    added = 0
+    for title, yid in samples:
+        if yid in existing:
+            continue
+        session.add(MusicLink(
+            title=title, youtube_id=yid, is_active=True,
+            church_id=district.id, sort_order=added,
+        ))
+        added += 1
+    if added:
+        session.commit()
+        print(f"✅ Church music sample tracks: {added}")
+
+
 def ensure_all_sample_data(session: Session) -> None:
     """Single entry: hierarchy, stats, music, sample member, password resets."""
     seed_knowsoft_bible_church(session)
@@ -316,6 +348,7 @@ def ensure_all_sample_data(session: Session) -> None:
         print(f"⚠️ Music seed: {e}")
     try:
         seed_sample_member(session)
+        seed_church_music(session)
     except Exception as e:
         print(f"⚠️ Sample member: {e}")
     print("✅ Sample logins:")
@@ -430,7 +463,7 @@ def seed_sample_member(session: Session) -> None:
         user.is_active = True
         user.role = UserRole.member
         user.is_sample_account = True
-        user.sample_started_at = None  # fresh 30-min trial each deploy/restart
+        user.sample_started_at = None  # fresh 5-min trial each deploy/restart
         user.church_id = district.id
         user.member_id = member.id
         session.add(user)
@@ -447,4 +480,4 @@ def seed_sample_member(session: Session) -> None:
         member.is_active = True
         session.add(member)
     session.commit()
-    print(f"✅ Sample member ready: {email} / {password} (30-min trial resets on each start)")
+    print(f"✅ Sample member ready: {email} / {password} (5-min trial resets on each start)")

@@ -226,8 +226,8 @@ async def member_portal(
         if sample_info is None and is_sample:
             sample_info = {
                 "is_sample": True, "show_warning": True, "expired": False,
-                "minutes_left": 30, "seconds_left": 1800, "pct_left": 100,
-                "message": "Sample membership (30-min trial). Register as a full member for perpetual access.",
+                "minutes_left": 5, "seconds_left": 300, "pct_left": 100,
+                "message": "Sample membership (5-min trial). Register as a full member for perpetual access.",
                 "can_subscribe": False,
             }
             sample_warning = sample_info["message"]
@@ -429,45 +429,59 @@ async def api_music_links(
     session: Session = Depends(get_session),
     user: Optional[User] = Depends(get_current_user),
 ):
-    """Platform music + music from this church and all parent churches (e.g. Global → District)."""
+    """
+    Returns:
+      platform: General Admin tracks (church_id is null)
+      church: tracks added by this member's church and parent churches only
+    """
     from app.models import MusicLink, ChurchUnit
+    platform, church = [], []
     try:
         rows = list(session.exec(
             select(MusicLink).where(MusicLink.is_active == True).order_by(MusicLink.sort_order, MusicLink.id)
         ).all())
-        allowed = set()  # church ids whose music this member may see
+        allowed = set()
+        own_id = None
         cid = getattr(user, "church_id", None) if user else None
-        if not cid and user and user.member_id:
+        if not cid and user and getattr(user, "member_id", None):
             m = session.get(ChurchMember, user.member_id)
             if m:
                 cid = m.church_id
+        own_id = cid
         if cid:
-            # walk up parent chain so Global/State music reaches district members
             cur = session.get(ChurchUnit, cid)
-            while cur:
+            hops = 0
+            while cur and hops < 12:
                 allowed.add(cur.id)
                 if not cur.parent_id:
                     break
                 cur = session.get(ChurchUnit, cur.parent_id)
-        links = []
+                hops += 1
+        seen_p, seen_c = set(), set()
         for L in rows:
-            if L.church_id is None or L.church_id in allowed:
-                links.append(L)
+            yid = (L.youtube_id or "").strip()
+            if not yid:
+                continue
+            if L.church_id is None:
+                if yid not in seen_p:
+                    seen_p.add(yid)
+                    platform.append({"id": yid, "title": L.title or yid, "source": "platform"})
+            elif L.church_id in allowed:
+                if yid not in seen_c:
+                    seen_c.add(yid)
+                    # label: own church vs parent
+                    src = "my_church" if own_id and L.church_id == own_id else "parent_church"
+                    church.append({
+                        "id": yid,
+                        "title": L.title or yid,
+                        "source": src,
+                    })
     except Exception as e:
         print("music links", e)
-        links = []
-    out = []
-    seen = set()
-    for L in links:
-        yid = (L.youtube_id or "").strip()
-        if not yid or yid in seen:
-            continue
-        seen.add(yid)
-        label = L.title or yid
-        if L.church_id:
-            label = f"{label} (church)"
-        out.append({"id": yid, "title": label})
-    return out
+    # backward compatible flat list
+    flat = list(platform) + list(church)
+    return {"platform": platform, "church": church, "all": flat}
+
 
 
 @router.post("/member/{member_id}/toggle-broadcast")

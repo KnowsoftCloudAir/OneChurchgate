@@ -1,27 +1,44 @@
 {% extends "base.html" %}
-{% block title %}Church music{% endblock %}
+{% block title %}My church music{% endblock %}
 {% block content %}
 <div class="max-w-2xl mx-auto px-4 py-8">
-  <a href="/dashboard" class="text-sm text-blue-700">← Dashboard</a>
-  <h1 class="text-2xl font-bold mt-2 mb-1">YouTube music for members</h1>
-  <p class="text-sm text-slate-500 mb-6">Tracks you add appear in the member portal music list (marked as church).</p>
-  <form method="post" action="/district/music/add" class="bg-slate-50 border rounded-2xl p-4 mb-6 space-y-3">
-    <input name="title" required placeholder="Song title" class="w-full px-3 py-2 rounded-xl border">
-    <input name="youtube_id" required placeholder="YouTube URL or video ID" class="w-full px-3 py-2 rounded-xl border">
-    <button class="w-full py-2.5 rounded-xl bg-indigo-700 text-white font-semibold">Add to member playlist</button>
+  <a href="/dashboard" class="text-sm text-blue-700 font-medium">← Dashboard</a>
+  <h1 class="text-2xl font-bold text-navy-900 mt-2">My church music</h1>
+  <p class="text-sm text-slate-600 mt-1 mb-6">
+    Add YouTube links for <strong>{{ church.name if church else "your church" }}</strong> only.
+    Members under this church (and its branches) will see these under <em>My church music</em> on their portal.
+    Other churches will not see them.
+  </p>
+
+  <form method="post" action="/district/music/add" class="bg-indigo-50 border border-indigo-100 rounded-2xl p-5 mb-8 space-y-3">
+    <p class="text-xs font-semibold uppercase tracking-wide text-indigo-700">Add a song</p>
+    <input name="title" required placeholder="Song title (e.g. Sunday worship – Way Maker)"
+           class="w-full px-3 py-2.5 rounded-xl border border-indigo-200">
+    <input name="youtube_id" required placeholder="YouTube URL or video ID"
+           class="w-full px-3 py-2.5 rounded-xl border border-indigo-200">
+    <p class="text-xs text-slate-500">Paste a full YouTube link or just the video ID.</p>
+    <button type="submit" class="w-full py-3 rounded-xl bg-indigo-700 hover:bg-indigo-800 text-white font-semibold">
+      Save for our members only
+    </button>
   </form>
+
+  <h2 class="font-semibold text-navy-900 mb-3">Songs for our members ({{ links|length }})</h2>
   {% for L in links %}
-  <div class="border rounded-xl p-3 mb-2 flex justify-between gap-2 items-center">
-    <div>
+  <div class="border rounded-xl p-3 mb-2 flex flex-wrap justify-between gap-2 items-center bg-white">
+    <div class="min-w-0">
       <p class="font-semibold text-sm">{{ L.title }}</p>
-      <a class="text-xs text-blue-700" href="https://www.youtube.com/watch?v={{ L.youtube_id }}" target="_blank">{{ L.youtube_id }}</a>
+      <a class="text-xs text-blue-700 break-all" href="https://www.youtube.com/watch?v={{ L.youtube_id }}" target="_blank" rel="noopener">
+        youtube.com/watch?v={{ L.youtube_id }}
+      </a>
     </div>
-    <form method="post" action="/district/music/{{ L.id }}/delete" onsubmit="return confirm('Remove?')">
-      <button class="text-xs text-red-600 font-semibold">Delete</button>
+    <form method="post" action="/district/music/{{ L.id }}/delete" onsubmit="return confirm('Remove this song from member list?')">
+      <button type="submit" class="text-xs text-red-600 font-semibold px-2 py-1">Delete</button>
     </form>
   </div>
   {% else %}
-  <p class="text-sm text-slate-400">No church tracks yet.</p>
+  <div class="rounded-xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">
+    No church songs yet. Add a YouTube link above — it will appear only for your members.
+  </div>
   {% endfor %}
 </div>
 {% endblock %}

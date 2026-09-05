@@ -40,6 +40,75 @@ def _settings(session: Session) -> SubscriptionSettings:
     return s
 
 
+
+def ensure_welcome_trial(session: Session, user: User):
+    """After district approval, first portal login starts a 7-minute welcome subscription."""
+    from typing import Optional
+    if getattr(user, "is_sample_account", False):
+        return None
+    if not user.member_id:
+        return None
+    mem = session.get(ChurchMember, user.member_id)
+    if not mem:
+        return None
+    if mem.approval_status not in ("approved", "waiting_approval", "waiting_subscription"):
+        return None
+    existing_paid = session.exec(
+        select(MemberSubscription).where(
+            MemberSubscription.user_id == user.id,
+            MemberSubscription.status == "active",
+            MemberSubscription.plan != "welcome",
+        )
+    ).first()
+    if existing_paid:
+        return existing_paid
+    now = datetime.utcnow()
+    welcome = session.exec(
+        select(MemberSubscription).where(
+            MemberSubscription.user_id == user.id,
+            MemberSubscription.plan == "welcome",
+        ).order_by(MemberSubscription.created_at.desc())
+    ).first()
+    if not welcome:
+        if not getattr(user, "welcome_started_at", None):
+            user.welcome_started_at = now
+            session.add(user)
+        ends = now + timedelta(minutes=7)
+        welcome = MemberSubscription(
+            user_id=user.id,
+            member_id=user.member_id,
+            plan="welcome",
+            amount=0.0,
+            currency="NGN",
+            duration_days=0,
+            status="active",
+            payment_reference="WELCOME-7MIN",
+            starts_at=now,
+            ends_at=ends,
+            note="Complimentary 7-minute welcome access after approval",
+        )
+        session.add(welcome)
+        if mem.approval_status != "approved":
+            mem.approval_status = "approved"
+            session.add(mem)
+        session.commit()
+        session.refresh(welcome)
+        return welcome
+    if welcome.status == "active" and welcome.ends_at and welcome.ends_at <= now:
+        welcome.status = "expired"
+        session.add(welcome)
+        mem.approval_status = "waiting_approval"
+        session.add(mem)
+        session.commit()
+    elif welcome.status == "active":
+        # If an older 30-min welcome is still running, leave ends_at as set
+        if mem.approval_status != "approved":
+            mem.approval_status = "approved"
+            session.add(mem)
+            session.commit()
+    return welcome
+
+
 def expire_due_subscriptions(session: Session) -> int:
     """Mark ended subscriptions expired; member goes to waiting_approval (can still pay)."""
     now = datetime.utcnow()
@@ -77,8 +146,8 @@ def expire_due_subscriptions(session: Session) -> int:
 
 
 def check_sample_member(session: Session, user: User) -> dict:
-    """Sample account: 30 minutes from first use, then deactivate. Cannot subscribe."""
-    SAMPLE_SECONDS = 30 * 60  # 30 minutes sample trial
+    """Sample account: 5 minutes from first use, then deactivate. Cannot subscribe."""
+    SAMPLE_SECONDS = 5 * 60  # 5 minutes sample trial
     info = {
         "is_sample": bool(getattr(user, "is_sample_account", False)),
         "show_warning": False,
@@ -108,7 +177,7 @@ def check_sample_member(session: Session, user: User) -> dict:
     mins = left // 60
     secs = left % 60
     info["message"] = (
-        f"Sample membership (30-min trial): {mins}m {secs:02d}s left. "
+        f"Sample membership (5-min trial): {mins}m {secs:02d}s left. "
         "Sample accounts cannot subscribe — please register as a full member for perpetual access."
     )
     info["show_warning"] = True  # always show while sample is active

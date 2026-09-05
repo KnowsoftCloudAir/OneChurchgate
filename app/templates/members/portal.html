@@ -351,21 +351,47 @@
         <a href="/testimonies" class="ms-btn inline-block px-4 py-2 text-sm">Open testimony wall →</a>
       </section>
       <section id="music" class="ms-card p-5">
-        <h2 class="font-bold text-lg mb-2">Inspirational music</h2>
-        <p class="text-xs ms-muted mb-3">YouTube only · can play while Bible reads · use Bible voice volume to balance</p>
-        <select x-model="music.id" class="w-full rounded-xl px-3 py-2 text-sm text-slate-900 mb-3">
-          <template x-for="m in musicList" :key="m.id">
-            <option :value="m.id" x-text="m.title"></option>
-          </template>
-        </select>
-        <div class="rounded-xl overflow-hidden bg-black aspect-video mb-2" x-show="music.playing" x-ref="ytWrap">
-          <iframe class="w-full h-full" x-ref="ytFrame"
-            :src="music.playing && music.id ? ('https://www.youtube.com/embed/' + music.id + '?rel=0&enablejsapi=1') : ''"
-            title="Worship" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-            allowfullscreen loading="lazy"></iframe>
+        <h2 class="font-bold text-lg mb-1">Music</h2>
+        <p class="text-xs ms-muted mb-4">YouTube can play while you read the Bible · use Bible voice volume to balance</p>
+
+        <div class="mb-5">
+          <p class="text-sm font-semibold mb-2">My church music</p>
+          <p class="text-xs ms-muted mb-2">Songs your pastor / church admin added for your church only</p>
+          <select x-model="churchMusic.id" class="w-full rounded-xl px-3 py-2 text-sm text-slate-900 mb-2">
+            <option value="">— Select a church song —</option>
+            <template x-for="m in churchMusicList" :key="'c-'+m.id">
+              <option :value="m.id" x-text="m.title"></option>
+            </template>
+          </select>
+          <p class="text-xs text-amber-200/90 mb-2" x-show="!churchMusicList.length">No church songs yet. Ask your church admin to add links under Church music.</p>
+          <div class="rounded-xl overflow-hidden bg-black aspect-video mb-2" x-show="churchMusic.playing && churchMusic.id">
+            <iframe class="w-full h-full"
+              :src="churchMusic.playing && churchMusic.id ? ('https://www.youtube.com/embed/' + churchMusic.id + '?rel=0') : ''"
+              title="Church music" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen loading="lazy"></iframe>
+          </div>
+          <button type="button" @click="if(churchMusic.id){ churchMusic.playing=true; music.playing=false }" class="ms-btn px-3 py-1.5 text-xs" :disabled="!churchMusic.id">Play church song</button>
+          <button type="button" @click="churchMusic.playing=false" class="text-xs ms-muted underline ml-2">Hide</button>
         </div>
-        <button type="button" @click="music.playing=true" class="ms-btn px-3 py-1.5 text-xs">Play</button>
-        <button type="button" @click="music.playing=false" class="text-xs ms-muted underline ml-2">Hide</button>
+
+        <div class="border-t border-white/10 pt-4">
+          <p class="text-sm font-semibold mb-2">Inspiration (platform)</p>
+          <p class="text-xs ms-muted mb-2">General playlist for all members</p>
+          <select x-model="music.id" class="w-full rounded-xl px-3 py-2 text-sm text-slate-900 mb-2">
+            <option value="">— Select a song —</option>
+            <template x-for="m in musicList" :key="'p-'+m.id">
+              <option :value="m.id" x-text="m.title"></option>
+            </template>
+          </select>
+          <div class="rounded-xl overflow-hidden bg-black aspect-video mb-2" x-show="music.playing && music.id">
+            <iframe class="w-full h-full"
+              :src="music.playing && music.id ? ('https://www.youtube.com/embed/' + music.id + '?rel=0&enablejsapi=1') : ''"
+              title="Worship" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen loading="lazy"></iframe>
+          </div>
+          <button type="button" @click="if(music.id){ music.playing=true; churchMusic.playing=false }" class="ms-btn px-3 py-1.5 text-xs">Play</button>
+          <button type="button" @click="music.playing=false" class="text-xs ms-muted underline ml-2">Hide</button>
+        </div>
       </section>
     </div>
 
@@ -397,7 +423,7 @@
             </svg>
             <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-2">
               <span class="text-2xl font-black leading-none" id="sampleCountdown">{{ sample_info.minutes_left or 0 }}m {{ '%02d'|format((sample_info.seconds_left or 0) % 60) }}s</span>
-              <span class="text-[10px] ms-muted uppercase">of 30 min left</span>
+              <span class="text-[10px] ms-muted uppercase">of 5 min left</span>
             </div>
           </div>
         </div>
@@ -429,7 +455,7 @@
         </div>
         <div class="space-y-2 text-sm">
           <p class="font-semibold {% if sub_is_welcome %}text-sky-300{% else %}text-emerald-400{% endif %}">
-            {% if sub_is_welcome %}✓ Welcome trial (30 min){% else %}✓ Active · {{ sub_active.plan|capitalize }}{% endif %}
+            {% if sub_is_welcome %}✓ Welcome trial (7 min){% else %}✓ Active · {{ sub_active.plan|capitalize }}{% endif %}
           </p>
           <div class="rounded-xl bg-black/20 p-3 space-y-1 text-xs">
             {% if not sub_is_welcome %}
@@ -471,7 +497,7 @@
       {% else %}
       <div class="rounded-xl bg-black/15 p-4 text-sm">
         <p class="font-semibold mb-1">No paid plan yet</p>
-        <p class="text-xs ms-muted mb-2">After district approval, your <strong>30-minute welcome</strong> starts on first login and appears here as a timer — this is <em>not</em> an expired subscription.</p>
+        <p class="text-xs ms-muted mb-2">After district approval, your <strong>7-minute welcome</strong> starts on first login and appears here as a timer — this is <em>not</em> an expired subscription.</p>
         <a href="/member/subscription" class="ms-btn inline-block px-4 py-2 text-sm">View plans →</a>
       </div>
       {% endif %}
@@ -563,8 +589,10 @@ function memberHub() {
     _timers: [],
     bible: { book:'', chapter:'', situation:'', version:'kjv', slides:[], slideIndex:0, status:'', voiceOn:false, voiceName:'', continuous:false, announcedChapter:false, volume: 0.85 },
     voiceList: [],
-    music: { id: 'DXDGE_lRI0E', playing: false },
+    music: { id: '', playing: false },
         musicList: [],
+        churchMusic: { id: '', playing: false },
+        churchMusicList: [],
     bibleBooks: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther','Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon','Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi','Matthew','Mark','Luke','John','Acts','Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude','Revelation'],
     situations: [
       { id:'unwell', label:'Feeling unwell / sickness', refs:['Psalm 103:2-3','Isaiah 53:5','Jeremiah 17:14','James 5:14-15','3 John 1:2','Matthew 9:35','Mark 5:34','1 Peter 2:24'] },
@@ -678,14 +706,21 @@ function memberHub() {
         const r = await fetch('/api/music-links', { credentials: 'same-origin' });
         if (!r.ok) throw new Error('HTTP ' + r.status);
         const data = await r.json();
-        this.musicList = Array.isArray(data) ? data.filter(x => x && x.id) : [];
-        if (this.musicList.length) {
-          if (!this.music.id || !this.musicList.find(m => m.id === this.music.id))
-            this.music.id = this.musicList[0].id;
+        if (Array.isArray(data)) {
+          this.musicList = data.filter(x => x && x.id);
+          this.churchMusicList = [];
+        } else {
+          this.musicList = (data.platform || data.all || []).filter(x => x && x.id);
+          this.churchMusicList = (data.church || []).filter(x => x && x.id);
         }
+        if (this.churchMusicList.length && !this.churchMusic.id)
+          this.churchMusic.id = this.churchMusicList[0].id;
+        if (this.musicList.length && !this.music.id)
+          this.music.id = this.musicList[0].id;
       } catch (e) {
         console.warn('music links', e);
         this.musicList = [];
+        this.churchMusicList = [];
       }
     },
     async fetchRef(ref) {
