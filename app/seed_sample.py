@@ -303,16 +303,18 @@ def seed_church_music(session: Session) -> None:
         ).first()
     if global_c:
         targets.append((global_c, [
+            ("Angel lift – worship (default)", "36hkGeb7r5E"),
+            ("Soul lift – praise (default)", "pVtjDcROtQ4"),
             ("Global praise – Our God", "tKjZuy0EP4s"),
-            ("Global worship – Great Are You Lord", "uHz0JiD9n2E"),
         ]))
     district = session.exec(
         select(ChurchUnit).where(ChurchUnit.code == "KC-NG-LAG-IKE-ALLEN")
     ).first()
     if district:
         targets.append((district, [
+            ("Angel lift – worship (default)", "36hkGeb7r5E"),
+            ("Soul lift – praise (default)", "pVtjDcROtQ4"),
             ("Way Maker – district church", "29yxjCzWUTs"),
-            ("Goodness of God – church choir", "IvSU8ZuC9sA"),
         ]))
     total = 0
     for unit, samples in targets:
@@ -329,6 +331,26 @@ def seed_church_music(session: Session) -> None:
                 church_id=unit.id, sort_order=i,
             ))
             total += 1
+    
+    # FORCE_DEFAULTS: always ensure Angel playlist IDs on global + district
+    for unit, _ in targets:
+        for title, yid in [
+            ("Angel lift – worship (default)", "36hkGeb7r5E"),
+            ("Soul lift – praise (default)", "pVtjDcROtQ4"),
+        ]:
+            exists = session.exec(
+                select(MusicLink).where(
+                    MusicLink.church_id == unit.id,
+                    MusicLink.youtube_id == yid,
+                )
+            ).first()
+            if not exists:
+                session.add(MusicLink(
+                    title=title, youtube_id=yid, is_active=True,
+                    church_id=unit.id, sort_order=0,
+                ))
+                total += 1
+
     if total:
         session.commit()
         print(f"✅ Church music sample tracks (global + district): {total}")

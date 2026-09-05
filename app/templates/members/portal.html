@@ -131,6 +131,11 @@
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-2">
+        <button type="button" @click="toggleAngel()"
+                :class="angel.enabled ? 'bg-amber-400 text-slate-900' : 'bg-white/15 text-white'"
+                class="px-3 py-1.5 rounded-full text-xs font-bold shadow border border-white/20">
+          <span x-text="angel.enabled ? '👼 Angel on' : '👼 Angel'"></span>
+        </button>
         <span class="text-xs ms-muted mr-1">Theme</span>
         <button type="button" @click="setTheme('royal')" class="w-8 h-8 rounded-full border-2 border-white/40 bg-[#0b1f4a]" title="Royal blue"></button>
         <button type="button" @click="setTheme('pink')" class="w-8 h-8 rounded-full border-2 border-white/40 bg-[#db2777]" title="Pink"></button>
@@ -139,7 +144,12 @@
       </div>
     </header>
 
-        <div class="flex justify-center mb-5">
+            <div class="mb-4 rounded-2xl border border-white/15 bg-black/20 px-4 py-3 text-sm" x-show="angel.enabled || angel.status" x-cloak>
+      <p class="font-semibold text-amber-200">👼 Angel voice assistant</p>
+      <p class="text-xs ms-muted mt-1" x-text="angel.status || 'Say: Angel, I am bored — or Angel, play music — or Angel, encourage me'"></p>
+      <p class="text-xs ms-accent mt-1" x-show="angel.listening">Listening…</p>
+    </div>
+    <div class="flex justify-center mb-5">
       <div class="ms-card px-5 py-4 shadow-lg inline-flex flex-col items-center gap-1 min-w-[16rem]">
         <p class="text-[10px] uppercase tracking-widest ms-muted font-semibold">Now with you · local time</p>
         <p id="liveClock" class="text-3xl sm:text-4xl font-black tabular-nums tracking-wider ms-accent leading-none">--:--:--</p>
@@ -605,6 +615,7 @@ function memberHub() {
         musicList: [],
         churchMusic: { id: '', playing: false },
         churchMusicList: [],
+        angel: { enabled: false, listening: false, status: '', recognition: null },
     bibleBooks: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther','Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon','Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi','Matthew','Mark','Luke','John','Acts','Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude','Revelation'],
     situations: [
       { id:'unwell', label:'Feeling unwell / sickness', refs:['Psalm 103:2-3','Isaiah 53:5','Jeremiah 17:14','James 5:14-15','3 John 1:2','Matthew 9:35','Mark 5:34','1 Peter 2:24'] },
@@ -633,6 +644,7 @@ function memberHub() {
       } catch (e) {}
       this.scheduleAlarms();
       this.loadMusicLinks();
+      this.initAngel();
       this.refreshVoices();
       if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => this.refreshVoices();
       this.tickClock();
@@ -713,6 +725,139 @@ function memberHub() {
         }, next - now));
       });
     },
+
+    initAngel() {
+      const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SR) {
+        this.angel.status = 'Voice commands need Chrome/Edge on this device.';
+        return;
+      }
+      const rec = new SR();
+      rec.lang = 'en-US';
+      rec.continuous = true;
+      rec.interimResults = false;
+      rec.onresult = (ev) => {
+        let said = '';
+        for (let i = ev.resultIndex; i < ev.results.length; i++) {
+          if (ev.results[i].isFinal) said += ev.results[i][0].transcript + ' ';
+        }
+        said = (said || '').trim();
+        if (said) this.handleAngelCommand(said);
+      };
+      rec.onerror = (e) => {
+        if (e.error === 'not-allowed') this.angel.status = 'Microphone blocked — allow mic for Angel.';
+        else if (e.error !== 'no-speech') this.angel.status = 'Angel: ' + (e.error || 'listen error');
+      };
+      rec.onend = () => {
+        this.angel.listening = false;
+        if (this.angel.enabled) {
+          try { rec.start(); this.angel.listening = true; } catch (err) {}
+        }
+      };
+      this.angel.recognition = rec;
+    },
+    toggleAngel() {
+      if (!this.angel.recognition) this.initAngel();
+      if (!this.angel.recognition) return;
+      this.angel.enabled = !this.angel.enabled;
+      if (this.angel.enabled) {
+        try {
+          this.angel.recognition.start();
+          this.angel.listening = true;
+          this.angel.status = 'Angel is listening. Try: “Angel, I am bored” or “Angel, play music”.';
+          this.angelSpeak('Angel is ready. How can I help your soul?');
+        } catch (e) {
+          this.angel.status = 'Could not start microphone.';
+          this.angel.enabled = false;
+        }
+      } else {
+        try { this.angel.recognition.stop(); } catch (e) {}
+        this.angel.listening = false;
+        this.angel.status = 'Angel is off.';
+      }
+    },
+    angelSpeak(text) {
+      if (!('speechSynthesis' in window)) return;
+      try {
+        const u = new SpeechSynthesisUtterance(text);
+        u.rate = 0.95;
+        u.volume = Math.max(0.3, Math.min(1, Number(this.bible.volume ?? 0.85)));
+        speechSynthesis.speak(u);
+      } catch (e) {}
+    },
+    handleAngelCommand(raw) {
+      const t = raw.toLowerCase().replace(/[^\w\s']/g, ' ').replace(/\s+/g, ' ').trim();
+      // Require wake word angel (or hey angel)
+      if (!/\bangel\b/.test(t) && !this.angel.enabled) return;
+      this.angel.status = 'Heard: “' + raw + '”';
+      // Music intents
+      if (/\b(play|music|song|worship|sing|bored|sad|down|heavy|lonely|discourage)/.test(t) &&
+          (/\b(music|song|worship|play|bored|sad|lift)\b/.test(t) || /\bbored\b/.test(t))) {
+        // Prefer church music, else platform
+        const list = (this.churchMusicList && this.churchMusicList.length)
+          ? this.churchMusicList : (this.musicList || []);
+        if (list.length) {
+          // pick default soul-lift ids first if present
+          const prefer = ['36hkGeb7r5E', 'pVtjDcROtQ4'];
+          let pick = list.find(m => prefer.includes(m.id)) || list[Math.floor(Math.random() * list.length)];
+          if (this.churchMusicList && this.churchMusicList.some(m => m.id === pick.id)) {
+            this.churchMusic.id = pick.id;
+            this.churchMusic.playing = true;
+            this.music.playing = false;
+          } else {
+            this.music.id = pick.id;
+            this.music.playing = true;
+            this.churchMusic.playing = false;
+          }
+          this.angelSpeak('Playing something to lift your soul. ' + (pick.title || ''));
+          this.angel.status = 'Playing: ' + (pick.title || pick.id);
+          return;
+        }
+        this.angelSpeak('No music is available yet. Ask your church admin to add church music.');
+        return;
+      }
+      // Bible / encouragement
+      if (/\b(bible|scripture|word|verse|encourage|peace|fear|anxious|worried|sick|unwell|hope|strength|forgive)\b/.test(t) || /\bbored\b/.test(t)) {
+        let sit = 'peace';
+        if (/sick|unwell|pain|heal/.test(t)) sit = 'unwell';
+        else if (/anxious|worry|worried/.test(t)) sit = 'anxious';
+        else if (/fear|afraid|scared/.test(t)) sit = 'fear';
+        else if (/lonely|alone/.test(t)) sit = 'lonely';
+        else if (/grief|loss|mourn/.test(t)) sit = 'grief';
+        else if (/money|finance|need/.test(t)) sit = 'finance';
+        else if (/guide|direction|decision/.test(t)) sit = 'guidance';
+        else if (/strength|weak|tired/.test(t)) sit = 'strength';
+        else if (/forgive|guilt|sin/.test(t)) sit = 'forgiveness';
+        else if (/faith/.test(t)) sit = 'faith';
+        else if (/bored|sad|down|heavy/.test(t)) sit = 'peace';
+        this.bible.situation = sit;
+        this.bible.voiceOn = true;
+        this.loadSituation().then(() => {
+          this.angelSpeak('Here is a portion of Scripture for you.');
+          if (this.bible.slides && this.bible.slides.length) this.speakCurrent(false);
+        });
+        this.angel.status = 'Opening Scripture for: ' + sit;
+        // Also soft-play music if bored
+        if (/\bbored\b|\bsad\b|\bdown\b/.test(t)) {
+          const list = this.churchMusicList.length ? this.churchMusicList : this.musicList;
+          if (list.length) {
+            const prefer = ['36hkGeb7r5E', 'pVtjDcROtQ4'];
+            const pick = list.find(m => prefer.includes(m.id)) || list[0];
+            if (this.churchMusicList.some(m => m.id === pick.id)) {
+              this.churchMusic.id = pick.id; this.churchMusic.playing = true; this.music.playing = false;
+            } else {
+              this.music.id = pick.id; this.music.playing = true; this.churchMusic.playing = false;
+            }
+          }
+        }
+        return;
+      }
+      if (/\bangel\b/.test(t)) {
+        this.angelSpeak('I am here. Say Angel, play music, or Angel, encourage me, or Angel, I am bored.');
+        this.angel.status = 'Waiting for a clearer request…';
+      }
+    },
+
     async loadMusicLinks() {
       try {
         const r = await fetch('/api/music-links', { credentials: 'same-origin' });
