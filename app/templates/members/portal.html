@@ -113,6 +113,11 @@
     opacity: 0.75;
   }
 
+  .angel-sticky {
+    position: sticky;
+    top: 4.25rem; /* below main nav */
+    z-index: 35;
+  }
   .angel-panel-live {
     position: relative;
     overflow: hidden;
@@ -223,17 +228,15 @@
   .music-player-frame {
     flex: 1 1 auto;
     width: 100%;
-    min-height: 14rem;
+    min-height: 11rem;
+    aspect-ratio: 16 / 9;
     border-radius: 0.75rem;
     overflow: hidden;
     background: #000;
     position: relative;
   }
   @media (min-width: 768px) {
-    .music-player-frame { min-height: 16.5rem; }
-  }
-  @media (min-width: 1024px) {
-    .music-player-frame { min-height: 18.5rem; }
+    .music-player-frame { min-height: 0; }
   }
   .music-player-frame iframe {
     position: absolute;
@@ -258,7 +261,7 @@
 <div class="member-space theme-royal" id="memberSpace" x-data="memberHub()" x-init="init()">
   <div class="pray-watermark" aria-hidden="true"></div>
 
-  <div class="relative z-10 max-w-6xl mx-auto px-4 py-6 pb-16">
+  <div class="relative z-10 max-w-4xl mx-auto px-4 py-6 pb-16">
     <header class="flex flex-wrap items-center justify-between gap-4 mb-6">
       <div class="flex items-center gap-3">
         <img src="/static/icons/icon-192.png" alt="Knowsoft Churchgate"
@@ -283,7 +286,7 @@
       </div>
     </header>
 
-                <div class="mb-5 rounded-3xl border border-amber-300/50 bg-gradient-to-br from-indigo-950 via-slate-900 to-violet-950 px-4 py-4 text-sm angel-panel-live"
+                <div class="mb-5 rounded-3xl border border-amber-300/50 bg-gradient-to-br from-indigo-950 via-slate-900 to-violet-950 px-4 py-4 text-sm angel-panel-live angel-sticky backdrop-blur-md"
          :class="angel.enabled && 'is-on'"
          x-show="angel.enabled || angel.status" x-cloak>
       <div class="angel-wave-stage" x-show="angel.enabled">
@@ -928,23 +931,46 @@ function memberHub() {
         }
         const rec = new SR();
         rec.lang = 'en-US';
-        rec.continuous = false;
+        rec.continuous = true;
         rec.interimResults = false;
         rec.maxAlternatives = 1;
         rec.onresult = (ev) => {
           try {
-            const said = (ev.results[0][0].transcript || '').trim();
+            let said = '';
+            for (let i = ev.resultIndex; i < ev.results.length; i++) {
+              if (ev.results[i].isFinal) said += ev.results[i][0].transcript + ' ';
+            }
+            said = (said || '').trim();
             if (said) this.handleAngelCommand(said);
           } catch (e) { console.warn(e); }
         };
         rec.onerror = (e) => {
-          this.angel.listening = false;
-          if (e.error === 'not-allowed') this.angel.status = 'Allow microphone for Angel, then tap Angel again.';
-          else if (e.error === 'no-speech') this.angel.status = 'No speech heard. Tap 🎤 Listen and speak again.';
-          else this.angel.status = 'Mic: ' + (e.error || 'error') + ' — try Listen again.';
+          if (e.error === 'not-allowed') {
+            this.angel.listening = false;
+            this.angel.status = 'Allow microphone for Angel, then tap Angel again.';
+            return;
+          }
+          // no-speech / aborted: keep trying while Angel is on
+          if (e.error === 'no-speech' || e.error === 'aborted') return;
+          this.angel.status = 'Mic: ' + (e.error || 'error') + ' — still listening if Angel is on.';
         };
         rec.onend = () => {
           this.angel.listening = false;
+          // Stay active until user turns Angel off (voice or button)
+          if (this.angel.enabled) {
+            setTimeout(() => {
+              if (!this.angel.enabled) return;
+              try {
+                this.angel.recognition.start();
+                this.angel.listening = true;
+              } catch (err) {
+                setTimeout(() => {
+                  if (!this.angel.enabled) return;
+                  try { this.angel.recognition.start(); this.angel.listening = true; } catch (e2) {}
+                }, 400);
+              }
+            }, 250);
+          }
         };
         this.angel.recognition = rec;
       } catch (e) {
@@ -955,8 +981,8 @@ function memberHub() {
       this.angel.enabled = !this.angel.enabled;
       if (this.angel.enabled) {
         if (!this.angel.recognition) this.initAngel();
-        this.angel.status = 'Angel is on. Tap 🎤 Listen, then speak — or use the buttons.';
-        this.angelSpeak('Angel is ready. You can ask me to play music or share the Word.');
+        this.angel.status = 'Angel is on and stays listening until you say “Angel stop” or turn Angel off.';
+        this.angelSpeak('Angel is ready and will keep listening until you say Angel stop.');
         try { fetch('/member/api/log', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'angel_on', detail:'Angel enabled'}) }); } catch(e) {}
         this.angelListenOnce();
       } else {
@@ -972,19 +998,18 @@ function memberHub() {
         this.angel.status = 'Voice not available — use Play music or Read Bible buttons.';
         return;
       }
-      try {
-        this.angel.recognition.abort();
-      } catch (e) {}
+      try { this.angel.recognition.abort(); } catch (e) {}
       setTimeout(() => {
+        if (!this.angel.enabled) return;
         try {
           this.angel.recognition.start();
           this.angel.listening = true;
-          this.angel.status = 'Listening… say for example: play music, or I am bored, or encourage me';
+          this.angel.status = 'Listening continuously… say Angel stop to turn off.';
         } catch (e) {
-          this.angel.status = 'Tap 🎤 Listen again (browser may need a fresh click).';
+          this.angel.status = 'Tap 🎤 Listen again if the mic paused.';
           this.angel.listening = false;
         }
-      }, 200);
+      }, 250);
     },
     angelSpeak(text) {
       if (!('speechSynthesis' in window) || !text) return;
