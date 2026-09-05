@@ -396,8 +396,8 @@
               <circle cx="18" cy="18" r="15.5" fill="none" stroke="#fbbf24" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="{{ sample_info.pct_left }} 100"></circle>
             </svg>
             <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-2">
-              <span class="text-2xl font-black leading-none" id="sampleCountdown">{{ sample_info.minutes_left }}m</span>
-              <span class="text-[10px] ms-muted uppercase">sample left</span>
+              <span class="text-2xl font-black leading-none" id="sampleCountdown">{{ sample_info.minutes_left or 0 }}m {{ '%02d'|format((sample_info.seconds_left or 0) % 60) }}s</span>
+              <span class="text-[10px] ms-muted uppercase">of 30 min left</span>
             </div>
           </div>
         </div>
@@ -417,7 +417,7 @@
             </svg>
             <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
               {% if sub_is_welcome or sub_days_left == 0 %}
-              <span class="text-2xl font-black leading-none" id="subCountdown">{{ sub_hours_left }}h {{ (sub_secs_left % 3600) // 60 }}m</span>
+              <span class="text-2xl font-black leading-none" id="subCountdown">{{ sub_hours_left }}h {{ ((sub_secs_left or 0) % 3600) // 60 }}m</span>
               <span class="text-[10px] ms-muted uppercase">{% if sub_is_welcome %}welcome left{% else %}time left{% endif %}</span>
               {% else %}
               <span class="text-3xl font-black leading-none">{{ sub_days_left }}</span>

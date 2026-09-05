@@ -77,8 +77,8 @@ def expire_due_subscriptions(session: Session) -> int:
 
 
 def check_sample_member(session: Session, user: User) -> dict:
-    """Sample account: 5 minutes from first use, then deactivate. Cannot subscribe."""
-    SAMPLE_SECONDS = 5 * 60  # 5 minutes
+    """Sample account: 30 minutes from first use, then deactivate. Cannot subscribe."""
+    SAMPLE_SECONDS = 30 * 60  # 30 minutes sample trial
     info = {
         "is_sample": bool(getattr(user, "is_sample_account", False)),
         "show_warning": False,
@@ -108,7 +108,7 @@ def check_sample_member(session: Session, user: User) -> dict:
     mins = left // 60
     secs = left % 60
     info["message"] = (
-        f"Sample membership: {mins}m {secs:02d}s left. "
+        f"Sample membership (30-min trial): {mins}m {secs:02d}s left. "
         "Sample accounts cannot subscribe — please register as a full member for perpetual access."
     )
     info["show_warning"] = True  # always show while sample is active

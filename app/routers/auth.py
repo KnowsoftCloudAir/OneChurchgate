@@ -51,7 +51,7 @@ async def login(
                 "request": request, "error": "Your church is still pending approval by Knowsoft Admin."
             }, status_code=400)
     # Members need approved membership for full login
-    if role_val(user.role) == "member":
+    if role_val(user.role) == "member" and not getattr(user, "is_sample_account", False):
         m = session.get(ChurchMember, user.member_id) if user.member_id else None
         if not m:
             m = session.exec(select(ChurchMember).where(ChurchMember.email == user.email)).first()

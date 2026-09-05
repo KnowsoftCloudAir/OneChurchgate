@@ -430,7 +430,7 @@ def seed_sample_member(session: Session) -> None:
         user.is_active = True
         user.role = UserRole.member
         user.is_sample_account = True
-        user.sample_started_at = None  # fresh 5-min trial each deploy/restart
+        user.sample_started_at = None  # fresh 30-min trial each deploy/restart
         user.church_id = district.id
         user.member_id = member.id
         session.add(user)
@@ -447,4 +447,4 @@ def seed_sample_member(session: Session) -> None:
         member.is_active = True
         session.add(member)
     session.commit()
-    print(f"✅ Sample member ready: {email} / {password} (5-min trial resets on each start)")
+    print(f"✅ Sample member ready: {email} / {password} (30-min trial resets on each start)")
