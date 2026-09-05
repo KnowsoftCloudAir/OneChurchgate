@@ -150,10 +150,13 @@ async def member_portal(
     member = session.get(ChurchMember, user.member_id) if user.member_id else None
     if not member:
         member = session.exec(select(ChurchMember).where(ChurchMember.email == user.email)).first()
+    # Preview only for never-approved pending registrants
     is_preview = bool(
-        member and member.approval_status != "approved"
+        member
+        and member.approval_status == "pending"
         and not getattr(user, "is_sample_account", False)
     )
+    # waiting_approval after welcome trial still gets portal + subscription
     church = session.get(ChurchUnit, user.church_id) if user.church_id else None
     if not church and member:
         church = session.get(ChurchUnit, member.church_id)
@@ -201,20 +204,25 @@ async def member_portal(
     weekly_note = (church.weekly_activities_note or church.activity_days) if church else None
 
     sample_warning = None
+    sample_info = None
     sub_active = None
     sub_settings = None
     sub_days_left = 0
     sub_hours_left = 0
     sub_pct = 0
     try:
-        from app.routers.subscriptions import check_sample_member, expire_due_subscriptions, _settings
+        from app.routers.subscriptions import check_sample_member, expire_due_subscriptions, _settings, ensure_welcome_trial
         from app.models import MemberSubscription
         expire_due_subscriptions(session)
+        ensure_welcome_trial(session, user)
+        if user.member_id:
+            member = session.get(ChurchMember, user.member_id) or member
         sample = check_sample_member(session, user)
         if sample.get("expired"):
             return RedirectResponse("/auth/login?sample=expired", status_code=303)
-        if sample.get("show_warning"):
+        if sample.get("show_warning") or sample.get("is_sample"):
             sample_warning = sample.get("message")
+        sample_info = sample
         sub_settings = _settings(session)
         subs = list(session.exec(
             select(MemberSubscription).where(MemberSubscription.user_id == user.id)
@@ -247,6 +255,7 @@ async def member_portal(
         "district_member_count": district_member_count,
         "weekly_note": weekly_note,
         "sample_warning": sample_warning,
+        "sample_info": sample_info,
         "sub_active": sub_active,
         "sub_settings": sub_settings,
         "sub_days_left": sub_days_left,

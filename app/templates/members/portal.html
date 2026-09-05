@@ -148,6 +148,12 @@
     </div>
 
     
+    {% if member and member.approval_status == 'waiting_approval' %}
+    <div class="mb-5 rounded-2xl border-2 border-amber-400/90 bg-amber-500/20 p-4 shadow-lg relative z-10">
+      <p class="font-bold text-sm">Subscription expired · waiting approval</p>
+      <p class="text-xs ms-muted mt-1">Your access period has ended (welcome trial or paid plan). Status is <strong>waiting approval</strong> until General Admin confirms a new payment. You can still open <a href="/member/subscription" class="underline font-semibold">Subscription</a> and submit payment evidence.</p>
+    </div>
+    {% endif %}
     {% if is_preview %}
     <div class="mb-5 rounded-2xl border-2 border-amber-400/90 bg-gradient-to-r from-amber-500/25 to-orange-500/15 p-4 shadow-lg relative z-10">
       <p class="font-bold text-sm">Preview mode · membership pending approval</p>
@@ -199,7 +205,7 @@
       <p class="text-xs ms-muted mt-4">Full access unlocks when your district admin approves your registration. You can still change your theme above while you wait.</p>
     </section>
     
-    {% elif member.approval_status == 'approved' %}
+    {% elif member.approval_status in ('approved', 'waiting_approval', 'waiting_subscription') %}
 
     <nav class="flex flex-wrap gap-2 mb-6 text-xs font-semibold">
       <a href="#devotions" class="px-3 py-1.5 rounded-full ms-card">Devotions</a>
@@ -354,15 +360,60 @@
     </div>
 
     
-        <section id="subscription" class="ms-card p-5 mb-5">
+            <section id="subscription" class="ms-card p-5 mb-5">
       <div class="flex flex-wrap justify-between gap-2 items-start mb-4">
         <div>
           <h2 class="font-bold text-lg">My subscription</h2>
-          <p class="text-xs ms-muted">Running balance · time until expiry</p>
+          <p class="text-xs ms-muted">{% if sample_info and sample_info.is_sample %}Sample trial timer{% else %}Running balance · time until expiry{% endif %}</p>
         </div>
+        {% if not (sample_info and sample_info.is_sample) %}
         <a href="/member/subscription" class="text-xs font-semibold ms-accent underline">Full payment page →</a>
+        {% endif %}
       </div>
-      {% if sub_active %}
+
+      {% if sample_info and sample_info.is_sample %}
+      <div class="grid sm:grid-cols-2 gap-5 items-center">
+        <div class="flex flex-col items-center">
+          <div class="relative w-40 h-40">
+            <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(128,128,128,0.25)" stroke-width="3.2"></circle>
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke="#fbbf24" stroke-width="3.2"
+                      stroke-linecap="round"
+                      stroke-dasharray="{{ sample_info.pct_left }} 100"></circle>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-2">
+              <span class="text-2xl font-black leading-none" id="sampleCountdown">
+                {{ sample_info.minutes_left }}m {{ '%02d'|format(sample_info.seconds_left % 60 if sample_info.seconds_left is not none else 0) }}s
+              </span>
+              <span class="text-[10px] ms-muted uppercase tracking-wide">sample left</span>
+            </div>
+          </div>
+          <p class="text-xs ms-muted mt-2">5-minute sample from first use</p>
+        </div>
+        <div class="space-y-2 text-sm">
+          <p class="font-semibold text-amber-300">Sample account · no paid subscription</p>
+          <p class="text-xs ms-muted leading-relaxed">{{ sample_info.message }}</p>
+          <p class="text-xs font-semibold text-amber-200">Sample members cannot subscribe or pay.</p>
+          <a href="/join" class="ms-btn inline-block mt-2 px-4 py-2 text-xs">Register as full member →</a>
+        </div>
+      </div>
+      <script>
+      (function(){
+        var left = {{ sample_info.seconds_left or 0 }};
+        var el = document.getElementById('sampleCountdown');
+        if(!el) return;
+        function tick(){
+          if(left <= 0){ el.textContent = '0m 00s'; return; }
+          var m = Math.floor(left/60), s = left % 60;
+          el.textContent = m + 'm ' + String(s).padStart(2,'0') + 's';
+          left -= 1;
+          setTimeout(tick, 1000);
+        }
+        tick();
+      })();
+      </script>
+      {% elif sub_active %}
+
       <div class="grid sm:grid-cols-2 gap-5 items-center">
         <div class="flex flex-col items-center">
           <div class="relative w-40 h-40">
@@ -465,7 +516,7 @@ function memberHub() {
     prayer: { new: '', list: [] },
     alarmStatus: 'Alarms work best with notifications enabled.',
     _timers: [],
-    bible: { book:'', chapter:'', situation:'', version:'kjv', slides:[], slideIndex:0, status:'', voiceOn:false, voiceName:'', continuous:false },
+    bible: { book:'', chapter:'', situation:'', version:'kjv', slides:[], slideIndex:0, status:'', voiceOn:false, voiceName:'', continuous:false, announcedChapter:false },
     voiceList: [],
     music: { id: 'DXDGE_lRI0E', playing: false },
         musicList: [],
@@ -646,11 +697,24 @@ function memberHub() {
     },
     speakCurrent(chain) {
       if (!this.bible.slides.length || !('speechSynthesis' in window)) return;
-      if (!chain) this.bible.continuous = false;
-      // Cancel previous utterance without clearing continuous flag
+      if (!chain) {
+        this.bible.continuous = false;
+        this.bible.announcedChapter = false;
+      }
       if ('speechSynthesis' in window) speechSynthesis.cancel();
       const s = this.bible.slides[this.bible.slideIndex];
-      const plain = (s.ref + '. ' + s.text).replace(/[“”"']/g, ' ');
+      let plain = (s.text || '').replace(/[“”"']/g, ' ');
+      // Continuous: announce chapter once at start, then only verse text
+      if (this.bible.continuous) {
+        if (!this.bible.announcedChapter) {
+          const firstRef = (this.bible.slides[0].ref || '').replace(/[“”"']/g, ' ');
+          plain = 'Reading ' + firstRef + ' through the end of this portion. ' + plain;
+          this.bible.announcedChapter = true;
+        }
+      } else {
+        // Single verse: include reference once
+        plain = ((s.ref || '') + '. ' + plain).trim();
+      }
       const u = new SpeechSynthesisUtterance(plain);
       u.rate = 0.9;
       const voices = speechSynthesis.getVoices();
@@ -664,6 +728,7 @@ function memberHub() {
           this.speakCurrent(true);
         } else {
           this.bible.continuous = false;
+          this.bible.announcedChapter = false;
         }
       };
       speechSynthesis.speak(u);
@@ -674,6 +739,7 @@ function memberHub() {
         return;
       }
       this.bible.continuous = true;
+      this.bible.announcedChapter = false;
       this.bible.slideIndex = 0;
       this.speakCurrent(true);
     },

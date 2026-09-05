@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ title or "No data" }}{% endblock %}
+{% block content %}
+<div class="min-h-[70vh] flex items-center justify-center px-4 py-12 relative">
+  <div class="absolute inset-0 bg-cover bg-center opacity-20" style="background-image:url('https://images.unsplash.com/photo-1438032005730-c779502df39b?w=1200&q=60')"></div>
+  <div class="relative z-10 max-w-md w-full text-center bg-white/95 border rounded-2xl shadow-xl p-8">
+    <p class="text-4xl mb-3">⛪</p>
+    <h1 class="text-xl font-bold text-navy-900 mb-2">{{ title or "No data" }}</h1>
+    <p class="text-sm text-slate-600 mb-6">{{ message or "No information to display on this page." }}</p>
+    <button type="button" onclick="if(history.length>1)history.back();else location.href='/';"
+            class="px-5 py-2.5 rounded-xl bg-navy-900 text-white text-sm font-semibold">
+      ← Go back to previous page
+    </button>
+    <a href="/" class="block mt-3 text-xs text-blue-700 font-medium">Home</a>
+  </div>
+</div>
+{% endblock %}

@@ -5,10 +5,26 @@
   <h1 class="text-2xl font-bold text-navy-900 mb-1">Membership subscription</h1>
   <p class="text-sm text-slate-500 mb-6">Pay monthly, annually, or a custom period. After transfer, submit your request — General Admin confirms and your status turns active.</p>
 
+  {% if sample and sample.is_sample %}
+  <div class="mb-6 rounded-2xl border-2 border-amber-400 bg-amber-50 p-5 text-amber-950">
+    <p class="font-bold">Sample account</p>
+    <p class="text-sm mt-1">{{ sample.message }}</p>
+    <p class="text-sm mt-2 font-semibold">You cannot subscribe with a sample login. Register as a full member for perpetual membership.</p>
+    <a href="/join" class="inline-block mt-3 px-4 py-2 rounded-xl bg-navy-900 text-white text-sm font-semibold">Register as full member</a>
+  </div>
+  {% endif %}
+
   {% if sample and sample.show_warning %}
   <div class="mb-6 rounded-2xl border-2 border-amber-400 bg-amber-50 p-4 text-amber-950 shadow">
     <p class="font-semibold">{{ sample.message }}</p>
     <a href="/join" class="inline-block mt-2 text-sm font-bold text-amber-800 underline">Register as a full member →</a>
+  </div>
+  {% endif %}
+
+  {% if not active %}
+  <div class="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+    <p class="font-semibold">No active subscription</p>
+    <p class="mt-1">If your plan expired, submit payment evidence below. After General Admin confirms, your membership returns to <strong>approved</strong>.</p>
   </div>
   {% endif %}
 
@@ -38,6 +54,9 @@
     {% if settings.other_details %}<p class="text-sm text-slate-600 whitespace-pre-wrap">{{ settings.other_details }}</p>{% endif %}
   </section>
 
+  {% if sample and sample.is_sample %}
+  <p class="text-sm text-slate-500 mb-8">Payment form is disabled for sample accounts.</p>
+  {% else %}
   <form method="post" action="/member/subscription/request" class="bg-slate-50 border rounded-2xl p-5 mb-8 space-y-3">
     <h2 class="font-semibold">Submit payment for confirmation</h2>
     <select name="plan" id="plan" class="w-full px-3 py-2 rounded-xl border" onchange="document.getElementById('customDays').classList.toggle('hidden', this.value!=='custom')">
@@ -52,6 +71,8 @@
     <input name="payment_reference" placeholder="Bank transfer reference / narration" class="w-full px-3 py-2 rounded-xl border">
     <button class="w-full py-3 rounded-xl bg-emerald-600 text-white font-semibold">I have paid — request confirmation</button>
   </form>
+  {% endif %}
+
 
   <h2 class="font-semibold mb-3">Your history</h2>
   <div class="space-y-3">

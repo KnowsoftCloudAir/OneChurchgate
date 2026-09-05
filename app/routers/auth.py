@@ -71,6 +71,11 @@ async def login(
             return templates.TemplateResponse("auth/login.html", {
                 "request": request, "error": "Membership not active."
             }, status_code=400)
+        # waiting_approval / deactivated-from-expiry: allow login so they can renew
+        if m and m.approval_status == "deactivated":
+            m.approval_status = "waiting_approval"
+            session.add(m)
+            session.commit()
 
     # Invalidate any other device/session using the same account
     user.session_version = int(getattr(user, "session_version", 0) or 0) + 1

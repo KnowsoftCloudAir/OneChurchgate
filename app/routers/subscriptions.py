@@ -41,7 +41,7 @@ def _settings(session: Session) -> SubscriptionSettings:
 
 
 def expire_due_subscriptions(session: Session) -> int:
-    """Deactivate membership when subscription ends."""
+    """Mark ended subscriptions expired; member goes to waiting_approval (can still pay)."""
     now = datetime.utcnow()
     n = 0
     active = list(session.exec(
@@ -51,12 +51,10 @@ def expire_due_subscriptions(session: Session) -> int:
         if sub.ends_at and sub.ends_at <= now:
             sub.status = "expired"
             session.add(sub)
-            # Deactivate member approval
             user = session.get(User, sub.user_id)
             if user and user.member_id:
                 mem = session.get(ChurchMember, user.member_id)
-                if mem and mem.approval_status == "approved":
-                    # only if no other active sub
+                if mem:
                     other = session.exec(
                         select(MemberSubscription).where(
                             MemberSubscription.user_id == user.id,
@@ -65,8 +63,13 @@ def expire_due_subscriptions(session: Session) -> int:
                         )
                     ).first()
                     if not other:
-                        mem.approval_status = "deactivated"
+                        # Keep login; require new payment evidence
+                        mem.approval_status = "waiting_approval"
                         session.add(mem)
+                        # Account stays active so they can open Subscription
+                        if not user.is_active:
+                            user.is_active = True
+                            session.add(user)
             n += 1
     if n:
         session.commit()
@@ -74,16 +77,21 @@ def expire_due_subscriptions(session: Session) -> int:
 
 
 def check_sample_member(session: Session, user: User) -> dict:
-    """Time-bound sample: 2h use + 5 min warning, then deactivate."""
+    """Sample account: 5 minutes from first use, then deactivate. Cannot subscribe."""
+    SAMPLE_SECONDS = 5 * 60  # 5 minutes
     info = {
         "is_sample": bool(getattr(user, "is_sample_account", False)),
         "show_warning": False,
         "expired": False,
         "minutes_left": None,
+        "seconds_left": None,
+        "pct_left": 100,
         "message": None,
+        "can_subscribe": True,
     }
     if not info["is_sample"]:
         return info
+    info["can_subscribe"] = False
     now = datetime.utcnow()
     started = getattr(user, "sample_started_at", None)
     if not started:
@@ -92,9 +100,19 @@ def check_sample_member(session: Session, user: User) -> dict:
         session.commit()
         started = now
         session.refresh(user)
-    elapsed = (now - started).total_seconds()
-    # 2 hours = 7200; warning from 7200; hard stop 7200+300=7500
-    if elapsed >= 7500:
+    elapsed = max(0.0, (now - started).total_seconds())
+    left = max(0, int(SAMPLE_SECONDS - elapsed))
+    info["seconds_left"] = left
+    info["minutes_left"] = left // 60
+    info["pct_left"] = min(100, round(100 * left / SAMPLE_SECONDS)) if SAMPLE_SECONDS else 0
+    mins = left // 60
+    secs = left % 60
+    info["message"] = (
+        f"Sample membership: {mins}m {secs:02d}s left. "
+        "Sample accounts cannot subscribe — please register as a full member for perpetual access."
+    )
+    info["show_warning"] = True  # always show while sample is active
+    if left <= 0:
         info["expired"] = True
         info["message"] = "Sample access has expired. Please register as a full member."
         user.is_active = False
@@ -105,15 +123,6 @@ def check_sample_member(session: Session, user: User) -> dict:
                 session.add(mem)
         session.add(user)
         session.commit()
-        return info
-    if elapsed >= 7200:
-        left = max(0, int((7500 - elapsed) / 60))
-        info["show_warning"] = True
-        info["minutes_left"] = left
-        info["message"] = (
-            "Thank you for using sample member. Note this will expire in "
-            f"{left} minute(s). Kindly register as a member to enjoy perpetual membership."
-        )
     return info
 
 
@@ -131,6 +140,8 @@ async def member_subscription_page(
     ).all())
     active = next((s for s in subs if s.status == "active"), None)
     sample = check_sample_member(session, user)
+    if sample.get("expired"):
+        return RedirectResponse("/auth/login?sample=expired", status_code=303)
     return templates.TemplateResponse("subscriptions/member.html", {
         "request": request, "user": user, "settings": settings,
         "subs": subs, "active": active, "sample": sample,
@@ -145,6 +156,11 @@ async def member_subscription_request(
     user: User = Depends(require_user),
     session: Session = Depends(get_session),
 ):
+    if getattr(user, "is_sample_account", False):
+        raise HTTPException(
+            403,
+            "Sample members cannot subscribe. Please register as a full member."
+        )
     settings = _settings(session)
     plan = (plan or "monthly").lower()
     if plan == "monthly":

@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, Depends, Form
+from fastapi import FastAPI, Request, Depends, Form, HTTPException
 from typing import Optional
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -72,6 +72,33 @@ app.include_router(payments.router)
 app.include_router(messages.router)
 app.include_router(subscriptions.router)
 app.include_router(youtube_data.router)
+
+@app.exception_handler(404)
+async def not_found_handler(request: Request, exc):
+    return templates.TemplateResponse(
+        "empty_state.html",
+        {"request": request, "title": "No data", "message": "This page was not found or has no content."},
+        status_code=404,
+    )
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    if exc.status_code == 404:
+        return templates.TemplateResponse(
+            "empty_state.html",
+            {"request": request, "title": "No data", "message": str(exc.detail) if exc.detail else "No information to display."},
+            status_code=404,
+        )
+    # default JSON for API-ish
+    from fastapi.responses import JSONResponse
+    if "text/html" in (request.headers.get("accept") or ""):
+        return templates.TemplateResponse(
+            "empty_state.html",
+            {"request": request, "title": "Something went wrong", "message": str(exc.detail) or "No information to display."},
+            status_code=exc.status_code,
+        )
+    return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
+
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request, user: Optional[User] = Depends(get_current_user)):

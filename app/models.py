@@ -101,7 +101,8 @@ class User(SQLModel, table=True):
     can_see_member_count: bool = Field(default=False)
     can_broadcast: bool = Field(default=False)
     is_sample_account: bool = Field(default=False)
-    sample_started_at: Optional[datetime] = None  # first login for time-bound sample  # approved to broadcast to members
+    sample_started_at: Optional[datetime] = None  # first login for time-bound sample
+    welcome_started_at: Optional[datetime] = None  # 30-min welcome trial after approval  # approved to broadcast to members
     can_view_church_dashboard: bool = Field(default=False)
     can_manage_focus_groups: bool = Field(default=False)  # create focus groups / message them  # sub-admin grants church dashboard to member  # see district member totals
     is_active: bool = Field(default=True)

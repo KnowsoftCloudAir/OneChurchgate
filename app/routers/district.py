@@ -333,6 +333,17 @@ async def approve_member(
             u.can_view_church_dashboard = False
         session.add(u)
     session.commit()
+    # Welcome trial subscription starts on first portal login (30 minutes)
+    # Mark member so portal can grant trial once
+    try:
+        member.custom_title = (member.custom_title or "")
+        # store flag in note field if exists - use a lightweight marker on user
+        if u:
+            # welcome_pending handled via first login check when no welcome sub exists
+            pass
+    except Exception:
+        pass
+    session.commit()
     return RedirectResponse("/district/approvals", status_code=303)
 
 @router.post("/approvals/{member_id}/reject")
