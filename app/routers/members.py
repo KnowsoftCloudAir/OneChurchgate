@@ -150,8 +150,10 @@ async def member_portal(
     member = session.get(ChurchMember, user.member_id) if user.member_id else None
     if not member:
         member = session.exec(select(ChurchMember).where(ChurchMember.email == user.email)).first()
-    if member and member.approval_status != "approved" and not getattr(user, "is_sample_account", False):
-        return RedirectResponse("/member/pending", status_code=303)
+    is_preview = bool(
+        member and member.approval_status != "approved"
+        and not getattr(user, "is_sample_account", False)
+    )
     church = session.get(ChurchUnit, user.church_id) if user.church_id else None
     if not church and member:
         church = session.get(ChurchUnit, member.church_id)
@@ -202,6 +204,7 @@ async def member_portal(
     sub_active = None
     sub_settings = None
     sub_days_left = 0
+    sub_hours_left = 0
     sub_pct = 0
     try:
         from app.routers.subscriptions import check_sample_member, expire_due_subscriptions, _settings
@@ -219,13 +222,22 @@ async def member_portal(
         ).all())
         sub_active = next((s for s in subs if s.status == "active"), None)
         sub_days_left = 0
+        sub_hours_left = 0
         sub_pct = 0
         if sub_active and sub_active.ends_at:
             from datetime import datetime as _dt
             delta = sub_active.ends_at - _dt.utcnow()
-            sub_days_left = max(0, delta.days)
+            secs = max(0, int(delta.total_seconds()))
+            sub_days_left = secs // 86400
+            sub_hours_left = (secs % 86400) // 3600
             total = max(1, sub_active.duration_days or 30)
-            sub_pct = min(100, round(100 * sub_days_left / total))
+            # percent of time remaining
+            if sub_active.starts_at and sub_active.ends_at:
+                total_secs = max(1, int((sub_active.ends_at - sub_active.starts_at).total_seconds()))
+                sub_pct = min(100, round(100 * secs / total_secs))
+            else:
+                sub_pct = min(100, round(100 * sub_days_left / total))
+
     except Exception as e:
         print("sample/sub check:", e)
 
@@ -238,7 +250,9 @@ async def member_portal(
         "sub_active": sub_active,
         "sub_settings": sub_settings,
         "sub_days_left": sub_days_left,
+        "sub_hours_left": sub_hours_left,
         "sub_pct": sub_pct,
+        "is_preview": is_preview,
     })
 
 @router.post("/member/update-profile")

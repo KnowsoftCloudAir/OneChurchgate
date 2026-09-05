@@ -63,7 +63,7 @@ async def login(
             session.commit()
             session.refresh(user)
             token = create_user_token(user)
-            resp = RedirectResponse("/member/pending", status_code=303)
+            resp = RedirectResponse("/member/portal", status_code=303)
             resp.set_cookie("access_token", token, httponly=True,
                             max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60, samesite="lax", path="/")
             return resp

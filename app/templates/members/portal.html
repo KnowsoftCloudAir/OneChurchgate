@@ -139,24 +139,22 @@
       </div>
     </header>
 
-    <div class="flex justify-center mb-5">
-      <div class="ms-card px-4 py-3 shadow-lg inline-flex flex-col items-center gap-1">
-        <p class="flip-label ms-muted">Now with you · local time</p>
-        <div class="flip-clock" aria-live="polite">
-          <div class="flip-unit"><div class="flip-card" :class="clock.pulseH && 'tick'" x-text="clock.h1"></div></div>
-          <div class="flip-unit"><div class="flip-card" :class="clock.pulseH && 'tick'" x-text="clock.h2"></div></div>
-          <span class="flip-colon ms-accent">:</span>
-          <div class="flip-unit"><div class="flip-card" :class="clock.pulseM && 'tick'" x-text="clock.m1"></div></div>
-          <div class="flip-unit"><div class="flip-card" :class="clock.pulseM && 'tick'" x-text="clock.m2"></div></div>
-          <span class="flip-colon ms-accent">:</span>
-          <div class="flip-unit"><div class="flip-card tick" x-text="clock.s1"></div></div>
-          <div class="flip-unit"><div class="flip-card tick" x-text="clock.s2"></div></div>
-          <span class="text-xs font-bold ms-muted ml-1" x-text="clock.ampm"></span>
-        </div>
-        <p class="text-[10px] ms-muted" x-text="clock.dateLine"></p>
-        <p class="text-lg font-bold tabular-nums tracking-widest" id="flipClockFallback" style="display:none"></p>
+        <div class="flex justify-center mb-5">
+      <div class="ms-card px-5 py-4 shadow-lg inline-flex flex-col items-center gap-1 min-w-[16rem]">
+        <p class="text-[10px] uppercase tracking-widest ms-muted font-semibold">Now with you · local time</p>
+        <p id="liveClock" class="text-3xl sm:text-4xl font-black tabular-nums tracking-wider ms-accent leading-none">--:--:--</p>
+        <p id="liveClockDate" class="text-xs ms-muted mt-1"></p>
       </div>
     </div>
+
+    
+    {% if is_preview %}
+    <div class="mb-5 rounded-2xl border-2 border-amber-400/90 bg-gradient-to-r from-amber-500/25 to-orange-500/15 p-4 shadow-lg relative z-10">
+      <p class="font-bold text-sm">Preview mode · membership pending approval</p>
+      <p class="text-xs ms-muted mt-1">You can explore themes, the clock, and a taste of what members enjoy. Full Bible tools, music library, messages, programs, and subscription activate after your district admin approves you.</p>
+      <p class="text-xs mt-2">Status: <strong class="capitalize">{{ member.approval_status if member else "pending" }}</strong></p>
+    </div>
+    {% endif %}
 
     {% if sample_warning %}
     <div class="mb-5 rounded-2xl border-2 border-amber-400/80 bg-amber-500/20 p-4 text-sm shadow-lg">
@@ -186,7 +184,22 @@
       <a href="/auth/change-password" class="text-xs font-semibold ms-accent underline">Password</a>
     </div>
 
-    {% if member.approval_status == 'approved' %}
+    {% if is_preview %}
+
+        <section class="ms-card p-5 mb-5">
+      <h2 class="font-bold text-lg mb-2">What you unlock after approval</h2>
+      <div class="grid sm:grid-cols-2 gap-3 text-sm">
+        <div class="rounded-xl bg-black/20 p-3 border border-white/10"><p class="font-semibold">Holy Bible</p><p class="text-xs ms-muted">Books, situations, continuous reading & voice</p></div>
+        <div class="rounded-xl bg-black/20 p-3 border border-white/10"><p class="font-semibold">Worship music</p><p class="text-xs ms-muted">Curated YouTube inspiration playlist</p></div>
+        <div class="rounded-xl bg-black/20 p-3 border border-white/10"><p class="font-semibold">Messages</p><p class="text-xs ms-muted">Chat with admin & pastor</p></div>
+        <div class="rounded-xl bg-black/20 p-3 border border-white/10"><p class="font-semibold">Programs & events</p><p class="text-xs ms-muted">See church programs and photos</p></div>
+        <div class="rounded-xl bg-black/20 p-3 border border-white/10"><p class="font-semibold">Subscription</p><p class="text-xs ms-muted">Track days left & renew easily</p></div>
+        <div class="rounded-xl bg-black/20 p-3 border border-white/10"><p class="font-semibold">Evangelism & prayer</p><p class="text-xs ms-muted">Personal growth tools</p></div>
+      </div>
+      <p class="text-xs ms-muted mt-4">Full access unlocks when your district admin approves your registration. You can still change your theme above while you wait.</p>
+    </section>
+    
+    {% elif member.approval_status == 'approved' %}
 
     <nav class="flex flex-wrap gap-2 mb-6 text-xs font-semibold">
       <a href="#devotions" class="px-3 py-1.5 rounded-full ms-card">Devotions</a>
@@ -341,47 +354,52 @@
     </div>
 
     
-    <section id="subscription" class="ms-card p-5 mb-5">
-      <div class="flex flex-wrap justify-between gap-2 items-start mb-3">
+        <section id="subscription" class="ms-card p-5 mb-5">
+      <div class="flex flex-wrap justify-between gap-2 items-start mb-4">
         <div>
           <h2 class="font-bold text-lg">My subscription</h2>
-          <p class="text-xs ms-muted">Stay active · renew before days run out</p>
+          <p class="text-xs ms-muted">Running balance · time until expiry</p>
         </div>
-        <a href="/member/subscription" class="text-xs font-semibold ms-accent underline">Manage / pay →</a>
+        <a href="/member/subscription" class="text-xs font-semibold ms-accent underline">Full payment page →</a>
       </div>
       {% if sub_active %}
-      <div class="grid sm:grid-cols-2 gap-4 items-center">
-        <div class="flex justify-center">
-          <div class="relative w-36 h-36">
+      <div class="grid sm:grid-cols-2 gap-5 items-center">
+        <div class="flex flex-col items-center">
+          <div class="relative w-40 h-40">
             <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
-              <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(128,128,128,0.25)" stroke-width="3"></circle>
-              <circle cx="18" cy="18" r="15.5" fill="none" stroke="#34d399" stroke-width="3"
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(128,128,128,0.25)" stroke-width="3.2"></circle>
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke="#34d399" stroke-width="3.2"
                       stroke-linecap="round"
-                      stroke-dasharray="{{ sub_pct }} 100"
-                      stroke-dashoffset="0"></circle>
+                      stroke-dasharray="{{ sub_pct }} 100"></circle>
             </svg>
-            <div class="absolute inset-0 flex flex-col items-center justify-center">
-              <span class="text-2xl font-bold">{{ sub_days_left }}</span>
-              <span class="text-[10px] ms-muted uppercase">days left</span>
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <span class="text-3xl font-black leading-none">{{ sub_days_left }}</span>
+              <span class="text-[10px] ms-muted uppercase tracking-wide">days{% if sub_hours_left is defined and sub_hours_left %} · {{ sub_hours_left }}h{% endif %}</span>
             </div>
           </div>
+          <p class="text-xs ms-muted mt-2">{{ sub_pct }}% of plan remaining</p>
         </div>
-        <div>
-          <p class="text-sm font-semibold text-emerald-400">✓ Active · {{ sub_active.plan }}</p>
-          <p class="text-xs ms-muted mt-1">Until {{ sub_active.ends_at }}</p>
-          <p class="text-xs ms-muted mt-2">Suggested minimum renewal:
-            <strong class="ms-accent">{% if sub_settings %}{{ sub_settings.currency }} {{ "%.2f"|format(sub_settings.monthly_price) }} / month{% else %}see subscription page{% endif %}</strong>
-          </p>
-          <a href="/member/subscription" class="ms-btn inline-block mt-3 px-4 py-2 text-xs">Renew now</a>
+        <div class="space-y-2 text-sm">
+          <p class="font-semibold text-emerald-400">✓ Active · {{ sub_active.plan|capitalize }}</p>
+          <div class="rounded-xl bg-black/20 p-3 space-y-1 text-xs">
+            <p>Paid: <strong class="ms-accent">{{ sub_active.currency }} {{ "%.2f"|format(sub_active.amount) }}</strong></p>
+            <p>Duration: <strong>{{ sub_active.duration_days }} days</strong></p>
+            <p>Started: <strong>{{ sub_active.starts_at }}</strong></p>
+            <p>Expires: <strong class="text-amber-300">{{ sub_active.ends_at }}</strong></p>
+            <p>Ref: {{ sub_active.payment_reference or "—" }}</p>
+          </div>
+          <p class="text-xs ms-muted">Renew from: <strong class="ms-accent">{% if sub_settings %}{{ sub_settings.currency }} {{ "%.2f"|format(sub_settings.monthly_price) }}/mo{% else %}see plans{% endif %}</strong></p>
+          <a href="/member/subscription" class="ms-btn inline-block mt-1 px-4 py-2 text-xs">Renew subscription</a>
         </div>
       </div>
       {% else %}
       <div class="rounded-xl bg-black/15 p-4 text-sm">
-        <p class="ms-muted mb-2">No active paid subscription yet. Unlock peace of mind with a monthly or annual plan.</p>
-        <p class="text-xs ms-muted mb-3">Minimum suggested:
+        <p class="font-semibold mb-1">No active subscription</p>
+        <p class="text-xs ms-muted mb-2">Time remaining: <strong>0 days</strong> · Running balance expired or not started.</p>
+        <p class="text-xs ms-muted mb-3">Minimum to renew:
           <strong class="ms-accent">{% if sub_settings %}{{ sub_settings.currency }} {{ "%.2f"|format(sub_settings.monthly_price) }}/mo · {{ sub_settings.currency }} {{ "%.2f"|format(sub_settings.annual_price) }}/yr{% else %}set by admin{% endif %}</strong>
         </p>
-        <a href="/member/subscription" class="ms-btn inline-block px-4 py-2 text-sm">View plans & pay →</a>
+        <a href="/member/subscription" class="ms-btn inline-block px-4 py-2 text-sm">Activate plan →</a>
       </div>
       {% endif %}
     </section>
@@ -670,4 +688,25 @@ function memberHub() {
   };
 }
 </script>
+
+
+<script>
+(function(){
+  function pad(n){ return String(n).padStart(2,'0'); }
+  function tick(){
+    var el = document.getElementById('liveClock');
+    var de = document.getElementById('liveClockDate');
+    if(!el) return;
+    var d = new Date();
+    var h = d.getHours();
+    var ampm = h >= 12 ? 'PM' : 'AM';
+    var h12 = h % 12; if(h12 === 0) h12 = 12;
+    el.textContent = pad(h12) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()) + ' ' + ampm;
+    if(de) de.textContent = d.toLocaleDateString(undefined, {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  }
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function(){ tick(); setInterval(tick, 1000); });
+  else { tick(); setInterval(tick, 1000); }
+})();
+</script>
+
 {% endblock %}
