@@ -150,6 +150,8 @@ async def member_portal(
     member = session.get(ChurchMember, user.member_id) if user.member_id else None
     if not member:
         member = session.exec(select(ChurchMember).where(ChurchMember.email == user.email)).first()
+    if member and member.approval_status != "approved" and not getattr(user, "is_sample_account", False):
+        return RedirectResponse("/member/pending", status_code=303)
     church = session.get(ChurchUnit, user.church_id) if user.church_id else None
     if not church and member:
         church = session.get(ChurchUnit, member.church_id)
@@ -197,17 +199,35 @@ async def member_portal(
     weekly_note = (church.weekly_activities_note or church.activity_days) if church else None
 
     sample_warning = None
+    sub_active = None
+    sub_settings = None
+    sub_days_left = 0
+    sub_pct = 0
     try:
-        from app.routers.subscriptions import check_sample_member, expire_due_subscriptions
+        from app.routers.subscriptions import check_sample_member, expire_due_subscriptions, _settings
+        from app.models import MemberSubscription
         expire_due_subscriptions(session)
         sample = check_sample_member(session, user)
         if sample.get("expired"):
-            from fastapi.responses import RedirectResponse
             return RedirectResponse("/auth/login?sample=expired", status_code=303)
         if sample.get("show_warning"):
             sample_warning = sample.get("message")
+        sub_settings = _settings(session)
+        subs = list(session.exec(
+            select(MemberSubscription).where(MemberSubscription.user_id == user.id)
+            .order_by(MemberSubscription.created_at.desc())
+        ).all())
+        sub_active = next((s for s in subs if s.status == "active"), None)
+        sub_days_left = 0
+        sub_pct = 0
+        if sub_active and sub_active.ends_at:
+            from datetime import datetime as _dt
+            delta = sub_active.ends_at - _dt.utcnow()
+            sub_days_left = max(0, delta.days)
+            total = max(1, sub_active.duration_days or 30)
+            sub_pct = min(100, round(100 * sub_days_left / total))
     except Exception as e:
-        print("sample check:", e)
+        print("sample/sub check:", e)
 
     return templates.TemplateResponse("members/portal.html", {
         "request": request, "user": user, "member": member, "church": church,
@@ -215,6 +235,10 @@ async def member_portal(
         "district_member_count": district_member_count,
         "weekly_note": weekly_note,
         "sample_warning": sample_warning,
+        "sub_active": sub_active,
+        "sub_settings": sub_settings,
+        "sub_days_left": sub_days_left,
+        "sub_pct": sub_pct,
     })
 
 @router.post("/member/update-profile")
@@ -307,10 +331,19 @@ async def geo_countries():
 async def api_music_links(session: Session = Depends(get_session)):
     """Active YouTube tracks for member portal (managed by General Admin)."""
     from app.models import MusicLink
-    links = list(session.exec(
-        select(MusicLink).where(MusicLink.is_active == True).order_by(MusicLink.sort_order, MusicLink.id)
-    ).all())
-    return [{"id": L.youtube_id, "title": L.title} for L in links]
+    try:
+        links = list(session.exec(
+            select(MusicLink).where(MusicLink.is_active == True).order_by(MusicLink.sort_order, MusicLink.id)
+        ).all())
+    except Exception:
+        links = []
+    out = []
+    for L in links:
+        yid = (L.youtube_id or "").strip()
+        if not yid:
+            continue
+        out.append({"id": yid, "title": L.title or yid})
+    return out
 
 
 @router.post("/member/{member_id}/toggle-broadcast")
@@ -330,3 +363,17 @@ async def toggle_broadcast(
     session.add(target)
     session.commit()
     return RedirectResponse("/district/members", status_code=303)
+
+
+@router.get("/member/pending", response_class=HTMLResponse)
+async def member_pending_page(
+    request: Request,
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    member = session.get(ChurchMember, user.member_id) if user.member_id else None
+    if not member:
+        member = session.exec(select(ChurchMember).where(ChurchMember.email == user.email)).first()
+    return templates.TemplateResponse("members/pending_access.html", {
+        "request": request, "user": user, "member": member,
+    })

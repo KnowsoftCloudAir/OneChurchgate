@@ -107,6 +107,7 @@ class User(SQLModel, table=True):
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     last_login: Optional[datetime] = None
+    session_version: int = Field(default=0)  # increments on login; only latest session valid
 
 class ChurchMember(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

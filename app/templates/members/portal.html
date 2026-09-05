@@ -38,6 +38,9 @@
     background-size: min(420px, 70vw);
   }
   .theme-white .pray-watermark { opacity: 0.06; filter: invert(1); }
+  .jesus-words { color: #f87171 !important; font-weight: 600; }
+  .bible-progress { height: 0.5rem; border-radius: 999px; background: rgba(128,128,128,0.25); overflow: hidden; margin-top: 0.75rem; }
+  .bible-progress > span { display: block; height: 100%; background: linear-gradient(90deg, #60a5fa, #a78bfa); transition: width 0.35s ease; }
   .progress-bar { height: 0.65rem; border-radius: 999px; background: rgba(128,128,128,0.25); overflow: hidden; }
 
   .flip-clock {
@@ -151,6 +154,7 @@
           <span class="text-xs font-bold ms-muted ml-1" x-text="clock.ampm"></span>
         </div>
         <p class="text-[10px] ms-muted" x-text="clock.dateLine"></p>
+        <p class="text-lg font-bold tabular-nums tracking-widest" id="flipClockFallback" style="display:none"></p>
       </div>
     </div>
 
@@ -191,6 +195,7 @@
       <a href="#prayer" class="px-3 py-1.5 rounded-full ms-card">Prayer</a>
       <a href="#testimonies" class="px-3 py-1.5 rounded-full ms-card">Testimonies</a>
       <a href="#music" class="px-3 py-1.5 rounded-full ms-card">Music</a>
+      <a href="#subscription" class="px-3 py-1.5 rounded-full ms-card">Subscription</a>
       <a href="#church" class="px-3 py-1.5 rounded-full ms-card">My church</a>
       <a href="/programs/" class="px-3 py-1.5 rounded-full ms-card">Programs</a>
     </nav>
@@ -269,13 +274,17 @@
         <template x-if="!bible.slides.length">
           <p class="text-sm ms-muted" x-text="bible.status || 'Select a book or situation…'"></p>
         </template>
+        <div class="bible-progress mt-3" x-show="bible.slides.length">
+          <span :style="'width:' + bibleProgress() + '%'"></span>
+        </div>
+        <p class="text-xs ms-muted mt-1" x-show="bible.continuous">Continuous reading in progress… <span x-text="bible.slideIndex+1"></span>/<span x-text="bible.slides.length"></span> · <span x-text="bibleProgress()"></span>%</p>
       </div>
       <div class="flex flex-wrap gap-2 mt-3">
         <button type="button" @click="prevSlide()" class="px-4 py-2 rounded-xl border border-white/20 text-sm font-semibold">← Prev</button>
         <button type="button" @click="nextSlide()" class="ms-btn px-4 py-2 text-sm">Next →</button>
         <button type="button" @click="speakCurrent(false)" class="px-4 py-2 rounded-xl border border-white/20 text-sm font-semibold">Speak this verse</button>
         <button type="button" @click="startContinuous()" class="ms-btn px-4 py-2 text-sm">Continuous chapter</button>
-        <button type="button" @click="bible.continuous=false; stopSpeak()" class="text-xs ms-muted underline px-2">Stop voice</button>
+        <button type="button" @click="stopSpeak()" class="text-xs ms-muted underline px-2">Stop voice</button>
       </div>
     </section>
 
@@ -330,6 +339,52 @@
         <button type="button" @click="music.playing=false" class="text-xs ms-muted underline ml-2">Hide</button>
       </section>
     </div>
+
+    
+    <section id="subscription" class="ms-card p-5 mb-5">
+      <div class="flex flex-wrap justify-between gap-2 items-start mb-3">
+        <div>
+          <h2 class="font-bold text-lg">My subscription</h2>
+          <p class="text-xs ms-muted">Stay active · renew before days run out</p>
+        </div>
+        <a href="/member/subscription" class="text-xs font-semibold ms-accent underline">Manage / pay →</a>
+      </div>
+      {% if sub_active %}
+      <div class="grid sm:grid-cols-2 gap-4 items-center">
+        <div class="flex justify-center">
+          <div class="relative w-36 h-36">
+            <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(128,128,128,0.25)" stroke-width="3"></circle>
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke="#34d399" stroke-width="3"
+                      stroke-linecap="round"
+                      stroke-dasharray="{{ sub_pct }} 100"
+                      stroke-dashoffset="0"></circle>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center">
+              <span class="text-2xl font-bold">{{ sub_days_left }}</span>
+              <span class="text-[10px] ms-muted uppercase">days left</span>
+            </div>
+          </div>
+        </div>
+        <div>
+          <p class="text-sm font-semibold text-emerald-400">✓ Active · {{ sub_active.plan }}</p>
+          <p class="text-xs ms-muted mt-1">Until {{ sub_active.ends_at }}</p>
+          <p class="text-xs ms-muted mt-2">Suggested minimum renewal:
+            <strong class="ms-accent">{% if sub_settings %}{{ sub_settings.currency }} {{ "%.2f"|format(sub_settings.monthly_price) }} / month{% else %}see subscription page{% endif %}</strong>
+          </p>
+          <a href="/member/subscription" class="ms-btn inline-block mt-3 px-4 py-2 text-xs">Renew now</a>
+        </div>
+      </div>
+      {% else %}
+      <div class="rounded-xl bg-black/15 p-4 text-sm">
+        <p class="ms-muted mb-2">No active paid subscription yet. Unlock peace of mind with a monthly or annual plan.</p>
+        <p class="text-xs ms-muted mb-3">Minimum suggested:
+          <strong class="ms-accent">{% if sub_settings %}{{ sub_settings.currency }} {{ "%.2f"|format(sub_settings.monthly_price) }}/mo · {{ sub_settings.currency }} {{ "%.2f"|format(sub_settings.annual_price) }}/yr{% else %}set by admin{% endif %}</strong>
+        </p>
+        <a href="/member/subscription" class="ms-btn inline-block px-4 py-2 text-sm">View plans & pay →</a>
+      </div>
+      {% endif %}
+    </section>
 
     <section id="church" class="ms-card p-5 mb-5">
       <h2 class="font-bold text-lg mb-3">My church</h2>
@@ -442,21 +497,25 @@ function memberHub() {
       this.persist();
     },
     tickClock() {
-      const d = new Date();
-      let h = d.getHours();
-      const ampm = h >= 12 ? 'PM' : 'AM';
-      h = h % 12; if (h === 0) h = 12;
-      const hh = String(h).padStart(2,'0');
-      const mm = String(d.getMinutes()).padStart(2,'0');
-      const ss = String(d.getSeconds()).padStart(2,'0');
-      this.clock.pulseH = this.clock._prevH && this.clock._prevH !== hh;
-      this.clock.pulseM = this.clock._prevM && this.clock._prevM !== mm;
-      this.clock._prevH = hh; this.clock._prevM = mm;
-      this.clock.h1=hh[0]; this.clock.h2=hh[1];
-      this.clock.m1=mm[0]; this.clock.m2=mm[1];
-      this.clock.s1=ss[0]; this.clock.s2=ss[1];
-      this.clock.ampm = ampm;
-      this.clock.dateLine = d.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
+      try {
+        const d = new Date();
+        let h = d.getHours();
+        const ampm = h >= 12 ? 'PM' : 'AM';
+        h = h % 12; if (h === 0) h = 12;
+        const hh = String(h).padStart(2,'0');
+        const mm = String(d.getMinutes()).padStart(2,'0');
+        const ss = String(d.getSeconds()).padStart(2,'0');
+        this.clock.pulseH = this.clock._prevH && this.clock._prevH !== hh;
+        this.clock.pulseM = this.clock._prevM && this.clock._prevM !== mm;
+        this.clock._prevH = hh; this.clock._prevM = mm;
+        this.clock.h1=hh[0]; this.clock.h2=hh[1];
+        this.clock.m1=mm[0]; this.clock.m2=mm[1];
+        this.clock.s1=ss[0]; this.clock.s2=ss[1];
+        this.clock.ampm = ampm;
+        this.clock.dateLine = d.toLocaleDateString(undefined,{weekday:'long',month:'short',day:'numeric'});
+        const fb = document.getElementById('flipClockFallback');
+        if (fb) fb.textContent = hh + ':' + mm + ':' + ss + ' ' + ampm;
+      } catch (e) { console.warn(e); }
     },
     saveDevotion() { this.persist(); this.scheduleAlarms(); },
     saveEvangelism() { this.persist(); },
@@ -500,6 +559,21 @@ function memberHub() {
         }, next - now));
       });
     },
+    async loadMusicLinks() {
+      try {
+        const r = await fetch('/api/music-links', { credentials: 'same-origin' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        const data = await r.json();
+        this.musicList = Array.isArray(data) ? data.filter(x => x && x.id) : [];
+        if (this.musicList.length) {
+          if (!this.music.id || !this.musicList.find(m => m.id === this.music.id))
+            this.music.id = this.musicList[0].id;
+        }
+      } catch (e) {
+        console.warn('music links', e);
+        this.musicList = [];
+      }
+    },
     async fetchRef(ref) {
       const r = await fetch('https://bible-api.com/' + encodeURIComponent(ref) + '?translation=' + (this.bible.version||'kjv'));
       if (!r.ok) throw new Error('fail');
@@ -541,7 +615,9 @@ function memberHub() {
     formatVerseHtml(text) {
       if (!text) return '';
       let html = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      html = html.replace(/([“"][^”"]+[”"])/g, '<span style="color:#f87171;font-weight:600">$1</span>');
+      // Curly or straight quotes → red (words of Jesus convention)
+      html = html.replace(/([“"][^”"]{2,}[”"])/g, '<span class="jesus-words">$1</span>');
+      // KJV style after saith unto them, / Verily, verily patterns often in quotes already
       return html;
     },
     prevSlide() {
@@ -553,9 +629,11 @@ function memberHub() {
     speakCurrent(chain) {
       if (!this.bible.slides.length || !('speechSynthesis' in window)) return;
       if (!chain) this.bible.continuous = false;
-      this.stopSpeak();
+      // Cancel previous utterance without clearing continuous flag
+      if ('speechSynthesis' in window) speechSynthesis.cancel();
       const s = this.bible.slides[this.bible.slideIndex];
-      const u = new SpeechSynthesisUtterance((s.ref + '. ' + s.text).replace(/[“”"]/g, ''));
+      const plain = (s.ref + '. ' + s.text).replace(/[“”"']/g, ' ');
+      const u = new SpeechSynthesisUtterance(plain);
       u.rate = 0.9;
       const voices = speechSynthesis.getVoices();
       let voice = null;
@@ -572,9 +650,22 @@ function memberHub() {
       };
       speechSynthesis.speak(u);
     },
+    startContinuous() {
+      if (!this.bible.slides.length) {
+        this.bible.status = 'Load a chapter first, then start continuous reading.';
+        return;
+      }
+      this.bible.continuous = true;
+      this.bible.slideIndex = 0;
+      this.speakCurrent(true);
+    },
     stopSpeak() {
       this.bible.continuous = false;
       if ('speechSynthesis' in window) speechSynthesis.cancel();
+    },
+    bibleProgress() {
+      if (!this.bible.slides.length) return 0;
+      return Math.round(100 * (this.bible.slideIndex + 1) / this.bible.slides.length);
     },
   };
 }

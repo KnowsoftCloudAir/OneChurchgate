@@ -38,6 +38,14 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
+
+def create_user_token(user: User, expires_delta: Optional[timedelta] = None) -> str:
+    """JWT bound to session_version so a new login invalidates older sessions."""
+    return create_access_token(
+        {"sub": user.email, "sv": int(getattr(user, "session_version", 0) or 0)},
+        expires_delta=expires_delta,
+    )
+
 def get_user_by_email(session: Session, email: str) -> Optional[User]:
     return session.exec(select(User).where(User.email == email)).first()
 
@@ -55,11 +63,17 @@ async def get_current_user(
         email: str = payload.get("sub")
         if not email:
             return None
+        token_sv = payload.get("sv")
     except JWTError:
         return None
     user = get_user_by_email(session, email)
     if not user or not user.is_active:
         return None
+    # Single active session: token must match current session_version
+    if token_sv is not None:
+        current_sv = int(getattr(user, "session_version", 0) or 0)
+        if int(token_sv) != current_sv:
+            return None
     rv = role_val(user.role)
     # Staff always see church dashboard; members only if granted or pastor status
     if rv in ("general_admin", "church_admin", "data_officer"):

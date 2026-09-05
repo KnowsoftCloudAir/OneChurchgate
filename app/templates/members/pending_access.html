@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Pending approval{% endblock %}
+{% block content %}
+<div class="max-w-lg mx-auto px-4 py-16 text-center">
+  <div class="bg-white border rounded-2xl p-8 shadow-sm">
+    <p class="text-4xl mb-3">⏳</p>
+    <h1 class="text-xl font-bold text-navy-900 mb-2">Membership pending approval</h1>
+    <p class="text-sm text-slate-600 mb-4">
+      Thank you{% if member %}, {{ member.full_name }}{% endif %}. Your registration was received.
+      Full features (Bible tools, music, programs, messages, subscription) unlock only after your
+      <strong>district admin</strong> approves your membership.
+    </p>
+    <p class="text-xs text-slate-500 mb-6">Status: <span class="font-semibold capitalize">{{ member.approval_status if member else "pending" }}</span></p>
+    <a href="/auth/logout" class="inline-block px-5 py-2.5 rounded-xl bg-navy-900 text-white text-sm font-semibold">Sign out</a>
+  </div>
+</div>
+{% endblock %}

@@ -10,7 +10,7 @@ import string
 
 from app.database import get_session
 from app.models import User, UserRole, ChurchUnit, ChurchLevel, ApprovalStatus, ChurchMember
-from app.auth import require_user, role_val, verify_password, get_password_hash, create_access_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
+from app.auth import require_user, role_val, verify_password, get_password_hash, create_access_token, create_user_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
@@ -56,18 +56,29 @@ async def login(
         if not m:
             m = session.exec(select(ChurchMember).where(ChurchMember.email == user.email)).first()
         if m and m.approval_status == "pending":
-            return templates.TemplateResponse("auth/login.html", {
-                "request": request, "error": "Your membership is pending district approval."
-            }, status_code=400)
+            # Limited access only — pending page after login
+            user.session_version = int(getattr(user, "session_version", 0) or 0) + 1
+            user.last_login = datetime.utcnow()
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+            token = create_user_token(user)
+            resp = RedirectResponse("/member/pending", status_code=303)
+            resp.set_cookie("access_token", token, httponly=True,
+                            max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60, samesite="lax", path="/")
+            return resp
         if m and m.approval_status in ("rejected", "discontinued"):
             return templates.TemplateResponse("auth/login.html", {
                 "request": request, "error": "Membership not active."
             }, status_code=400)
 
-    token = create_access_token({"sub": user.email})
+    # Invalidate any other device/session using the same account
+    user.session_version = int(getattr(user, "session_version", 0) or 0) + 1
     user.last_login = datetime.utcnow()
     session.add(user)
     session.commit()
+    session.refresh(user)
+    token = create_user_token(user)
     # Route by role — members without dashboard grant go to portal only
     rv = role_val(user.role)
     if rv == "general_admin":
