@@ -10,7 +10,7 @@ from sqlmodel import Session, select
 from app.database import get_session
 from app.models import (
     User, UserRole, ChurchUnit, ChurchMember,
-    FocusGroup, FocusGroupMember, FocusGroupMessage, FocusGroupMessageComment,
+    FocusGroup, FocusGroupMember, FocusGroupMessage, FocusGroupMessageComment, FocusGroupMessageLike, FocusGroupMessageLike,
     Testimony, TestimonyLike, TestimonyComment,
     HeartNeed, HeartDonation, HeartDistribution,
 )
@@ -49,6 +49,28 @@ def _is_group_member(session: Session, group_id: int, user: User) -> bool:
     ).first() is not None
 
 
+
+def _scope_ids(session: Session, user: User) -> list:
+    cid = _church_id(user)
+    if not cid:
+        return []
+    from app.routers.church import collect_descendant_ids
+    if _can_manage_groups(user):
+        return collect_descendant_ids(session, cid)
+    return [cid]
+
+
+def _members_in_scope(session: Session, user: User) -> list:
+    ids = _scope_ids(session, user)
+    if not ids:
+        return []
+    return list(session.exec(
+        select(ChurchMember).where(
+            ChurchMember.church_id.in_(ids),
+            ChurchMember.approval_status == "approved",
+        )
+    ).all())
+
 # ---------- Focus groups ----------
 @router.get("/focus-groups", response_class=HTMLResponse)
 async def focus_groups_list(
@@ -64,10 +86,14 @@ async def focus_groups_list(
             "empty_message": "Your account is not linked to a church yet.",
             "back_url": "/member/portal",
         })
+    scope = _scope_ids(session, user) or [cid]
     groups = list(session.exec(
-        select(FocusGroup).where(FocusGroup.church_id == cid, FocusGroup.is_active == True)
+        select(FocusGroup).where(
+            FocusGroup.church_id.in_(scope),
+            FocusGroup.is_active == True,
+        )
     ).all())
-    # Members only see groups they belong to; admins see all
+    # Members only see groups they belong to; admins see all in scope
     if not _can_manage_groups(user):
         m = _member_for_user(session, user)
         if not m:
@@ -77,13 +103,6 @@ async def focus_groups_list(
                 select(FocusGroupMember).where(FocusGroupMember.member_id == m.id)
             ).all()}
             groups = [g for g in groups if g.id in gids]
-    if not groups:
-        return templates.TemplateResponse("community/empty.html", {
-            "request": request, "user": user,
-            "empty_title": "No information to display",
-            "empty_message": "No focus groups yet. Church admin can create one and add members.",
-            "back_url": "/dashboard" if _can_manage_groups(user) else "/member/portal",
-        })
     return templates.TemplateResponse("community/focus_list.html", {
         "request": request, "user": user, "groups": groups,
         "can_manage": _can_manage_groups(user),
@@ -99,13 +118,7 @@ async def focus_group_new(
     if not _can_manage_groups(user):
         raise HTTPException(403, "Not allowed")
     cid = _church_id(user)
-    members = list(session.exec(
-        select(ChurchMember).where(
-            ChurchMember.church_id == cid,
-            ChurchMember.approval_status == "approved",
-            ChurchMember.is_active == True,
-        )
-    ).all()) if cid else []
+    members = _members_in_scope(session, user) if cid else []
     return templates.TemplateResponse("community/focus_form.html", {
         "request": request, "user": user, "members": members,
     })
@@ -151,43 +164,47 @@ async def focus_group_view(
 ):
     g = session.get(FocusGroup, group_id)
     if not g or not g.is_active:
-        return templates.TemplateResponse("community/empty.html", {
-            "request": request, "user": user,
-            "empty_title": "No information to display",
-            "empty_message": "This focus group was not found.",
-            "back_url": "/focus-groups",
-        })
-    can_manage = _can_manage_groups(user) and g.church_id == user.church_id
+        raise HTTPException(404)
+    can_manage = _can_manage_groups(user)
     if not can_manage and not _is_group_member(session, group_id, user):
         raise HTTPException(403, "You are not in this focus group")
-    msgs = list(session.exec(
+    raw_msgs = list(session.exec(
         select(FocusGroupMessage).where(FocusGroupMessage.group_id == group_id)
         .order_by(FocusGroupMessage.created_at.desc())
     ).all())
-    msg_data = []
-    for msg in msgs:
+    messages = []
+    for msg in raw_msgs:
         sender = session.get(User, msg.sender_id)
         comments = list(session.exec(
             select(FocusGroupMessageComment).where(FocusGroupMessageComment.message_id == msg.id)
             .order_by(FocusGroupMessageComment.created_at)
         ).all())
-        clist = []
+        c_rows = []
         for c in comments:
             cu = session.get(User, c.user_id)
-            clist.append({"id": c.id, "body": c.body, "user": cu.full_name if cu else "Member", "user_id": c.user_id, "at": c.created_at})
-        msg_data.append({
-            "id": msg.id, "body": msg.body,
-            "sender": sender.full_name if sender else "Admin",
-            "at": msg.created_at, "comments": clist,
+            c_rows.append({"user": cu.full_name if cu else "Member", "body": c.body, "at": c.created_at})
+        likes = list(session.exec(
+            select(FocusGroupMessageLike).where(FocusGroupMessageLike.message_id == msg.id)
+        ).all())
+        liked = any(L.user_id == user.id for L in likes)
+        messages.append({
+            "id": msg.id,
+            "body": msg.body,
+            "sender": sender.full_name if sender else "Member",
+            "at": msg.created_at,
+            "comments": c_rows,
+            "like_count": len(likes),
+            "liked": liked,
         })
-    members = []
+    member_rows = []
     for fm in session.exec(select(FocusGroupMember).where(FocusGroupMember.group_id == group_id)).all():
-        m = session.get(ChurchMember, fm.member_id)
-        if m:
-            members.append(m)
+        mem = session.get(ChurchMember, fm.member_id)
+        if mem:
+            member_rows.append(mem)
     return templates.TemplateResponse("community/focus_view.html", {
         "request": request, "user": user, "group": g,
-        "messages": msg_data, "members": members, "can_manage": can_manage,
+        "messages": messages, "members": member_rows,
+        "can_manage": can_manage,
     })
 
 

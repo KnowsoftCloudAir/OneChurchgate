@@ -255,15 +255,22 @@ async def member_portal(
                 sub_pct = 100 if secs > 0 else 0
         # Pastor messages for this church
         try:
-            from app.models import PastorMessage
+            from app.models import PastorMessage, ChurchUnit
             cid = user.church_id or (member.church_id if member else None)
             if cid:
+                allowed = set()
+                cur = session.get(ChurchUnit, cid)
+                while cur:
+                    allowed.add(cur.id)
+                    if not cur.parent_id:
+                        break
+                    cur = session.get(ChurchUnit, cur.parent_id)
                 pastor_messages = list(session.exec(
                     select(PastorMessage).where(
-                        PastorMessage.church_id == cid,
                         PastorMessage.is_active == True,
-                    ).order_by(PastorMessage.created_at.desc()).limit(10)
+                    ).order_by(PastorMessage.created_at.desc()).limit(40)
                 ).all())
+                pastor_messages = [p for p in pastor_messages if p.church_id in allowed][:10]
         except Exception as pe:
             print("pastor msgs", pe)
             pastor_messages = []
@@ -381,18 +388,32 @@ async def api_music_links(
     session: Session = Depends(get_session),
     user: Optional[User] = Depends(get_current_user),
 ):
-    """Active YouTube tracks: platform (GA) + this member's church (church admin)."""
-    from app.models import MusicLink
-    from sqlalchemy import or_
+    """Platform music + music from this church and all parent churches (e.g. Global → District)."""
+    from app.models import MusicLink, ChurchUnit
     try:
-        q = select(MusicLink).where(MusicLink.is_active == True)
-        rows = list(session.exec(q.order_by(MusicLink.sort_order, MusicLink.id)).all())
+        rows = list(session.exec(
+            select(MusicLink).where(MusicLink.is_active == True).order_by(MusicLink.sort_order, MusicLink.id)
+        ).all())
+        allowed = set()  # church ids whose music this member may see
         cid = getattr(user, "church_id", None) if user else None
+        if not cid and user and user.member_id:
+            m = session.get(ChurchMember, user.member_id)
+            if m:
+                cid = m.church_id
+        if cid:
+            # walk up parent chain so Global/State music reaches district members
+            cur = session.get(ChurchUnit, cid)
+            while cur:
+                allowed.add(cur.id)
+                if not cur.parent_id:
+                    break
+                cur = session.get(ChurchUnit, cur.parent_id)
         links = []
         for L in rows:
-            if L.church_id is None or (cid and L.church_id == cid):
+            if L.church_id is None or L.church_id in allowed:
                 links.append(L)
-    except Exception:
+    except Exception as e:
+        print("music links", e)
         links = []
     out = []
     seen = set()

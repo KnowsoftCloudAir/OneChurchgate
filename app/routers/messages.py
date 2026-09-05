@@ -25,6 +25,18 @@ def _district_id_for_user(user: User, session: Session) -> Optional[int]:
     return None
 
 
+def _scope_church_ids(user: User, session: Session) -> list:
+    """Church unit + all descendants (Global admin sees whole tree)."""
+    cid = _district_id_for_user(user, session)
+    if not cid:
+        return []
+    from app.routers.church import collect_descendant_ids
+    rv = role_val(user.role)
+    if rv in ("church_admin", "general_admin", "data_officer"):
+        return collect_descendant_ids(session, cid)
+    return [cid]
+
+
 def _can_broadcast(user: User) -> bool:
     rv = role_val(user.role)
     if rv in ("church_admin", "general_admin", "data_officer"):
@@ -41,22 +53,27 @@ async def messages_inbox(
     cid = _district_id_for_user(user, session)
     if not cid:
         raise HTTPException(400, "No church linked")
+    scope = _scope_church_ids(user, session) or [cid]
     all_msg = list(session.exec(
-        select(DistrictMessage).where(DistrictMessage.church_id == cid)
-        .order_by(DistrictMessage.created_at.desc()).limit(100)
+        select(DistrictMessage).where(DistrictMessage.church_id.in_(scope))
+        .order_by(DistrictMessage.created_at.desc()).limit(200)
     ).all())
+    is_staff = role_val(user.role) in ("church_admin", "general_admin", "data_officer")
     visible = []
     for m in all_msg:
         if m.is_broadcast and m.to_role == "members":
             if m.recipient_user_ids:
                 ids = {int(x) for x in m.recipient_user_ids.split(",") if x.strip().isdigit()}
-                if user.id in ids or role_val(user.role) in ("church_admin", "general_admin"):
+                if user.id in ids or is_staff:
                     visible.append(m)
             else:
-                visible.append(m)
+                # broadcast to all in that church unit — members of that unit + staff in tree
+                if is_staff or m.church_id == cid:
+                    visible.append(m)
             continue
         if m.to_role in ("admin", "pastor"):
-            if role_val(user.role) in ("church_admin", "general_admin", "data_officer") or m.sender_user_id == user.id:
+            # Pastors/admins at all levels in the tree see messages to admin/pastor
+            if is_staff or m.sender_user_id == user.id:
                 visible.append(m)
             continue
         if m.sender_user_id == user.id:
@@ -70,7 +87,7 @@ async def messages_inbox(
         rows.append({"m": m, "sender": sender})
     members = list(session.exec(
         select(ChurchMember).where(
-            ChurchMember.church_id == cid,
+            ChurchMember.church_id.in_(scope),
             ChurchMember.approval_status == "approved",
         )
     ).all())

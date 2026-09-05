@@ -299,6 +299,12 @@ class FocusGroupMessageComment(SQLModel, table=True):
     body: str = Field(sa_column=Column(Text))
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+class FocusGroupMessageLike(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    message_id: int = Field(foreign_key="focusgroupmessage.id", index=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
 class Testimony(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     church_id: int = Field(foreign_key="churchunit.id", index=True)

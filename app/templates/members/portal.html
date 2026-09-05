@@ -216,6 +216,7 @@
       <a href="#music" class="px-3 py-1.5 rounded-full ms-card">Music</a>
       <a href="#subscription" class="px-3 py-1.5 rounded-full ms-card">Subscription</a>
       <a href="#church" class="px-3 py-1.5 rounded-full ms-card">My church</a>
+      <a href="/focus-groups" class="px-3 py-1.5 rounded-full ms-card">Focus groups</a>
       <a href="/programs/" class="px-3 py-1.5 rounded-full ms-card">Programs</a>
     </nav>
 
@@ -281,6 +282,14 @@
           </template>
         </select>
         <button type="button" @click="refreshVoices()" class="text-xs underline ms-muted">Load voices</button>
+        <label class="flex items-center gap-2 text-xs ms-muted w-full sm:w-auto mt-1 sm:mt-0">
+          <span>Bible voice volume</span>
+          <input type="range" min="0" max="100" step="5"
+                 :value="Math.round((bible.volume||0.85)*100)"
+                 @input="bible.volume = Math.max(0, Math.min(1, (+$event.target.value)/100))"
+                 class="w-28 accent-blue-500">
+          <span class="tabular-nums w-8" x-text="Math.round((bible.volume||0.85)*100)+'%'"></span>
+        </label>
       </div>
       <div class="rounded-2xl bg-black/25 border border-white/10 p-5 min-h-[10rem]">
         <template x-if="bible.slides.length">
@@ -343,7 +352,7 @@
       </section>
       <section id="music" class="ms-card p-5">
         <h2 class="font-bold text-lg mb-2">Inspirational music</h2>
-        <p class="text-xs ms-muted mb-3">YouTube only — long worship playlist · select then Play</p>
+        <p class="text-xs ms-muted mb-3">YouTube only · can play while Bible reads · use Bible voice volume to balance</p>
         <select x-model="music.id" class="w-full rounded-xl px-3 py-2 text-sm text-slate-900 mb-3">
           <template x-for="m in musicList" :key="m.id">
             <option :value="m.id" x-text="m.title"></option>
@@ -552,7 +561,7 @@ function memberHub() {
     prayer: { new: '', list: [] },
     alarmStatus: 'Alarms work best with notifications enabled.',
     _timers: [],
-    bible: { book:'', chapter:'', situation:'', version:'kjv', slides:[], slideIndex:0, status:'', voiceOn:false, voiceName:'', continuous:false, announcedChapter:false },
+    bible: { book:'', chapter:'', situation:'', version:'kjv', slides:[], slideIndex:0, status:'', voiceOn:false, voiceName:'', continuous:false, announcedChapter:false, volume: 0.85 },
     voiceList: [],
     music: { id: 'DXDGE_lRI0E', playing: false },
         musicList: [],
@@ -731,29 +740,16 @@ function memberHub() {
     nextSlide() {
       if (this.bible.slideIndex < this.bible.slides.length - 1) { this.bible.slideIndex++; if (this.bible.voiceOn) this.speakCurrent(); }
     },
-    pauseMusicForSpeech() {
-      this._musicWasPlaying = !!this.music.playing;
-      if (this.music.playing) {
-        this.music.playing = false; // unloads iframe so audio stops
-      }
-    },
-    resumeMusicAfterSpeech() {
-      if (this._musicWasPlaying) {
-        this.music.playing = true;
-        this._musicWasPlaying = false;
-      }
-    },
     speakCurrent(chain) {
       if (!this.bible.slides.length || !('speechSynthesis' in window)) return;
       if (!chain) {
         this.bible.continuous = false;
         this.bible.announcedChapter = false;
       }
-      this.pauseMusicForSpeech();
+      // Keep YouTube music playing — only cancel previous speech (smooth overlap with music)
       if ('speechSynthesis' in window) speechSynthesis.cancel();
       const s = this.bible.slides[this.bible.slideIndex];
       let plain = (s.text || '').replace(/[“”"']/g, ' ');
-      // Continuous: announce chapter once at start, then only verse text
       if (this.bible.continuous) {
         if (!this.bible.announcedChapter) {
           const firstRef = (this.bible.slides[0].ref || '').replace(/[“”"']/g, ' ');
@@ -761,11 +757,13 @@ function memberHub() {
           this.bible.announcedChapter = true;
         }
       } else {
-        // Single verse: include reference once
         plain = ((s.ref || '') + '. ' + plain).trim();
       }
       const u = new SpeechSynthesisUtterance(plain);
-      u.rate = 0.9;
+      u.rate = 0.92;
+      u.pitch = 1.0;
+      // Volume 0–1 (browser speech); lower while music plays if user prefers
+      u.volume = Math.max(0, Math.min(1, Number(this.bible.volume ?? 0.85)));
       const voices = speechSynthesis.getVoices();
       let voice = null;
       if (this.bible.voiceName) voice = voices.find(v => v.name === this.bible.voiceName);
@@ -774,14 +772,14 @@ function memberHub() {
       u.onend = () => {
         if (this.bible.continuous && this.bible.slideIndex < this.bible.slides.length - 1) {
           this.bible.slideIndex++;
-          this.speakCurrent(true);
+          // small gap so continuous reading stays smooth without cutting music
+          setTimeout(() => this.speakCurrent(true), 120);
         } else {
           this.bible.continuous = false;
           this.bible.announcedChapter = false;
-          this.resumeMusicAfterSpeech();
         }
       };
-      u.onerror = () => { this.bible.continuous = false; this.resumeMusicAfterSpeech(); };
+      u.onerror = () => { this.bible.continuous = false; this.bible.announcedChapter = false; };
       speechSynthesis.speak(u);
     },
     startContinuous() {
@@ -798,7 +796,6 @@ function memberHub() {
       this.bible.continuous = false;
       this.bible.announcedChapter = false;
       if ('speechSynthesis' in window) speechSynthesis.cancel();
-      this.resumeMusicAfterSpeech();
     },
     bibleProgress() {
       if (!this.bible.slides.length) return 0;
