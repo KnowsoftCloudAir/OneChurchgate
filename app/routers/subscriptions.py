@@ -161,6 +161,7 @@ def check_sample_member(session: Session, user: User) -> dict:
     if not info["is_sample"]:
         return info
     info["can_subscribe"] = False
+    info["locked"] = False
     now = datetime.utcnow()
     started = getattr(user, "sample_started_at", None)
     if not started:
@@ -183,12 +184,17 @@ def check_sample_member(session: Session, user: User) -> dict:
     info["show_warning"] = True  # always show while sample is active
     if left <= 0:
         info["expired"] = True
-        info["message"] = "Sample access has expired. Please register as a full member."
-        user.is_active = False
+        info["locked"] = True
+        info["message"] = (
+            "Sample trial ended. Register as a member of a church to continue. "
+            "Resources and Angel are locked until you join as a full member."
+        )
+        # Do NOT log out — same as paid members: waiting_approval style lock
+        user.is_active = True
         if user.member_id:
             mem = session.get(ChurchMember, user.member_id)
             if mem:
-                mem.approval_status = "deactivated"
+                mem.approval_status = "waiting_approval"
                 session.add(mem)
         session.add(user)
         session.commit()

@@ -159,8 +159,9 @@ async def member_portal(
     is_awaiting_payment = bool(
         member
         and status in ("waiting_approval", "waiting_subscription")
-        and not is_sample
     )
+    # Sample trial over also locks (same UI as awaiting approval)
+
 
 
     church = session.get(ChurchUnit, user.church_id) if user.church_id else None
@@ -203,8 +204,12 @@ async def member_portal(
             )
 
         sample_info = check_sample_member(session, user)
-        if sample_info.get("expired"):
-            return RedirectResponse("/auth/login?sample=expired", status_code=303)
+        # Sample expired: stay logged in, lock like waiting_approval (do not redirect logout)
+        if sample_info.get("expired") or sample_info.get("locked"):
+            is_awaiting_payment = True
+            is_sample = True
+            if member:
+                member.approval_status = "waiting_approval"
         if sample_info.get("show_warning") or sample_info.get("is_sample"):
             sample_warning = sample_info.get("message")
 

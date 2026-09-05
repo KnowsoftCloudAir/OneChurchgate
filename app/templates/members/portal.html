@@ -131,7 +131,7 @@
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <button type="button" @click="toggleAngel()"
+        <button type="button" @click="if(window.__MEMBER_STATUS__ && window.__MEMBER_STATUS__.awaiting===true){ angel.status='Locked until you register or renew.'; return; } toggleAngel()"
                 :class="angel.enabled ? 'bg-amber-400 text-slate-900' : 'bg-white/15 text-white'"
                 class="px-3 py-1.5 rounded-full text-xs font-bold shadow border border-white/20">
           <span x-text="angel.enabled ? '👼 Angel on' : '👼 Angel'"></span>
@@ -375,7 +375,14 @@
     </section>
 
     <div class="grid sm:grid-cols-2 gap-4 mb-5">
-      <section id="testimonies" class="ms-card p-5">
+      
+    <section id="salvation" class="ms-card p-5 mb-5 border border-amber-400/30">
+      <h2 class="font-bold text-lg mb-2">New life in Christ</h2>
+      <p class="text-xs ms-muted mb-3">If Angel led you in the salvation prayer, affirm below and download your certificate.</p>
+      <a href="/member/certificate/newborn" class="ms-btn inline-block px-4 py-2.5 text-sm font-bold">I accepted Jesus — download certificate</a>
+    </section>
+
+    <section id="testimonies" class="ms-card p-5">
         <h2 class="font-bold text-lg mb-2">Testimonies</h2>
         <a href="/testimonies" class="ms-btn inline-block px-4 py-2 text-sm">Open testimony wall →</a>
       </section>
@@ -604,6 +611,22 @@
     {% endif %}
   </div>
 </div>
+
+
+<script>
+window.__MEMBER_STATUS__ = {
+  name: {{ (member.full_name if member else user.full_name or user.email)|tojson }},
+  email: {{ user.email|tojson }},
+  role: {{ (user.role.value if user.role.value is defined else user.role)|tojson }},
+  approval: {{ (member.approval_status if member else '')|tojson }},
+  status: {{ (member.status if member else '')|tojson }},
+  church: {{ (church.name if church else '')|tojson }},
+  sample: {{ (sample_info.is_sample if sample_info else false)|tojson }},
+  sub_days: {{ sub_days_left or 0 }},
+  sub_active: {{ 'true' if sub_active else 'false' }},
+  awaiting: {{ 'true' if is_awaiting_payment else 'false' }}
+};
+</script>
 
 <script>
 function memberHub() {
@@ -884,42 +907,134 @@ function memberHub() {
       this.angel.status = 'Heard: “' + raw + '”';
       if (!t) return;
 
-      const wantsMusic = /\b(play|music|song|worship|sing|lift|radio)\b/.test(t)
-        || /\b(bored|sad|down|heavy|lonely|discourage|happy)\b/.test(t);
-      const wantsBible = /\b(bible|scripture|word|verse|encourage|read|peace|fear|anxious|worried|sick|unwell|hope|strength|forgive|faith|pray)\b/.test(t)
-        || /\b(bored|sad|down)\b/.test(t);
+      // STOP
+      if (/\bangel\s+stop\b/.test(t) || /\b(stop listening|stop angel|angel off|goodbye angel)\b/.test(t) || (t === 'stop' && this.angel.enabled)) {
+        try { speechSynthesis.cancel(); } catch (e) {}
+        this.angel.enabled = false;
+        this.angel.listening = false;
+        try { if (this.angel.recognition) this.angel.recognition.abort(); } catch (e) {}
+        this.angel.status = 'Angel stopped. Tap Angel to start again.';
+        this.angelSpeak('Angel is stopping. God bless you.');
+        return;
+      }
 
-      // Music
-      if (wantsMusic && !/\bbible\b|\bscripture\b|\bverse\b/.test(t)) {
-        this.angelPlayMusic();
-        if (/\bbored\b|\bsad\b|\bdown\b|\bencourage\b/.test(t)) {
-          await this.angelReadBible('peace');
+      // Locked / awaiting payment
+      if (window.__MEMBER_STATUS__ && window.__MEMBER_STATUS__.awaiting === true) {
+        this.angelSpeak('Your access is locked. Please register as a full church member or renew your subscription.');
+        this.angel.status = 'Locked — register or renew subscription.';
+        return;
+      }
+
+      // Status
+      if (/\b(my status|what is my status|who am i|dashboard|my account)\b/.test(t)) {
+        const s = window.__MEMBER_STATUS__ || {};
+        const msg = `You are ${s.name || 'member'}, email ${s.email || ''}. Membership status ${s.approval || 'unknown'}, role ${s.status || s.role || ''}. Church: ${s.church || 'not linked'}. Subscription active: ${s.sub_active}. Days left: ${s.sub_days}.`;
+        this.angelSpeak(msg);
+        this.angel.status = msg;
+        return;
+      }
+
+      // About Jesus
+      if (/\b(tell me about jesus|who is jesus|about jesus)\b/.test(t)) {
+        const msg = 'Jesus is the Son of God, the Messiah, also called Emmanuel, meaning God with us. He died for our sins and rose again so we can be saved.';
+        this.angelSpeak(msg);
+        this.angel.status = msg;
+        await this.angelReadBible('salvation');
+        return;
+      }
+
+      // How to receive Jesus
+      if (/\b(receive jesus|accept jesus|how do i (get )?saved|how can i be saved|into my heart)\b/.test(t)) {
+        this.angelSpeak('To receive Jesus: believe He can save you, confess and forsake your sins, ask God to forgive you. I will lead you in a short prayer.');
+        this.angel.status = 'Leading salvation prayer…';
+        setTimeout(() => this.angelLeadSalvation(), 800);
+        return;
+      }
+
+      // Sanctification
+      if (/\bsanctif/.test(t)) {
+        const msg = 'Sanctification is being set apart for God — a holy life by His grace. Ask God to cleanse your heart, fill you with love, and help you obey His Word daily. Seek Him in prayer and Scripture.';
+        this.angelSpeak(msg);
+        this.angel.status = msg;
+        return;
+      }
+
+      // Holy Spirit
+      if (/\bholy spirit\b|\bholy ghost\b/.test(t)) {
+        const msg = 'The Holy Spirit is God\'s presence with believers — our Helper, Teacher and Comforter. Ask the Father in Jesus\' name to fill you with the Holy Spirit, and receive by faith.';
+        this.angelSpeak(msg);
+        this.angel.status = msg;
+        return;
+      }
+
+      // Explain last bible portion
+      if (/\bexplain\b/.test(t)) {
+        const s = this.bible.slides && this.bible.slides[this.bible.slideIndex];
+        if (s) {
+          const msg = `This portion, ${s.ref}, says: ${(s.text || '').slice(0, 280)}. Cross reference: John 3:16, Romans 10:9, and Psalm 23 encourage us to trust God.`;
+          this.angelSpeak(msg);
+          this.angel.status = msg;
+        } else {
+          this.angelSpeak('Load a Bible portion first, then say explain.');
         }
         return;
       }
 
-      // Bible situation map
-      if (wantsBible || /\bangel\b/.test(t)) {
-        let sit = 'peace';
-        if (/sick|unwell|pain|heal/.test(t)) sit = 'unwell';
-        else if (/anxious|worry|worried/.test(t)) sit = 'anxious';
-        else if (/fear|afraid|scared/.test(t)) sit = 'fear';
-        else if (/lonely|alone/.test(t)) sit = 'lonely';
-        else if (/grief|loss|mourn/.test(t)) sit = 'grief';
-        else if (/money|finance|need/.test(t)) sit = 'finance';
-        else if (/guide|direction|decision/.test(t)) sit = 'guidance';
-        else if (/strength|weak|tired/.test(t)) sit = 'strength';
-        else if (/forgive|guilt|sin/.test(t)) sit = 'forgiveness';
-        else if (/faith/.test(t)) sit = 'faith';
-        else if (/bored|sad|down|heavy|encourage/.test(t)) sit = 'peace';
-        await this.angelReadBible(sit);
-        if (/\bbored\b|\bsad\b|\bmusic\b|\bplay\b/.test(t)) this.angelPlayMusic();
+      // Change / next music
+      if (/\b(change music|next (song|music)|another song|different music)\b/.test(t)) {
+        const list = (this.churchMusicList && this.churchMusicList.length) ? this.churchMusicList : (this.musicList || []);
+        if (list.length) {
+          const cur = this.churchMusic.id || this.music.id;
+          let i = list.findIndex(m => m.id === cur);
+          i = (i + 1) % list.length;
+          this.angelPlayMusicPick(list[i]);
+        } else this.angelPlayMusic();
         return;
       }
 
-      // Default help
-      this.angelSpeak('You can say play music, or I am bored, or encourage me.');
-      this.angel.status = 'Try: play music · I am bored · encourage me';
+      const wantsMusic = /\b(play|music|song|worship|sing|lift|radio)\b/.test(t)
+        || /\b(bored|sad|down|heavy|lonely)\b/.test(t);
+      const wantsBible = /\b(bible|scripture|word|verse|encourage|read|peace|fear|anxious|worried|sick|unwell|hope|strength|forgive|faith|pray)\b/.test(t)
+        || /\b(bored|sad|down)\b/.test(t);
+
+      if (wantsMusic && !/\bbible\b|\bscripture\b|\bverse\b/.test(t)) {
+        this.angelPlayMusic();
+        if (/\bbored\b|\bsad\b|\bdown\b|\bencourage\b/.test(t)) await this.angelReadBible('peace');
+        return;
+      }
+      if (wantsBible || /\bangel\b/.test(t)) {
+        let sit = 'peace';
+        if (/sick|unwell|heal/.test(t)) sit = 'unwell';
+        else if (/anxious|worry/.test(t)) sit = 'anxious';
+        else if (/fear|afraid/.test(t)) sit = 'fear';
+        else if (/lonely/.test(t)) sit = 'lonely';
+        else if (/forgive|guilt/.test(t)) sit = 'forgiveness';
+        else if (/bored|sad|encourage|saved|jesus/.test(t)) sit = 'peace';
+        await this.angelReadBible(sit);
+        if (/\bbored\b|\bmusic\b|\bplay\b/.test(t)) this.angelPlayMusic();
+        return;
+      }
+      this.angelSpeak('You can ask about Jesus, how to be saved, the Holy Spirit, play music, my status, explain, or say Angel stop.');
+      this.angel.status = 'Try: tell me about Jesus · how do I receive Jesus · play music · my status · angel stop';
+    },
+    angelLeadSalvation() {
+      const prayer = 'To be saved, believe that Jesus can save you, confess and forsake your sins, ask God to forgive you, and repeat after me: Lord Jesus, I know I am a sinner. I am sorry for all the bad life I have lived. I forsake them. Please forgive me and give me the grace to live a life that will please you. In Jesus name I pray. Amen. If you have just said this prayer, you are forgiven. Click the I accepted Jesus button to download your New Born in Christ certificate.';
+      this.angelSpeak(prayer);
+      this.angel.status = 'Salvation shared — use “I accepted Jesus” for your certificate.';
+      try { document.getElementById('salvation')?.scrollIntoView({ behavior: 'smooth' }); } catch (e) {}
+    },
+    angelPlayMusicPick(pick) {
+      if (!pick || !pick.id) return this.angelPlayMusic();
+      this.churchMusic.id = pick.id;
+      this.music.id = pick.id;
+      this.churchMusic.playing = false;
+      this.music.playing = false;
+      this.$nextTick(() => {
+        this.churchMusic.playing = true;
+        this.music.playing = false;
+      });
+      this.angel.status = 'Playing: ' + (pick.title || pick.id);
+      this.angelSpeak('Changing the music for you.');
     },
 
     async loadMusicLinks() {

@@ -358,6 +358,64 @@ def seed_church_music(session: Session) -> None:
         print("✅ Church music already seeded for global/district")
 
 
+def seed_global_denominations(session: Session) -> None:
+    """Default global church records (directory) — approved globals for selection."""
+    from app.models import ChurchUnit, ChurchLevel
+    from app.auth import get_password_hash
+    churches = [
+        ("Catholic Church – Holy See", "Catholic", "Vatican City", "Via della Conciliazione, 54, 00120 Vatican City"),
+        ("Anglican Communion", "Anglican", "United Kingdom", "Anglican Communion Office, St Andrew's House, 16 Tavistock Crescent, London W11 1AP, UK"),
+        ("Church of England", "Anglican", "United Kingdom", "Church House, Great Smith Street, London SW1P 3AZ, UK"),
+        ("World Council of Churches (WCC)", "Ecumenical", "Switzerland", "Ecumenical Centre, Chemin du Pommier 42, CH-1218 Le Grand-Saconnex, Switzerland"),
+        ("Assemblies of God", "Pentecostal", "USA", "1445 N. Boonville Avenue, Springfield, MO 65802, USA"),
+        ("Seventh-day Adventist Church", "Adventist", "USA", "12501 Old Columbia Pike, Silver Spring, MD 20904, USA"),
+        ("The Church of Jesus Christ of Latter-day Saints", "Latter-day Saint", "USA", "50 East North Temple Street, Salt Lake City, UT 84150, USA"),
+        ("Greek Orthodox Archdiocese of America", "Eastern Orthodox", "USA", "8 East 79th Street, New York, NY 10075, USA"),
+        ("Orthodox Church in America", "Eastern Orthodox", "USA", "6850 North Hempstead Turnpike, Syosset, NY 11791, USA"),
+        ("Jehovah's Witnesses", "Restorationist", "USA", "World Headquarters, Warwick, New York, USA"),
+        ("Hillsong Church", "Pentecostal / Contemporary", "Australia", "PO Box 1195, Castle Hill NSW 1765, Australia"),
+        ("Lakewood Church", "Evangelical / Megachurch", "USA", "3700 Southwest Freeway, Houston, TX 77027, USA"),
+        ("Saddleback Church", "Evangelical / Megachurch", "USA", "1 Saddleback Parkway, Lake Forest, CA 92630, USA"),
+        ("Bethel Church", "Evangelical / Charismatic", "USA", "933 College View Drive, Redding, CA 96003, USA"),
+        ("Living Faith Church Worldwide", "Pentecostal / Charismatic", "Nigeria", "Faith Tabernacle, Canaanland, Ota, Ogun State, Nigeria"),
+        ("Redeemed Christian Church of God (RCCG)", "Pentecostal", "Nigeria", "Redemption City, Lagos-Ibadan Expressway, Ogun State, Nigeria"),
+        ("Deeper Christian Life Ministry", "Evangelical / Pentecostal", "Nigeria", "2–10 Ayodele Oke-Owo Street, Gbagada, Lagos, Nigeria"),
+        ("Mountain of Fire and Miracles Ministries (MFM)", "Pentecostal", "Nigeria", "13 Olasimbo Street, Onike, Yaba, Lagos 100213, Nigeria"),
+        ("Foursquare Gospel Church in Nigeria", "Pentecostal", "Nigeria", "38 Akinwunmi Street, Alagomeji, Yaba, Lagos, Nigeria"),
+        ("Salvation Ministries", "Pentecostal", "Nigeria", "Plot 17, Birabi Street, GRA Phase 1, Port Harcourt, Rivers State, Nigeria"),
+    ]
+    added = 0
+    for i, (name, doctrine, country, address) in enumerate(churches, 1):
+        code = f"GLB-{i:03d}"
+        existing = session.exec(select(ChurchUnit).where(ChurchUnit.code == code)).first()
+        if existing:
+            continue
+        by_name = session.exec(
+            select(ChurchUnit).where(
+                ChurchUnit.name == name,
+                ChurchUnit.level == ChurchLevel.global_church,
+            )
+        ).first()
+        if by_name:
+            continue
+        session.add(ChurchUnit(
+            code=code,
+            name=name,
+            level=ChurchLevel.global_church,
+            parent_id=None,
+            global_code=code,
+            country_name=country,
+            doctrine=doctrine,
+            address=address,
+            approval_status="approved",
+            is_active=True,
+        ))
+        added += 1
+    if added:
+        session.commit()
+        print(f"✅ Global denomination directory: {added} churches")
+
+
 def ensure_all_sample_data(session: Session) -> None:
     """Single entry: hierarchy, stats, music, sample member, password resets."""
     seed_knowsoft_bible_church(session)
@@ -385,6 +443,7 @@ def ensure_all_sample_data(session: Session) -> None:
     try:
         seed_sample_member(session)
         seed_church_music(session)
+        seed_global_denominations(session)
     except Exception as e:
         print(f"⚠️ Sample member: {e}")
     print("✅ Sample logins:")
