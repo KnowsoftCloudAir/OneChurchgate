@@ -510,8 +510,7 @@ async def toggle_broadcast(
     session: Session = Depends(get_session),
 ):
     """District/church admin may grant broadcast privilege to an approved member."""
-    from app.activity import log_activity
-from app.auth import role_val
+    from app.auth import role_val
     if role_val(user.role) not in ("church_admin", "general_admin"):
         raise HTTPException(403, "Admin only")
     target = session.exec(select(User).where(User.member_id == member_id)).first()
