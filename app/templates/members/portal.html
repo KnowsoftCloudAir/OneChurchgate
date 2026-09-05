@@ -148,7 +148,7 @@
     </div>
 
     
-    {% if member and member.approval_status == 'waiting_approval' %}
+    {% if member and member.approval_status == 'waiting_approval' and had_expired_sub %}
     <div class="mb-5 rounded-2xl border-2 border-amber-400/90 bg-amber-500/20 p-4 shadow-lg relative z-10">
       <p class="font-bold text-sm">Subscription expired · waiting approval</p>
       <p class="text-xs ms-muted mt-1">Your access period has ended (welcome trial or paid plan). Status is <strong>waiting approval</strong> until General Admin confirms a new payment. You can still open <a href="/member/subscription" class="underline font-semibold">Subscription</a> and submit payment evidence.</p>
@@ -349,8 +349,9 @@
             <option :value="m.id" x-text="m.title"></option>
           </template>
         </select>
-        <div class="rounded-xl overflow-hidden bg-black aspect-video mb-2" x-show="music.playing">
-          <iframe class="w-full h-full" :src="'https://www.youtube.com/embed/' + music.id + '?rel=0'"
+        <div class="rounded-xl overflow-hidden bg-black aspect-video mb-2" x-show="music.playing" x-ref="ytWrap">
+          <iframe class="w-full h-full" x-ref="ytFrame"
+            :src="music.playing && music.id ? ('https://www.youtube.com/embed/' + music.id + '?rel=0&enablejsapi=1') : ''"
             title="Worship" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             allowfullscreen loading="lazy"></iframe>
         </div>
@@ -364,10 +365,16 @@
       <div class="flex flex-wrap justify-between gap-2 items-start mb-4">
         <div>
           <h2 class="font-bold text-lg">My subscription</h2>
-          <p class="text-xs ms-muted">{% if sample_info and sample_info.is_sample %}Sample trial timer{% else %}Running balance · time until expiry{% endif %}</p>
+          <p class="text-xs ms-muted">
+            {% if sample_info and sample_info.is_sample %}Sample trial timer
+            {% elif sub_active and sub_is_welcome %}Welcome access · time left
+            {% elif sub_active %}Running balance · time left
+            {% elif had_expired_sub %}Subscription expired · renew below
+            {% else %}No plan yet · welcome starts on first approved login{% endif %}
+          </p>
         </div>
         {% if not (sample_info and sample_info.is_sample) %}
-        <a href="/member/subscription" class="text-xs font-semibold ms-accent underline">Full payment page →</a>
+        <a href="/member/subscription" class="text-xs font-semibold ms-accent underline">Payment page →</a>
         {% endif %}
       </div>
 
@@ -377,81 +384,110 @@
           <div class="relative w-40 h-40">
             <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
               <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(128,128,128,0.25)" stroke-width="3.2"></circle>
-              <circle cx="18" cy="18" r="15.5" fill="none" stroke="#fbbf24" stroke-width="3.2"
-                      stroke-linecap="round"
-                      stroke-dasharray="{{ sample_info.pct_left }} 100"></circle>
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke="#fbbf24" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="{{ sample_info.pct_left }} 100"></circle>
             </svg>
             <div class="absolute inset-0 flex flex-col items-center justify-center text-center px-2">
-              <span class="text-2xl font-black leading-none" id="sampleCountdown">
-                {{ sample_info.minutes_left }}m {{ '%02d'|format(sample_info.seconds_left % 60 if sample_info.seconds_left is not none else 0) }}s
-              </span>
-              <span class="text-[10px] ms-muted uppercase tracking-wide">sample left</span>
+              <span class="text-2xl font-black leading-none" id="sampleCountdown">{{ sample_info.minutes_left }}m</span>
+              <span class="text-[10px] ms-muted uppercase">sample left</span>
             </div>
           </div>
-          <p class="text-xs ms-muted mt-2">5-minute sample from first use</p>
         </div>
-        <div class="space-y-2 text-sm">
-          <p class="font-semibold text-amber-300">Sample account · no paid subscription</p>
-          <p class="text-xs ms-muted leading-relaxed">{{ sample_info.message }}</p>
-          <p class="text-xs font-semibold text-amber-200">Sample members cannot subscribe or pay.</p>
-          <a href="/join" class="ms-btn inline-block mt-2 px-4 py-2 text-xs">Register as full member →</a>
+        <div class="text-sm space-y-2">
+          <p class="font-semibold text-amber-300">Sample · cannot subscribe</p>
+          <p class="text-xs ms-muted">{{ sample_info.message }}</p>
+          <a href="/join" class="ms-btn inline-block px-4 py-2 text-xs">Register as full member →</a>
         </div>
       </div>
+      {% elif sub_active %}
+      <div class="grid sm:grid-cols-2 gap-5 items-center">
+        <div class="flex flex-col items-center">
+          <div class="relative w-40 h-40">
+            <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(128,128,128,0.25)" stroke-width="3.2"></circle>
+              <circle cx="18" cy="18" r="15.5" fill="none" stroke="{% if sub_is_welcome %}#60a5fa{% else %}#34d399{% endif %}" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="{{ sub_pct }} 100"></circle>
+            </svg>
+            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+              {% if sub_is_welcome or sub_days_left == 0 %}
+              <span class="text-2xl font-black leading-none" id="subCountdown">{{ sub_hours_left }}h {{ (sub_secs_left % 3600) // 60 }}m</span>
+              <span class="text-[10px] ms-muted uppercase">{% if sub_is_welcome %}welcome left{% else %}time left{% endif %}</span>
+              {% else %}
+              <span class="text-3xl font-black leading-none">{{ sub_days_left }}</span>
+              <span class="text-[10px] ms-muted uppercase">days{% if sub_hours_left %} · {{ sub_hours_left }}h{% endif %}</span>
+              {% endif %}
+            </div>
+          </div>
+          <p class="text-xs ms-muted mt-2">{{ sub_pct }}% remaining</p>
+        </div>
+        <div class="space-y-2 text-sm">
+          <p class="font-semibold {% if sub_is_welcome %}text-sky-300{% else %}text-emerald-400{% endif %}">
+            {% if sub_is_welcome %}✓ Welcome trial (30 min){% else %}✓ Active · {{ sub_active.plan|capitalize }}{% endif %}
+          </p>
+          <div class="rounded-xl bg-black/20 p-3 space-y-1 text-xs">
+            {% if not sub_is_welcome %}
+            <p>Paid: <strong class="ms-accent">{{ sub_active.currency }} {{ "%.2f"|format(sub_active.amount) }}</strong></p>
+            {% endif %}
+            <p>Expires: <strong class="text-amber-300">{{ sub_active.ends_at }}</strong></p>
+            <p>Ref: {{ sub_active.payment_reference or "—" }}</p>
+          </div>
+          {% if not sub_is_welcome %}
+          <a href="/member/subscription" class="ms-btn inline-block mt-1 px-4 py-2 text-xs">Renew</a>
+          {% else %}
+          <p class="text-xs ms-muted">After welcome ends you can submit payment evidence.</p>
+          {% endif %}
+        </div>
+      </div>
+      {% if sub_is_welcome or (sub_secs_left and sub_secs_left < 86400) %}
       <script>
       (function(){
-        var left = {{ sample_info.seconds_left or 0 }};
-        var el = document.getElementById('sampleCountdown');
+        var left = {{ sub_secs_left or 0 }};
+        var el = document.getElementById('subCountdown');
         if(!el) return;
         function tick(){
-          if(left <= 0){ el.textContent = '0m 00s'; return; }
-          var m = Math.floor(left/60), s = left % 60;
-          el.textContent = m + 'm ' + String(s).padStart(2,'0') + 's';
+          if(left <= 0){ el.textContent = '0h 0m'; return; }
+          var h = Math.floor(left/3600), m = Math.floor((left%3600)/60), s = left%60;
+          el.textContent = h + 'h ' + m + 'm ' + String(s).padStart(2,'0') + 's';
           left -= 1;
           setTimeout(tick, 1000);
         }
         tick();
       })();
       </script>
-      {% elif sub_active %}
-
-      <div class="grid sm:grid-cols-2 gap-5 items-center">
-        <div class="flex flex-col items-center">
-          <div class="relative w-40 h-40">
-            <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
-              <circle cx="18" cy="18" r="15.5" fill="none" stroke="rgba(128,128,128,0.25)" stroke-width="3.2"></circle>
-              <circle cx="18" cy="18" r="15.5" fill="none" stroke="#34d399" stroke-width="3.2"
-                      stroke-linecap="round"
-                      stroke-dasharray="{{ sub_pct }} 100"></circle>
-            </svg>
-            <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
-              <span class="text-3xl font-black leading-none">{{ sub_days_left }}</span>
-              <span class="text-[10px] ms-muted uppercase tracking-wide">days{% if sub_hours_left is defined and sub_hours_left %} · {{ sub_hours_left }}h{% endif %}</span>
-            </div>
-          </div>
-          <p class="text-xs ms-muted mt-2">{{ sub_pct }}% of plan remaining</p>
-        </div>
-        <div class="space-y-2 text-sm">
-          <p class="font-semibold text-emerald-400">✓ Active · {{ sub_active.plan|capitalize }}</p>
-          <div class="rounded-xl bg-black/20 p-3 space-y-1 text-xs">
-            <p>Paid: <strong class="ms-accent">{{ sub_active.currency }} {{ "%.2f"|format(sub_active.amount) }}</strong></p>
-            <p>Duration: <strong>{{ sub_active.duration_days }} days</strong></p>
-            <p>Started: <strong>{{ sub_active.starts_at }}</strong></p>
-            <p>Expires: <strong class="text-amber-300">{{ sub_active.ends_at }}</strong></p>
-            <p>Ref: {{ sub_active.payment_reference or "—" }}</p>
-          </div>
-          <p class="text-xs ms-muted">Renew from: <strong class="ms-accent">{% if sub_settings %}{{ sub_settings.currency }} {{ "%.2f"|format(sub_settings.monthly_price) }}/mo{% else %}see plans{% endif %}</strong></p>
-          <a href="/member/subscription" class="ms-btn inline-block mt-1 px-4 py-2 text-xs">Renew subscription</a>
-        </div>
+      {% endif %}
+      {% elif had_expired_sub %}
+      <div class="rounded-xl bg-black/15 p-4 text-sm">
+        <p class="font-semibold text-amber-300 mb-1">Subscription expired</p>
+        <p class="text-xs ms-muted mb-3">Your previous plan ended. Submit payment evidence to continue. Status: waiting approval until confirmed.</p>
+        <a href="/member/subscription" class="ms-btn inline-block px-4 py-2 text-sm">Renew / pay →</a>
       </div>
       {% else %}
       <div class="rounded-xl bg-black/15 p-4 text-sm">
-        <p class="font-semibold mb-1">No active subscription</p>
-        <p class="text-xs ms-muted mb-2">Time remaining: <strong>0 days</strong> · Running balance expired or not started.</p>
-        <p class="text-xs ms-muted mb-3">Minimum to renew:
-          <strong class="ms-accent">{% if sub_settings %}{{ sub_settings.currency }} {{ "%.2f"|format(sub_settings.monthly_price) }}/mo · {{ sub_settings.currency }} {{ "%.2f"|format(sub_settings.annual_price) }}/yr{% else %}set by admin{% endif %}</strong>
-        </p>
-        <a href="/member/subscription" class="ms-btn inline-block px-4 py-2 text-sm">Activate plan →</a>
+        <p class="font-semibold mb-1">No paid plan yet</p>
+        <p class="text-xs ms-muted mb-2">After district approval, your <strong>30-minute welcome</strong> starts on first login and appears here as a timer — this is <em>not</em> an expired subscription.</p>
+        <a href="/member/subscription" class="ms-btn inline-block px-4 py-2 text-sm">View plans →</a>
       </div>
+      {% endif %}
+    </section>
+
+
+    <section id="pastor-msg" class="ms-card p-5 mb-5">
+      <h2 class="font-bold text-lg mb-2">Message from pastor</h2>
+      {% if pastor_messages %}
+      <div class="space-y-4">
+        {% for pm in pastor_messages %}
+        <div class="rounded-xl bg-black/15 p-3">
+          <p class="font-semibold text-sm">{{ pm.title }}</p>
+          {% if pm.body %}<p class="text-xs ms-muted mt-1 whitespace-pre-wrap">{{ pm.body }}</p>{% endif %}
+          {% if pm.youtube_id %}
+          <div class="mt-2 rounded-lg overflow-hidden aspect-video bg-black">
+            <iframe class="w-full h-full" src="https://www.youtube.com/embed/{{ pm.youtube_id }}?rel=0" allowfullscreen loading="lazy"></iframe>
+          </div>
+          {% endif %}
+          <p class="text-[10px] ms-muted mt-1">{{ pm.created_at }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-sm ms-muted">No pastor messages yet.</p>
       {% endif %}
     </section>
 
@@ -695,12 +731,25 @@ function memberHub() {
     nextSlide() {
       if (this.bible.slideIndex < this.bible.slides.length - 1) { this.bible.slideIndex++; if (this.bible.voiceOn) this.speakCurrent(); }
     },
+    pauseMusicForSpeech() {
+      this._musicWasPlaying = !!this.music.playing;
+      if (this.music.playing) {
+        this.music.playing = false; // unloads iframe so audio stops
+      }
+    },
+    resumeMusicAfterSpeech() {
+      if (this._musicWasPlaying) {
+        this.music.playing = true;
+        this._musicWasPlaying = false;
+      }
+    },
     speakCurrent(chain) {
       if (!this.bible.slides.length || !('speechSynthesis' in window)) return;
       if (!chain) {
         this.bible.continuous = false;
         this.bible.announcedChapter = false;
       }
+      this.pauseMusicForSpeech();
       if ('speechSynthesis' in window) speechSynthesis.cancel();
       const s = this.bible.slides[this.bible.slideIndex];
       let plain = (s.text || '').replace(/[“”"']/g, ' ');
@@ -729,8 +778,10 @@ function memberHub() {
         } else {
           this.bible.continuous = false;
           this.bible.announcedChapter = false;
+          this.resumeMusicAfterSpeech();
         }
       };
+      u.onerror = () => { this.bible.continuous = false; this.resumeMusicAfterSpeech(); };
       speechSynthesis.speak(u);
     },
     startContinuous() {
@@ -745,7 +796,9 @@ function memberHub() {
     },
     stopSpeak() {
       this.bible.continuous = false;
+      this.bible.announcedChapter = false;
       if ('speechSynthesis' in window) speechSynthesis.cancel();
+      this.resumeMusicAfterSpeech();
     },
     bibleProgress() {
       if (!this.bible.slides.length) return 0;

@@ -439,12 +439,14 @@ class YoutubeChannelLink(SQLModel, table=True):
 
 
 class MusicLink(SQLModel, table=True):
-    """YouTube worship tracks managed by General Admin."""
+    """YouTube worship tracks — General Admin (global) or church admin (district)."""
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str
     youtube_id: str = Field(index=True)
     is_active: bool = Field(default=True)
     sort_order: int = Field(default=0)
+    church_id: Optional[int] = Field(default=None, foreign_key="churchunit.id", index=True)  # null = platform-wide
+    created_by: Optional[int] = Field(default=None, foreign_key="user.id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -503,4 +505,16 @@ class MemberSubscription(SQLModel, table=True):
     confirmed_at: Optional[datetime] = None
     confirmed_by: Optional[int] = None
     note: Optional[str] = Field(default=None, sa_column=Column(Text))
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class PastorMessage(SQLModel, table=True):
+    """Message / YouTube note from district pastor or church admin to members."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    church_id: int = Field(foreign_key="churchunit.id", index=True)
+    sender_user_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    title: str = Field(default="Message from pastor")
+    body: Optional[str] = Field(default=None, sa_column=Column(Text))
+    youtube_id: Optional[str] = None
+    is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)

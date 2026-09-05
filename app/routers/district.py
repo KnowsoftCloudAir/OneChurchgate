@@ -429,3 +429,129 @@ async def edit_member_status(
         session.add(u)
     session.commit()
     return RedirectResponse("/district/members", status_code=303)
+
+
+# ---- Church YouTube music + pastor messages ----
+def _parse_youtube_id(raw: str) -> str:
+    yid = (raw or "").strip()
+    if "youtu.be/" in yid:
+        yid = yid.split("youtu.be/")[-1].split("?")[0]
+    elif "v=" in yid:
+        yid = yid.split("v=")[-1].split("&")[0]
+    return yid.strip()[:20]
+
+
+@router.get("/music", response_class=HTMLResponse)
+async def church_music_page(
+    request: Request,
+    user: User = Depends(require_roles(UserRole.church_admin, UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    from app.models import MusicLink
+    church = get_user_church(user, session)
+    if not church:
+        raise HTTPException(400, "No church linked")
+    links = list(session.exec(
+        select(MusicLink).where(MusicLink.church_id == church.id).order_by(MusicLink.sort_order, MusicLink.id)
+    ).all())
+    return templates.TemplateResponse("district/music.html", {
+        "request": request, "user": user, "church": church, "links": links,
+    })
+
+
+@router.post("/music/add")
+async def church_music_add(
+    title: str = Form(...),
+    youtube_id: str = Form(...),
+    user: User = Depends(require_roles(UserRole.church_admin, UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    from app.models import MusicLink
+    church = get_user_church(user, session)
+    if not church:
+        raise HTTPException(400, "No church linked")
+    yid = _parse_youtube_id(youtube_id)
+    if not yid:
+        raise HTTPException(400, "Invalid YouTube link")
+    session.add(MusicLink(
+        title=title.strip(), youtube_id=yid, is_active=True,
+        church_id=church.id, created_by=user.id, sort_order=0,
+    ))
+    session.commit()
+    return RedirectResponse("/district/music", status_code=303)
+
+
+@router.post("/music/{link_id}/delete")
+async def church_music_delete(
+    link_id: int,
+    user: User = Depends(require_roles(UserRole.church_admin, UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    from app.models import MusicLink
+    church = get_user_church(user, session)
+    link = session.get(MusicLink, link_id)
+    if not link or (church and link.church_id != church.id and user.role != UserRole.general_admin):
+        raise HTTPException(404)
+    session.delete(link)
+    session.commit()
+    return RedirectResponse("/district/music", status_code=303)
+
+
+@router.get("/pastor-messages", response_class=HTMLResponse)
+async def pastor_messages_page(
+    request: Request,
+    user: User = Depends(require_roles(UserRole.church_admin, UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    from app.models import PastorMessage
+    church = get_user_church(user, session)
+    if not church:
+        raise HTTPException(400, "No church linked")
+    msgs = list(session.exec(
+        select(PastorMessage).where(PastorMessage.church_id == church.id)
+        .order_by(PastorMessage.created_at.desc())
+    ).all())
+    return templates.TemplateResponse("district/pastor_messages.html", {
+        "request": request, "user": user, "church": church, "msgs": msgs,
+    })
+
+
+@router.post("/pastor-messages/add")
+async def pastor_messages_add(
+    title: str = Form("Message from pastor"),
+    body: str = Form(""),
+    youtube_id: str = Form(""),
+    user: User = Depends(require_roles(UserRole.church_admin, UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    from app.models import PastorMessage
+    church = get_user_church(user, session)
+    if not church:
+        raise HTTPException(400, "No church linked")
+    yid = _parse_youtube_id(youtube_id) if youtube_id.strip() else None
+    session.add(PastorMessage(
+        church_id=church.id,
+        sender_user_id=user.id,
+        title=(title or "Message from pastor").strip(),
+        body=(body or "").strip() or None,
+        youtube_id=yid or None,
+        is_active=True,
+    ))
+    session.commit()
+    return RedirectResponse("/district/pastor-messages", status_code=303)
+
+
+@router.post("/pastor-messages/{msg_id}/delete")
+async def pastor_messages_delete(
+    msg_id: int,
+    user: User = Depends(require_roles(UserRole.church_admin, UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    from app.models import PastorMessage
+    church = get_user_church(user, session)
+    msg = session.get(PastorMessage, msg_id)
+    if not msg or (church and msg.church_id != church.id and user.role != UserRole.general_admin):
+        raise HTTPException(404)
+    session.delete(msg)
+    session.commit()
+    return RedirectResponse("/district/pastor-messages", status_code=303)

@@ -205,11 +205,16 @@ async def member_portal(
 
     sample_warning = None
     sample_info = None
+    pastor_messages = []
     sub_active = None
     sub_settings = None
     sub_days_left = 0
     sub_hours_left = 0
+    sub_secs_left = 0
     sub_pct = 0
+    sub_is_welcome = False
+    had_expired_sub = False
+    pastor_messages = []
     try:
         from app.routers.subscriptions import check_sample_member, expire_due_subscriptions, _settings, ensure_welcome_trial
         from app.models import MemberSubscription
@@ -229,22 +234,39 @@ async def member_portal(
             .order_by(MemberSubscription.created_at.desc())
         ).all())
         sub_active = next((s for s in subs if s.status == "active"), None)
+        had_expired_sub = any(s.status == "expired" for s in subs)
         sub_days_left = 0
         sub_hours_left = 0
+        sub_secs_left = 0
         sub_pct = 0
+        sub_is_welcome = False
         if sub_active and sub_active.ends_at:
             from datetime import datetime as _dt
             delta = sub_active.ends_at - _dt.utcnow()
             secs = max(0, int(delta.total_seconds()))
+            sub_secs_left = secs
             sub_days_left = secs // 86400
             sub_hours_left = (secs % 86400) // 3600
-            total = max(1, sub_active.duration_days or 30)
-            # percent of time remaining
+            sub_is_welcome = (sub_active.plan or "") == "welcome"
             if sub_active.starts_at and sub_active.ends_at:
                 total_secs = max(1, int((sub_active.ends_at - sub_active.starts_at).total_seconds()))
-                sub_pct = min(100, round(100 * secs / total_secs))
+                sub_pct = min(100, max(0, round(100 * secs / total_secs)))
             else:
-                sub_pct = min(100, round(100 * sub_days_left / total))
+                sub_pct = 100 if secs > 0 else 0
+        # Pastor messages for this church
+        try:
+            from app.models import PastorMessage
+            cid = user.church_id or (member.church_id if member else None)
+            if cid:
+                pastor_messages = list(session.exec(
+                    select(PastorMessage).where(
+                        PastorMessage.church_id == cid,
+                        PastorMessage.is_active == True,
+                    ).order_by(PastorMessage.created_at.desc()).limit(10)
+                ).all())
+        except Exception as pe:
+            print("pastor msgs", pe)
+            pastor_messages = []
 
     except Exception as e:
         print("sample/sub check:", e)
@@ -260,7 +282,11 @@ async def member_portal(
         "sub_settings": sub_settings,
         "sub_days_left": sub_days_left,
         "sub_hours_left": sub_hours_left,
+        "sub_secs_left": sub_secs_left,
         "sub_pct": sub_pct,
+        "sub_is_welcome": sub_is_welcome,
+        "had_expired_sub": had_expired_sub,
+        "pastor_messages": pastor_messages,
         "is_preview": is_preview,
     })
 
@@ -351,21 +377,34 @@ async def geo_countries():
 
 
 @router.get("/api/music-links")
-async def api_music_links(session: Session = Depends(get_session)):
-    """Active YouTube tracks for member portal (managed by General Admin)."""
+async def api_music_links(
+    session: Session = Depends(get_session),
+    user: Optional[User] = Depends(get_current_user),
+):
+    """Active YouTube tracks: platform (GA) + this member's church (church admin)."""
     from app.models import MusicLink
+    from sqlalchemy import or_
     try:
-        links = list(session.exec(
-            select(MusicLink).where(MusicLink.is_active == True).order_by(MusicLink.sort_order, MusicLink.id)
-        ).all())
+        q = select(MusicLink).where(MusicLink.is_active == True)
+        rows = list(session.exec(q.order_by(MusicLink.sort_order, MusicLink.id)).all())
+        cid = getattr(user, "church_id", None) if user else None
+        links = []
+        for L in rows:
+            if L.church_id is None or (cid and L.church_id == cid):
+                links.append(L)
     except Exception:
         links = []
     out = []
+    seen = set()
     for L in links:
         yid = (L.youtube_id or "").strip()
-        if not yid:
+        if not yid or yid in seen:
             continue
-        out.append({"id": yid, "title": L.title or yid})
+        seen.add(yid)
+        label = L.title or yid
+        if L.church_id:
+            label = f"{label} (church)"
+        out.append({"id": yid, "title": label})
     return out
 
 
