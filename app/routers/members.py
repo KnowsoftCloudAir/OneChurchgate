@@ -153,11 +153,15 @@ async def member_portal(
         member = session.exec(select(ChurchMember).where(ChurchMember.email == user.email)).first()
 
     is_sample = bool(getattr(user, "is_sample_account", False))
-    is_preview = bool(
+    status = (getattr(member, "approval_status", None) or "") if member else ""
+    is_preview = bool(member and status == "pending" and not is_sample)
+    # Expired / waiting payment: same limited surface as awaiting approval
+    is_awaiting_payment = bool(
         member
-        and getattr(member, "approval_status", None) == "pending"
+        and status in ("waiting_approval", "waiting_subscription")
         and not is_sample
     )
+
 
     church = session.get(ChurchUnit, user.church_id) if user.church_id else None
     if not church and member and getattr(member, "church_id", None):
@@ -186,13 +190,17 @@ async def member_portal(
         )
         from app.models import MemberSubscription
         expire_due_subscriptions(session)
-        if not is_sample and not is_preview:
+        if not is_sample and not is_preview and not is_awaiting_payment:
             try:
                 ensure_welcome_trial(session, user)
             except Exception as we:
                 print("welcome trial:", we)
             if user.member_id:
                 member = session.get(ChurchMember, user.member_id) or member
+            status = (getattr(member, "approval_status", None) or "") if member else status
+            is_awaiting_payment = bool(
+                member and status in ("waiting_approval", "waiting_subscription") and not is_sample
+            )
 
         sample_info = check_sample_member(session, user)
         if sample_info.get("expired"):
@@ -233,7 +241,7 @@ async def member_portal(
             sample_warning = sample_info["message"]
 
     # Programs / photos (optional)
-    if church and not is_preview:
+    if church and not is_preview and not is_awaiting_payment:
         try:
             scope = {church.id}
             ch = church
@@ -335,6 +343,7 @@ async def member_portal(
         "had_expired_sub": bool(had_expired_sub),
         "pastor_messages": pastor_messages or [],
         "is_preview": bool(is_preview),
+        "is_awaiting_payment": bool(is_awaiting_payment),
     })
 
 

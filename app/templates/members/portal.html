@@ -148,10 +148,10 @@
     </div>
 
     
-    {% if member and member.approval_status == 'waiting_approval' and had_expired_sub %}
+    {% if is_awaiting_payment %}
     <div class="mb-5 rounded-2xl border-2 border-amber-400/90 bg-amber-500/20 p-4 shadow-lg relative z-10">
-      <p class="font-bold text-sm">Subscription expired · waiting approval</p>
-      <p class="text-xs ms-muted mt-1">Your access period has ended (welcome trial or paid plan). Status is <strong>waiting approval</strong> until General Admin confirms a new payment. You can still open <a href="/member/subscription" class="underline font-semibold">Subscription</a> and submit payment evidence.</p>
+      <p class="font-bold text-sm">Awaiting approval · subscription required</p>
+      <p class="text-xs ms-muted mt-1">Your access has ended. You cannot use Bible, music, messages, or other resources until you pay and General Admin confirms. Use <a href="/member/subscription" class="underline font-semibold">Subscription</a> only.</p>
     </div>
     {% endif %}
     {% if is_preview %}
@@ -190,7 +190,19 @@
       <a href="/auth/change-password" class="text-xs font-semibold ms-accent underline">Password</a>
     </div>
 
-    {% if is_preview %}
+    
+    {% if is_awaiting_payment %}
+    <section class="ms-card p-5 mb-5 border-2 border-amber-400/50">
+      <h2 class="font-bold text-lg mb-2">Awaiting approval</h2>
+      <p class="text-sm ms-muted mb-4">Membership resources are locked until your subscription payment is confirmed.</p>
+      <div class="rounded-xl bg-black/20 p-4 mb-4">
+        <p class="text-xs ms-muted mb-1">Status</p>
+        <p class="font-semibold capitalize">{{ member.approval_status }}</p>
+      </div>
+      <a href="/member/subscription" class="ms-btn inline-block px-5 py-3 text-sm font-bold">Go to subscription &amp; pay →</a>
+      <p class="text-xs ms-muted mt-3">After you transfer, submit payment evidence. General Admin confirms → full access returns.</p>
+    </section>
+    {% elif is_preview %}
 
         <section class="ms-card p-5 mb-5">
       <h2 class="font-bold text-lg mb-2">What you unlock after approval</h2>
@@ -205,7 +217,7 @@
       <p class="text-xs ms-muted mt-4">Full access unlocks when your district admin approves your registration. You can still change your theme above while you wait.</p>
     </section>
     
-    {% elif member.approval_status in ('approved', 'waiting_approval', 'waiting_subscription') %}
+    {% elif member.approval_status == 'approved' and not is_awaiting_payment %}
 
     <nav class="flex flex-wrap gap-2 mb-6 text-xs font-semibold">
       <a href="#devotions" class="px-3 py-1.5 rounded-full ms-card">Devotions</a>

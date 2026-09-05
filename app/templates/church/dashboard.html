@@ -30,6 +30,22 @@
     <h1 class="text-2xl font-bold mb-6">Dashboard</h1>
     {% endif %}
 
+    
+    <!-- Church music quick action -->
+    <div class="mb-8">
+      <a href="/district/music"
+         class="flex flex-wrap items-center justify-between gap-4 rounded-2xl border-2 border-amber-300/80 bg-gradient-to-r from-indigo-600 to-violet-700 p-5 shadow-xl hover:from-indigo-500 hover:to-violet-600 transition">
+        <div class="flex items-center gap-4">
+          <span class="text-4xl" aria-hidden="true">🎵</span>
+          <div>
+            <p class="text-lg font-bold text-white">Church music</p>
+            <p class="text-sm text-indigo-100">Add YouTube songs for <strong>your church level only</strong> (Global stays global). Members under you see them on My church music.</p>
+          </div>
+        </div>
+        <span class="px-4 py-2 rounded-xl bg-amber-400 text-slate-900 text-sm font-bold shrink-0">Add YouTube link →</span>
+      </a>
+    </div>
+
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
       <div class="stat-card rounded-2xl p-5">
         <p class="text-xs text-blue-200 uppercase">Registered members</p>

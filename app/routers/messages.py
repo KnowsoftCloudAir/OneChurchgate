@@ -9,7 +9,7 @@ from sqlmodel import Session, select
 
 from app.database import get_session
 from app.models import User, UserRole, ChurchMember, DistrictMessage
-from app.auth import require_user, role_val
+from app.auth import require_user, role_val, member_access_locked
 
 router = APIRouter(prefix="/messages", tags=["messages"])
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
@@ -50,6 +50,8 @@ async def messages_inbox(
     user: User = Depends(require_user),
     session: Session = Depends(get_session),
 ):
+    if member_access_locked(session, user):
+        return RedirectResponse("/member/portal", status_code=303)
     cid = _district_id_for_user(user, session)
     if not cid:
         raise HTTPException(400, "No church linked")

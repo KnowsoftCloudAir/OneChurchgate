@@ -98,3 +98,39 @@ def require_roles(*roles: UserRole):
             raise HTTPException(status_code=403, detail="Insufficient permissions")
         return user
     return checker
+
+
+def member_access_locked(session, user: User) -> bool:
+    """True if member must pay before using resources (waiting_approval / no active sub after expiry)."""
+    from app.models import ChurchMember, MemberSubscription
+    from sqlmodel import select
+    if not user:
+        return False
+    rv = role_val(user.role)
+    if rv in ("general_admin", "church_admin", "data_officer"):
+        return False
+    if getattr(user, "is_sample_account", False):
+        return False  # sample handled separately
+    if rv != "member":
+        return False
+    mem = session.get(ChurchMember, user.member_id) if user.member_id else None
+    if not mem:
+        mem = session.exec(select(ChurchMember).where(ChurchMember.email == user.email)).first()
+    if not mem:
+        return True
+    status = (mem.approval_status or "").lower()
+    if status in ("pending", "rejected", "discontinued", "deactivated"):
+        return status != "pending"  # pending has its own preview; lock hard rejects
+    if status == "waiting_approval" or status == "waiting_subscription":
+        return True
+    # approved but no active subscription and had expiry → should already be waiting_approval
+    active = session.exec(
+        select(MemberSubscription).where(
+            MemberSubscription.user_id == user.id,
+            MemberSubscription.status == "active",
+        )
+    ).first()
+    if status == "approved" and not active:
+        # first-time approved before welcome runs: not locked yet
+        return False
+    return False

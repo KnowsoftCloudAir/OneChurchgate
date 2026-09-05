@@ -14,7 +14,7 @@ from app.models import (
     Testimony, TestimonyLike, TestimonyComment,
     HeartNeed, HeartDonation, HeartDistribution,
 )
-from app.auth import require_user, require_roles, role_val
+from app.auth import require_user, require_roles, role_val, member_access_locked
 
 router = APIRouter(tags=["community"])
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
@@ -78,6 +78,8 @@ async def focus_groups_list(
     user: User = Depends(require_user),
     session: Session = Depends(get_session),
 ):
+    if member_access_locked(session, user):
+        return RedirectResponse("/member/portal", status_code=303)
     cid = _church_id(user)
     if not cid:
         return templates.TemplateResponse("community/empty.html", {
