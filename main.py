@@ -11,6 +11,7 @@ from app.database import create_db_and_tables, get_session, engine
 from app.models import User, UserRole
 from app.auth import get_password_hash, get_current_user, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from app.routers import auth, admin, church, district, members, programs, projects, community, payments, youtube_data, messages, subscriptions
+from app.seed_sample import ensure_all_sample_data
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,7 +37,12 @@ async def lifespan(app: FastAPI):
             session.commit()
             print("✅ General Admin ready: admin@knowsoft.com / Admin@12345")
 
-            ensure_all_sample_data(session)
+            try:
+                ensure_all_sample_data(session)
+            except Exception as se:
+                print(f"⚠️ Sample data seed failed: {se}")
+                import traceback
+                traceback.print_exc()
     except Exception as e:
         print(f"⚠️ Seed: {e}")
         import traceback
