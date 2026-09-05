@@ -99,7 +99,9 @@ class User(SQLModel, table=True):
     can_create_churches: bool = Field(default=False)  # GA grants: create child churches
     can_approve_members: bool = Field(default=False)  # GA grants: approve member registrations
     can_see_member_count: bool = Field(default=False)
-    can_broadcast: bool = Field(default=False)  # approved to broadcast to members
+    can_broadcast: bool = Field(default=False)
+    is_sample_account: bool = Field(default=False)
+    sample_started_at: Optional[datetime] = None  # first login for time-bound sample  # approved to broadcast to members
     can_view_church_dashboard: bool = Field(default=False)
     can_manage_focus_groups: bool = Field(default=False)  # create focus groups / message them  # sub-admin grants church dashboard to member  # see district member totals
     is_active: bool = Field(default=True)
@@ -464,3 +466,39 @@ class MessageRead(SQLModel, table=True):
     message_id: int = Field(foreign_key="districtmessage.id", index=True)
     user_id: int = Field(foreign_key="user.id", index=True)
     read_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class SubscriptionSettings(SQLModel, table=True):
+    """General Admin sets member subscription prices and default duration."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str = Field(default="Member subscription")
+    currency: str = Field(default="NGN")
+    monthly_price: float = Field(default=1000.0)
+    annual_price: float = Field(default=10000.0)
+    custom_min_days: int = Field(default=7)
+    instructions: Optional[str] = Field(default=None, sa_column=Column(Text))
+    bank_name: Optional[str] = None
+    account_name: Optional[str] = None
+    account_number: Optional[str] = None
+    other_details: Optional[str] = Field(default=None, sa_column=Column(Text))
+    is_active: bool = Field(default=True)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class MemberSubscription(SQLModel, table=True):
+    """Member subscription request; General Admin confirms; auto-expires."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    member_id: Optional[int] = Field(default=None, foreign_key="churchmember.id")
+    plan: str = Field(default="monthly")  # monthly | annual | custom
+    amount: float = Field(default=0.0)
+    currency: str = Field(default="NGN")
+    duration_days: int = Field(default=30)
+    status: str = Field(default="pending")  # pending | active | expired | rejected
+    payment_reference: Optional[str] = None
+    starts_at: Optional[datetime] = None
+    ends_at: Optional[datetime] = None
+    confirmed_at: Optional[datetime] = None
+    confirmed_by: Optional[int] = None
+    note: Optional[str] = Field(default=None, sa_column=Column(Text))
+    created_at: datetime = Field(default_factory=datetime.utcnow)

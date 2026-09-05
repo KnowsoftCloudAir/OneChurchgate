@@ -10,7 +10,7 @@ from pathlib import Path
 from app.database import create_db_and_tables, get_session, engine
 from app.models import User, UserRole
 from app.auth import get_password_hash, get_current_user, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
-from app.routers import auth, admin, church, district, members, programs, projects, community, payments, youtube_data, messages
+from app.routers import auth, admin, church, district, members, programs, projects, community, payments, youtube_data, messages, subscriptions
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,45 +36,7 @@ async def lifespan(app: FastAPI):
             session.commit()
             print("✅ General Admin ready: admin@knowsoft.com / Admin@12345")
 
-            # Hierarchy + sample sub-admins
-            from app.seed_sample import seed_knowsoft_bible_church, SAMPLE_PASSWORD, DATA_PASSWORD, _ensure_admin, _ensure_district_sample_data, seed_music_links, seed_sample_member
-            seed_knowsoft_bible_church(session)
-            seed_music_links(session)
-            seed_sample_member(session)
-
-            # Force-reset sample passwords every boot (fixes old/wrong hashes on Render)
-            from app.models import ChurchUnit
-            samples = [
-                ("global@knowsoftchurch.org", "Apostle David Knowsoft", "KC-GLOBAL", SAMPLE_PASSWORD, UserRole.church_admin, False),
-                ("nigeria@knowsoftchurch.org", "Rev. Samuel Okonkwo", "KC-NG", SAMPLE_PASSWORD, UserRole.church_admin, False),
-                ("lagos@knowsoftchurch.org", "Pastor Grace Adeyemi", "KC-NG-LAG", SAMPLE_PASSWORD, UserRole.church_admin, False),
-                ("ikeja@knowsoftchurch.org", "Pastor Michael Bello", "KC-NG-LAG-IKE", SAMPLE_PASSWORD, UserRole.church_admin, False),
-                ("allen@knowsoftchurch.org", "Pastor Ruth Okoro", "KC-NG-LAG-IKE-ALLEN", SAMPLE_PASSWORD, UserRole.church_admin, False),
-                ("data@allen.knowsoftchurch.org", "Bro. James Data Officer", "KC-NG-LAG-IKE-ALLEN", DATA_PASSWORD, UserRole.data_officer, True),
-            ]
-            for email, name, code, pwd, role, stats in samples:
-                unit = session.exec(select(ChurchUnit).where(ChurchUnit.code == code)).first()
-                if unit:
-                    unit.approval_status = "approved"
-                    unit.is_active = True
-                    session.add(unit)
-                    session.commit()
-                    _ensure_admin(session, email, name, unit.id, role, pwd, stats)
-            # Force district sample data every boot
-            try:
-                district = session.exec(select(ChurchUnit).where(ChurchUnit.code == "KC-NG-LAG-IKE-ALLEN")).first()
-                global_c = session.exec(select(ChurchUnit).where(ChurchUnit.code == "KC-GLOBAL")).first()
-                country = session.exec(select(ChurchUnit).where(ChurchUnit.code == "KC-NG")).first()
-                state = session.exec(select(ChurchUnit).where(ChurchUnit.code == "KC-NG-LAG")).first()
-                group = session.exec(select(ChurchUnit).where(ChurchUnit.code == "KC-NG-LAG-IKE")).first()
-                if district:
-                    _ensure_district_sample_data(session, district, global_c, country, state, group)
-            except Exception as de:
-                print(f"⚠️ District sample: {de}")
-            print("✅ Sample logins reset:")
-            print("   global@knowsoftchurch.org / Church@12345")
-            print("   allen@knowsoftchurch.org / Church@12345")
-            print("   (and other hierarchy admins)")
+            ensure_all_sample_data(session)
     except Exception as e:
         print(f"⚠️ Seed: {e}")
         import traceback
@@ -102,6 +64,7 @@ app.include_router(projects.router)
 app.include_router(community.router)
 app.include_router(payments.router)
 app.include_router(messages.router)
+app.include_router(subscriptions.router)
 app.include_router(youtube_data.router)
 
 @app.get("/", response_class=HTMLResponse)

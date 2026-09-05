@@ -154,6 +154,14 @@
       </div>
     </div>
 
+    {% if sample_warning %}
+    <div class="mb-5 rounded-2xl border-2 border-amber-400/80 bg-amber-500/20 p-4 text-sm shadow-lg">
+      <p class="font-semibold">{{ sample_warning }}</p>
+      <a href="/join" class="inline-block mt-2 text-xs font-bold underline">Register as a full member →</a>
+      <a href="/member/subscription" class="inline-block mt-2 ml-3 text-xs font-bold underline">Subscription →</a>
+    </div>
+    {% endif %}
+
     {% if not member %}
     <div class="ms-card p-6 text-center">
       <p class="ms-muted">No member profile linked to this account.</p>

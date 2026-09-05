@@ -196,11 +196,25 @@ async def member_portal(
 
     weekly_note = (church.weekly_activities_note or church.activity_days) if church else None
 
+    sample_warning = None
+    try:
+        from app.routers.subscriptions import check_sample_member, expire_due_subscriptions
+        expire_due_subscriptions(session)
+        sample = check_sample_member(session, user)
+        if sample.get("expired"):
+            from fastapi.responses import RedirectResponse
+            return RedirectResponse("/auth/login?sample=expired", status_code=303)
+        if sample.get("show_warning"):
+            sample_warning = sample.get("message")
+    except Exception as e:
+        print("sample check:", e)
+
     return templates.TemplateResponse("members/portal.html", {
         "request": request, "user": user, "member": member, "church": church,
         "programs": programs, "photos": photos,
         "district_member_count": district_member_count,
         "weekly_note": weekly_note,
+        "sample_warning": sample_warning,
     })
 
 @router.post("/member/update-profile")

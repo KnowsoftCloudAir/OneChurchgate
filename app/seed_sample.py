@@ -1,9 +1,7 @@
 """Sample: Knowsoft Church — hierarchy, sub-admins, members, weekly stats."""
 from datetime import date, timedelta
 from sqlmodel import Session, select
-from app.models import MusicLink, DistrictMessage, (
-    User, UserRole, ChurchUnit, ChurchLevel, ChurchMember, WeeklyStat, SpecialProgram
-)
+from app.models import MusicLink, DistrictMessage, User, UserRole, ChurchUnit, ChurchLevel, ChurchMember, WeeklyStat, SpecialProgram
 from app.auth import get_password_hash
 
 FIRST = ["David", "Grace", "Samuel", "Ruth", "Michael", "Esther", "Daniel", "Hannah",
@@ -170,237 +168,172 @@ def _ensure_district_sample_data(session: Session, district, global_c, country, 
     session.commit()
 
 
-def seed_knowsoft_bible_church(session: Session) -> None:
-    try:
-        global_c = session.exec(select(ChurchUnit).where(ChurchUnit.code == "KC-GLOBAL")).first()
 
-        if not global_c:
-            def unit(**kw):
-                c = ChurchUnit(**kw)
+def seed_knowsoft_bible_church(session: Session) -> None:
+    """Always ensure full Knowsoft sample hierarchy + district data exist."""
+    try:
+        def unit_get_or_create(code: str, **kw):
+            c = session.exec(select(ChurchUnit).where(ChurchUnit.code == code)).first()
+            if c:
+                c.approval_status = "approved"
+                c.is_active = True
+                for k, v in kw.items():
+                    if v is not None and hasattr(c, k):
+                        setattr(c, k, v)
                 session.add(c)
                 session.commit()
                 session.refresh(c)
                 return c
-
-            global_c = unit(
-                code="KC-GLOBAL", name="Knowsoft Church", level=ChurchLevel.global_church,
-                global_code="KC-GLOBAL",
-                doctrine="Scripture-based faith, salvation in Christ, discipleship and mission.",
-                activity_days="Sunday, Wednesday, Friday",
-                owner_name="Apostle David Knowsoft", resident_pastor="Apostle David Knowsoft",
-                address="Knowsoft Global HQ, Abuja", phone="+234-800-100-0001",
-                email="global@knowsoftchurch.org", country_name="Nigeria",
-                approval_status="approved", is_active=True,
-            )
-            country = unit(
-                code="KC-NG", name="Knowsoft Church – Nigeria", level=ChurchLevel.country,
-                parent_id=global_c.id, global_code="KC-GLOBAL", country_code="KC-NG",
-                country_name="Nigeria", resident_pastor="Rev. Samuel Okonkwo",
-                email="nigeria@knowsoftchurch.org", approval_status="approved", is_active=True,
-            )
-            state = unit(
-                code="KC-NG-LAG", name="Knowsoft Church – Lagos State", level=ChurchLevel.state,
-                parent_id=country.id, global_code="KC-GLOBAL", country_code="KC-NG",
-                state_code="KC-NG-LAG", country_name="Nigeria", state_name="Lagos",
-                resident_pastor="Pastor Grace Adeyemi", email="lagos@knowsoftchurch.org",
-                approval_status="approved", is_active=True,
-            )
-            group = unit(
-                code="KC-NG-LAG-IKE", name="Knowsoft Church – Ikeja Group", level=ChurchLevel.group,
-                parent_id=state.id, global_code="KC-GLOBAL", country_code="KC-NG",
-                state_code="KC-NG-LAG", group_code="KC-NG-LAG-IKE",
-                country_name="Nigeria", state_name="Lagos",
-                resident_pastor="Pastor Michael Bello", email="ikeja@knowsoftchurch.org",
-                approval_status="approved", is_active=True,
-            )
-            district = unit(
-                code="KC-NG-LAG-IKE-ALLEN", name="Knowsoft Church – Allen Avenue District",
-                level=ChurchLevel.district, parent_id=group.id,
-                global_code="KC-GLOBAL", country_code="KC-NG", state_code="KC-NG-LAG",
-                group_code="KC-NG-LAG-IKE", district_code="KC-NG-LAG-IKE-ALLEN",
-                country_name="Nigeria", state_name="Lagos",
-                doctrine=global_c.doctrine, activity_days="Sunday, Wednesday, Friday",
-                owner_name="Apostle David Knowsoft", resident_pastor="Pastor Ruth Okoro",
-                address="12 Allen Avenue, Ikeja, Lagos", phone="+234-801-234-5678",
-                email="allen@knowsoftchurch.org", approval_status="approved", is_active=True,
-            )
-
-            # Members
-            import itertools
-            statuses = [
-                ("member", None, None), ("member", None, None), ("member", None, None),
-                ("worker", "usher", None), ("worker", "choir", None), ("worker", "prayer", None),
-                ("worker", "evangelist", None), ("worker", "media", None),
-                ("leader", None, "coordinator"), ("leader", None, "women_leader"),
-                ("leader", None, "children_leader"), ("leader", None, "bible_study_teacher"),
-                ("pastor", None, "group_pastor"),
-            ]
-            sexes = ["brother", "sister"]
-            ages = ["child", "youth", "campus", "adult"]
-            conf = ["saved", "saved", "saved", "restored", "backslidden"]
-            n = 0
-            for i, (fn, ln) in enumerate(itertools.product(FIRST, LAST)):
-                if n >= 80:
-                    break
-                st, wt, lt = statuses[i % len(statuses)]
-                session.add(ChurchMember(
-                    church_id=district.id,
-                    global_church_id=global_c.id,
-                    country_church_id=country.id,
-                    state_church_id=state.id,
-                    group_church_id=group.id,
-                    full_name=f"{fn} {ln}",
-                    sex=sexes[i % 2],
-                    age_category=ages[i % 4],
-                    confession=conf[i % 5],
-                    member_since=date.today() - timedelta(days=30 * (i % 24)),
-                    whatsapp=f"+23480{1000000 + i}",
-                    phone=f"+23480{1000000 + i}",
-                    email=f"member{i}@knowsoftchurch.sample",
-                    address=f"{10 + i} Sample Street, Ikeja, Lagos",
-                    status=st, worker_type=wt, leader_type=lt,
-                    approval_status="approved", is_active=True,
-                ))
-                n += 1
+            c = ChurchUnit(code=code, approval_status="approved", is_active=True, **kw)
+            session.add(c)
             session.commit()
+            session.refresh(c)
+            return c
 
-            today = date.today()
-            monday = today - timedelta(days=today.weekday())
-            for w in range(12):
-                ws = monday - timedelta(weeks=11 - w)
-                base = 40 + (w % 5) * 3
-                session.add(WeeklyStat(
-                    church_id=district.id, week_start=ws,
-                    adult_male=base, adult_female=base + 12,
-                    children_boys=10 + w % 4, children_girls=12 + w % 3,
-                    youth_male=15 + w % 5, youth_female=18 + w % 4,
-                    offering=80000 + w * 3000, tithe=110000 + w * 4000, donation=15000 + w * 1000,
-                    special_program_attendance=70 + w * 5, newcomers=3 + w % 4, converts=1 + w % 3,
-                    counseling=2 + w % 3, members_in_need=3 + w % 4,
-                    notes="Knowsoft Church Allen – sample week",
-                ))
-            session.add(SpecialProgram(
-                church_id=district.id,
-                title="Victory Sunday Thanksgiving",
-                description="Special thanksgiving service. All Ikeja Group members invited.",
-                program_date=date.today() + timedelta(days=7),
-                location="Allen Avenue Auditorium",
-                # featured only after general admin approval - leave false on district
-                broadcast_to="group",
-                is_active=True,
-            ))
-            session.commit()
-            print(f"✅ Knowsoft Church hierarchy + {n} members + 12 weeks stats created")
-        else:
-            country = session.exec(select(ChurchUnit).where(ChurchUnit.code == "KC-NG")).first()
-            state = session.exec(select(ChurchUnit).where(ChurchUnit.code == "KC-NG-LAG")).first()
-            group = session.exec(select(ChurchUnit).where(ChurchUnit.code == "KC-NG-LAG-IKE")).first()
-            district = session.exec(select(ChurchUnit).where(ChurchUnit.code == "KC-NG-LAG-IKE-ALLEN")).first()
-            print("ℹ️ Knowsoft Church units already present – ensuring sub-admin logins")
+        global_c = unit_get_or_create(
+            "KC-GLOBAL",
+            name="Knowsoft Church",
+            level=ChurchLevel.global_church,
+            global_code="KC-GLOBAL",
+            doctrine="Scripture-based faith, salvation in Christ, discipleship and mission.",
+            activity_days="Sunday, Wednesday, Friday",
+            owner_name="Apostle David Knowsoft",
+            resident_pastor="Apostle David Knowsoft",
+            address="Knowsoft Global HQ, Abuja",
+            phone="+234-800-100-0001",
+            email="global@knowsoftchurch.org",
+            country_name="Nigeria",
+            tithe_account_name="Knowsoft Church Global",
+            tithe_account_number="0123456789",
+            tithe_bank_name="First Bank",
+            offering_account_name="Knowsoft Church Global Offering",
+            offering_account_number="0123456790",
+            offering_bank_name="First Bank",
+            weekly_activities_note="Sunday 8am & 10am · Midweek Wednesday 6pm · Friday prayer 9pm",
+        )
+        country = unit_get_or_create(
+            "KC-NG",
+            name="Knowsoft Church – Nigeria",
+            level=ChurchLevel.country,
+            parent_id=global_c.id,
+            global_code="KC-GLOBAL",
+            country_code="KC-NG",
+            country_name="Nigeria",
+            resident_pastor="Rev. Samuel Okonkwo",
+            email="nigeria@knowsoftchurch.org",
+            address="National Office, Abuja, Nigeria",
+        )
+        state = unit_get_or_create(
+            "KC-NG-LAG",
+            name="Knowsoft Church – Lagos State",
+            level=ChurchLevel.state,
+            parent_id=country.id,
+            global_code="KC-GLOBAL",
+            country_code="KC-NG",
+            state_code="KC-NG-LAG",
+            country_name="Nigeria",
+            state_name="Lagos",
+            resident_pastor="Pastor Grace Adeyemi",
+            email="lagos@knowsoftchurch.org",
+            address="Lagos State Office, Ikeja",
+            latitude=6.5244,
+            longitude=3.3792,
+        )
+        group = unit_get_or_create(
+            "KC-NG-LAG-IKE",
+            name="Knowsoft Church – Ikeja Group",
+            level=ChurchLevel.group,
+            parent_id=state.id,
+            global_code="KC-GLOBAL",
+            country_code="KC-NG",
+            state_code="KC-NG-LAG",
+            group_code="KC-NG-LAG-IKE",
+            country_name="Nigeria",
+            state_name="Lagos",
+            resident_pastor="Pastor Michael Bello",
+            email="ikeja@knowsoftchurch.org",
+        )
+        district = unit_get_or_create(
+            "KC-NG-LAG-IKE-ALLEN",
+            name="Knowsoft Church – Allen Avenue District",
+            level=ChurchLevel.district,
+            parent_id=group.id,
+            global_code="KC-GLOBAL",
+            country_code="KC-NG",
+            state_code="KC-NG-LAG",
+            group_code="KC-NG-LAG-IKE",
+            district_code="KC-NG-LAG-IKE-ALLEN",
+            country_name="Nigeria",
+            state_name="Lagos",
+            resident_pastor="Pastor Ruth Okoro",
+            email="allen@knowsoftchurch.org",
+            address="Allen Avenue, Ikeja, Lagos",
+            phone="+234-800-100-0005",
+            pastor_phone="+234-800-100-0005",
+            pastor_email="allen@knowsoftchurch.org",
+            tithe_account_name="Knowsoft Allen District",
+            tithe_account_number="3012345678",
+            tithe_bank_name="GTBank",
+            offering_account_name="Knowsoft Allen Offering",
+            offering_account_number="3012345679",
+            offering_bank_name="GTBank",
+            weekly_activities_note="Sunday celebration 8am & 10am · Bible study Wed 6pm · Prayer Fri 9pm",
+            latitude=6.6018,
+            longitude=3.3515,
+        )
 
-        # Always ensure sub-admin accounts (even if hierarchy already existed)
-        district = session.exec(select(ChurchUnit).where(ChurchUnit.code == "KC-NG-LAG-IKE-ALLEN")).first()
-        group = session.exec(select(ChurchUnit).where(ChurchUnit.code == "KC-NG-LAG-IKE")).first()
-        state = session.exec(select(ChurchUnit).where(ChurchUnit.code == "KC-NG-LAG")).first()
-        country = session.exec(select(ChurchUnit).where(ChurchUnit.code == "KC-NG")).first()
-        global_c = session.exec(select(ChurchUnit).where(ChurchUnit.code == "KC-GLOBAL")).first()
-
-        if global_c:
-            _ensure_admin(session, "global@knowsoftchurch.org", "Apostle David Knowsoft", global_c.id)
-        if country:
-            _ensure_admin(session, "nigeria@knowsoftchurch.org", "Rev. Samuel Okonkwo", country.id)
-        if state:
-            _ensure_admin(session, "lagos@knowsoftchurch.org", "Pastor Grace Adeyemi", state.id)
-        if group:
-            _ensure_admin(session, "ikeja@knowsoftchurch.org", "Pastor Michael Bello", group.id)
-        if district:
-            _ensure_admin(session, "allen@knowsoftchurch.org", "Pastor Ruth Okoro", district.id)
-            _ensure_admin(session, "data@allen.knowsoftchurch.org", "Bro. James Data Officer",
-                          district.id, UserRole.data_officer, DATA_PASSWORD, stats=True)
-            # Always ensure rich district sample data (members, stats, program)
-            _ensure_district_sample_data(session, district, global_c, country, state, group)
-
-        
-            # Global showcase program (General Admin can also toggle featured_on_home)
-            existing_global_prog = session.exec(
-                select(SpecialProgram).where(SpecialProgram.title == "Knowsoft Global Convention")
-            ).first()
-            if not existing_global_prog and global_c:
-                from datetime import date, timedelta
-                gp = SpecialProgram(
-                    church_id=global_c.id,
-                    title="Knowsoft Global Convention",
-                    description="Annual gathering of assemblies — worship, teaching and fellowship.",
-                    program_date=date.today() + timedelta(days=45),
-                    location="International Conference Centre",
-                    broadcast_to="global",
-                    is_active=True,
-                    request_home_display=True,
-                    featured_on_home=False,  # General Admin must approve
-                )
-                session.add(gp)
-                session.commit()
-                print("✅ Sample featured Global program for home page")
-
-            print("✅ Sample sub-admin logins ready:")
-        print("   allen@knowsoftchurch.org / Church@12345  (District – use this first)")
-        print("   ikeja@knowsoftchurch.org / Church@12345")
-        print("   lagos@knowsoftchurch.org / Church@12345")
-        print("   nigeria@knowsoftchurch.org / Church@12345")
-        print("   global@knowsoftchurch.org / Church@12345")
-        print("   data@allen.knowsoftchurch.org / Data@12345")
-        # Remittance + map coordinates (so global map has markers)
-        if district:
-            district.tithe_account_name = "Knowsoft Church Allen Tithe"
-            district.tithe_account_number = "0123456789"
-            district.tithe_bank_name = "Sample Bank"
-            district.offering_account_name = "Knowsoft Church Allen Offering"
-            district.offering_account_number = "9876543210"
-            district.offering_bank_name = "Sample Bank"
-            district.pastor_phone = "+234-801-234-5678"
-            district.pastor_email = "pastor@knowsoftchurch.org"
-            district.weekly_activities_note = "Sunday 8am & 10am · Wednesday Bible study 6pm · Friday prayer 7pm"
-            district.latitude = 6.6018
-            district.longitude = 3.3515
-            district.country_name = district.country_name or "Nigeria"
-            district.state_name = district.state_name or "Lagos"
-            session.add(district)
-        if global_c:
-            global_c.latitude = 9.0765
-            global_c.longitude = 7.3986
-            global_c.country_name = global_c.country_name or "Nigeria"
-            session.add(global_c)
-        if country:
-            country.latitude = 9.0820
-            country.longitude = 8.6753
-            country.country_name = country.country_name or "Nigeria"
-            session.add(country)
-        if state:
-            state.latitude = 6.5244
-            state.longitude = 3.3792
-            state.country_name = state.country_name or "Nigeria"
-            state.state_name = state.state_name or "Lagos"
-            session.add(state)
-        if group:
-            group.latitude = 6.6018
-            group.longitude = 3.3515
-            group.country_name = group.country_name or "Nigeria"
-            group.state_name = group.state_name or "Lagos"
-            session.add(group)
-        session.commit()
-        print("✅ Map coordinates set on sample churches")
+        _ensure_district_sample_data(session, district, global_c, country, state, group)
+        print("✅ Knowsoft sample churches ready: Global → Nigeria → Lagos → Ikeja → Allen District")
     except Exception as e:
-        session.rollback()
         print(f"⚠️ Sample seed error: {e}")
         import traceback
         traceback.print_exc()
 
 
+def ensure_all_sample_data(session: Session) -> None:
+    """Single entry: hierarchy, stats, music, sample member, password resets."""
+    seed_knowsoft_bible_church(session)
+    # Sub-admins
+    samples = [
+        ("global@knowsoftchurch.org", "Apostle David Knowsoft", "KC-GLOBAL", SAMPLE_PASSWORD, UserRole.church_admin, False),
+        ("nigeria@knowsoftchurch.org", "Rev. Samuel Okonkwo", "KC-NG", SAMPLE_PASSWORD, UserRole.church_admin, False),
+        ("lagos@knowsoftchurch.org", "Pastor Grace Adeyemi", "KC-NG-LAG", SAMPLE_PASSWORD, UserRole.church_admin, False),
+        ("ikeja@knowsoftchurch.org", "Pastor Michael Bello", "KC-NG-LAG-IKE", SAMPLE_PASSWORD, UserRole.church_admin, False),
+        ("allen@knowsoftchurch.org", "Pastor Ruth Okoro", "KC-NG-LAG-IKE-ALLEN", SAMPLE_PASSWORD, UserRole.church_admin, False),
+        ("data@allen.knowsoftchurch.org", "Bro. James Data Officer", "KC-NG-LAG-IKE-ALLEN", DATA_PASSWORD, UserRole.data_officer, True),
+    ]
+    for email, name, code, pwd, role, stats in samples:
+        unit = session.exec(select(ChurchUnit).where(ChurchUnit.code == code)).first()
+        if unit:
+            unit.approval_status = "approved"
+            unit.is_active = True
+            session.add(unit)
+            session.commit()
+            _ensure_admin(session, email, name, unit.id, role, pwd, stats)
+    try:
+        seed_music_links(session)
+    except Exception as e:
+        print(f"⚠️ Music seed: {e}")
+    try:
+        seed_sample_member(session)
+    except Exception as e:
+        print(f"⚠️ Sample member: {e}")
+    print("✅ Sample logins:")
+    print("   General Admin:  admin@knowsoft.com / Admin@12345")
+    print("   Global:         global@knowsoftchurch.org / Church@12345")
+    print("   Country (NG):   nigeria@knowsoftchurch.org / Church@12345")
+    print("   State (Lagos):  lagos@knowsoftchurch.org / Church@12345")
+    print("   Group (Ikeja):  ikeja@knowsoftchurch.org / Church@12345")
+    print("   District:       allen@knowsoftchurch.org / Church@12345")
+    print("   Data officer:   data@allen.knowsoftchurch.org / Data@12345")
+    print("   Sample member:  member@knowsoftchurch.org / Member@12345")
+
 def seed_music_links(session: Session) -> None:
     """Default YouTube worship list; General Admin can edit later."""
     from app.models import MusicLink
-    existing = session.exec(select(MusicLink)).first()
-    if existing:
+    count = len(list(session.exec(select(MusicLink)).all()))
+    if count > 0:
+        print(f"ℹ️ Music links already present ({count})")
         return
     defaults = [
         ("10,000 Reasons (Bless the Lord) – Matt Redman", "DXDGE_lRI0E", 0),
@@ -486,6 +419,8 @@ def seed_sample_member(session: Session) -> None:
             hashed_password=get_password_hash(password),
             role=UserRole.member,
             is_active=True,
+            is_sample_account=True,
+            sample_started_at=None,
             church_id=district.id,
             member_id=member.id,
         )
@@ -494,6 +429,7 @@ def seed_sample_member(session: Session) -> None:
         user.hashed_password = get_password_hash(password)
         user.is_active = True
         user.role = UserRole.member
+        user.is_sample_account = True
         user.church_id = district.id
         user.member_id = member.id
         session.add(user)
