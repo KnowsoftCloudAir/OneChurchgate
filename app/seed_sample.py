@@ -430,8 +430,21 @@ def seed_sample_member(session: Session) -> None:
         user.is_active = True
         user.role = UserRole.member
         user.is_sample_account = True
+        user.sample_started_at = None  # fresh 5-min trial each deploy/restart
         user.church_id = district.id
         user.member_id = member.id
         session.add(user)
+    # Always refresh trial clock on seed so sample login works after expiry
+    user = session.exec(select(User).where(User.email == email)).first()
+    if user:
+        user.sample_started_at = None
+        user.is_active = True
+        user.is_sample_account = True
+        user.hashed_password = get_password_hash(password)
+        session.add(user)
+    if member:
+        member.approval_status = "approved"
+        member.is_active = True
+        session.add(member)
     session.commit()
-    print(f"✅ Sample member ready: {email} / {password}")
+    print(f"✅ Sample member ready: {email} / {password} (5-min trial resets on each start)")
