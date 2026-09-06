@@ -2,87 +2,116 @@
 {% block title %}My subscription{% endblock %}
 {% block content %}
 <div class="max-w-3xl mx-auto px-4 py-8">
-  <h1 class="text-2xl font-bold text-navy-900 mb-1">Membership subscription</h1>
-  <p class="text-sm text-slate-500 mb-6">Pay monthly, annually, or a custom period. After transfer, submit your request — General Admin confirms and your status turns active.</p>
+  <a href="/member/portal" class="text-sm text-indigo-700">← My Spiritual Space</a>
+  <h1 class="text-2xl font-bold text-navy-900 mt-2 mb-2">My subscription</h1>
+  <p class="text-sm text-slate-600 mb-6">{{ settings.title }}</p>
 
-  {% if sample and sample.is_sample %}
-  <div class="mb-6 rounded-2xl border-2 border-amber-400 bg-amber-50 p-5 text-amber-950">
-    <p class="font-bold">Sample account</p>
-    <p class="text-sm mt-1">{{ sample.message }}</p>
-    <p class="text-sm mt-2 font-semibold">You cannot subscribe with a sample login. Register as a full member for perpetual membership.</p>
-    <a href="/join" class="inline-block mt-3 px-4 py-2 rounded-xl bg-navy-900 text-white text-sm font-semibold">Register as full member</a>
+  {% if request.query_params.get('submitted') %}
+  <div class="mb-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-sm px-4 py-3">
+    Payment request submitted. General Admin will confirm after verifying your transfer or card payment evidence.
   </div>
   {% endif %}
 
-  {% if sample and sample.show_warning %}
-  <div class="mb-6 rounded-2xl border-2 border-amber-400 bg-amber-50 p-4 text-amber-950 shadow">
-    <p class="font-semibold">{{ sample.message }}</p>
-    <a href="/join" class="inline-block mt-2 text-sm font-bold text-amber-800 underline">Register as a full member →</a>
+  {% if sample and not sample.can_subscribe %}
+  <div class="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 mb-6">
+    Sample accounts cannot subscribe. Please register as a full member.
   </div>
-  {% endif %}
-
-  {% if not active %}
-  <div class="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
-    <p class="font-semibold">No active subscription</p>
-    <p class="mt-1">If your plan expired, submit payment evidence below. After General Admin confirms, your membership returns to <strong>approved</strong>.</p>
-  </div>
-  {% endif %}
-
-  {% if active %}
-  <div class="mb-8 rounded-2xl border-2 border-emerald-400 bg-gradient-to-br from-emerald-50 to-teal-50 p-6 shadow-lg text-center">
-    <p class="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-1">Subscription active</p>
-    <p class="text-3xl font-bold text-emerald-800">✓ Paid & confirmed</p>
-    <p class="text-sm text-emerald-900 mt-2">{{ active.plan|capitalize }} · {{ active.currency }} {{ "%.2f"|format(active.amount) }}</p>
-    <p class="text-xs text-emerald-700 mt-1">Valid until {{ active.ends_at }} UTC</p>
-    <p class="text-xs text-emerald-600 mt-2">Ref: {{ active.payment_reference }}</p>
-  </div>
-  {% endif %}
-
-  <section class="bg-white border rounded-2xl p-6 mb-8 shadow-sm">
-    <h2 class="font-semibold text-lg mb-2">{{ settings.title }}</h2>
-    {% if settings.instructions %}<p class="text-sm text-slate-600 mb-4 whitespace-pre-wrap">{{ settings.instructions }}</p>{% endif %}
-    <div class="grid sm:grid-cols-2 gap-3 text-sm mb-4">
-      <div class="bg-slate-50 rounded-xl p-3 border"><p class="text-xs text-slate-500">Bank</p><p class="font-semibold">{{ settings.bank_name or "—" }}</p></div>
-      <div class="bg-slate-50 rounded-xl p-3 border"><p class="text-xs text-slate-500">Account name</p><p class="font-semibold">{{ settings.account_name or "—" }}</p></div>
-      <div class="bg-slate-50 rounded-xl p-3 border"><p class="text-xs text-slate-500">Account number</p><p class="font-semibold tracking-wide">{{ settings.account_number or "—" }}</p></div>
-      <div class="bg-slate-50 rounded-xl p-3 border">
-        <p class="text-xs text-slate-500">Prices</p>
-        <p class="font-semibold">Monthly: {{ settings.currency }} {{ "%.2f"|format(settings.monthly_price) }}</p>
-        <p class="font-semibold">Annual: {{ settings.currency }} {{ "%.2f"|format(settings.annual_price) }}</p>
-      </div>
-    </div>
-    {% if settings.other_details %}<p class="text-sm text-slate-600 whitespace-pre-wrap">{{ settings.other_details }}</p>{% endif %}
-  </section>
-
-  {% if sample and sample.is_sample %}
-  <p class="text-sm text-slate-500 mb-8">Payment form is disabled for sample accounts.</p>
   {% else %}
-  <form method="post" action="/member/subscription/request" class="bg-slate-50 border rounded-2xl p-5 mb-8 space-y-3">
-    <h2 class="font-semibold">Submit payment for confirmation</h2>
-    <select name="plan" id="plan" class="w-full px-3 py-2 rounded-xl border" onchange="document.getElementById('customDays').classList.toggle('hidden', this.value!=='custom')">
-      <option value="monthly">Monthly ({{ settings.currency }} {{ "%.2f"|format(settings.monthly_price) }} · 30 days)</option>
-      <option value="annual">Annual ({{ settings.currency }} {{ "%.2f"|format(settings.annual_price) }} · 365 days)</option>
-      <option value="custom">Custom duration</option>
-    </select>
+
+  <div class="grid sm:grid-cols-2 gap-4 mb-6">
+    <div class="rounded-2xl border bg-white p-4 shadow-sm">
+      <p class="text-xs font-semibold text-slate-500 uppercase mb-2">Local bank transfer</p>
+      <p class="text-sm text-slate-700 whitespace-pre-wrap">{{ settings.instructions or "Transfer using the details below." }}</p>
+      <ul class="mt-3 text-sm space-y-1">
+        <li><span class="text-slate-500">Bank:</span> <strong>{{ settings.bank_name or "—" }}</strong></li>
+        <li><span class="text-slate-500">Name:</span> <strong>{{ settings.account_name or "—" }}</strong></li>
+        <li><span class="text-slate-500">Account:</span> <strong class="font-mono">{{ settings.account_number or "—" }}</strong></li>
+      </ul>
+      {% if settings.other_details %}<p class="text-xs text-slate-500 mt-2 whitespace-pre-wrap">{{ settings.other_details }}</p>{% endif %}
+    </div>
+    <div class="rounded-2xl border border-indigo-200 bg-indigo-50/50 p-4 shadow-sm">
+      <p class="text-xs font-semibold text-indigo-700 uppercase mb-2">International · card</p>
+      {% if settings.card_enabled %}
+      <p class="text-sm text-slate-700 whitespace-pre-wrap">{{ settings.card_instructions or "Pay with debit/credit card for international members. Use the secure link, then upload a screenshot of the successful payment." }}</p>
+      <p class="text-sm mt-2"><strong>{{ settings.card_currency or "USD" }}</strong>
+        monthly {{ "%.2f"|format(settings.card_monthly_price or 5) }} ·
+        annual {{ "%.2f"|format(settings.card_annual_price or 50) }}</p>
+      {% if settings.card_payment_link %}
+      <a href="{{ settings.card_payment_link }}" target="_blank" rel="noopener"
+         class="inline-block mt-3 px-4 py-2.5 rounded-xl bg-indigo-700 text-white text-sm font-bold shadow">
+        Pay by card (open secure link) →
+      </a>
+      {% else %}
+      <p class="text-xs text-amber-800 mt-2">Card link not published yet — contact admin, or use bank transfer and attach evidence.</p>
+      {% endif %}
+      {% else %}
+      <p class="text-sm text-slate-500">Card payments are not enabled. Use bank transfer.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <form method="post" action="/member/subscription/request" enctype="multipart/form-data"
+        class="rounded-2xl border bg-white p-5 shadow-sm space-y-4 mb-8">
+    <h2 class="font-semibold text-lg">Submit payment evidence</h2>
+    <div>
+      <p class="text-xs font-semibold text-slate-600 mb-2">Payment method</p>
+      <label class="flex items-center gap-2 text-sm mb-2 cursor-pointer">
+        <input type="radio" name="payment_method" value="bank" checked class="text-indigo-700"> Bank transfer (local)
+      </label>
+      <label class="flex items-center gap-2 text-sm cursor-pointer {% if not settings.card_enabled %}opacity-50{% endif %}">
+        <input type="radio" name="payment_method" value="card" {% if not settings.card_enabled %}disabled{% endif %} class="text-indigo-700">
+        Debit / credit card (international)
+      </label>
+    </div>
+    <div>
+      <label class="text-xs text-slate-600">Plan</label>
+      <select name="plan" id="planSelect" class="w-full px-3 py-2 rounded-xl border mt-1">
+        <option value="monthly">Monthly</option>
+        <option value="annual">Annual</option>
+        <option value="custom">Custom duration</option>
+      </select>
+    </div>
     <div id="customDays" class="hidden">
       <label class="text-xs text-slate-600">Number of days (min {{ settings.custom_min_days }})</label>
       <input type="number" name="custom_days" min="{{ settings.custom_min_days }}" value="30" class="w-full px-3 py-2 rounded-xl border">
     </div>
-    <input name="payment_reference" placeholder="Bank transfer reference / narration" class="w-full px-3 py-2 rounded-xl border">
-    <button class="w-full py-3 rounded-xl bg-emerald-600 text-white font-semibold">I have paid — request confirmation</button>
+    <div>
+      <label class="text-xs text-slate-600">Payment reference / transaction ID</label>
+      <input name="payment_reference" placeholder="Bank ref or card receipt number" class="w-full px-3 py-2 rounded-xl border mt-1">
+    </div>
+    <div>
+      <label class="text-xs text-slate-600 font-semibold">Picture evidence (receipt / screenshot) *</label>
+      <input type="file" name="evidence" accept="image/*,application/pdf" required
+             class="w-full mt-1 text-sm file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-800">
+      <p class="text-[11px] text-slate-400 mt-1">JPG, PNG, WebP or PDF — clear photo of transfer slip or card payment confirmation.</p>
+    </div>
+    <button type="submit" class="w-full py-3 rounded-xl bg-emerald-600 text-white font-semibold">
+      Submit evidence for confirmation
+    </button>
   </form>
+  <script>
+    document.getElementById('planSelect').addEventListener('change', function() {
+      document.getElementById('customDays').classList.toggle('hidden', this.value !== 'custom');
+    });
+  </script>
   {% endif %}
-
 
   <h2 class="font-semibold mb-3">Your history</h2>
   <div class="space-y-3">
     {% for s in subs %}
     <div class="border rounded-xl p-4 bg-white {% if s.status=='active' %}border-emerald-300{% elif s.status=='pending' %}border-amber-200{% endif %}">
-      <div class="flex justify-between text-sm">
-        <span class="font-semibold">{{ s.plan }} · {{ s.currency }} {{ "%.2f"|format(s.amount) }}</span>
+      <div class="flex justify-between text-sm gap-2 flex-wrap">
+        <span class="font-semibold">{{ s.plan }} · {{ s.currency }} {{ "%.2f"|format(s.amount) }}
+          <span class="text-xs font-normal text-slate-500">({{ s.payment_method or "bank" }})</span>
+        </span>
         <span class="text-xs uppercase {% if s.status=='active' %}text-emerald-700{% elif s.status=='pending' %}text-amber-700{% else %}text-slate-500{% endif %}">{{ s.status }}</span>
       </div>
       <p class="text-xs text-slate-500 mt-1">{{ s.duration_days }} days · Ref {{ s.payment_reference or "—" }} · {{ s.created_at }}</p>
+      {% if s.evidence_image %}
+      <p class="text-xs mt-2">
+        <a href="{{ s.evidence_image }}" target="_blank" class="text-indigo-700 font-semibold underline">View payment evidence →</a>
+      </p>
+      {% endif %}
       {% if s.ends_at %}<p class="text-xs text-slate-500">Ends {{ s.ends_at }}</p>{% endif %}
     </div>
     {% else %}

@@ -499,6 +499,13 @@ class SubscriptionSettings(SQLModel, table=True):
     account_name: Optional[str] = None
     account_number: Optional[str] = None
     other_details: Optional[str] = Field(default=None, sa_column=Column(Text))
+    # International / card payment (General Admin configures link or Stripe Payment Link)
+    card_enabled: bool = Field(default=True)
+    card_currency: str = Field(default="USD")
+    card_monthly_price: float = Field(default=5.0)
+    card_annual_price: float = Field(default=50.0)
+    card_instructions: Optional[str] = Field(default=None, sa_column=Column(Text))
+    card_payment_link: Optional[str] = None  # Stripe Payment Link, PayPal.me, etc.
     is_active: bool = Field(default=True)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -514,6 +521,8 @@ class MemberSubscription(SQLModel, table=True):
     duration_days: int = Field(default=30)
     status: str = Field(default="pending")  # pending | active | expired | rejected
     payment_reference: Optional[str] = None
+    payment_method: str = Field(default="bank")  # bank | card
+    evidence_image: Optional[str] = None  # path to uploaded proof photo
     starts_at: Optional[datetime] = None
     ends_at: Optional[datetime] = None
     confirmed_at: Optional[datetime] = None

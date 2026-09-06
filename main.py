@@ -19,6 +19,27 @@ async def lifespan(app: FastAPI):
     try:
         from sqlalchemy import text
         with engine.begin() as conn:
+            for stmt in [
+                "ALTER TABLE membersubscription ADD COLUMN IF NOT EXISTS payment_method VARCHAR DEFAULT 'bank'",
+                "ALTER TABLE membersubscription ADD COLUMN IF NOT EXISTS evidence_image VARCHAR",
+                "ALTER TABLE subscriptionsettings ADD COLUMN IF NOT EXISTS card_enabled BOOLEAN DEFAULT TRUE",
+                "ALTER TABLE subscriptionsettings ADD COLUMN IF NOT EXISTS card_currency VARCHAR DEFAULT 'USD'",
+                "ALTER TABLE subscriptionsettings ADD COLUMN IF NOT EXISTS card_monthly_price FLOAT DEFAULT 5",
+                "ALTER TABLE subscriptionsettings ADD COLUMN IF NOT EXISTS card_annual_price FLOAT DEFAULT 50",
+                "ALTER TABLE subscriptionsettings ADD COLUMN IF NOT EXISTS card_instructions TEXT",
+                "ALTER TABLE subscriptionsettings ADD COLUMN IF NOT EXISTS card_payment_link VARCHAR",
+                "ALTER TABLE membersubscription ADD COLUMN payment_method VARCHAR",
+                "ALTER TABLE membersubscription ADD COLUMN evidence_image VARCHAR",
+            ]:
+                try:
+                    conn.execute(text(stmt))
+                except Exception:
+                    pass
+    except Exception as _pe:
+        print("payment cols migrate:", _pe)
+    try:
+        from sqlalchemy import text
+        with engine.begin() as conn:
             for stmt in (
                 "ALTER TABLE user ADD COLUMN IF NOT EXISTS session_version INTEGER DEFAULT 0",
                 "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS session_version INTEGER DEFAULT 0",

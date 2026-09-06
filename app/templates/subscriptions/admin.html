@@ -22,6 +22,19 @@
       <input name="account_number" value="{{ settings.account_number or "" }}" placeholder="Account number" class="px-3 py-2 rounded-xl border">
     </div>
     <textarea name="other_details" rows="2" class="w-full px-3 py-2 rounded-xl border" placeholder="Other details">{{ settings.other_details or "" }}</textarea>
+    <div class="border-t pt-4 mt-2">
+      <p class="text-sm font-semibold text-indigo-900 mb-2">International card payments</p>
+      <label class="flex items-center gap-2 text-sm mb-2">
+        <input type="checkbox" name="card_enabled" value="yes" {% if settings.card_enabled %}checked{% endif %}> Enable card / international option
+      </label>
+      <div class="grid sm:grid-cols-3 gap-3 mb-2">
+        <input name="card_currency" value="{{ settings.card_currency or 'USD' }}" placeholder="Card currency" class="px-3 py-2 rounded-xl border">
+        <input name="card_monthly_price" type="number" step="0.01" value="{{ settings.card_monthly_price or 5 }}" placeholder="Card monthly" class="px-3 py-2 rounded-xl border">
+        <input name="card_annual_price" type="number" step="0.01" value="{{ settings.card_annual_price or 50 }}" placeholder="Card annual" class="px-3 py-2 rounded-xl border">
+      </div>
+      <input name="card_payment_link" value="{{ settings.card_payment_link or '' }}" placeholder="Stripe Payment Link / PayPal / card checkout URL" class="w-full px-3 py-2 rounded-xl border mb-2">
+      <textarea name="card_instructions" rows="2" class="w-full px-3 py-2 rounded-xl border" placeholder="Instructions for international card payers">{{ settings.card_instructions or "" }}</textarea>
+    </div>
     <button class="px-5 py-2.5 rounded-xl bg-navy-900 text-white text-sm font-semibold">Save settings</button>
   </form>
 
@@ -31,7 +44,10 @@
     <div class="bg-white border rounded-2xl p-4 flex flex-wrap justify-between gap-3 items-start">
       <div>
         <p class="font-semibold">{{ row.user.email if row.user else "User" }} · {{ row.s.plan }} · {{ row.s.currency }} {{ "%.2f"|format(row.s.amount) }}</p>
-        <p class="text-xs text-slate-500">{{ row.s.duration_days }} days · {{ row.s.status }} · Ref {{ row.s.payment_reference }} · {{ row.s.created_at }}</p>
+        <p class="text-xs text-slate-500">{{ row.s.duration_days }} days · {{ row.s.status }} · {{ row.s.payment_method or 'bank' }} · Ref {{ row.s.payment_reference }} · {{ row.s.created_at }}</p>
+        {% if row.s.evidence_image %}
+        <p class="text-xs mt-1"><a href="{{ row.s.evidence_image }}" target="_blank" class="text-indigo-700 font-semibold underline">View payment evidence photo →</a></p>
+        {% endif %}
         {% if row.s.ends_at %}<p class="text-xs text-slate-500">Ends {{ row.s.ends_at }}</p>{% endif %}
       </div>
       {% if row.s.status == 'pending' %}

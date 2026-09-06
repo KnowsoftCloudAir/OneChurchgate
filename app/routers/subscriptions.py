@@ -4,8 +4,10 @@ from datetime import datetime, timedelta
 from typing import Optional
 import secrets
 import string
+import shutil
+from pathlib import Path as FsPath
 
-from fastapi import APIRouter, Depends, Request, Form, HTTPException
+from fastapi import APIRouter, Depends, Request, Form, HTTPException, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
@@ -228,6 +230,8 @@ async def member_subscription_request(
     plan: str = Form("monthly"),
     custom_days: int = Form(30),
     payment_reference: str = Form(""),
+    payment_method: str = Form("bank"),
+    evidence: UploadFile = File(None),
     user: User = Depends(require_user),
     session: Session = Depends(get_session),
 ):
@@ -238,31 +242,64 @@ async def member_subscription_request(
         )
     settings = _settings(session)
     plan = (plan or "monthly").lower()
+    method = (payment_method or "bank").lower()
+    if method not in ("bank", "card"):
+        method = "bank"
     if plan == "monthly":
-        amount, days = settings.monthly_price, 30
+        if method == "card" and getattr(settings, "card_enabled", True):
+            amount, days = float(getattr(settings, "card_monthly_price", None) or settings.monthly_price), 30
+            currency = getattr(settings, "card_currency", None) or "USD"
+        else:
+            amount, days = settings.monthly_price, 30
+            currency = settings.currency or "NGN"
     elif plan == "annual":
-        amount, days = settings.annual_price, 365
+        if method == "card" and getattr(settings, "card_enabled", True):
+            amount, days = float(getattr(settings, "card_annual_price", None) or settings.annual_price), 365
+            currency = getattr(settings, "card_currency", None) or "USD"
+        else:
+            amount, days = settings.annual_price, 365
+            currency = settings.currency or "NGN"
     else:
         days = max(settings.custom_min_days or 7, int(custom_days or 30))
-        # pro-rate from monthly
-        amount = round(settings.monthly_price * (days / 30.0), 2)
+        if method == "card" and getattr(settings, "card_enabled", True):
+            base = float(getattr(settings, "card_monthly_price", None) or 5.0)
+            amount = round(base * (days / 30.0), 2)
+            currency = getattr(settings, "card_currency", None) or "USD"
+        else:
+            amount = round(settings.monthly_price * (days / 30.0), 2)
+            currency = settings.currency or "NGN"
         plan = "custom"
     ref = payment_reference.strip() or (
         "SUB-" + "".join(secrets.choice(string.ascii_uppercase + string.digits) for _ in range(8))
     )
-    sub = MemberSubscription(
+    evidence_path = None
+    if evidence and evidence.filename:
+        ext = (evidence.filename.rsplit(".", 1)[-1] or "jpg").lower()
+        if ext not in ("jpg", "jpeg", "png", "webp", "gif", "pdf"):
+            ext = "jpg"
+        upload_dir = FsPath("app/static/uploads/payment_evidence")
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        fname = f"sub_{user.id}_{secrets.token_hex(6)}.{ext}"
+        dest = upload_dir / fname
+        with dest.open("wb") as f:
+            shutil.copyfileobj(evidence.file, f)
+        evidence_path = f"/static/uploads/payment_evidence/{fname}"
+    sub_row = MemberSubscription(
         user_id=user.id,
         member_id=user.member_id,
         plan=plan,
         amount=amount,
-        currency=settings.currency or "NGN",
+        currency=currency,
         duration_days=days,
         status="pending",
         payment_reference=ref,
+        payment_method=method,
+        evidence_image=evidence_path,
+        note=("Card/international payment" if method == "card" else "Bank transfer"),
     )
-    session.add(sub)
+    session.add(sub_row)
     session.commit()
-    return RedirectResponse("/member/subscription", status_code=303)
+    return RedirectResponse("/member/subscription?submitted=1", status_code=303)
 
 
 @router.get("/admin/subscriptions", response_class=HTMLResponse)
@@ -297,6 +334,12 @@ async def admin_subscription_settings(
     account_name: str = Form(""),
     account_number: str = Form(""),
     other_details: str = Form(""),
+    card_enabled: str = Form("yes"),
+    card_currency: str = Form("USD"),
+    card_monthly_price: float = Form(5),
+    card_annual_price: float = Form(50),
+    card_instructions: str = Form(""),
+    card_payment_link: str = Form(""),
     user: User = Depends(require_roles(UserRole.general_admin)),
     session: Session = Depends(get_session),
 ):
@@ -311,10 +354,18 @@ async def admin_subscription_settings(
     s.account_name = account_name.strip() or None
     s.account_number = account_number.strip() or None
     s.other_details = other_details.strip() or None
+    s.card_enabled = card_enabled == "yes"
+    s.card_currency = card_currency.strip() or "USD"
+    s.card_monthly_price = float(card_monthly_price or 5)
+    s.card_annual_price = float(card_annual_price or 50)
+    s.card_instructions = card_instructions.strip() or None
+    s.card_payment_link = card_payment_link.strip() or None
+    from datetime import datetime
     s.updated_at = datetime.utcnow()
     session.add(s)
     session.commit()
     return RedirectResponse("/admin/subscriptions", status_code=303)
+
 
 
 @router.post("/admin/subscriptions/{sub_id}/confirm")
