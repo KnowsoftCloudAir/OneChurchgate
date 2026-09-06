@@ -295,6 +295,44 @@
   }
   .progress-bar > span { display: block; height: 100%; background: var(--mp-accent); border-radius: 999px; transition: width 0.4s; }
   [x-cloak] { display: none !important; }
+  .nav-chip { position: relative; }
+  .nav-chip.has-notice {
+    background: rgba(239, 68, 68, 0.25) !important;
+    border: 1px solid rgba(248, 113, 113, 0.7);
+    box-shadow: 0 0 12px rgba(239, 68, 68, 0.35);
+  }
+  .nav-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 999px;
+    background: #ef4444;
+    box-shadow: 0 0 0 2px rgba(15,23,42,0.5), 0 0 8px #f87171;
+    animation: navPulse 1.4s ease-in-out infinite;
+  }
+  .nav-dot-count {
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    min-width: 1rem;
+    height: 1rem;
+    padding: 0 4px;
+    border-radius: 999px;
+    background: #ef4444;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 800;
+    line-height: 1rem;
+    text-align: center;
+    box-shadow: 0 0 0 2px rgba(15,23,42,0.4);
+  }
+  @keyframes navPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.25); opacity: 0.75; }
+  }
+
 </style>
 
 <div class="member-space theme-royal" id="memberSpace" x-data="memberHub()" x-init="init()">
@@ -448,41 +486,61 @@
 
     <nav class="flex flex-wrap gap-2 mb-6 text-xs font-semibold select-none" style="touch-action: manipulation;">
       <button type="button" @click.prevent="showPanel('devotions')"
-              :class="openPanel==='devotions' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
-              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Devotions</button>
+              :class="(openPanel==='devotions' ? 'ring-2 ring-amber-300 bg-white/15 ' : '') + (notices.devotions ? 'has-notice ' : '')"
+              class="nav-chip px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">
+        Devotions
+        <span class="nav-dot" x-show="notices.devotions" x-cloak></span>
+      </button>
       <button type="button" @click.prevent="showPanel('bible')"
               :class="openPanel==='bible' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
-              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Bible</button>
+              class="nav-chip px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Bible</button>
       <button type="button" @click.prevent="showPanel('evangelism')"
               :class="openPanel==='evangelism' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
-              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Evangelism</button>
+              class="nav-chip px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Evangelism</button>
       <button type="button" @click.prevent="showPanel('prayer')"
               :class="openPanel==='prayer' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
-              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Prayer</button>
+              class="nav-chip px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Prayer</button>
       <button type="button" @click.prevent="showPanel('life')"
               :class="openPanel==='life' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
-              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">New life</button>
+              class="nav-chip px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">New life</button>
       <button type="button" @click.prevent="showPanel('members')"
               :class="openPanel==='members' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
-              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Members</button>
+              class="nav-chip px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Members</button>
       <button type="button" @click.prevent="showPanel('music')"
               :class="openPanel==='music' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
-              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Music</button>
+              class="nav-chip px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Music</button>
       <button type="button" @click.prevent="showPanel('subscription')"
-              :class="openPanel==='subscription' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
-              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Subscription</button>
+              :class="(openPanel==='subscription' ? 'ring-2 ring-amber-300 bg-white/15 ' : '') + (notices.subscription ? 'has-notice ' : '')"
+              class="nav-chip px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">
+        Subscription
+        <span class="nav-dot" x-show="notices.subscription" x-cloak></span>
+      </button>
       <button type="button" @click.prevent="showPanel('pastor')"
-              :class="openPanel==='pastor' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
-              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Pastor</button>
+              :class="(openPanel==='pastor' ? 'ring-2 ring-amber-300 bg-white/15 ' : '') + (notices.pastor ? 'has-notice ' : '')"
+              class="nav-chip px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">
+        Pastor
+        <span class="nav-dot-count" x-show="notices.pastor && notices.pastorCount > 0" x-text="notices.pastorCount > 9 ? '9+' : notices.pastorCount" x-cloak></span>
+        <span class="nav-dot" x-show="notices.pastor && !notices.pastorCount" x-cloak></span>
+      </button>
       <button type="button" @click.prevent="showPanel('church')"
               :class="openPanel==='church' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
-              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">My church</button>
-      <a href="/focus-groups" class="px-3 py-2 rounded-full ms-card inline-block">Focus groups</a>
-      <a href="/programs/" class="px-3 py-2 rounded-full ms-card inline-block">Programs</a>
+              class="nav-chip px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">My church</button>
+      <a href="/focus-groups" @click="(function(){ const seen=JSON.parse(localStorage.getItem('cg_notice_seen_v1')||'{}'); seen.focus=Number((window.__PORTAL_NOTICES__||{}).focusCount||0); localStorage.setItem('cg_notice_seen_v1', JSON.stringify(seen)); })()"
+         :class="notices.focus ? 'has-notice' : ''"
+         class="nav-chip px-3 py-2 rounded-full ms-card inline-block relative">
+        Focus groups
+        <span class="nav-dot-count" x-show="notices.focus && notices.focusCount > 0" x-text="notices.focusCount > 9 ? '9+' : notices.focusCount" x-cloak></span>
+        <span class="nav-dot" x-show="notices.focus && !notices.focusCount" x-cloak></span>
+      </a>
+      <a href="/programs/" class="nav-chip px-3 py-2 rounded-full ms-card inline-block">Programs</a>
       <button type="button" @click.prevent="openPanel=null"
               class="px-3 py-2 rounded-full border border-white/20 text-xs ms-muted cursor-pointer">Hide panels</button>
     </nav>
-    <p class="text-xs ms-muted -mt-3 mb-5">Tap any item above to open its panel. Ask Angel, or use Hide panels to fold them again.</p>
+    <p class="text-xs ms-muted -mt-3 mb-5">
+      Tap a chip to open its panel.
+      <span x-show="notices.pastor || notices.focus || notices.devotions || notices.subscription" class="text-rose-300 font-semibold"> Red glow / dot = new message or notice.</span>
+    </p>
+
 
     <section id="devotions" class="ms-card p-5 mb-5" x-show="openPanel==='devotions'" x-cloak x-transition>
       <h2 class="font-bold text-lg mb-1">Devotionals</h2>
@@ -887,6 +945,12 @@
 
 
 <script>
+window.__PORTAL_NOTICES__ = {
+  pastorCount: {{ pastor_notice_count|default(0) }},
+  focusCount: {{ focus_notice_count|default(0) }},
+  focusLatest: {{ (focus_latest_at or '')|tojson }},
+  subAlert: {{ 'true' if (is_awaiting_payment or had_expired_sub) else 'false' }}
+};
 window.__MEMBER_STATUS__ = {
   name: {{ (member.full_name if member else user.full_name or user.email)|tojson }},
   email: {{ user.email|tojson }},
@@ -921,6 +985,8 @@ function memberHub() {
         angel: { enabled: false, listening: false, busy: false, status: 'Tap 👼 Angel to turn on — then speak anytime.', recognition: null },
     directory: { list: [], selectedId: '', current: null },
     openPanel: null,
+    notices: { pastor: false, pastorCount: 0, focus: false, focusCount: 0, devotions: false, subscription: false },
+
     bibleBooks: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther','Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon','Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi','Matthew','Mark','Luke','John','Acts','Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude','Revelation'],
     situations: [
       { id:'unwell', label:'Feeling unwell / sickness', refs:['Psalm 103:2-3','Isaiah 53:5','Jeremiah 17:14','James 5:14-15','3 John 1:2','Matthew 9:35','Mark 5:34','1 Peter 2:24'] },
@@ -950,7 +1016,9 @@ function memberHub() {
       this.scheduleAlarms();
       this.loadMusicLinks();
       this.loadDirectory();
+      this.refreshNotices();
       this.initAngel();
+      setInterval(() => this.refreshNotices(), 60000);
       this.refreshVoices();
       if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => this.refreshVoices();
       this.tickClock();
@@ -1365,9 +1433,55 @@ function memberHub() {
     },
 
 
+    refreshNotices() {
+      const N = window.__PORTAL_NOTICES__ || {};
+      const seen = JSON.parse(localStorage.getItem('cg_notice_seen_v1') || '{}');
+      const pastorCount = Number(N.pastorCount || 0);
+      const focusCount = Number(N.focusCount || 0);
+      const pastorSeen = Number(seen.pastor || 0);
+      const focusSeen = Number(seen.focus || 0);
+      this.notices.pastorCount = pastorCount;
+      this.notices.focusCount = focusCount;
+      this.notices.pastor = pastorCount > pastorSeen;
+      this.notices.focus = focusCount > focusSeen;
+      this.notices.subscription = (N.subAlert === true || N.subAlert === 'true');
+      // devotion alarm within next 20 minutes
+      this.notices.devotions = this._devotionSoon();
+    },
+    _devotionSoon() {
+      try {
+        const slots = [
+          { time: this.devotion.quiet, on: this.devotion.quietOn },
+          { time: this.devotion.morning, on: this.devotion.morningOn },
+          { time: this.devotion.evening, on: this.devotion.eveningOn },
+        ];
+        const now = new Date();
+        for (const s of slots) {
+          if (!s.on || !s.time) continue;
+          const [h, m] = s.time.split(':').map(Number);
+          const next = new Date(now);
+          next.setHours(h, m, 0, 0);
+          if (next <= now) next.setDate(next.getDate() + 1);
+          const mins = (next - now) / 60000;
+          if (mins >= 0 && mins <= 20) return true;
+        }
+      } catch (e) {}
+      return false;
+    },
+    clearNotice(id) {
+      const seen = JSON.parse(localStorage.getItem('cg_notice_seen_v1') || '{}');
+      if (id === 'pastor') {
+        seen.pastor = this.notices.pastorCount;
+        this.notices.pastor = false;
+      }
+      if (id === 'devotions') this.notices.devotions = false;
+      if (id === 'subscription') this.notices.subscription = false;
+      localStorage.setItem('cg_notice_seen_v1', JSON.stringify(seen));
+    },
     showPanel(id) {
       if (!id) { this.openPanel = null; return; }
       this.openPanel = id;
+      this.clearNotice(id);
       const map = {
         devotions: 'devotions',
         bible: 'bible',

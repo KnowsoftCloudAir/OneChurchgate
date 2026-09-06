@@ -328,6 +328,34 @@ async def member_portal(
         print("pastor msgs:", e)
         pastor_messages = []
 
+
+    focus_notice_count = 0
+    focus_latest_at = ""
+    try:
+        from app.models import FocusGroup, FocusGroupMember, FocusGroupMessage
+        from datetime import datetime, timedelta
+        if user.id:
+            gids = [
+                fm.group_id for fm in session.exec(
+                    select(FocusGroupMember).where(FocusGroupMember.user_id == user.id)
+                ).all()
+            ]
+            if gids:
+                since = datetime.utcnow() - timedelta(days=14)
+                msgs = list(session.exec(
+                    select(FocusGroupMessage).where(
+                        FocusGroupMessage.group_id.in_(gids),
+                        FocusGroupMessage.created_at >= since,
+                    ).order_by(FocusGroupMessage.created_at.desc()).limit(50)
+                ).all())
+                focus_notice_count = len(msgs)
+                if msgs:
+                    focus_latest_at = str(msgs[0].created_at)
+    except Exception as fe:
+        print("focus notice:", fe)
+        focus_notice_count = 0
+        focus_latest_at = ""
+
     try:
         log_activity(session, user=user, action="portal_view", detail="Opened member dashboard", request=request)
     except Exception:
@@ -352,6 +380,9 @@ async def member_portal(
         "sub_is_welcome": bool(sub_is_welcome),
         "had_expired_sub": bool(had_expired_sub),
         "pastor_messages": pastor_messages or [],
+        "pastor_notice_count": len(pastor_messages or []),
+        "focus_notice_count": focus_notice_count,
+        "focus_latest_at": focus_latest_at,
         "is_preview": bool(is_preview),
         "is_awaiting_payment": bool(is_awaiting_payment),
     })
