@@ -296,14 +296,13 @@
     </header>
 
                 <div class="mb-5 rounded-3xl border border-amber-300/50 bg-gradient-to-br from-indigo-950 via-slate-900 to-violet-950 px-4 py-4 text-sm angel-panel-live angel-sticky backdrop-blur-md"
-         :class="{ 'is-on': angel.enabled, 'is-waiting': angel.enabled && !angel.busy }"
-         x-show="angel.enabled || angel.status" x-cloak>
-      <div class="angel-wave-stage" x-show="angel.enabled">
+         :class="{ 'is-on': angel.enabled, 'is-waiting': angel.enabled && !angel.busy }">
+      <div class="angel-wave-stage" :style="angel.enabled ? '' : 'opacity:0.35'">
         <div class="angel-wave-layer w1"></div>
         <div class="angel-wave-layer w2"></div>
         <div class="angel-wave-layer w3"></div>
         <div class="angel-wave-layer w4"></div>
-        <div class="angel-orb" aria-hidden="true"></div>
+        <div class="angel-orb" x-show="angel.enabled" aria-hidden="true"></div>
       </div>
       <p class="font-bold text-lg text-amber-200 relative z-10 tracking-wide">👼 Angel — your soul helper</p>
       <p class="text-xs ms-muted mt-1 relative z-10 pr-24" x-text="angel.status || 'Turn Angel on to begin.'"></p>
@@ -819,7 +818,7 @@ function memberHub() {
         musicList: [],
         churchMusic: { id: '', playing: false },
         churchMusicList: [],
-        angel: { enabled: false, listening: false, busy: false, status: '', recognition: null },
+        angel: { enabled: false, listening: false, busy: false, status: 'Tap 👼 Angel to turn on — then speak anytime.', recognition: null },
     bibleBooks: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther','Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon','Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi','Matthew','Mark','Luke','John','Acts','Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude','Revelation'],
     situations: [
       { id:'unwell', label:'Feeling unwell / sickness', refs:['Psalm 103:2-3','Isaiah 53:5','Jeremiah 17:14','James 5:14-15','3 John 1:2','Matthew 9:35','Mark 5:34','1 Peter 2:24'] },
@@ -1389,9 +1388,6 @@ function memberHub() {
       this.angelSpeak(prayer);
       this.angel.status = 'Salvation prayer shared — use I accepted Jesus for your certificate.';
       try { document.getElementById('salvation')?.scrollIntoView({ behavior: 'smooth' }); } catch (e) {}
-    },
-
-.');
     },
 
     async loadMusicLinks() {
