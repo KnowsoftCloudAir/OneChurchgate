@@ -450,8 +450,9 @@
       <a href="#bible" class="px-3 py-1.5 rounded-full ms-card">Bible</a>
       <a href="#evangelism" class="px-3 py-1.5 rounded-full ms-card">Evangelism</a>
       <a href="#prayer" class="px-3 py-1.5 rounded-full ms-card">Prayer</a>
-      <a href="#testimonies" class="px-3 py-1.5 rounded-full ms-card">Testimonies</a>
-      <a href="#music" class="px-3 py-1.5 rounded-full ms-card">Music</a>
+      <a href="#district-directory" class="px-3 py-1.5 rounded-full ms-card">Members</a>
+      <a href="#music-church" class="px-3 py-1.5 rounded-full ms-card">Church music</a>
+      <a href="#music-general" class="px-3 py-1.5 rounded-full ms-card">Inspiration</a>
       <a href="#subscription" class="px-3 py-1.5 rounded-full ms-card">Subscription</a>
       <a href="#church" class="px-3 py-1.5 rounded-full ms-card">My church</a>
       <a href="/focus-groups" class="px-3 py-1.5 rounded-full ms-card">Focus groups</a>
@@ -583,68 +584,14 @@
       </ul>
     </section>
 
-    <div class="grid sm:grid-cols-2 gap-4 mb-5">
-      
-    <section id="salvation" class="ms-card p-5 mb-5 border border-amber-400/30">
-      <h2 class="font-bold text-lg mb-2">New life in Christ</h2>
-      <p class="text-xs ms-muted mb-3">If Angel led you in the salvation prayer, affirm below and download your certificate.</p>
-      <a href="/member/certificate/newborn" class="ms-btn inline-block px-4 py-2.5 text-sm font-bold">I accepted Jesus — download certificate</a>
-    </section>
-
-    <section id="testimonies" class="ms-card p-5">
-        <h2 class="font-bold text-lg mb-2">Testimonies</h2>
-        <a href="/testimonies" class="ms-btn inline-block px-4 py-2 text-sm">Open testimony wall →</a>
-      </section>
-      
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5 items-stretch" id="music-directory-row">
-      <section id="music" class="ms-card p-5 w-full flex flex-col" style="min-height:24rem">
-        <h2 class="font-bold text-lg mb-1">Music</h2>
-        <p class="text-xs ms-muted mb-3">Church playlist and general inspiration</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full flex-1">
-          <div class="rounded-2xl bg-black/25 border border-white/10 p-3 flex flex-col">
-            <p class="text-sm font-semibold mb-1">① Church music</p>
-            <select x-model="churchMusic.id" class="w-full rounded-xl px-3 py-2 text-sm text-slate-900 mb-2">
-              <option value="">— Select church song —</option>
-              <template x-for="m in churchMusicList" :key="'c-'+m.id">
-                <option :value="m.id" x-text="m.title"></option>
-              </template>
-            </select>
-            <div class="w-full rounded-xl overflow-hidden bg-black mb-2" style="aspect-ratio:16/9">
-              <iframe class="w-full h-full" x-show="churchMusic.playing && churchMusic.id"
-                :src="(churchMusic.playing && churchMusic.id) ? ('https://www.youtube.com/embed/' + churchMusic.id + '?autoplay=1&rel=0') : ''"
-                title="Church music" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
-              <div class="w-full h-full flex items-center justify-center text-xs text-white/50" style="min-height:8rem"
-                   x-show="!(churchMusic.playing && churchMusic.id)">Select &amp; Play</div>
-            </div>
-            <div class="mt-auto">
-              <button type="button" @click="if(churchMusic.id){ churchMusic.playing=true; music.playing=false }" class="ms-btn px-3 py-1.5 text-xs">Play</button>
-              <button type="button" @click="churchMusic.playing=false" class="text-xs ms-muted underline ml-2">Hide</button>
-            </div>
-          </div>
-          <div class="rounded-2xl bg-black/25 border border-white/10 p-3 flex flex-col">
-            <p class="text-sm font-semibold mb-1">② General music</p>
-            <select x-model="music.id" class="w-full rounded-xl px-3 py-2 text-sm text-slate-900 mb-2">
-              <option value="">— Select song —</option>
-              <template x-for="m in musicList" :key="'p-'+m.id">
-                <option :value="m.id" x-text="m.title"></option>
-              </template>
-            </select>
-            <div class="w-full rounded-xl overflow-hidden bg-black mb-2" style="aspect-ratio:16/9">
-              <iframe class="w-full h-full" x-show="music.playing && music.id"
-                :src="(music.playing && music.id) ? ('https://www.youtube.com/embed/' + music.id + '?autoplay=1&rel=0') : ''"
-                title="General music" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
-              <div class="w-full h-full flex items-center justify-center text-xs text-white/50" style="min-height:8rem"
-                   x-show="!(music.playing && music.id)">Select &amp; Play</div>
-            </div>
-            <div class="mt-auto">
-              <button type="button" @click="if(music.id){ music.playing=true; churchMusic.playing=false }" class="ms-btn px-3 py-1.5 text-xs">Play</button>
-              <button type="button" @click="music.playing=false" class="text-xs ms-muted underline ml-2">Hide</button>
-            </div>
-          </div>
-        </div>
+    <div class="grid sm:grid-cols-2 gap-4 mb-5 items-stretch">
+      <section id="salvation" class="ms-card p-5 border border-amber-400/30 flex flex-col">
+        <h2 class="font-bold text-lg mb-2">New life in Christ</h2>
+        <p class="text-xs ms-muted mb-3 flex-1">If Angel led you in the salvation prayer, affirm below and download your certificate.</p>
+        <a href="/member/certificate/newborn" class="ms-btn inline-block px-4 py-2.5 text-sm font-bold text-center">I accepted Jesus — download certificate</a>
       </section>
 
-      <section id="district-directory" class="ms-card p-5 w-full flex flex-col" style="min-height:24rem">
+      <section id="district-directory" class="ms-card p-5 flex flex-col">
         <h2 class="font-bold text-lg mb-1">District members</h2>
         <p class="text-xs ms-muted mb-3">Select a member to view details</p>
         <select x-model="directory.selectedId" @change="onDirectorySelect()" class="w-full rounded-xl px-3 py-2 text-sm text-slate-900 mb-3">
@@ -653,41 +600,84 @@
             <option :value="m.id" x-text="m.name"></option>
           </template>
         </select>
-        <div class="flex-1 rounded-2xl bg-black/20 border border-white/10 p-4" x-show="directory.current">
-          <div class="flex gap-4 items-start">
+        <div class="flex-1 rounded-2xl bg-black/20 border border-white/10 p-3" x-show="directory.current">
+          <div class="flex gap-3 items-start">
             <img :src="directory.current.profile_pic || '/static/icons/icon-192.png'"
-                 class="w-16 h-16 rounded-full object-cover ring-2 ring-white/30 bg-white/10"
-                 alt="">
-            <div class="min-w-0 text-sm space-y-1">
-              <p class="font-bold text-base" x-text="directory.current.name"></p>
-              <p class="ms-muted"><span class="opacity-70">District:</span> <span x-text="directory.current.district"></span></p>
-              <p class="capitalize"><span class="opacity-70">Sex:</span> <span x-text="directory.current.sex || '—'"></span></p>
-              <p class="capitalize"><span class="opacity-70">Unit:</span> <span x-text="directory.current.unit || directory.current.status"></span></p>
-              <p>
+                 class="w-14 h-14 rounded-full object-cover ring-2 ring-white/30 bg-white/10 shrink-0" alt="">
+            <div class="min-w-0 text-sm space-y-0.5">
+              <p class="font-bold" x-text="directory.current.name"></p>
+              <p class="ms-muted text-xs"><span class="opacity-70">District:</span> <span x-text="directory.current.district"></span></p>
+              <p class="capitalize text-xs"><span class="opacity-70">Sex:</span> <span x-text="directory.current.sex || '—'"></span></p>
+              <p class="capitalize text-xs"><span class="opacity-70">Unit:</span> <span x-text="directory.current.unit || directory.current.status"></span></p>
+              <p class="text-xs">
                 <span class="opacity-70">Travel:</span>
                 <span class="font-semibold" :class="directory.current.is_travelling ? 'text-amber-300' : 'text-emerald-300'"
                       x-text="directory.current.is_travelling ? 'Out of district' : 'In district'"></span>
               </p>
             </div>
           </div>
-          <div class="mt-4 pt-3 border-t border-white/10" x-show="directory.current.is_self">
-            <p class="text-xs ms-muted mb-2">Your travel status (visible to district members)</p>
+          <div class="mt-3 pt-2 border-t border-white/10" x-show="directory.current.is_self">
+            <p class="text-xs ms-muted mb-2">Your travel status</p>
             <div class="flex flex-wrap gap-2">
-              <button type="button" @click="setTravelStatus(false)"
-                      class="px-3 py-1.5 rounded-full text-xs font-bold"
-                      :class="!directory.current.is_travelling ? 'bg-emerald-500 text-white' : 'bg-white/10'">I am in the district</button>
-              <button type="button" @click="setTravelStatus(true)"
-                      class="px-3 py-1.5 rounded-full text-xs font-bold"
-                      :class="directory.current.is_travelling ? 'bg-amber-400 text-slate-900' : 'bg-white/10'">I have travelled out</button>
+              <button type="button" @click="setTravelStatus(false)" class="px-2.5 py-1 rounded-full text-xs font-bold"
+                      :class="!directory.current.is_travelling ? 'bg-emerald-500 text-white' : 'bg-white/10'">In district</button>
+              <button type="button" @click="setTravelStatus(true)" class="px-2.5 py-1 rounded-full text-xs font-bold"
+                      :class="directory.current.is_travelling ? 'bg-amber-400 text-slate-900' : 'bg-white/10'">Travelled out</button>
             </div>
           </div>
         </div>
-        <p class="text-xs ms-muted mt-3" x-show="!directory.list.length">No approved district members loaded yet.</p>
-        <p class="text-xs ms-muted mt-3" x-show="directory.list.length && !directory.current">Pick a name from the list above.</p>
+        <p class="text-xs ms-muted mt-2" x-show="!directory.list.length">No approved district members loaded yet.</p>
+        <p class="text-xs ms-muted mt-2" x-show="directory.list.length && !directory.current">Pick a name from the list above.</p>
       </section>
     </div>
 
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 items-stretch" id="music-row">
+      <section id="music-church" class="ms-card p-5 flex flex-col">
+        <h2 class="font-bold text-lg mb-1">Church music</h2>
+        <p class="text-xs ms-muted mb-3">Songs from your church only</p>
+        <select x-model="churchMusic.id" class="w-full rounded-xl px-3 py-2 text-sm text-slate-900 mb-2">
+          <option value="">— Select church song —</option>
+          <template x-for="m in churchMusicList" :key="'c-'+m.id">
+            <option :value="m.id" x-text="m.title"></option>
+          </template>
+        </select>
+        <p class="text-xs text-amber-200/90 mb-2" x-show="!churchMusicList.length">No church songs yet.</p>
+        <div class="w-full rounded-xl overflow-hidden bg-black mb-2 flex-1" style="min-height:10rem;aspect-ratio:16/9">
+          <iframe class="w-full h-full" x-show="churchMusic.playing && churchMusic.id"
+            :src="(churchMusic.playing && churchMusic.id) ? ('https://www.youtube.com/embed/' + churchMusic.id + '?autoplay=1&rel=0') : ''"
+            title="Church music" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+          <div class="w-full h-full flex items-center justify-center text-xs text-white/50" style="min-height:10rem"
+               x-show="!(churchMusic.playing && churchMusic.id)">Select &amp; Play</div>
+        </div>
+        <div>
+          <button type="button" @click="if(churchMusic.id){ churchMusic.playing=true; music.playing=false }" class="ms-btn px-3 py-1.5 text-xs">Play</button>
+          <button type="button" @click="churchMusic.playing=false" class="text-xs ms-muted underline ml-2">Hide</button>
+        </div>
+      </section>
+
+      <section id="music-general" class="ms-card p-5 flex flex-col">
+        <h2 class="font-bold text-lg mb-1">General inspiration</h2>
+        <p class="text-xs ms-muted mb-3">Platform worship playlist</p>
+        <select x-model="music.id" class="w-full rounded-xl px-3 py-2 text-sm text-slate-900 mb-2">
+          <option value="">— Select song —</option>
+          <template x-for="m in musicList" :key="'p-'+m.id">
+            <option :value="m.id" x-text="m.title"></option>
+          </template>
+        </select>
+        <div class="w-full rounded-xl overflow-hidden bg-black mb-2 flex-1" style="min-height:10rem;aspect-ratio:16/9">
+          <iframe class="w-full h-full" x-show="music.playing && music.id"
+            :src="(music.playing && music.id) ? ('https://www.youtube.com/embed/' + music.id + '?autoplay=1&rel=0') : ''"
+            title="General music" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+          <div class="w-full h-full flex items-center justify-center text-xs text-white/50" style="min-height:10rem"
+               x-show="!(music.playing && music.id)">Select &amp; Play</div>
+        </div>
+        <div>
+          <button type="button" @click="if(music.id){ music.playing=true; churchMusic.playing=false }" class="ms-btn px-3 py-1.5 text-xs">Play</button>
+          <button type="button" @click="music.playing=false" class="text-xs ms-muted underline ml-2">Hide</button>
+        </div>
+      </section>
     </div>
+
 
     
             <section id="subscription" class="ms-card p-5 mb-5" style="min-height:24rem">
