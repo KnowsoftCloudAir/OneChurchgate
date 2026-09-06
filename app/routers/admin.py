@@ -439,9 +439,31 @@ async def admin_footprints(
     session: Session = Depends(get_session),
 ):
     from app.models import ActivityLog
+    from app.activity import log_activity
     logs = list(session.exec(
         select(ActivityLog).order_by(ActivityLog.created_at.desc()).limit(500)
     ).all())
+    # Enrich rows that predate name/email columns or failed writes
+    enriched = []
+    for L in logs:
+        row = {
+            "created_at": L.created_at,
+            "full_name": getattr(L, "full_name", None),
+            "email": getattr(L, "email", None),
+            "action": L.action,
+            "detail": getattr(L, "detail", None),
+            "ip_address": getattr(L, "ip_address", None),
+            "location_hint": getattr(L, "location_hint", None),
+            "path": getattr(L, "path", None),
+            "user_id": getattr(L, "user_id", None),
+        }
+        if (not row["full_name"] or not row["email"]) and row["user_id"]:
+            u = session.get(User, row["user_id"])
+            if u:
+                row["email"] = row["email"] or u.email
+                row["full_name"] = row["full_name"] or (u.full_name or u.email)
+        enriched.append(row)
     return templates.TemplateResponse("admin/footprints.html", {
-        "request": request, "user": user, "logs": logs,
+        "request": request, "user": user, "logs": enriched,
     })
+

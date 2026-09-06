@@ -16,6 +16,37 @@ from app.seed_sample import ensure_all_sample_data
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
+
+    try:
+        from sqlalchemy import text
+        with engine.begin() as conn:
+            for stmt in [
+                "ALTER TABLE activitylog ADD COLUMN IF NOT EXISTS email VARCHAR",
+                "ALTER TABLE activitylog ADD COLUMN IF NOT EXISTS full_name VARCHAR",
+                "ALTER TABLE activitylog ADD COLUMN IF NOT EXISTS ip_address VARCHAR",
+                "ALTER TABLE activitylog ADD COLUMN IF NOT EXISTS user_agent VARCHAR",
+                "ALTER TABLE activitylog ADD COLUMN IF NOT EXISTS location_hint VARCHAR",
+                "ALTER TABLE activitylog ADD COLUMN IF NOT EXISTS path VARCHAR",
+            ]:
+                try:
+                    conn.execute(text(stmt))
+                except Exception:
+                    pass
+            # SQLite variants without IF NOT EXISTS
+            for stmt in [
+                "ALTER TABLE activitylog ADD COLUMN email VARCHAR",
+                "ALTER TABLE activitylog ADD COLUMN full_name VARCHAR",
+                "ALTER TABLE activitylog ADD COLUMN ip_address VARCHAR",
+                "ALTER TABLE activitylog ADD COLUMN user_agent VARCHAR",
+                "ALTER TABLE activitylog ADD COLUMN location_hint VARCHAR",
+                "ALTER TABLE activitylog ADD COLUMN path VARCHAR",
+            ]:
+                try:
+                    conn.execute(text(stmt))
+                except Exception:
+                    pass
+    except Exception as _ae:
+        print("activitylog migrate:", _ae)
     try:
         from sqlalchemy import text
         with engine.begin() as conn:

@@ -217,12 +217,19 @@ class PhotoComment(SQLModel, table=True):
     photo: Optional[ProgramPhoto] = Relationship(back_populates="comments")
 
 class ActivityLog(SQLModel, table=True):
+    """Member/admin activity footprint for General Admin reports."""
     id: Optional[int] = Field(default=None, primary_key=True)
-    church_id: Optional[int] = None
-    user_id: Optional[int] = None
-    action: str
-    detail: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    church_id: Optional[int] = Field(default=None, index=True)
+    user_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
+    email: Optional[str] = Field(default=None, index=True)
+    full_name: Optional[str] = None
+    action: str = Field(index=True)
+    detail: Optional[str] = Field(default=None, sa_column=Column(Text))
+    ip_address: Optional[str] = None
+    user_agent: Optional[str] = None
+    location_hint: Optional[str] = None  # country/city when proxy headers or client provide it
+    path: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
 
 class SpecialProject(SQLModel, table=True):
     """Fundraising / special project with collection tracking for admin dashboard."""

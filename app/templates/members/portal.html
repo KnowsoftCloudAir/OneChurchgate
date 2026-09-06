@@ -294,6 +294,7 @@
     background: linear-gradient(160deg, #0f172a, #1e293b);
   }
   .progress-bar > span { display: block; height: 100%; background: var(--mp-accent); border-radius: 999px; transition: width 0.4s; }
+  [x-cloak] { display: none !important; }
 </style>
 
 <div class="member-space theme-royal" id="memberSpace" x-data="memberHub()" x-init="init()">
@@ -448,16 +449,19 @@
     <nav class="flex flex-wrap gap-2 mb-6 text-xs font-semibold">
       <a href="#devotions" class="px-3 py-1.5 rounded-full ms-card">Devotions</a>
       <a href="#bible" class="px-3 py-1.5 rounded-full ms-card">Bible</a>
-      <a href="#evangelism" class="px-3 py-1.5 rounded-full ms-card">Evangelism</a>
-      <a href="#prayer" class="px-3 py-1.5 rounded-full ms-card">Prayer</a>
-      <a href="#district-directory" class="px-3 py-1.5 rounded-full ms-card">Members</a>
-      <a href="#music-church" class="px-3 py-1.5 rounded-full ms-card">Church music</a>
-      <a href="#music-general" class="px-3 py-1.5 rounded-full ms-card">Inspiration</a>
-      <a href="#subscription" class="px-3 py-1.5 rounded-full ms-card">Subscription</a>
-      <a href="#church" class="px-3 py-1.5 rounded-full ms-card">My church</a>
+      <button type="button" @click="showPanel('evangelism')" :class="openPanel==='evangelism' && 'ring-2 ring-amber-300'" class="px-3 py-1.5 rounded-full ms-card">Evangelism</button>
+      <button type="button" @click="showPanel('prayer')" :class="openPanel==='prayer' && 'ring-2 ring-amber-300'" class="px-3 py-1.5 rounded-full ms-card">Prayer</button>
+      <button type="button" @click="showPanel('life')" :class="openPanel==='life' && 'ring-2 ring-amber-300'" class="px-3 py-1.5 rounded-full ms-card">New life</button>
+      <button type="button" @click="showPanel('members')" :class="openPanel==='members' && 'ring-2 ring-amber-300'" class="px-3 py-1.5 rounded-full ms-card">Members</button>
+      <button type="button" @click="showPanel('music')" :class="openPanel==='music' && 'ring-2 ring-amber-300'" class="px-3 py-1.5 rounded-full ms-card">Music</button>
+      <button type="button" @click="showPanel('subscription')" :class="openPanel==='subscription' && 'ring-2 ring-amber-300'" class="px-3 py-1.5 rounded-full ms-card">Subscription</button>
+      <button type="button" @click="showPanel('pastor')" :class="openPanel==='pastor' && 'ring-2 ring-amber-300'" class="px-3 py-1.5 rounded-full ms-card">Pastor</button>
+      <button type="button" @click="showPanel('church')" :class="openPanel==='church' && 'ring-2 ring-amber-300'" class="px-3 py-1.5 rounded-full ms-card">My church</button>
       <a href="/focus-groups" class="px-3 py-1.5 rounded-full ms-card">Focus groups</a>
       <a href="/programs/" class="px-3 py-1.5 rounded-full ms-card">Programs</a>
+      <button type="button" @click="openPanel=null" class="px-3 py-1.5 rounded-full border border-white/20 text-xs ms-muted">Hide panels</button>
     </nav>
+    <p class="text-xs ms-muted -mt-4 mb-5">Panels from Evangelism downward stay folded — open one from the list above, or ask Angel.</p>
 
     <section id="devotions" class="ms-card p-5 mb-5">
       <h2 class="font-bold text-lg mb-1">Devotionals</h2>
@@ -555,7 +559,7 @@
       </div>
     </section>
 
-    <section id="evangelism" class="ms-card p-5 mb-5">
+    <section id="evangelism" class="ms-card p-5 mb-5" x-show="openPanel==='evangelism'" x-cloak x-transition>
       <h2 class="font-bold text-lg mb-1">Evangelism bar</h2>
       <div class="grid grid-cols-3 gap-3 mb-3 text-center">
         <div><p class="text-2xl font-bold ms-accent" x-text="evangelism.target"></p><p class="text-xs ms-muted">Target</p></div>
@@ -570,7 +574,7 @@
       </div>
     </section>
 
-    <section id="prayer" class="ms-card p-5 mb-5">
+    <section id="prayer" class="ms-card p-5 mb-5" x-show="openPanel==='prayer'" x-cloak x-transition>
       <h2 class="font-bold text-lg mb-1">Prayer request board</h2>
       <textarea x-model="prayer.new" rows="2" placeholder="What should we agree with you in prayer?" class="w-full rounded-xl px-3 py-2 text-sm text-slate-900 mb-2"></textarea>
       <button type="button" @click="addPrayer()" class="ms-btn px-4 py-2 text-sm mb-4">Post request</button>
@@ -584,7 +588,7 @@
       </ul>
     </section>
 
-    <div class="grid sm:grid-cols-2 gap-4 mb-5 items-stretch">
+    <div class="grid sm:grid-cols-2 gap-4 mb-5 items-stretch" x-show="openPanel==='life' || openPanel==='members'" x-cloak x-transition>
       <section id="salvation" class="ms-card p-5 border border-amber-400/30 flex flex-col">
         <h2 class="font-bold text-lg mb-2">New life in Christ</h2>
         <p class="text-xs ms-muted mb-3 flex-1">If Angel led you in the salvation prayer, affirm below and download your certificate.</p>
@@ -631,7 +635,7 @@
       </section>
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 items-stretch" id="music-row">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 items-stretch" id="music-row" x-show="openPanel==='music'" x-cloak x-transition>
       <section id="music-church" class="ms-card p-5 flex flex-col">
         <h2 class="font-bold text-lg mb-1">Church music</h2>
         <p class="text-xs ms-muted mb-3">Songs from your church only</p>
@@ -680,7 +684,7 @@
 
 
     
-            <section id="subscription" class="ms-card p-5 mb-5" style="min-height:24rem">
+            <section id="subscription" class="ms-card p-5 mb-5" style="min-height:24rem" x-show="openPanel==='subscription'" x-cloak x-transition>
       <div class="flex flex-wrap justify-between gap-2 items-start mb-4">
         <div>
           <h2 class="font-bold text-lg">My subscription</h2>
@@ -788,7 +792,7 @@
     </section>
 
 
-    <section id="pastor-msg" class="ms-card p-5 mb-5">
+    <section id="pastor-msg" class="ms-card p-5 mb-5" x-show="openPanel==='pastor'" x-cloak x-transition>
       <h2 class="font-bold text-lg mb-2">Message from pastor</h2>
       {% if pastor_messages %}
       <div class="space-y-4">
@@ -810,7 +814,7 @@
       {% endif %}
     </section>
 
-    <section id="church" class="ms-card p-5 mb-5">
+    <section id="church" class="ms-card p-5 mb-5" x-show="openPanel==='church'" x-cloak x-transition>
       <h2 class="font-bold text-lg mb-3">My church</h2>
       {% if church %}
       <p class="font-medium">{{ church.name }}</p>
@@ -895,6 +899,7 @@ function memberHub() {
         churchMusicList: [],
         angel: { enabled: false, listening: false, busy: false, status: 'Tap 👼 Angel to turn on — then speak anytime.', recognition: null },
     directory: { list: [], selectedId: '', current: null },
+    openPanel: null,
     bibleBooks: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther','Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon','Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi','Matthew','Mark','Luke','John','Acts','Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude','Revelation'],
     situations: [
       { id:'unwell', label:'Feeling unwell / sickness', refs:['Psalm 103:2-3','Isaiah 53:5','Jeremiah 17:14','James 5:14-15','3 John 1:2','Matthew 9:35','Mark 5:34','1 Peter 2:24'] },
@@ -1158,7 +1163,7 @@ function memberHub() {
       });
       this.angel.status = 'Playing: ' + (pick.title || pick.id);
       this.angelSpeak('Playing music to lift your soul.');
-      try { document.getElementById('music')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+      try { this.openPanel='music'; document.getElementById('music-row')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
       setTimeout(() => this.angelIdleAfterAction('Music playing. Silent and waiting…'), 2200);
     },
     angelStopMusic() {
@@ -1223,6 +1228,7 @@ function memberHub() {
     angelDashboardHelp(kind) {
       const s = window.__MEMBER_STATUS__ || {};
       if (kind === 'subscription' || kind === 'status') {
+        this.openPanel = 'subscription';
         let msg = 'Your name is ' + (s.name || 'member') + '. Membership status: ' + (s.approval || 'unknown') + '. ';
         if (s.awaiting === true || s.awaiting === 'true') {
           msg += 'Access is locked. Renew subscription or register fully, then wait for confirmation.';
@@ -1235,15 +1241,18 @@ function memberHub() {
         return true;
       }
       if (kind === 'devotion') {
+        try { document.getElementById('devotions')?.scrollIntoView({ behavior: 'smooth' }); } catch (e) {}
         const d = this.devotion || {};
         this.angelSpeak('Quiet time ' + (d.quiet || 'not set') + ', morning ' + (d.morning || 'not set') + ', evening ' + (d.evening || 'not set') + '. Set alarms on this page.');
         return true;
       }
       if (kind === 'programs') {
+        this.openPanel = 'programs';
         this.angelSpeak('Special programs are listed under Programs and events on your page.');
         return true;
       }
       if (kind === 'pastor') {
+        this.openPanel = 'pastor';
         this.angelSpeak('Pastor messages and church contact are on your dashboard and under Pastor messages.');
         return true;
       }
@@ -1252,6 +1261,7 @@ function memberHub() {
         return true;
       }
       if (kind === 'activities') {
+        this.openPanel = 'church';
         this.angelSpeak('Church activity days and weekly notes appear under church information when published.');
         return true;
       }
@@ -1330,7 +1340,7 @@ function memberHub() {
     angelLeadSalvation() {
       const prayer = 'To be saved, believe that Jesus can save you, confess and forsake your sins, ask God to forgive you, and repeat after me: Lord Jesus, I know I am a sinner. I am sorry for all the bad life I have lived. I forsake them. Please forgive me and give me the grace to live a life that will please you. In Jesus name I pray. Amen. If you have just said this prayer, you are forgiven. Click the I accepted Jesus button to download your New Born in Christ certificate.';
       this.angelSpeak(prayer);
-      try { document.getElementById('salvation')?.scrollIntoView({ behavior: 'smooth' }); } catch (e) {}
+      try { this.openPanel='life'; document.getElementById('salvation')?.scrollIntoView({ behavior: 'smooth' }); } catch (e) {}
     },
 
     async loadMusicLinks() {
