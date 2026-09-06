@@ -116,9 +116,34 @@
   .angel-sticky {
     position: -webkit-sticky;
     position: sticky;
-    top: 4.5rem; /* below site nav + online bar */
-    z-index: 40;
+    top: 4.75rem;
+    z-index: 25;
     margin-bottom: 1rem;
+    background: linear-gradient(135deg, #0f172aee, #1e1b4bee);
+  }
+  .angel-wave-stage { pointer-events: none !important; }
+  .angel-orb { pointer-events: none !important; }
+  .clock-chip {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.45rem 0.9rem;
+    border-radius: 1rem;
+    background: linear-gradient(160deg, rgba(15,23,42,0.9), rgba(30,58,138,0.55));
+    border: 1px solid rgba(96,165,250,0.35);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+  }
+  .clock-chip .time {
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.2;
+  }
+  .clock-chip .date {
+    font-size: 0.65rem;
+    opacity: 0.75;
+    margin-top: 0.15rem;
   }
   .angel-panel-live.is-waiting .angel-orb {
     animation: orbFloat 3s ease-in-out infinite, orbPulse 2s ease-in-out infinite;
@@ -271,59 +296,72 @@
   <div class="pray-watermark" aria-hidden="true"></div>
 
   <div class="relative z-10 max-w-4xl mx-auto px-4 py-6 pb-16">
-    <header class="flex flex-wrap items-center justify-between gap-4 mb-6">
-      <div class="flex items-center gap-3">
+    <header class="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <div class="flex items-center gap-3 min-w-0">
         <img src="/static/icons/icon-192.png" alt="Knowsoft Churchgate"
-             class="h-12 w-12 rounded-2xl shadow-lg object-contain bg-white/10 p-1"
+             class="h-11 w-11 rounded-2xl shadow-lg object-contain bg-white/10 p-1 shrink-0"
              onerror="this.src='/static/img/knowsoft-logo.png'">
-        <div>
+        <div class="min-w-0">
           <p class="text-xs ms-muted uppercase tracking-wider font-semibold">Knowsoft Churchgate</p>
-          <h1 class="text-xl sm:text-2xl font-bold leading-tight">My Spiritual Space</h1>
+          <h1 class="text-lg sm:text-xl font-bold leading-tight truncate">My Spiritual Space</h1>
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        <button type="button" @click="if(window.__MEMBER_STATUS__ && window.__MEMBER_STATUS__.awaiting===true){ angel.status='Locked until you register or renew.'; return; } toggleAngel()"
-                :class="angel.enabled ? 'bg-amber-400 text-slate-900 ring-2 ring-amber-200 shadow-lg shadow-amber-400/30' : 'bg-white/15 text-white'"
-                class="px-3 py-1.5 rounded-full text-xs font-bold shadow border border-white/20">
+        <button type="button"
+                @click="toggleAngel()"
+                :class="angel.enabled ? 'bg-amber-400 text-slate-900 ring-2 ring-amber-200 shadow-lg' : 'bg-white/15 text-white'"
+                class="px-3 py-1.5 rounded-full text-xs font-bold shadow border border-white/25 shrink-0">
           <span x-text="angel.enabled ? '👼 Angel on' : '👼 Angel'"></span>
         </button>
-        <span class="text-xs ms-muted mr-1">Theme</span>
-        <button type="button" @click="setTheme('royal')" class="w-8 h-8 rounded-full border-2 border-white/40 bg-[#0b1f4a]" title="Royal blue"></button>
-        <button type="button" @click="setTheme('pink')" class="w-8 h-8 rounded-full border-2 border-white/40 bg-[#db2777]" title="Pink"></button>
-        <button type="button" @click="setTheme('green')" class="w-8 h-8 rounded-full border-2 border-white/40 bg-[#059669]" title="Green"></button>
-        <button type="button" @click="setTheme('white')" class="w-8 h-8 rounded-full border-2 border-slate-300 bg-white" title="White"></button>
+        <span class="text-xs ms-muted">Theme</span>
+        <button type="button" @click="setTheme('royal')" class="w-7 h-7 rounded-full border-2 border-white/40 bg-[#0b1f4a]" title="Royal blue"></button>
+        <button type="button" @click="setTheme('pink')" class="w-7 h-7 rounded-full border-2 border-white/40 bg-[#db2777]" title="Pink"></button>
+        <button type="button" @click="setTheme('green')" class="w-7 h-7 rounded-full border-2 border-white/40 bg-[#059669]" title="Green"></button>
+        <button type="button" @click="setTheme('white')" class="w-7 h-7 rounded-full border-2 border-slate-300 bg-white" title="White"></button>
       </div>
     </header>
 
-                <div class="mb-5 rounded-3xl border border-amber-300/50 bg-gradient-to-br from-indigo-950 via-slate-900 to-violet-950 px-4 py-4 text-sm angel-panel-live angel-sticky backdrop-blur-md"
+    <!-- Clock ABOVE Angel so sticky panel never covers it -->
+    <div class="flex justify-center mb-4 relative z-30">
+      <div class="clock-chip">
+        <p class="text-[9px] uppercase tracking-widest ms-muted font-semibold">Local time</p>
+        <p id="liveClock" class="time ms-accent">--:--:--</p>
+        <p id="liveClockDate" class="date"></p>
+      </div>
+    </div>
+
+    <div class="mb-5 rounded-2xl border border-amber-300/50 px-3 py-3 sm:px-4 sm:py-4 text-sm angel-panel-live angel-sticky backdrop-blur-md"
          :class="{ 'is-on': angel.enabled, 'is-waiting': angel.enabled && !angel.busy }">
-      <div class="angel-wave-stage" :style="angel.enabled ? '' : 'opacity:0.35'">
+      <div class="angel-wave-stage" :style="angel.enabled ? 'opacity:1' : 'opacity:0.4'">
         <div class="angel-wave-layer w1"></div>
         <div class="angel-wave-layer w2"></div>
         <div class="angel-wave-layer w3"></div>
         <div class="angel-wave-layer w4"></div>
         <div class="angel-orb" x-show="angel.enabled" aria-hidden="true"></div>
       </div>
-      <p class="font-bold text-lg text-amber-200 relative z-10 tracking-wide">👼 Angel — your soul helper</p>
-      <p class="text-xs ms-muted mt-1 relative z-10 pr-24" x-text="angel.status || 'Turn Angel on to begin.'"></p>
-      <p class="text-xs text-sky-300 mt-1 relative z-10" x-show="angel.enabled && !angel.busy">◐ Active · silent · waiting for your next instruction</p>
-      <p class="text-xs text-amber-200 mt-1 relative z-10" x-show="angel.busy">● Working on your request…</p>
-      <p class="text-xs text-emerald-300 mt-1 relative z-10" x-show="angel.listening && !angel.busy">🎤 Mic open · speak anytime</p>
+      <div class="relative z-10 flex flex-wrap items-start justify-between gap-2">
+        <div class="min-w-0 flex-1">
+          <p class="font-bold text-base sm:text-lg text-amber-200 tracking-wide">👼 Angel — your soul helper</p>
+          <p class="text-xs ms-muted mt-1" x-text="angel.status || 'Tap Angel above to turn on.'"></p>
+          <p class="text-xs text-sky-300 mt-1" x-show="angel.enabled && !angel.busy">◐ Active · silent · waiting</p>
+          <p class="text-xs text-amber-200 mt-1" x-show="angel.busy">● Working…</p>
+          <p class="text-xs text-emerald-300 mt-1" x-show="angel.listening && !angel.busy">🎤 Mic open</p>
+        </div>
+        <button type="button" @click="toggleAngel()"
+                class="shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border border-white/30"
+                :class="angel.enabled ? 'bg-amber-400 text-slate-900' : 'bg-white/15'">
+          <span x-text="angel.enabled ? 'Turn off' : 'Turn on'"></span>
+        </button>
+      </div>
       <div class="flex flex-wrap gap-2 mt-3 relative z-10" x-show="angel.enabled">
         <button type="button" @click="angelListenOnce()" class="px-3 py-1.5 rounded-full bg-amber-400 text-slate-900 text-xs font-bold">🎤 Listen</button>
-        <button type="button" @click="angelPlayMusic()" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">▶ Play music</button>
-        <button type="button" @click="angelReadBible('peace')" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">📖 Encourage me</button>
-        <button type="button" @click="angelReadBible('anxious')" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">📖 Calm anxiety</button>
-        <button type="button" @click="angelPlayMusic(); angelReadBible('peace')" class="px-3 py-1.5 rounded-full bg-rose-500/90 text-xs font-bold">Bored? Music + Word</button>
+        <button type="button" @click="angelPlayMusic()" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">▶ Music</button>
+        <button type="button" @click="angelReadBible('peace')" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">📖 Encourage</button>
+        <button type="button" @click="angelReadBible('anxious')" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">📖 Calm</button>
+        <button type="button" @click="angelStopMusic()" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">⏹ Stop music</button>
       </div>
     </div>
-    <div class="flex justify-center mb-5">
-      <div class="ms-card px-5 py-4 shadow-lg inline-flex flex-col items-center gap-1 min-w-[16rem]">
-        <p class="text-[10px] uppercase tracking-widest ms-muted font-semibold">Now with you · local time</p>
-        <p id="liveClock" class="text-3xl sm:text-4xl font-black tabular-nums tracking-wider ms-accent leading-none">--:--:--</p>
-        <p id="liveClockDate" class="text-xs ms-muted mt-1"></p>
-      </div>
-    </div>
+
 
     
     {% if is_awaiting_payment %}
@@ -549,54 +587,52 @@
       </section>
       <section id="music" class="ms-card p-5 w-full">
         <h2 class="font-bold text-lg mb-1">Music</h2>
-        <p class="text-xs ms-muted mb-3">Full-width players · church &amp; platform side by side</p>
-
-        <div class="music-grid w-full">
-          <div class="music-player-card">
-            <p class="text-sm font-semibold mb-1">My church music</p>
-            <p class="text-xs ms-muted mb-2">Songs your church admin added</p>
+        <p class="text-xs ms-muted mb-3">Church playlist and general inspiration — side by side</p>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
+          <div class="rounded-2xl bg-black/25 border border-white/10 p-3 flex flex-col">
+            <p class="text-sm font-semibold mb-1">① Church music</p>
+            <p class="text-xs ms-muted mb-2">From your church only</p>
             <select x-model="churchMusic.id" class="w-full rounded-xl px-3 py-2 text-sm text-slate-900 mb-2">
-              <option value="">— Select a church song —</option>
+              <option value="">— Select church song —</option>
               <template x-for="m in churchMusicList" :key="'c-'+m.id">
                 <option :value="m.id" x-text="m.title"></option>
               </template>
             </select>
             <p class="text-xs text-amber-200/90 mb-2" x-show="!churchMusicList.length">No church songs yet.</p>
-            <div class="music-player-frame mb-2">
-              <template x-if="churchMusic.playing && churchMusic.id">
-                <iframe :key="'cm-'+churchMusic.id"
-                  :src="'https://www.youtube.com/embed/' + churchMusic.id + '?autoplay=1&rel=0'"
-                  title="Church music" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowfullscreen></iframe>
-              </template>
-              <div class="music-player-placeholder" x-show="!(churchMusic.playing && churchMusic.id)">Select a song and press Play</div>
+            <div class="w-full rounded-xl overflow-hidden bg-black mb-2" style="aspect-ratio:16/9">
+              <iframe class="w-full h-full" x-show="churchMusic.playing && churchMusic.id"
+                :src="(churchMusic.playing && churchMusic.id) ? ('https://www.youtube.com/embed/' + churchMusic.id + '?autoplay=1&rel=0') : ''"
+                title="Church music" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen></iframe>
+              <div class="w-full h-full flex items-center justify-center text-xs text-white/50" style="min-height:10rem"
+                   x-show="!(churchMusic.playing && churchMusic.id)">Select &amp; Play</div>
             </div>
-            <div>
-              <button type="button" @click="if(churchMusic.id){ churchMusic.playing=true; music.playing=false }" class="ms-btn px-3 py-1.5 text-xs" :disabled="!churchMusic.id">Play</button>
+            <div class="mt-auto">
+              <button type="button" @click="if(churchMusic.id){ churchMusic.playing=true; music.playing=false }"
+                      class="ms-btn px-3 py-1.5 text-xs" :disabled="!churchMusic.id">Play</button>
               <button type="button" @click="churchMusic.playing=false" class="text-xs ms-muted underline ml-2">Hide</button>
             </div>
           </div>
-
-          <div class="music-player-card">
-            <p class="text-sm font-semibold mb-1">Inspiration (platform)</p>
-            <p class="text-xs ms-muted mb-2">General playlist</p>
+          <div class="rounded-2xl bg-black/25 border border-white/10 p-3 flex flex-col">
+            <p class="text-sm font-semibold mb-1">② General music</p>
+            <p class="text-xs ms-muted mb-2">Platform inspiration</p>
             <select x-model="music.id" class="w-full rounded-xl px-3 py-2 text-sm text-slate-900 mb-2">
-              <option value="">— Select a song —</option>
+              <option value="">— Select song —</option>
               <template x-for="m in musicList" :key="'p-'+m.id">
                 <option :value="m.id" x-text="m.title"></option>
               </template>
             </select>
-            <div class="music-player-frame mb-2">
-              <template x-if="music.playing && music.id">
-                <iframe :key="'pm-'+music.id"
-                  :src="'https://www.youtube.com/embed/' + music.id + '?autoplay=1&rel=0'"
-                  title="Worship" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowfullscreen></iframe>
-              </template>
-              <div class="music-player-placeholder" x-show="!(music.playing && music.id)">Select a song and press Play</div>
+            <div class="w-full rounded-xl overflow-hidden bg-black mb-2" style="aspect-ratio:16/9">
+              <iframe class="w-full h-full" x-show="music.playing && music.id"
+                :src="(music.playing && music.id) ? ('https://www.youtube.com/embed/' + music.id + '?autoplay=1&rel=0') : ''"
+                title="General music" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowfullscreen></iframe>
+              <div class="w-full h-full flex items-center justify-center text-xs text-white/50" style="min-height:10rem"
+                   x-show="!(music.playing && music.id)">Select &amp; Play</div>
             </div>
-            <div>
-              <button type="button" @click="if(music.id){ music.playing=true; churchMusic.playing=false }" class="ms-btn px-3 py-1.5 text-xs">Play</button>
+            <div class="mt-auto">
+              <button type="button" @click="if(music.id){ music.playing=true; churchMusic.playing=false }"
+                      class="ms-btn px-3 py-1.5 text-xs">Play</button>
               <button type="button" @click="music.playing=false" class="text-xs ms-muted underline ml-2">Hide</button>
             </div>
           </div>
@@ -986,12 +1022,14 @@ function memberHub() {
       }
     },
     toggleAngel() {
+      if (window.__MEMBER_STATUS__ && (window.__MEMBER_STATUS__.awaiting === true || window.__MEMBER_STATUS__.awaiting === 'true')) {
+        this.angel.status = 'Membership locked — renew subscription to use full Angel features. You can still open the panel.';
+      }
       this.angel.enabled = !this.angel.enabled;
       if (this.angel.enabled) {
         if (!this.angel.recognition) this.initAngel();
         this.angel.busy = false;
         this.angel.status = 'Angel is on. Silent and waiting — speak anytime, or use the buttons.';
-        // Do not speak a long greeting every time — brief confirm then silence
         this.angelSpeak('Angel is on and waiting.', true);
         try {
           fetch('/member/api/log', {
