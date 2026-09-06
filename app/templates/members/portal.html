@@ -296,6 +296,11 @@
   <div class="pray-watermark" aria-hidden="true"></div>
 
   <div class="relative z-10 max-w-4xl mx-auto px-4 py-6 pb-16">
+    <div class="member-hero-strip mb-4 rounded-2xl px-4 py-2 text-center text-xs font-semibold tracking-wide"
+         style="background:linear-gradient(90deg,rgba(251,191,36,0.15),rgba(96,165,250,0.2),rgba(167,139,250,0.15));border:1px solid rgba(255,255,255,0.12)">
+      Your space for prayer, the Word, worship &amp; Angel guidance
+    </div>
+
     <header class="flex flex-wrap items-center justify-between gap-3 mb-4">
       <div class="flex items-center gap-3 min-w-0">
         <img src="/static/icons/icon-192.png" alt="Knowsoft Churchgate"
@@ -345,7 +350,8 @@
           <p class="text-xs ms-muted mt-1" x-text="angel.status || 'Tap Angel above to turn on.'"></p>
           <p class="text-xs text-sky-300 mt-1" x-show="angel.enabled && !angel.busy">◐ Active · silent · waiting</p>
           <p class="text-xs text-amber-200 mt-1" x-show="angel.busy">● Working…</p>
-          <p class="text-xs text-emerald-300 mt-1" x-show="angel.listening && !angel.busy">🎤 Mic open</p>
+          <p class="text-xs text-emerald-300 mt-1" x-show="angel.enabled && angel.listening && !angel.busy">🎤 Waves active · listening</p>
+          <p class="text-xs text-sky-200/90 mt-1" x-show="angel.enabled && !angel.listening && !angel.busy">◐ Attentive · waiting for instruction</p>
         </div>
         <button type="button" @click="toggleAngel()"
                 class="shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border border-white/30"
@@ -585,10 +591,10 @@
         <h2 class="font-bold text-lg mb-2">Testimonies</h2>
         <a href="/testimonies" class="ms-btn inline-block px-4 py-2 text-sm">Open testimony wall →</a>
       </section>
-      <section id="music" class="ms-card p-5 w-full">
+      <section id="music" class="ms-card p-5 w-full" style="min-height:24rem">
         <h2 class="font-bold text-lg mb-1">Music</h2>
         <p class="text-xs ms-muted mb-3">Church playlist and general inspiration — side by side</p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full items-stretch">
           <div class="rounded-2xl bg-black/25 border border-white/10 p-3 flex flex-col">
             <p class="text-sm font-semibold mb-1">① Church music</p>
             <p class="text-xs ms-muted mb-2">From your church only</p>
@@ -641,7 +647,7 @@
     </div>
 
     
-            <section id="subscription" class="ms-card p-5 mb-5">
+            <section id="subscription" class="ms-card p-5 mb-5" style="min-height:24rem">
       <div class="flex flex-wrap justify-between gap-2 items-start mb-4">
         <div>
           <h2 class="font-bold text-lg">My subscription</h2>
@@ -962,7 +968,8 @@ function memberHub() {
           else alert(s.label);
           this.scheduleAlarms();
         }, next - now));
-     
+      });
+    },
 
     initAngel() {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1022,7 +1029,7 @@ function memberHub() {
       if (this.angel.enabled) {
         if (!this.angel.recognition) this.initAngel();
         this.angel.busy = false;
-        this.angel.status = 'Angel is on — silent and waiting for your instruction.';
+        this.angel.status = 'Waves active — Angel is on, silent, and attentive. Speak anytime.';
         this.angelSpeak('Angel is on and waiting.', true);
         try {
           fetch('/member/api/log', {
@@ -1292,6 +1299,14 @@ function memberHub() {
     },
 
     async loadMusicLinks() {
+      const defaults = [
+        { id: '36hkGeb7r5E', title: 'Angel lift – worship' },
+        { id: 'pVtjDcROtQ4', title: 'Soul lift – praise' },
+        { id: 'DXDGE_lRI0E', title: 'Build My Life – Pat Barrett' },
+        { id: 'y4REuiYL1Vo', title: 'Way Maker – Leeland' },
+        { id: 'Cqx86lbnFIQ', title: 'Goodness of God – Bethel' },
+        { id: '0DsuyIRY2L0', title: 'What A Beautiful Name' },
+      ];
       try {
         const r = await fetch('/api/music-links', { credentials: 'same-origin' });
         if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -1300,24 +1315,29 @@ function memberHub() {
           this.musicList = data.filter(x => x && x.id);
           this.churchMusicList = [];
         } else {
-          this.musicList = (data.platform || data.all || []).filter(x => x && x.id);
+          this.musicList = (data.platform || []).filter(x => x && x.id);
           this.churchMusicList = (data.church || []).filter(x => x && x.id);
+          if (!this.musicList.length && data.all) this.musicList = data.all.filter(x => x && x.id);
         }
-        if (this.churchMusicList.length && !this.churchMusic.id)
-          this.churchMusic.id = this.churchMusicList[0].id;
-        if (this.musicList.length && !this.music.id)
-          this.music.id = this.musicList[0].id;
       } catch (e) {
         console.warn('music links', e);
         this.musicList = [];
         this.churchMusicList = [];
       }
-      if (!this.churchMusicList.length && !this.musicList.length) {
+      // Always ensure a usable general list
+      if (!this.musicList.length) this.musicList = defaults.slice();
+      else {
+        const ids = new Set(this.musicList.map(m => m.id));
+        defaults.forEach(d => { if (!ids.has(d.id)) this.musicList.push(d); });
+      }
+      if (!this.churchMusicList.length) {
         this.churchMusicList = [
-          { id: '36hkGeb7r5E', title: 'Angel lift – worship (default)' },
-          { id: 'pVtjDcROtQ4', title: 'Soul lift – praise (default)' },
+          { id: '36hkGeb7r5E', title: 'Church – Angel lift' },
+          { id: 'pVtjDcROtQ4', title: 'Church – Soul lift' },
         ];
       }
+      if (!this.churchMusic.id) this.churchMusic.id = this.churchMusicList[0].id;
+      if (!this.music.id) this.music.id = this.musicList[0].id;
     },
     async fetchRef(ref) {
       const r = await fetch('https://bible-api.com/' + encodeURIComponent(ref) + '?translation=' + (this.bible.version||'kjv'));
@@ -1434,6 +1454,7 @@ function memberHub() {
     },
   };
 }
+window.memberHub = memberHub;
 </script>
 
 
