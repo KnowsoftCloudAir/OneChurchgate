@@ -73,11 +73,12 @@
   <style>[x-cloak]{display:none!important}</style>
 
 <style>
-  .cg-stage-slide { animation: cgSlideIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .cg-stage-slide { animation: cgSlideIn 0.65s cubic-bezier(0.16, 1, 0.3, 1) both; }
   @keyframes cgSlideIn {
-    0% { transform: translateX(28%) scale(0.96); opacity: 0; filter: blur(6px); }
-    55% { transform: translateX(-2%) scale(1.01); opacity: 1; filter: blur(0); }
-    100% { transform: translateX(0) scale(1); opacity: 1; }
+    0%   { transform: translateX(55%) scale(0.88) rotateY(-8deg); opacity: 0; filter: blur(10px); }
+    40%  { transform: translateX(-4%) scale(1.03) rotateY(1deg); opacity: 1; filter: blur(0); }
+    70%  { transform: translateX(1.5%) scale(0.995) rotateY(0); }
+    100% { transform: translateX(0) scale(1) rotateY(0); opacity: 1; filter: blur(0); }
   }
   .cg-promo-panel {
     background:
@@ -199,7 +200,7 @@
            <p class="relative text-sm sm:text-base text-slate-200 mt-3 max-w-md leading-relaxed">
              You can advertise your church global program here. Contact admin for support.
            </p>
-           <p class="relative text-[11px] text-slate-400 mt-4">Promo slide · stays ~40 minutes when no other clips rotate in</p>
+           <p class="relative text-[11px] text-slate-400 mt-4">Promo · 10s then next live clip</p>
          </div>
        </template>
      </div>
@@ -442,7 +443,7 @@ window.homeLive = function homeLive() {
   const base = {{ live_stats|default({'churches': 5, 'countries': 1, 'states': 1, 'members': 1})|tojson }};
   const clips = {{ youtube_clips|default([])|tojson }};
   const VIDEO_MS = 40000;          // ~40 seconds per video
-  const PROMO_MS = 40 * 60 * 1000; // 40 minutes for default promo slide
+  const PROMO_MS = 10000; // 10 seconds for default Knowsoft promo, then next YouTube
   const promo = {
     kind: 'promo',
     title: 'Advertise your church global program here',
