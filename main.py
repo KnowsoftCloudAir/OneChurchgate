@@ -17,6 +17,18 @@ from app.seed_sample import ensure_all_sample_data
 async def lifespan(app: FastAPI):
     create_db_and_tables()
     try:
+        from sqlalchemy import text
+        with engine.begin() as conn:
+            try:
+                conn.execute(text("ALTER TABLE churchmember ADD COLUMN IF NOT EXISTS is_travelling BOOLEAN DEFAULT FALSE"))
+            except Exception:
+                try:
+                    conn.execute(text("ALTER TABLE churchmember ADD COLUMN is_travelling BOOLEAN DEFAULT 0"))
+                except Exception:
+                    pass
+    except Exception as _e:
+        print("migrate is_travelling:", _e)
+    try:
         with Session(engine) as session:
             # Always ensure General Admin exists with known password
             admin = session.exec(select(User).where(User.email == "admin@knowsoft.com")).first()

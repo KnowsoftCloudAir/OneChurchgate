@@ -556,3 +556,63 @@ async def member_api_log(
         location_hint=body.get("location"),
     )
     return {"ok": True}
+
+
+@router.get("/api/district-members")
+async def api_district_members(
+    session: Session = Depends(get_session),
+    user: User = Depends(require_user),
+):
+    """Approved members in the same district (or unit) as the current member."""
+    member = session.get(ChurchMember, user.member_id) if user.member_id else None
+    if not member:
+        member = session.exec(select(ChurchMember).where(ChurchMember.email == user.email)).first()
+    if not member or not member.church_id:
+        return []
+    church = session.get(ChurchUnit, member.church_id)
+    rows = list(session.exec(
+        select(ChurchMember).where(
+            ChurchMember.church_id == member.church_id,
+            ChurchMember.approval_status == "approved",
+            ChurchMember.is_active == True,
+        ).order_by(ChurchMember.full_name)
+    ).all())
+    district_name = church.name if church else ""
+    out = []
+    for m in rows:
+        unit = (m.custom_title or m.worker_type or m.leader_type or m.status or "member")
+        out.append({
+            "id": m.id,
+            "name": m.full_name,
+            "district": district_name,
+            "sex": m.sex or "",
+            "unit": unit,
+            "status": m.status or "member",
+            "profile_pic": m.profile_pic or "",
+            "is_travelling": bool(getattr(m, "is_travelling", False)),
+            "is_self": bool(user.member_id and m.id == user.member_id),
+        })
+    return out
+
+
+@router.post("/api/member-travel")
+async def api_member_travel(
+    request: Request,
+    session: Session = Depends(get_session),
+    user: User = Depends(require_user),
+):
+    """Current member sets whether they have travelled out of the district."""
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    travelling = bool(body.get("is_travelling"))
+    member = session.get(ChurchMember, user.member_id) if user.member_id else None
+    if not member:
+        member = session.exec(select(ChurchMember).where(ChurchMember.email == user.email)).first()
+    if not member:
+        raise HTTPException(404, "Member not found")
+    member.is_travelling = travelling
+    session.add(member)
+    session.commit()
+    return {"ok": True, "is_travelling": member.is_travelling}

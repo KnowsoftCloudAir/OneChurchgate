@@ -113,12 +113,16 @@
     opacity: 0.75;
   }
 
-  .angel-sticky {
+  .angel-sticky-on {
     position: -webkit-sticky;
     position: sticky;
-    top: 4.75rem;
-    z-index: 25;
-    margin-bottom: 1rem;
+    top: 3.25rem; /* sit higher under nav — less block of content below */
+    z-index: 20;
+    margin-bottom: 0.75rem;
+    background: linear-gradient(135deg, #0f172aee, #1e1b4bee);
+  }
+  .angel-sticky {
+    margin-bottom: 0.75rem;
     background: linear-gradient(135deg, #0f172aee, #1e1b4bee);
   }
   .angel-wave-stage { pointer-events: none !important; }
@@ -335,8 +339,8 @@
       </div>
     </div>
 
-    <div class="mb-5 rounded-2xl border border-amber-300/50 px-3 py-3 sm:px-4 sm:py-4 text-sm angel-panel-live angel-sticky backdrop-blur-md"
-         :class="{ 'is-on': angel.enabled, 'is-waiting': angel.enabled && !angel.busy }">
+    <div class="mb-4 rounded-2xl border border-amber-300/50 px-3 py-2.5 sm:px-4 sm:py-3 text-sm angel-panel-live angel-sticky backdrop-blur-md"
+         :class="{ 'is-on': angel.enabled, 'is-waiting': angel.enabled && !angel.busy, 'angel-sticky-on': angel.enabled }">
       <div class="angel-wave-stage" :style="angel.enabled ? 'opacity:1' : 'opacity:0.4'">
         <div class="angel-wave-layer w1"></div>
         <div class="angel-wave-layer w2"></div>
@@ -591,37 +595,34 @@
         <h2 class="font-bold text-lg mb-2">Testimonies</h2>
         <a href="/testimonies" class="ms-btn inline-block px-4 py-2 text-sm">Open testimony wall →</a>
       </section>
-      <section id="music" class="ms-card p-5 w-full" style="min-height:24rem">
+      
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-5 items-stretch" id="music-directory-row">
+      <section id="music" class="ms-card p-5 w-full flex flex-col" style="min-height:24rem">
         <h2 class="font-bold text-lg mb-1">Music</h2>
-        <p class="text-xs ms-muted mb-3">Church playlist and general inspiration — side by side</p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 w-full items-stretch">
+        <p class="text-xs ms-muted mb-3">Church playlist and general inspiration</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full flex-1">
           <div class="rounded-2xl bg-black/25 border border-white/10 p-3 flex flex-col">
             <p class="text-sm font-semibold mb-1">① Church music</p>
-            <p class="text-xs ms-muted mb-2">From your church only</p>
             <select x-model="churchMusic.id" class="w-full rounded-xl px-3 py-2 text-sm text-slate-900 mb-2">
               <option value="">— Select church song —</option>
               <template x-for="m in churchMusicList" :key="'c-'+m.id">
                 <option :value="m.id" x-text="m.title"></option>
               </template>
             </select>
-            <p class="text-xs text-amber-200/90 mb-2" x-show="!churchMusicList.length">No church songs yet.</p>
             <div class="w-full rounded-xl overflow-hidden bg-black mb-2" style="aspect-ratio:16/9">
               <iframe class="w-full h-full" x-show="churchMusic.playing && churchMusic.id"
                 :src="(churchMusic.playing && churchMusic.id) ? ('https://www.youtube.com/embed/' + churchMusic.id + '?autoplay=1&rel=0') : ''"
-                title="Church music" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowfullscreen></iframe>
-              <div class="w-full h-full flex items-center justify-center text-xs text-white/50" style="min-height:10rem"
+                title="Church music" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+              <div class="w-full h-full flex items-center justify-center text-xs text-white/50" style="min-height:8rem"
                    x-show="!(churchMusic.playing && churchMusic.id)">Select &amp; Play</div>
             </div>
             <div class="mt-auto">
-              <button type="button" @click="if(churchMusic.id){ churchMusic.playing=true; music.playing=false }"
-                      class="ms-btn px-3 py-1.5 text-xs" :disabled="!churchMusic.id">Play</button>
+              <button type="button" @click="if(churchMusic.id){ churchMusic.playing=true; music.playing=false }" class="ms-btn px-3 py-1.5 text-xs">Play</button>
               <button type="button" @click="churchMusic.playing=false" class="text-xs ms-muted underline ml-2">Hide</button>
             </div>
           </div>
           <div class="rounded-2xl bg-black/25 border border-white/10 p-3 flex flex-col">
             <p class="text-sm font-semibold mb-1">② General music</p>
-            <p class="text-xs ms-muted mb-2">Platform inspiration</p>
             <select x-model="music.id" class="w-full rounded-xl px-3 py-2 text-sm text-slate-900 mb-2">
               <option value="">— Select song —</option>
               <template x-for="m in musicList" :key="'p-'+m.id">
@@ -631,19 +632,61 @@
             <div class="w-full rounded-xl overflow-hidden bg-black mb-2" style="aspect-ratio:16/9">
               <iframe class="w-full h-full" x-show="music.playing && music.id"
                 :src="(music.playing && music.id) ? ('https://www.youtube.com/embed/' + music.id + '?autoplay=1&rel=0') : ''"
-                title="General music" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowfullscreen></iframe>
-              <div class="w-full h-full flex items-center justify-center text-xs text-white/50" style="min-height:10rem"
+                title="General music" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+              <div class="w-full h-full flex items-center justify-center text-xs text-white/50" style="min-height:8rem"
                    x-show="!(music.playing && music.id)">Select &amp; Play</div>
             </div>
             <div class="mt-auto">
-              <button type="button" @click="if(music.id){ music.playing=true; churchMusic.playing=false }"
-                      class="ms-btn px-3 py-1.5 text-xs">Play</button>
+              <button type="button" @click="if(music.id){ music.playing=true; churchMusic.playing=false }" class="ms-btn px-3 py-1.5 text-xs">Play</button>
               <button type="button" @click="music.playing=false" class="text-xs ms-muted underline ml-2">Hide</button>
             </div>
           </div>
         </div>
       </section>
+
+      <section id="district-directory" class="ms-card p-5 w-full flex flex-col" style="min-height:24rem">
+        <h2 class="font-bold text-lg mb-1">District members</h2>
+        <p class="text-xs ms-muted mb-3">Select a member to view details</p>
+        <select x-model="directory.selectedId" @change="onDirectorySelect()" class="w-full rounded-xl px-3 py-2 text-sm text-slate-900 mb-3">
+          <option value="">— Choose member —</option>
+          <template x-for="m in directory.list" :key="m.id">
+            <option :value="m.id" x-text="m.name"></option>
+          </template>
+        </select>
+        <div class="flex-1 rounded-2xl bg-black/20 border border-white/10 p-4" x-show="directory.current">
+          <div class="flex gap-4 items-start">
+            <img :src="directory.current.profile_pic || '/static/icons/icon-192.png'"
+                 class="w-16 h-16 rounded-full object-cover ring-2 ring-white/30 bg-white/10"
+                 alt="">
+            <div class="min-w-0 text-sm space-y-1">
+              <p class="font-bold text-base" x-text="directory.current.name"></p>
+              <p class="ms-muted"><span class="opacity-70">District:</span> <span x-text="directory.current.district"></span></p>
+              <p class="capitalize"><span class="opacity-70">Sex:</span> <span x-text="directory.current.sex || '—'"></span></p>
+              <p class="capitalize"><span class="opacity-70">Unit:</span> <span x-text="directory.current.unit || directory.current.status"></span></p>
+              <p>
+                <span class="opacity-70">Travel:</span>
+                <span class="font-semibold" :class="directory.current.is_travelling ? 'text-amber-300' : 'text-emerald-300'"
+                      x-text="directory.current.is_travelling ? 'Out of district' : 'In district'"></span>
+              </p>
+            </div>
+          </div>
+          <div class="mt-4 pt-3 border-t border-white/10" x-show="directory.current.is_self">
+            <p class="text-xs ms-muted mb-2">Your travel status (visible to district members)</p>
+            <div class="flex flex-wrap gap-2">
+              <button type="button" @click="setTravelStatus(false)"
+                      class="px-3 py-1.5 rounded-full text-xs font-bold"
+                      :class="!directory.current.is_travelling ? 'bg-emerald-500 text-white' : 'bg-white/10'">I am in the district</button>
+              <button type="button" @click="setTravelStatus(true)"
+                      class="px-3 py-1.5 rounded-full text-xs font-bold"
+                      :class="directory.current.is_travelling ? 'bg-amber-400 text-slate-900' : 'bg-white/10'">I have travelled out</button>
+            </div>
+          </div>
+        </div>
+        <p class="text-xs ms-muted mt-3" x-show="!directory.list.length">No approved district members loaded yet.</p>
+        <p class="text-xs ms-muted mt-3" x-show="directory.list.length && !directory.current">Pick a name from the list above.</p>
+      </section>
+    </div>
+
     </div>
 
     
@@ -861,6 +904,7 @@ function memberHub() {
         churchMusic: { id: '', playing: false },
         churchMusicList: [],
         angel: { enabled: false, listening: false, busy: false, status: 'Tap 👼 Angel to turn on — then speak anytime.', recognition: null },
+    directory: { list: [], selectedId: '', current: null },
     bibleBooks: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther','Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon','Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi','Matthew','Mark','Luke','John','Acts','Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude','Revelation'],
     situations: [
       { id:'unwell', label:'Feeling unwell / sickness', refs:['Psalm 103:2-3','Isaiah 53:5','Jeremiah 17:14','James 5:14-15','3 John 1:2','Matthew 9:35','Mark 5:34','1 Peter 2:24'] },
@@ -889,6 +933,7 @@ function memberHub() {
       } catch (e) {}
       this.scheduleAlarms();
       this.loadMusicLinks();
+      this.loadDirectory();
       this.initAngel();
       this.refreshVoices();
       if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = () => this.refreshVoices();

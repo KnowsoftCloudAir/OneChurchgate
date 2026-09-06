@@ -135,6 +135,7 @@ class ChurchMember(SQLModel, table=True):
     approval_status: str = Field(default="pending")  # pending, approved, rejected, discontinued
     discontinue_requested: bool = Field(default=False)
     is_active: bool = Field(default=True)
+    is_travelling: bool = Field(default=False)
     notes: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
