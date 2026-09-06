@@ -446,24 +446,45 @@
     
     {% elif member.approval_status == 'approved' and not is_awaiting_payment %}
 
-    <nav class="flex flex-wrap gap-2 mb-6 text-xs font-semibold">
-      <a href="#devotions" class="px-3 py-1.5 rounded-full ms-card">Devotions</a>
-      <a href="#bible" class="px-3 py-1.5 rounded-full ms-card">Bible</a>
-      <button type="button" @click="showPanel('evangelism')" :class="openPanel==='evangelism' && 'ring-2 ring-amber-300'" class="px-3 py-1.5 rounded-full ms-card">Evangelism</button>
-      <button type="button" @click="showPanel('prayer')" :class="openPanel==='prayer' && 'ring-2 ring-amber-300'" class="px-3 py-1.5 rounded-full ms-card">Prayer</button>
-      <button type="button" @click="showPanel('life')" :class="openPanel==='life' && 'ring-2 ring-amber-300'" class="px-3 py-1.5 rounded-full ms-card">New life</button>
-      <button type="button" @click="showPanel('members')" :class="openPanel==='members' && 'ring-2 ring-amber-300'" class="px-3 py-1.5 rounded-full ms-card">Members</button>
-      <button type="button" @click="showPanel('music')" :class="openPanel==='music' && 'ring-2 ring-amber-300'" class="px-3 py-1.5 rounded-full ms-card">Music</button>
-      <button type="button" @click="showPanel('subscription')" :class="openPanel==='subscription' && 'ring-2 ring-amber-300'" class="px-3 py-1.5 rounded-full ms-card">Subscription</button>
-      <button type="button" @click="showPanel('pastor')" :class="openPanel==='pastor' && 'ring-2 ring-amber-300'" class="px-3 py-1.5 rounded-full ms-card">Pastor</button>
-      <button type="button" @click="showPanel('church')" :class="openPanel==='church' && 'ring-2 ring-amber-300'" class="px-3 py-1.5 rounded-full ms-card">My church</button>
-      <a href="/focus-groups" class="px-3 py-1.5 rounded-full ms-card">Focus groups</a>
-      <a href="/programs/" class="px-3 py-1.5 rounded-full ms-card">Programs</a>
-      <button type="button" @click="openPanel=null" class="px-3 py-1.5 rounded-full border border-white/20 text-xs ms-muted">Hide panels</button>
+    <nav class="flex flex-wrap gap-2 mb-6 text-xs font-semibold select-none" style="touch-action: manipulation;">
+      <button type="button" @click.prevent="showPanel('devotions')"
+              :class="openPanel==='devotions' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
+              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Devotions</button>
+      <button type="button" @click.prevent="showPanel('bible')"
+              :class="openPanel==='bible' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
+              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Bible</button>
+      <button type="button" @click.prevent="showPanel('evangelism')"
+              :class="openPanel==='evangelism' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
+              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Evangelism</button>
+      <button type="button" @click.prevent="showPanel('prayer')"
+              :class="openPanel==='prayer' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
+              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Prayer</button>
+      <button type="button" @click.prevent="showPanel('life')"
+              :class="openPanel==='life' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
+              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">New life</button>
+      <button type="button" @click.prevent="showPanel('members')"
+              :class="openPanel==='members' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
+              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Members</button>
+      <button type="button" @click.prevent="showPanel('music')"
+              :class="openPanel==='music' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
+              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Music</button>
+      <button type="button" @click.prevent="showPanel('subscription')"
+              :class="openPanel==='subscription' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
+              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Subscription</button>
+      <button type="button" @click.prevent="showPanel('pastor')"
+              :class="openPanel==='pastor' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
+              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Pastor</button>
+      <button type="button" @click.prevent="showPanel('church')"
+              :class="openPanel==='church' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
+              class="px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">My church</button>
+      <a href="/focus-groups" class="px-3 py-2 rounded-full ms-card inline-block">Focus groups</a>
+      <a href="/programs/" class="px-3 py-2 rounded-full ms-card inline-block">Programs</a>
+      <button type="button" @click.prevent="openPanel=null"
+              class="px-3 py-2 rounded-full border border-white/20 text-xs ms-muted cursor-pointer">Hide panels</button>
     </nav>
-    <p class="text-xs ms-muted -mt-4 mb-5">Panels from Evangelism downward stay folded — open one from the list above, or ask Angel.</p>
+    <p class="text-xs ms-muted -mt-3 mb-5">Tap any item above to open its panel. Ask Angel, or use Hide panels to fold them again.</p>
 
-    <section id="devotions" class="ms-card p-5 mb-5">
+    <section id="devotions" class="ms-card p-5 mb-5" x-show="openPanel==='devotions'" x-cloak x-transition>
       <h2 class="font-bold text-lg mb-1">Devotionals</h2>
       <p class="text-xs ms-muted mb-4">Set quiet time, morning and evening devotion with optional alarms.</p>
       <div class="grid sm:grid-cols-3 gap-4">
@@ -487,7 +508,7 @@
       <button type="button" @click="enableNotifications()" class="mt-2 text-xs font-semibold ms-btn px-3 py-1.5">Enable device alarms</button>
     </section>
 
-    <section id="bible" class="ms-card p-5 mb-5">
+    <section id="bible" class="ms-card p-5 mb-5" x-show="openPanel==='bible'" x-cloak x-transition>
       <h2 class="font-bold text-lg mb-1">Holy Bible</h2>
       <p class="text-xs ms-muted mb-3">Select a book or a situation. Verses slide one by one. Quoted words of Jesus show in <span class="text-red-400 font-semibold">red</span>.</p>
       <div class="grid sm:grid-cols-2 gap-3 mb-3">
@@ -1197,7 +1218,7 @@ function memberHub() {
         if (this.bible.slides.length) {
           this.bible.slideIndex = 0;
           setTimeout(() => { try { this.speakCurrent(false); } catch (e) {} }, 250);
-          this.angel.status = 'Reading: ' + (this.bible.slides[0].ref || sit);
+          this.openPanel = 'bible'; this.angel.status = 'Reading: ' + (this.bible.slides[0].ref || sit);
         } else {
           this.angelSpeak('I could not load the Bible right now.');
         }
@@ -1241,7 +1262,7 @@ function memberHub() {
         return true;
       }
       if (kind === 'devotion') {
-        try { document.getElementById('devotions')?.scrollIntoView({ behavior: 'smooth' }); } catch (e) {}
+        this.openPanel = 'devotions'; try { document.getElementById('devotions')?.scrollIntoView({ behavior: 'smooth' }); } catch (e) {}
         const d = this.devotion || {};
         this.angelSpeak('Quiet time ' + (d.quiet || 'not set') + ', morning ' + (d.morning || 'not set') + ', evening ' + (d.evening || 'not set') + '. Set alarms on this page.');
         return true;
@@ -1341,6 +1362,68 @@ function memberHub() {
       const prayer = 'To be saved, believe that Jesus can save you, confess and forsake your sins, ask God to forgive you, and repeat after me: Lord Jesus, I know I am a sinner. I am sorry for all the bad life I have lived. I forsake them. Please forgive me and give me the grace to live a life that will please you. In Jesus name I pray. Amen. If you have just said this prayer, you are forgiven. Click the I accepted Jesus button to download your New Born in Christ certificate.';
       this.angelSpeak(prayer);
       try { this.openPanel='life'; document.getElementById('salvation')?.scrollIntoView({ behavior: 'smooth' }); } catch (e) {}
+    },
+
+
+    showPanel(id) {
+      if (!id) { this.openPanel = null; return; }
+      this.openPanel = id;
+      const map = {
+        devotions: 'devotions',
+        bible: 'bible',
+        evangelism: 'evangelism',
+        prayer: 'prayer',
+        life: 'salvation',
+        members: 'district-directory',
+        music: 'music-row',
+        subscription: 'subscription',
+        pastor: 'pastor-msg',
+        church: 'church',
+        programs: 'programs',
+      };
+      const targetId = map[id] || id;
+      const scrollTo = () => {
+        const el = document.getElementById(targetId);
+        if (el) {
+          try { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch (e) {}
+        }
+      };
+      setTimeout(scrollTo, 60);
+      if (typeof this.$nextTick === 'function') this.$nextTick(scrollTo);
+    },
+    async loadDirectory() {
+      try {
+        const r = await fetch('/api/district-members', { credentials: 'same-origin' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        this.directory.list = await r.json();
+        const self = this.directory.list.find(m => m.is_self);
+        if (self) {
+          this.directory.selectedId = String(self.id);
+          this.directory.current = self;
+        }
+      } catch (e) {
+        console.warn('directory', e);
+        this.directory.list = [];
+      }
+    },
+    onDirectorySelect() {
+      const id = Number(this.directory.selectedId);
+      this.directory.current = this.directory.list.find(m => m.id === id) || null;
+    },
+    async setTravelStatus(travelling) {
+      try {
+        const r = await fetch('/api/member-travel', {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ is_travelling: !!travelling })
+        });
+        if (!r.ok) throw new Error('fail');
+        await this.loadDirectory();
+        if (this.directory.selectedId) this.onDirectorySelect();
+      } catch (e) {
+        alert('Could not update travel status');
+      }
     },
 
     async loadMusicLinks() {
