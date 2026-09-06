@@ -334,7 +334,7 @@ async def admin_subscription_settings(
     account_name: str = Form(""),
     account_number: str = Form(""),
     other_details: str = Form(""),
-    card_enabled: str = Form("yes"),
+    card_enabled: str = Form("no"),
     card_currency: str = Form("USD"),
     card_monthly_price: float = Form(5),
     card_annual_price: float = Form(50),

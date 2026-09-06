@@ -71,6 +71,22 @@
 </style>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <style>[x-cloak]{display:none!important}</style>
+
+<style>
+  .cg-stage-slide { animation: cgSlideIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  @keyframes cgSlideIn {
+    0% { transform: translateX(28%) scale(0.96); opacity: 0; filter: blur(6px); }
+    55% { transform: translateX(-2%) scale(1.01); opacity: 1; filter: blur(0); }
+    100% { transform: translateX(0) scale(1); opacity: 1; }
+  }
+  .cg-promo-panel {
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(212,160,23,0.35), transparent 50%),
+      radial-gradient(ellipse at 90% 100%, rgba(99,102,241,0.35), transparent 45%),
+      linear-gradient(160deg, #0b1220 0%, #1e1b4b 45%, #0f172a 100%);
+  }
+</style>
+
 </head>
 <body class="font-sans antialiased text-white bg-ink-900 overflow-x-hidden">
  <!-- Nav -->
@@ -153,40 +169,47 @@
      </div>
 
      <div class="relative mx-3 mb-3 rounded-2xl overflow-hidden border border-white/10 bg-black aspect-video shadow-lift">
-       <!-- Live YouTube embed rotates every 30s -->
-       <template x-if="playlist.length && playlist[yi] && playlist[yi].video_id">
-         <div class="absolute inset-0" :key="yi + '-' + playlist[yi].video_id">
+       <template x-if="current() && current().kind === 'video'">
+         <div class="absolute inset-0 cg-stage-slide" :key="'v-'+yi+'-'+current().video_id">
            <iframe class="w-full h-full"
-                   :src="'https://www.youtube.com/embed/' + playlist[yi].video_id + '?autoplay=1&mute=1&controls=1&rel=0&modestbranding=1&playsinline=1'"
-                   :title="playlist[yi].title"
+                   :src="ytSrc(current())"
+                   :title="current().title"
                    allow="autoplay; encrypted-media; picture-in-picture"
                    allowfullscreen></iframe>
-           <button type="button" @click="openYt(playlist[yi])"
+           <div class="absolute top-3 left-3 z-10 flex gap-2">
+             <button type="button" @click="soundOn = true; forceReload()"
+                     class="px-3 py-1.5 rounded-full text-xs font-bold shadow"
+                     :class="soundOn ? 'bg-emerald-400 text-ink-900' : 'bg-amber-300 text-ink-900'">
+               <span x-text="soundOn ? '🔊 Sound on' : '🔇 Tap for sound'"></span>
+             </button>
+           </div>
+           <button type="button" @click="openYt(current())"
                    class="absolute bottom-3 right-3 z-10 px-3 py-1.5 rounded-full bg-white/95 text-ink-900 text-xs font-bold shadow hover:bg-white">
              Enlarge
            </button>
          </div>
        </template>
-       <!-- Fallback: home page style screenshot when nothing to show -->
-       <template x-if="!playlist.length">
-         <div class="absolute inset-0 flex flex-col">
-           <div class="flex-1 relative hero-mesh flex items-center justify-center p-4">
-             <img src="/static/img/church-hero.svg" alt="Churchgate" class="absolute inset-0 w-full h-full object-cover opacity-40">
-             <div class="relative text-center z-10 px-4">
-               <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" class="h-12 mx-auto mb-3 object-contain drop-shadow-lg"
-                    onerror="this.style.display='none'">
-               <p class="font-display text-lg sm:text-xl font-bold text-white">Knowsoft Churchgate</p>
-               <p class="text-xs text-slate-300 mt-1">One flock · Every assembly visible</p>
-               <p class="text-[10px] text-slate-500 mt-3">Approved YouTube links will play here live</p>
-             </div>
-           </div>
+       <template x-if="current() && current().kind === 'promo'">
+         <div class="absolute inset-0 cg-stage-slide cg-promo-panel flex flex-col items-center justify-center p-5 text-center" :key="'promo-'+yi">
+           <img src="/static/img/church-hero.svg" alt="" class="absolute inset-0 w-full h-full object-cover opacity-25 pointer-events-none">
+           <img src="/static/img/knowsoft-logo.png" alt="Knowsoft Churchgate" class="relative h-14 sm:h-16 object-contain drop-shadow-xl mb-3"
+                onerror="this.src='/static/icons/icon-192.png'">
+           <p class="relative font-display text-xl sm:text-2xl font-bold text-white tracking-tight">Knowsoft Churchgate</p>
+           <p class="relative text-sanctum-300 text-xs sm:text-sm mt-1 font-semibold uppercase tracking-wider">Advertise your global program</p>
+           <p class="relative text-sm sm:text-base text-slate-200 mt-3 max-w-md leading-relaxed">
+             You can advertise your church global program here. Contact admin for support.
+           </p>
+           <p class="relative text-[11px] text-slate-400 mt-4">Promo slide · stays ~40 minutes when no other clips rotate in</p>
          </div>
        </template>
      </div>
 
      <div class="px-4 pb-3">
-       <p class="text-sm font-semibold text-white truncate" x-text="playlist.length ? playlist[yi].title : 'Welcome to Churchgate'"></p>
-       <p class="text-[11px] text-slate-400" x-show="playlist.length">Auto-plays muted · rotates every 30s · tap Enlarge for sound</p>
+       <p class="text-sm font-semibold text-white truncate" x-text="current() ? current().title : 'Welcome to Churchgate'"></p>
+       <p class="text-[11px] text-slate-400">
+         <span x-show="current() && current().kind==='video'">Videos ~40s each · sound when browser allows · dramatic slide to next</span>
+         <span x-show="current() && current().kind==='promo'">Default showcase · contact admin to feature your global program</span>
+       </p>
      </div>
    </div>
 
@@ -223,7 +246,7 @@
    </div>
  </div>
 
- <!-- Featured Global special programs (approved by General Admin) — 20s each -->
+ <!-- Featured Global special programs (approved by General Admin) — ~40s each -->
  {% if featured_programs %}
  <section class="relative border-y border-white/10 bg-ink-800/80 overflow-hidden" x-data="homeShowcase()" x-init="start()">
    <div class="max-w-6xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
@@ -339,7 +362,7 @@
        if (!this.items || this.items.length < 2) return;
        this.timer = setInterval(() => {
          if (!this.lightbox) this.active = (this.active + 1) % this.items.length;
-       }, 20000);
+       }, 40000);
      },
      restart() {
        if (this.timer) clearInterval(this.timer);
@@ -418,23 +441,73 @@
 window.homeLive = function homeLive() {
   const base = {{ live_stats|default({'churches': 5, 'countries': 1, 'states': 1, 'members': 1})|tojson }};
   const clips = {{ youtube_clips|default([])|tojson }};
+  const VIDEO_MS = 40000;          // ~40 seconds per video
+  const PROMO_MS = 40 * 60 * 1000; // 40 minutes for default promo slide
+  const promo = {
+    kind: 'promo',
+    title: 'Advertise your church global program here',
+    church: 'Knowsoft Churchgate',
+    video_id: '',
+    duration: PROMO_MS,
+  };
+  const built = [];
+  (clips || []).forEach(function (c) {
+    if (!c) return;
+    const id = c.video_id || c.youtube_id || c.id;
+    if (!id) return;
+    built.push({
+      kind: 'video',
+      video_id: id,
+      title: c.title || 'Church program',
+      church: c.church || c.church_name || 'Churchgate',
+      duration: VIDEO_MS,
+    });
+  });
+  // Always include promo so empty stage still advertises
+  built.push(promo);
   return {
     hh: "00", mm: "00", ss: "00",
     dateStr: "",
     tickH: false, tickM: false, tickS: false,
     display: { churches: base.churches, countries: base.countries, states: base.states, members: base.members },
     target: base,
-    playlist: clips,
+    playlist: built,
     yi: 0,
     ytOpen: false,
     ytId: "",
+    soundOn: true,
+    _rotTimer: null,
     boot() {
       this.tickClock();
       setInterval(() => this.tickClock(), 1000);
       setInterval(() => this.jitterStats(), 1800);
-      if (this.playlist.length > 1) {
-        setInterval(() => { this.yi = (this.yi + 1) % this.playlist.length; }, 30000);
-      }
+      this.scheduleRotate();
+    },
+    current() {
+      return this.playlist[this.yi] || null;
+    },
+    ytSrc(item) {
+      if (!item || !item.video_id) return '';
+      // Prefer sound on; many browsers still require a user tap — button reloads with mute=0
+      const mute = this.soundOn ? '0' : '1';
+      return 'https://www.youtube.com/embed/' + item.video_id
+        + '?autoplay=1&mute=' + mute + '&controls=1&rel=0&modestbranding=1&playsinline=1';
+    },
+    forceReload() {
+      // bump key by reassigning yi briefly so iframe rebuilds with new mute flag
+      const i = this.yi;
+      this.yi = -1;
+      this.$nextTick(() => { this.yi = i; this.scheduleRotate(); });
+    },
+    scheduleRotate() {
+      if (this._rotTimer) clearTimeout(this._rotTimer);
+      const cur = this.current();
+      const ms = (cur && cur.duration) ? cur.duration : VIDEO_MS;
+      this._rotTimer = setTimeout(() => {
+        if (!this.playlist.length) return;
+        this.yi = (this.yi + 1) % this.playlist.length;
+        this.scheduleRotate();
+      }, ms);
     },
     pad(n) { return String(n).padStart(2, "0"); },
     tickClock() {
@@ -448,7 +521,6 @@ window.homeLive = function homeLive() {
       setTimeout(() => { this.tickS = false; this.tickM = false; this.tickH = false; }, 280);
     },
     jitterStats() {
-      // dramatic but returns toward real targets
       const j = (t) => Math.max(1, Math.round(t * (0.85 + Math.random() * 0.45)));
       this.display = {
         churches: j(this.target.churches),
@@ -458,7 +530,7 @@ window.homeLive = function homeLive() {
       };
     },
     fmt(n) { return (n || 0).toLocaleString(); },
-    openYt(item) { this.ytId = item.video_id; this.ytOpen = true; },
+    openYt(item) { if (item && item.video_id) { this.ytId = item.video_id; this.ytOpen = true; } },
     closeYt() { this.ytOpen = false; this.ytId = ""; },
   };
 }
