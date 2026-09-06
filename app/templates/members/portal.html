@@ -11,7 +11,7 @@
     background: var(--mp-bg);
     color: var(--mp-text);
     position: relative;
-    overflow-x: hidden;
+    overflow-x: clip;
   }
   .member-space .ms-card {
     background: var(--mp-card);
@@ -114,9 +114,18 @@
   }
 
   .angel-sticky {
+    position: -webkit-sticky;
     position: sticky;
-    top: 4.25rem; /* below main nav */
-    z-index: 35;
+    top: 4.5rem; /* below site nav + online bar */
+    z-index: 40;
+    margin-bottom: 1rem;
+  }
+  .angel-panel-live.is-waiting .angel-orb {
+    animation: orbFloat 3s ease-in-out infinite, orbPulse 2s ease-in-out infinite;
+  }
+  @keyframes orbPulse {
+    0%, 100% { box-shadow: 0 0 20px rgba(251,191,36,0.5); }
+    50% { box-shadow: 0 0 40px rgba(96,165,250,0.8), 0 0 60px rgba(251,191,36,0.4); }
   }
   .angel-panel-live {
     position: relative;
@@ -287,7 +296,7 @@
     </header>
 
                 <div class="mb-5 rounded-3xl border border-amber-300/50 bg-gradient-to-br from-indigo-950 via-slate-900 to-violet-950 px-4 py-4 text-sm angel-panel-live angel-sticky backdrop-blur-md"
-         :class="angel.enabled && 'is-on'"
+         :class="{ 'is-on': angel.enabled, 'is-waiting': angel.enabled && !angel.busy }"
          x-show="angel.enabled || angel.status" x-cloak>
       <div class="angel-wave-stage" x-show="angel.enabled">
         <div class="angel-wave-layer w1"></div>
@@ -297,8 +306,10 @@
         <div class="angel-orb" aria-hidden="true"></div>
       </div>
       <p class="font-bold text-lg text-amber-200 relative z-10 tracking-wide">👼 Angel — your soul helper</p>
-      <p class="text-xs ms-muted mt-1 relative z-10 pr-20" x-text="angel.status || 'Turn Angel on, then speak or use the buttons.'"></p>
-      <p class="text-xs text-emerald-300 mt-1 relative z-10" x-show="angel.listening">🎤 Listening… waves active</p>
+      <p class="text-xs ms-muted mt-1 relative z-10 pr-24" x-text="angel.status || 'Turn Angel on to begin.'"></p>
+      <p class="text-xs text-sky-300 mt-1 relative z-10" x-show="angel.enabled && !angel.busy">◐ Active · silent · waiting for your next instruction</p>
+      <p class="text-xs text-amber-200 mt-1 relative z-10" x-show="angel.busy">● Working on your request…</p>
+      <p class="text-xs text-emerald-300 mt-1 relative z-10" x-show="angel.listening && !angel.busy">🎤 Mic open · speak anytime</p>
       <div class="flex flex-wrap gap-2 mt-3 relative z-10" x-show="angel.enabled">
         <button type="button" @click="angelListenOnce()" class="px-3 py-1.5 rounded-full bg-amber-400 text-slate-900 text-xs font-bold">🎤 Listen</button>
         <button type="button" @click="angelPlayMusic()" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">▶ Play music</button>
@@ -808,7 +819,7 @@ function memberHub() {
         musicList: [],
         churchMusic: { id: '', playing: false },
         churchMusicList: [],
-        angel: { enabled: false, listening: false, status: '', recognition: null },
+        angel: { enabled: false, listening: false, busy: false, status: '', recognition: null },
     bibleBooks: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther','Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon','Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi','Matthew','Mark','Luke','John','Acts','Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude','Revelation'],
     situations: [
       { id:'unwell', label:'Feeling unwell / sickness', refs:['Psalm 103:2-3','Isaiah 53:5','Jeremiah 17:14','James 5:14-15','3 John 1:2','Matthew 9:35','Mark 5:34','1 Peter 2:24'] },
@@ -916,18 +927,16 @@ function memberHub() {
           else alert(s.label);
           this.scheduleAlarms();
         }, next - now));
-      });
-    },
-
+     
     initAngel() {
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SR) {
-        this.angel.status = 'Voice needs Chrome or Edge. Use the Angel action buttons below.';
+        this.angel.status = 'Voice needs Chrome or Edge. Use the buttons while Angel is on.';
         return;
       }
       try {
         if (this.angel.recognition) {
-          try { this.angel.recognition.abort(); } catch (e) {}
+          try { this.angel.recognition.onend = null; this.angel.recognition.abort(); } catch (e) {}
         }
         const rec = new SR();
         rec.lang = 'en-US';
@@ -935,6 +944,7 @@ function memberHub() {
         rec.interimResults = false;
         rec.maxAlternatives = 1;
         rec.onresult = (ev) => {
+          if (!this.angel.enabled || this.angel.busy) return;
           try {
             let said = '';
             for (let i = ev.resultIndex; i < ev.results.length; i++) {
@@ -947,85 +957,114 @@ function memberHub() {
         rec.onerror = (e) => {
           if (e.error === 'not-allowed') {
             this.angel.listening = false;
-            this.angel.status = 'Allow microphone for Angel, then tap Angel again.';
+            this.angel.status = 'Allow the microphone, then turn Angel on again.';
             return;
           }
-          // no-speech / aborted: keep trying while Angel is on
-          if (e.error === 'no-speech' || e.error === 'aborted') return;
-          this.angel.status = 'Mic: ' + (e.error || 'error') + ' — still listening if Angel is on.';
+          // Stay active; browser often fires no-speech — ignore
         };
         rec.onend = () => {
           this.angel.listening = false;
-          // Stay active until user turns Angel off (voice or button)
           if (this.angel.enabled) {
-            setTimeout(() => {
-              if (!this.angel.enabled) return;
-              try {
-                this.angel.recognition.start();
-                this.angel.listening = true;
-              } catch (err) {
-                setTimeout(() => {
-                  if (!this.angel.enabled) return;
-                  try { this.angel.recognition.start(); this.angel.listening = true; } catch (e2) {}
-                }, 400);
-              }
-            }, 250);
+            // Silently resume listening — still "on and waiting"
+            setTimeout(() => this._angelResumeListen(), 300);
           }
         };
         this.angel.recognition = rec;
       } catch (e) {
-        this.angel.status = 'Could not init voice on this device.';
+        this.angel.status = 'Could not start voice on this device.';
+      }
+    },
+    _angelResumeListen() {
+      if (!this.angel.enabled || !this.angel.recognition) return;
+      try {
+        this.angel.recognition.start();
+        this.angel.listening = true;
+      } catch (e) {
+        setTimeout(() => {
+          if (!this.angel.enabled) return;
+          try { this.angel.recognition.start(); this.angel.listening = true; } catch (e2) {}
+        }, 500);
       }
     },
     toggleAngel() {
       this.angel.enabled = !this.angel.enabled;
       if (this.angel.enabled) {
         if (!this.angel.recognition) this.initAngel();
-        this.angel.status = 'Angel is on and stays listening until you say “Angel stop” or turn Angel off.';
-        this.angelSpeak('Angel is ready and will keep listening until you say Angel stop.');
-        try { fetch('/member/api/log', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({action:'angel_on', detail:'Angel enabled'}) }); } catch(e) {}
-        this.angelListenOnce();
+        this.angel.busy = false;
+        this.angel.status = 'Angel is on. Silent and waiting — speak anytime, or use the buttons.';
+        // Do not speak a long greeting every time — brief confirm then silence
+        this.angelSpeak('Angel is on and waiting.', true);
+        try {
+          fetch('/member/api/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'angel_on', detail: 'Angel enabled' })
+          });
+        } catch (e) {}
+        this._angelResumeListen();
       } else {
-        try { if (this.angel.recognition) this.angel.recognition.abort(); } catch (e) {}
-        this.angel.listening = false;
-        this.angel.status = 'Angel is off.';
+        this.angelTurnOff(false);
       }
+    },
+    angelTurnOff(speakBye) {
+      this.angel.enabled = false;
+      this.angel.busy = false;
+      this.angel.listening = false;
+      try {
+        if (this.angel.recognition) {
+          this.angel.recognition.onend = null;
+          this.angel.recognition.abort();
+        }
+      } catch (e) {}
+      try { speechSynthesis.cancel(); } catch (e) {}
+      this.angel.status = 'Angel is off.';
+      if (speakBye) this.angelSpeak('Angel is off. God bless you.', false);
     },
     angelListenOnce() {
-      if (!this.angel.enabled) return;
-      if (!this.angel.recognition) this.initAngel();
-      if (!this.angel.recognition) {
-        this.angel.status = 'Voice not available — use Play music or Read Bible buttons.';
+      if (!this.angel.enabled) {
+        this.toggleAngel();
         return;
       }
-      try { this.angel.recognition.abort(); } catch (e) {}
-      setTimeout(() => {
-        if (!this.angel.enabled) return;
-        try {
-          this.angel.recognition.start();
-          this.angel.listening = true;
-          this.angel.status = 'Listening continuously… say Angel stop to turn off.';
-        } catch (e) {
-          this.angel.status = 'Tap 🎤 Listen again if the mic paused.';
-          this.angel.listening = false;
-        }
-      }, 250);
+      if (!this.angel.recognition) this.initAngel();
+      this.angel.status = 'Mic refreshed — still waiting for your instruction.';
+      this._angelResumeListen();
     },
-    angelSpeak(text) {
+    angelSpeak(text, brief) {
       if (!('speechSynthesis' in window) || !text) return;
       try {
         speechSynthesis.cancel();
         const u = new SpeechSynthesisUtterance(String(text));
-        u.rate = 0.95;
+        u.rate = brief ? 1 : 0.95;
         u.volume = Math.max(0.4, Math.min(1, Number(this.bible.volume ?? 0.9)));
         const voices = speechSynthesis.getVoices();
         const v = voices.find(x => /en/i.test(x.lang)) || voices[0];
         if (v) u.voice = v;
+        u.onend = () => {
+          this.angel.busy = false;
+          if (this.angel.enabled) {
+            this.angel.status = 'Done. Silent and waiting for your next instruction.';
+            this._angelResumeListen();
+          }
+        };
+        u.onerror = () => {
+          this.angel.busy = false;
+          if (this.angel.enabled) this.angel.status = 'Silent and waiting…';
+        };
+        this.angel.busy = true;
         speechSynthesis.speak(u);
-      } catch (e) { console.warn(e); }
+      } catch (e) {
+        this.angel.busy = false;
+        console.warn(e);
+      }
+    },
+    angelIdleAfterAction(msg) {
+      this.angel.busy = false;
+      if (this.angel.enabled) {
+        this.angel.status = msg || 'Done. Active, silent, waiting for your next command.';
+        this._angelResumeListen();
+      }
     },
     angelPlayMusic() {
-      // Hard fallback tracks if lists empty
       const defaults = [
         { id: '36hkGeb7r5E', title: 'Angel lift – worship' },
         { id: 'pVtjDcROtQ4', title: 'Soul lift – praise' },
@@ -1034,183 +1073,16 @@ function memberHub() {
       if (this.churchMusicList && this.churchMusicList.length) list = this.churchMusicList.slice();
       else if (this.musicList && this.musicList.length) list = this.musicList.slice();
       else list = defaults.slice();
-      // Prefer known soul-lift ids
       const prefer = ['36hkGeb7r5E', 'pVtjDcROtQ4'];
       let pick = list.find(m => prefer.includes(m.id)) || list[0];
-      if (!pick || !pick.id) {
-        this.angel.status = 'No music available.';
-        this.angelSpeak('I could not find music yet.');
-        return;
-      }
-      // Force play on church player first
-      this.churchMusic.id = pick.id;
-      this.churchMusic.playing = false;
-      this.music.playing = false;
-      // Alpine needs tick to reload iframe
-      this.$nextTick(() => {
-        this.churchMusic.playing = true;
-        this.music.playing = false;
-        // Also set platform id as backup display
-        this.music.id = pick.id;
-      });
-      this.angel.status = 'Playing: ' + (pick.title || pick.id);
-      this.angelSpeak('Playing music to lift your soul.');
-      // scroll to music section
-      try { document.getElementById('music')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
-    },
-    async angelReadBible(situationId) {
-      const sit = situationId || 'peace';
-      this.bible.situation = sit;
-      this.bible.voiceOn = true;
-      this.bible.continuous = false;
-      this.bible.announcedChapter = false;
-      this.angel.status = 'Loading Scripture…';
-      try {
-        await this.loadSituation();
-        if (!this.bible.slides || !this.bible.slides.length) {
-          // fallback fetch known verse
-          const j = await this.fetchRef('Psalm 23:1-3');
-          this.bible.slides = [{ ref: j.reference || 'Psalm 23:1-3', text: (j.text || '').trim() }];
-        }
-        if (this.bible.slides.length) {
-          this.bible.slideIndex = 0;
-          this.angelSpeak('Here is a word for you.');
-          setTimeout(() => this.speakCurrent(false), 400);
-          this.angel.status = 'Reading: ' + (this.bible.slides[0].ref || sit);
-          try { document.getElementById('bible')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
-        } else {
-          this.angel.status = 'Could not load Bible text. Check internet.';
-          this.angelSpeak('I could not load the Bible right now.');
-        }
-      } catch (e) {
-        console.warn(e);
-        this.angel.status = 'Bible error — try again.';
-        this.angelSpeak('Something went wrong loading Scripture.');
-      }
-    },
-    async handleAngelCommand(raw) {
-      const t = (raw || '').toLowerCase().replace(/[^\w\s']/g, ' ').replace(/\s+/g, ' ').trim();
-      this.angel.status = 'Heard: “' + raw + '”';
-      if (!t) return;
-
-      // STOP
-      if (/\bangel\s+stop\b/.test(t) || /\b(stop listening|stop angel|angel off|goodbye angel)\b/.test(t) || (t === 'stop' && this.angel.enabled)) {
-        try { speechSynthesis.cancel(); } catch (e) {}
-        this.angel.enabled = false;
-        this.angel.listening = false;
-        try { if (this.angel.recognition) this.angel.recognition.abort(); } catch (e) {}
-        this.angel.status = 'Angel stopped. Tap Angel to start again.';
-        this.angelSpeak('Angel is stopping. God bless you.');
-        return;
-      }
-
-      // Locked / awaiting payment
-      if (window.__MEMBER_STATUS__ && window.__MEMBER_STATUS__.awaiting === true) {
-        this.angelSpeak('Your access is locked. Please register as a full church member or renew your subscription.');
-        this.angel.status = 'Locked — register or renew subscription.';
-        return;
-      }
-
-      // Status
-      if (/\b(my status|what is my status|who am i|dashboard|my account)\b/.test(t)) {
-        const s = window.__MEMBER_STATUS__ || {};
-        const msg = `You are ${s.name || 'member'}, email ${s.email || ''}. Membership status ${s.approval || 'unknown'}, role ${s.status || s.role || ''}. Church: ${s.church || 'not linked'}. Subscription active: ${s.sub_active}. Days left: ${s.sub_days}.`;
-        this.angelSpeak(msg);
-        this.angel.status = msg;
-        return;
-      }
-
-      // About Jesus
-      if (/\b(tell me about jesus|who is jesus|about jesus)\b/.test(t)) {
-        const msg = 'Jesus is the Son of God, the Messiah, also called Emmanuel, meaning God with us. He died for our sins and rose again so we can be saved.';
-        this.angelSpeak(msg);
-        this.angel.status = msg;
-        await this.angelReadBible('salvation');
-        return;
-      }
-
-      // How to receive Jesus
-      if (/\b(receive jesus|accept jesus|how do i (get )?saved|how can i be saved|into my heart)\b/.test(t)) {
-        this.angelSpeak('To receive Jesus: believe He can save you, confess and forsake your sins, ask God to forgive you. I will lead you in a short prayer.');
-        this.angel.status = 'Leading salvation prayer…';
-        setTimeout(() => this.angelLeadSalvation(), 800);
-        return;
-      }
-
-      // Sanctification
-      if (/\bsanctif/.test(t)) {
-        const msg = 'Sanctification is being set apart for God — a holy life by His grace. Ask God to cleanse your heart, fill you with love, and help you obey His Word daily. Seek Him in prayer and Scripture.';
-        this.angelSpeak(msg);
-        this.angel.status = msg;
-        return;
-      }
-
-      // Holy Spirit
-      if (/\bholy spirit\b|\bholy ghost\b/.test(t)) {
-        const msg = 'The Holy Spirit is God\'s presence with believers — our Helper, Teacher and Comforter. Ask the Father in Jesus\' name to fill you with the Holy Spirit, and receive by faith.';
-        this.angelSpeak(msg);
-        this.angel.status = msg;
-        return;
-      }
-
-      // Explain last bible portion
-      if (/\bexplain\b/.test(t)) {
-        const s = this.bible.slides && this.bible.slides[this.bible.slideIndex];
-        if (s) {
-          const msg = `This portion, ${s.ref}, says: ${(s.text || '').slice(0, 280)}. Cross reference: John 3:16, Romans 10:9, and Psalm 23 encourage us to trust God.`;
-          this.angelSpeak(msg);
-          this.angel.status = msg;
-        } else {
-          this.angelSpeak('Load a Bible portion first, then say explain.');
-        }
-        return;
-      }
-
-      // Change / next music
-      if (/\b(change music|next (song|music)|another song|different music)\b/.test(t)) {
-        const list = (this.churchMusicList && this.churchMusicList.length) ? this.churchMusicList : (this.musicList || []);
-        if (list.length) {
-          const cur = this.churchMusic.id || this.music.id;
-          let i = list.findIndex(m => m.id === cur);
-          i = (i + 1) % list.length;
-          this.angelPlayMusicPick(list[i]);
-        } else this.angelPlayMusic();
-        return;
-      }
-
-      const wantsMusic = /\b(play|music|song|worship|sing|lift|radio)\b/.test(t)
-        || /\b(bored|sad|down|heavy|lonely)\b/.test(t);
-      const wantsBible = /\b(bible|scripture|word|verse|encourage|read|peace|fear|anxious|worried|sick|unwell|hope|strength|forgive|faith|pray)\b/.test(t)
-        || /\b(bored|sad|down)\b/.test(t);
-
-      if (wantsMusic && !/\bbible\b|\bscripture\b|\bverse\b/.test(t)) {
-        this.angelPlayMusic();
-        if (/\bbored\b|\bsad\b|\bdown\b|\bencourage\b/.test(t)) await this.angelReadBible('peace');
-        return;
-      }
-      if (wantsBible || /\bangel\b/.test(t)) {
-        let sit = 'peace';
-        if (/sick|unwell|heal/.test(t)) sit = 'unwell';
-        else if (/anxious|worry/.test(t)) sit = 'anxious';
-        else if (/fear|afraid/.test(t)) sit = 'fear';
-        else if (/lonely/.test(t)) sit = 'lonely';
-        else if (/forgive|guilt/.test(t)) sit = 'forgiveness';
-        else if (/bored|sad|encourage|saved|jesus/.test(t)) sit = 'peace';
-        await this.angelReadBible(sit);
-        if (/\bbored\b|\bmusic\b|\bplay\b/.test(t)) this.angelPlayMusic();
-        return;
-      }
-      this.angelSpeak('You can ask about Jesus, how to be saved, the Holy Spirit, play music, my status, explain, or say Angel stop.');
-      this.angel.status = 'Try: tell me about Jesus · how do I receive Jesus · play music · my status · angel stop';
-    },
-    angelLeadSalvation() {
-      const prayer = 'To be saved, believe that Jesus can save you, confess and forsake your sins, ask God to forgive you, and repeat after me: Lord Jesus, I know I am a sinner. I am sorry for all the bad life I have lived. I forsake them. Please forgive me and give me the grace to live a life that will please you. In Jesus name I pray. Amen. If you have just said this prayer, you are forgiven. Click the I accepted Jesus button to download your New Born in Christ certificate.';
-      this.angelSpeak(prayer);
-      this.angel.status = 'Salvation shared — use “I accepted Jesus” for your certificate.';
-      try { document.getElementById('salvation')?.scrollIntoView({ behavior: 'smooth' }); } catch (e) {}
+      this.angelPlayMusicPick(pick);
     },
     angelPlayMusicPick(pick) {
-      if (!pick || !pick.id) return this.angelPlayMusic();
+      if (!pick || !pick.id) {
+        this.angelSpeak('No music is available yet.');
+        return;
+      }
+      this.angel.busy = true;
       this.churchMusic.id = pick.id;
       this.music.id = pick.id;
       this.churchMusic.playing = false;
@@ -1220,7 +1092,306 @@ function memberHub() {
         this.music.playing = false;
       });
       this.angel.status = 'Playing: ' + (pick.title || pick.id);
-      this.angelSpeak('Changing the music for you.');
+      this.angelSpeak('Playing music to lift your soul.');
+      try { document.getElementById('music')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+      // After short delay, return to silent waiting while music plays
+      setTimeout(() => this.angelIdleAfterAction('Music playing. Silent and waiting for your next command.'), 2500);
+    },
+    angelStopMusic() {
+      this.churchMusic.playing = false;
+      this.music.playing = false;
+      this.angelSpeak('Music stopped.');
+      setTimeout(() => this.angelIdleAfterAction('Music stopped. Waiting for your next instruction.'), 1200);
+    },
+    angelNextTrack() {
+      const list = (this.churchMusicList && this.churchMusicList.length)
+        ? this.churchMusicList : (this.musicList || []);
+      if (!list.length) { this.angelPlayMusic(); return; }
+      const cur = this.churchMusic.id || this.music.id;
+      let i = list.findIndex(m => m.id === cur);
+      i = (i + 1) % list.length;
+      this.angelPlayMusicPick(list[i]);
+    },
+    async angelReadBible(situationId) {
+      const sit = situationId || 'peace';
+      this.bible.situation = sit;
+      this.bible.voiceOn = true;
+      this.bible.continuous = false;
+      this.bible.announcedChapter = false;
+      this.angel.busy = true;
+      this.angel.status = 'Loading Scripture…';
+      try {
+        if (typeof this.loadSituation === 'function') await this.loadSituation();
+        if (!this.bible.slides || !this.bible.slides.length) {
+          const j = await this.fetchRef('Psalm 23:1-3');
+          this.bible.slides = [{ ref: j.reference || 'Psalm 23:1-3', text: (j.text || '').trim() }];
+        }
+        if (this.bible.slides.length) {
+          this.bible.slideIndex = 0;
+          setTimeout(() => { try { this.speakCurrent(false); } catch (e) {} }, 300);
+          this.angel.status = 'Reading: ' + (this.bible.slides[0].ref || sit);
+          try { document.getElementById('bible')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
+        } else {
+          this.angelSpeak('I could not load the Bible right now.');
+        }
+        setTimeout(() => this.angelIdleAfterAction('Scripture shared. Silent and waiting…'), 4000);
+      } catch (e) {
+        console.warn(e);
+        this.angelSpeak('Something went wrong loading Scripture.');
+        this.angelIdleAfterAction('Waiting for your next instruction.');
+      }
+    },
+    angelTopicTalk(topicKey) {
+      const topics = {
+        jesus: {
+          speak: 'Jesus is the Son of God, the Messiah, also called Emmanuel, meaning God with us. He is the way, the truth, and the life. Cross references: John 3:16, John 14:6, Matthew 1:23, Philippians 2:5-11, Acts 4:12.',
+          refs: ['John 3:16', 'John 14:6', 'Matthew 1:23']
+        },
+        god: {
+          speak: 'God is the Creator of heaven and earth, holy, loving, and just. The Lord our God is one Lord. Cross references: Genesis 1:1, Deuteronomy 6:4, Isaiah 45:5, John 4:24, Psalm 90:2.',
+          refs: ['Genesis 1:1', 'Deuteronomy 6:4', 'Psalm 90:2']
+        },
+        creation: {
+          speak: 'In the beginning God created the heaven and the earth. All things were made by Him. Cross references: Genesis 1:1-3, Genesis 1:27, John 1:1-3, Colossians 1:16, Hebrews 11:3.',
+          refs: ['Genesis 1:1', 'John 1:1-3', 'Hebrews 11:3']
+        },
+        faith: {
+          speak: 'Faith is the substance of things hoped for, the evidence of things not seen. We walk by faith, not by sight. Cross references: Hebrews 11:1, Hebrews 11:6, Romans 10:17, 2 Corinthians 5:7, Mark 11:22-24.',
+          refs: ['Hebrews 11:1', 'Romans 10:17', '2 Corinthians 5:7']
+        },
+        holiness: {
+          speak: 'Be ye holy; for I am holy. Without holiness no man shall see the Lord. Cross references: 1 Peter 1:15-16, Hebrews 12:14, 1 Thessalonians 4:7, Romans 12:1-2, 2 Corinthians 7:1.',
+          refs: ['1 Peter 1:15-16', 'Hebrews 12:14', 'Romans 12:1']
+        },
+        rapture: {
+          speak: 'The Bible teaches the blessed hope of the Lord\'s return. The dead in Christ shall rise first, then we which are alive shall be caught up together with them in the clouds. Cross references: 1 Thessalonians 4:16-17, 1 Corinthians 15:51-52, John 14:1-3, Titus 2:13, Matthew 24:30-31.',
+          refs: ['1 Thessalonians 4:16-17', '1 Corinthians 15:51-52', 'John 14:1-3']
+        },
+        endtime: {
+          speak: 'Jesus spoke of signs of the end of the age: wars, famines, earthquakes, the gospel preached in all the world, and His glorious return. Watch therefore. Cross references: Matthew 24:3-14, Matthew 24:36, 2 Timothy 3:1-5, Revelation 1:7, 2 Peter 3:10-13.',
+          refs: ['Matthew 24:3-14', '2 Timothy 3:1-5', 'Revelation 1:7']
+        },
+        holyspirit: {
+          speak: 'The Holy Spirit is the Comforter, Teacher, and power of God in the believer. Ask the Father in Jesus\' name. Cross references: John 14:26, Acts 1:8, Acts 2:1-4, Romans 8:14, Galatians 5:22-23.',
+          refs: ['John 14:26', 'Acts 1:8', 'Galatians 5:22-23']
+        },
+        salvation: {
+          speak: 'By grace are ye saved through faith. Confess with your mouth the Lord Jesus and believe in your heart. Cross references: Ephesians 2:8-9, Romans 10:9-10, John 3:16, Acts 16:31, 1 John 1:9.',
+          refs: ['Ephesians 2:8-9', 'Romans 10:9-10', 'John 3:16']
+        },
+        prayer: {
+          speak: 'Pray without ceasing. Ask, and it shall be given you. Cross references: 1 Thessalonians 5:17, Matthew 6:9-13, Matthew 7:7, Philippians 4:6-7, James 5:16.',
+          refs: ['1 Thessalonians 5:17', 'Matthew 7:7', 'Philippians 4:6-7']
+        },
+        peace: {
+          speak: 'Peace I leave with you, my peace I give unto you. Cross references: John 14:27, Isaiah 26:3, Philippians 4:7, Romans 5:1, Colossians 3:15.',
+          refs: ['John 14:27', 'Isaiah 26:3', 'Philippians 4:7']
+        },
+      };
+      const topic = topics[topicKey];
+      if (!topic) return false;
+      this.angel.busy = true;
+      this.angelSpeak(topic.speak);
+      // load first ref into bible panel if possible
+      if (topic.refs && topic.refs[0] && typeof this.fetchRef === 'function') {
+        this.fetchRef(topic.refs[0]).then(j => {
+          this.bible.slides = [{ ref: j.reference || topic.refs[0], text: (j.text || '').trim() }];
+          this.bible.slideIndex = 0;
+        }).catch(() => {});
+      }
+      return true;
+    },
+    angelDashboardHelp(kind) {
+      const s = window.__MEMBER_STATUS__ || {};
+      if (kind === 'status' || kind === 'subscription') {
+        let msg = `Your name is ${s.name || 'member'}. Membership status: ${s.approval || 'unknown'}. `;
+        if (s.awaiting === true || s.awaiting === 'true') {
+          msg += 'Your access is locked. Please renew your subscription or register as a full church member, then wait for admin confirmation.';
+        } else if (s.sub_active === true || s.sub_active === 'true') {
+          msg += `Subscription is active. About ${s.sub_days || 0} day or days of access remaining. Keep your quiet time and stay in the Word.`;
+        } else {
+          msg += 'No active paid plan showing. Open Subscription to choose a plan and submit payment evidence.';
+        }
+        this.angelSpeak(msg);
+        return true;
+      }
+      if (kind === 'devotion' || kind === 'quiet') {
+        const d = this.devotion || {};
+        const msg = `Your devotion times: quiet time ${d.quiet || 'not set'}, morning ${d.morning || 'not set'}, evening ${d.evening || 'not set'}. Set alarms on this page so you do not miss them.`;
+        this.angelSpeak(msg);
+        try { document.getElementById('devotion')?.scrollIntoView({ behavior: 'smooth' }); } catch (e) {}
+        return true;
+      }
+      if (kind === 'programs') {
+        this.angelSpeak('Special programs are listed on your member page under Programs and events. Open Programs to see dates and details.');
+        try { document.getElementById('programs')?.scrollIntoView({ behavior: 'smooth' }); } catch (e) {}
+        return true;
+      }
+      if (kind === 'pastor') {
+        this.angelSpeak('Pastor messages and church contact appear on your dashboard and under Pastor messages. Check the church info section for contact details.');
+        return true;
+      }
+      if (kind === 'focus') {
+        this.angelSpeak('Focus group discussions are under Focus groups. Open that page to chat on topics your church admin set.');
+        return true;
+      }
+      if (kind === 'activities') {
+        this.angelSpeak('Church activity days and weekly notes appear on your dashboard under church information when your district has published them.');
+        return true;
+      }
+      return false;
+    },
+    async handleAngelCommand(raw) {
+      const t = (raw || '').toLowerCase().replace(/[^\w\s']/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!t) return;
+      this.angel.status = 'Heard: “' + raw + '”';
+
+      // STOP / OFF
+      if (/\bangel\s+stop\b/.test(t) || /\b(stop angel|angel off|turn off angel|goodbye angel)\b/.test(t)
+          || (this.angel.enabled && /^(stop|off|turn off)$/.test(t))) {
+        this.angelTurnOff(true);
+        return;
+      }
+
+      if (!this.angel.enabled) return;
+
+      // Locked
+      if (window.__MEMBER_STATUS__ && (window.__MEMBER_STATUS__.awaiting === true || window.__MEMBER_STATUS__.awaiting === 'true')) {
+        this.angelSpeak('Your membership access is locked. Register fully or renew your subscription first.');
+        return;
+      }
+
+      // Stop music
+      if (/\b(stop music|stop the music|pause music|music off)\b/.test(t)) {
+        this.angelStopMusic();
+        return;
+      }
+
+      // Change / next music
+      if (/\b(change music|next (song|music|track)|another song|different music)\b/.test(t)) {
+        this.angelNextTrack();
+        return;
+      }
+
+      // Play music
+      if (/\b(play music|play a song|play worship|start music)\b/.test(t)
+          || (/\bmusic\b/.test(t) && /\b(play|start|listen)\b/.test(t))) {
+        this.angelPlayMusic();
+        return;
+      }
+
+      // Subscription / status
+      if (/\b(my status|what is my status|subscription|my account|how many days)\b/.test(t)) {
+        this.angelDashboardHelp('subscription');
+        return;
+      }
+
+      // Devotion times
+      if (/\b(quiet time|morning devotion|evening devotion|devotion times|my devotion)\b/.test(t)) {
+        this.angelDashboardHelp('devotion');
+        return;
+      }
+
+      // Programs
+      if (/\b(special program|programs|events|church program)\b/.test(t)) {
+        this.angelDashboardHelp('programs');
+        return;
+      }
+
+      // Pastor
+      if (/\b(pastor message|pastor'?s? message|pastor contact|pastor)\b/.test(t)) {
+        this.angelDashboardHelp('pastor');
+        return;
+      }
+
+      // Focus groups
+      if (/\b(focus group|focus discussion)\b/.test(t)) {
+        this.angelDashboardHelp('focus');
+        return;
+      }
+
+      // Church activities
+      if (/\b(church activit|activity days|days of (service|activities))\b/.test(t)) {
+        this.angelDashboardHelp('activities');
+        return;
+      }
+
+      // Salvation flow
+      if (/\b(receive jesus|accept jesus|how do i (get )?saved|how can i be saved|into my heart)\b/.test(t)) {
+        this.angelLeadSalvation();
+        return;
+      }
+
+      // Bible topics
+      if (/\brapture\b/.test(t)) { this.angelTopicTalk('rapture'); return; }
+      if (/\bend\s*time|end of the age|last days\b/.test(t)) { this.angelTopicTalk('endtime'); return; }
+      if (/\bcreation\b|\bcreated the world\b|\bin the beginning\b/.test(t)) { this.angelTopicTalk('creation'); return; }
+      if (/\bholiness\b|\bholy living\b/.test(t)) { this.angelTopicTalk('holiness'); return; }
+      if (/\bholy spirit\b|\bholy ghost\b/.test(t)) { this.angelTopicTalk('holyspirit'); return; }
+      if (/\bfaith\b/.test(t) && !/\bfaithful\b/.test(t)) { this.angelTopicTalk('faith'); return; }
+      if (/\btell me about jesus\b|\bwho is jesus\b|\babout jesus\b/.test(t)) { this.angelTopicTalk('jesus'); return; }
+      if (/\btell me about god\b|\bwho is god\b|\babout god\b/.test(t)) { this.angelTopicTalk('god'); return; }
+      if (/\bsanctif/.test(t)) {
+        this.angelSpeak('Sanctification is being set apart for God. Cross references: 1 Thessalonians 4:3, John 17:17, Hebrews 12:14, 1 Peter 1:15-16.');
+        return;
+      }
+      if (/\bpray/.test(t) && !/\bprayer request\b/.test(t)) { this.angelTopicTalk('prayer'); return; }
+
+      // Explain current verse
+      if (/\bexplain\b/.test(t)) {
+        const s = this.bible.slides && this.bible.slides[this.bible.slideIndex];
+        if (s) {
+          this.angelSpeak(`This portion, ${s.ref}, says: ${(s.text || '').slice(0, 280)}. Cross reference: John 3:16, Romans 10:9, Psalm 23.`);
+        } else {
+          this.angelSpeak('Load a Bible portion first, then say explain.');
+        }
+        return;
+      }
+
+      // Bible reference pattern e.g. john 3 16
+      const refMatch = t.match(/\b(genesis|exodus|leviticus|numbers|deuteronomy|joshua|judges|ruth|samuel|kings|chronicles|ezra|nehemiah|esther|job|psalm|psalms|proverbs|ecclesiastes|isaiah|jeremiah|lamentations|ezekiel|daniel|hosea|joel|amos|obadiah|jonah|micah|nahum|habakkuk|zephaniah|haggai|zechariah|malachi|matthew|mark|luke|john|acts|romans|corinthians|galatians|ephesians|philippians|colossians|thessalonians|timothy|titus|philemon|hebrews|james|peter|jude|revelation)\b\s*(\d+)(?:\s*[:\s]\s*(\d+))?/i);
+      if (refMatch) {
+        const book = refMatch[1];
+        const ch = refMatch[2];
+        const vs = refMatch[3];
+        const ref = vs ? `${book} ${ch}:${vs}` : `${book} ${ch}`;
+        this.angel.busy = true;
+        this.angel.status = 'Looking up ' + ref;
+        try {
+          const j = await this.fetchRef(ref);
+          const text = (j.text || '').trim();
+          this.bible.slides = [{ ref: j.reference || ref, text }];
+          this.bible.slideIndex = 0;
+          this.angelSpeak(`${j.reference || ref}. ${text.slice(0, 400)}`);
+        } catch (e) {
+          this.angelSpeak('I could not load that reference. Try again clearly, for example John 3 16.');
+        }
+        return;
+      }
+
+      // Encouragement / mood → scripture
+      if (/\b(bored|sad|anxious|worried|fear|afraid|lonely|sick|unwell|encourage|peace|hope)\b/.test(t)) {
+        let sit = 'peace';
+        if (/sick|unwell/.test(t)) sit = 'unwell';
+        else if (/anxious|worry/.test(t)) sit = 'anxious';
+        else if (/fear|afraid/.test(t)) sit = 'fear';
+        else if (/lonely/.test(t)) sit = 'lonely';
+        await this.angelReadBible(sit);
+        if (/\bbored\b|\bsad\b/.test(t)) this.angelPlayMusic();
+        return;
+      }
+
+      // Default help — still stay on and wait
+      this.angelSpeak('You can ask about Jesus, God, creation, faith, holiness, the rapture, the end time, play music, stop music, my status, devotion times, programs, or say Angel stop.');
+    },
+    angelLeadSalvation() {
+      const prayer = 'To be saved, believe that Jesus can save you, confess and forsake your sins, ask God to forgive you, and repeat after me: Lord Jesus, I know I am a sinner. I am sorry for all the bad life I have lived. I forsake them. Please forgive me and give me the grace to live a life that will please you. In Jesus name I pray. Amen. If you have just said this prayer, you are forgiven. Click the I accepted Jesus button to download your New Born in Christ certificate.';
+      this.angelSpeak(prayer);
+      this.angel.status = 'Salvation prayer shared — use I accepted Jesus for your certificate.';
+      try { document.getElementById('salvation')?.scrollIntoView({ behavior: 'smooth' }); } catch (e) {}
+    },
+
+.');
     },
 
     async loadMusicLinks() {
