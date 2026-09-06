@@ -69,11 +69,18 @@ async def get_current_user(
     user = get_user_by_email(session, email)
     if not user or not user.is_active:
         return None
-    # Single active session: token must match current session_version
-    if token_sv is not None:
-        current_sv = int(getattr(user, "session_version", 0) or 0)
-        if int(token_sv) != current_sv:
+    # One login at a time: JWT "sv" must match user.session_version (bumped on every login)
+    current_sv = int(getattr(user, "session_version", 0) or 0)
+    try:
+        token_sv_i = int(token_sv) if token_sv is not None else None
+    except (TypeError, ValueError):
+        token_sv_i = None
+    # Reject older sessions (another device logged in) or legacy tokens without sv after first modern login
+    if token_sv_i is None:
+        if current_sv > 0:
             return None
+    elif token_sv_i != current_sv:
+        return None
     rv = role_val(user.role)
     # Staff always see church dashboard; members only if granted or pastor status
     if rv in ("general_admin", "church_admin", "data_officer"):
@@ -87,7 +94,10 @@ async def get_current_user(
 
 async def require_user(user: Optional[User] = Depends(get_current_user)) -> User:
     if not user:
-        raise HTTPException(status_code=401, detail="Not authenticated")
+        raise HTTPException(
+            status_code=401,
+            detail="Not authenticated or signed in on another device. Please log in again.",
+        )
     return user
 
 def require_roles(*roles: UserRole):

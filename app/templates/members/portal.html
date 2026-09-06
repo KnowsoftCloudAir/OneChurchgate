@@ -525,8 +525,8 @@
       <button type="button" @click.prevent="showPanel('church')"
               :class="openPanel==='church' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
               class="nav-chip px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">My church</button>
-      <a href="/focus-groups" @click="(function(){ const seen=JSON.parse(localStorage.getItem('cg_notice_seen_v1')||'{}'); seen.focus=Number((window.__PORTAL_NOTICES__||{}).focusCount||0); localStorage.setItem('cg_notice_seen_v1', JSON.stringify(seen)); })()"
-         :class="notices.focus ? 'has-notice' : ''"
+      <a href="/focus-groups" @click="(function(){ const seen=JSON.parse(localStorage.getItem('cg_notice_seen_v1')||'{}'); const N=window.__PORTAL_NOTICES__||{}; seen.focus=Number(N.focusCount||0); seen.focusAt=String(N.focusLatest||''); localStorage.setItem('cg_notice_seen_v1', JSON.stringify(seen)); })()"
+         :class="notices.focus ? 'has-notice bg-rose-500/30 border border-rose-400' : ''"
          class="nav-chip px-3 py-2 rounded-full ms-card inline-block relative">
         Focus groups
         <span class="nav-dot-count" x-show="notices.focus && notices.focusCount > 0" x-text="notices.focusCount > 9 ? '9+' : notices.focusCount" x-cloak></span>
@@ -1438,14 +1438,18 @@ function memberHub() {
       const seen = JSON.parse(localStorage.getItem('cg_notice_seen_v1') || '{}');
       const pastorCount = Number(N.pastorCount || 0);
       const focusCount = Number(N.focusCount || 0);
+      const focusLatest = String(N.focusLatest || '');
       const pastorSeen = Number(seen.pastor || 0);
-      const focusSeen = Number(seen.focus || 0);
+      const focusSeenCount = Number(seen.focus || 0);
+      const focusSeenAt = String(seen.focusAt || '');
       this.notices.pastorCount = pastorCount;
       this.notices.focusCount = focusCount;
       this.notices.pastor = pastorCount > pastorSeen;
-      this.notices.focus = focusCount > focusSeen;
+      this.notices.focus = (focusCount > 0) && (
+        focusCount > focusSeenCount ||
+        (focusLatest && focusLatest !== focusSeenAt)
+      );
       this.notices.subscription = (N.subAlert === true || N.subAlert === 'true');
-      // devotion alarm within next 20 minutes
       this.notices.devotions = this._devotionSoon();
     },
     _devotionSoon() {

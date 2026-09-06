@@ -334,27 +334,34 @@ async def member_portal(
     try:
         from app.models import FocusGroup, FocusGroupMember, FocusGroupMessage
         from datetime import datetime, timedelta
-        if user.id:
+        mrec = session.get(ChurchMember, user.member_id) if user.member_id else None
+        if not mrec:
+            mrec = session.exec(select(ChurchMember).where(ChurchMember.email == user.email)).first()
+        gids = []
+        if mrec:
             gids = [
                 fm.group_id for fm in session.exec(
-                    select(FocusGroupMember).where(FocusGroupMember.user_id == user.id)
+                    select(FocusGroupMember).where(FocusGroupMember.member_id == mrec.id)
                 ).all()
             ]
-            if gids:
-                since = datetime.utcnow() - timedelta(days=14)
-                msgs = list(session.exec(
-                    select(FocusGroupMessage).where(
-                        FocusGroupMessage.group_id.in_(gids),
-                        FocusGroupMessage.created_at >= since,
-                    ).order_by(FocusGroupMessage.created_at.desc()).limit(50)
-                ).all())
-                focus_notice_count = len(msgs)
-                if msgs:
-                    focus_latest_at = str(msgs[0].created_at)
+        if gids:
+            since = datetime.utcnow() - timedelta(days=30)
+            msgs = list(session.exec(
+                select(FocusGroupMessage).where(
+                    FocusGroupMessage.group_id.in_(gids),
+                    FocusGroupMessage.created_at >= since,
+                ).order_by(FocusGroupMessage.created_at.desc()).limit(100)
+            ).all())
+            incoming = [m for m in msgs if getattr(m, "sender_id", None) != user.id]
+            focus_notice_count = len(incoming) if incoming else len(msgs)
+            if msgs:
+                ca = msgs[0].created_at
+                focus_latest_at = ca.isoformat() if hasattr(ca, "isoformat") else str(ca)
     except Exception as fe:
         print("focus notice:", fe)
         focus_notice_count = 0
         focus_latest_at = ""
+
 
     try:
         log_activity(session, user=user, action="portal_view", detail="Opened member dashboard", request=request)

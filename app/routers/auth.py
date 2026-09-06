@@ -86,7 +86,7 @@ async def login(
     session.commit()
     session.refresh(user)
     token = create_user_token(user)
-    log_activity(session, user=user, action="login", detail="Successful login", request=request)
+    log_activity(session, user=user, action="login", detail="Successful login (single-session; prior devices signed out)", request=request)
     # Route by role — members without dashboard grant go to portal only
     rv = role_val(user.role)
     if rv == "general_admin":

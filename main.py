@@ -16,6 +16,20 @@ from app.seed_sample import ensure_all_sample_data
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
+    try:
+        from sqlalchemy import text
+        with engine.begin() as conn:
+            for stmt in (
+                "ALTER TABLE user ADD COLUMN IF NOT EXISTS session_version INTEGER DEFAULT 0",
+                "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS session_version INTEGER DEFAULT 0",
+                "ALTER TABLE user ADD COLUMN session_version INTEGER DEFAULT 0",
+            ):
+                try:
+                    conn.execute(text(stmt))
+                except Exception:
+                    pass
+    except Exception as _sv:
+        print("session_version migrate:", _sv)
 
     try:
         from sqlalchemy import text
