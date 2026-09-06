@@ -203,10 +203,18 @@ async def focus_group_view(
         mem = session.get(ChurchMember, fm.member_id)
         if mem:
             member_rows.append(mem)
+
+    in_group_ids = {m.id for m in member_rows}
+    available_members = []
+    if can_manage:
+        for m in _members_in_scope(session, user):
+            if m.id not in in_group_ids:
+                available_members.append(m)
+
     return templates.TemplateResponse("community/focus_view.html", {
         "request": request, "user": user, "group": g,
         "messages": messages, "members": member_rows,
-        "can_manage": can_manage,
+        "can_manage": can_manage, "available_members": available_members,
     })
 
 
@@ -254,6 +262,84 @@ async def focus_comment(
     session.add(FocusGroupMessageComment(message_id=message_id, user_id=user.id, body=body))
     session.commit()
     return RedirectResponse(f"/focus-groups/{msg.group_id}", status_code=303)
+
+
+
+
+@router.post("/focus-groups/{group_id}/add-members")
+async def focus_group_add_members(
+    group_id: int,
+    request: Request,
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    """Admin / manager: add more members to an existing focus group."""
+    g = session.get(FocusGroup, group_id)
+    if not g or not g.is_active:
+        raise HTTPException(404, "Group not found")
+    if not _can_manage_groups(user):
+        raise HTTPException(403, "Only admins can add members")
+    # church_admin should manage groups in their scope
+    scope = set(_scope_ids(session, user) or [])
+    if role_val(user.role) != "general_admin" and g.church_id not in scope and g.church_id != user.church_id:
+        raise HTTPException(403, "Group not in your church scope")
+
+    form = await request.form()
+    raw = form.getlist("member_ids")
+    existing = {
+        fm.member_id
+        for fm in session.exec(
+            select(FocusGroupMember).where(FocusGroupMember.group_id == group_id)
+        ).all()
+    }
+    added = 0
+    for mid in raw:
+        try:
+            mid_i = int(mid)
+        except Exception:
+            continue
+        if mid_i in existing:
+            continue
+        # must be approved member in scope
+        m = session.get(ChurchMember, mid_i)
+        if not m or m.approval_status != "approved":
+            continue
+        if role_val(user.role) != "general_admin":
+            if m.church_id not in scope and m.church_id != user.church_id:
+                continue
+        session.add(FocusGroupMember(group_id=group_id, member_id=mid_i))
+        existing.add(mid_i)
+        added += 1
+    session.commit()
+    return RedirectResponse(f"/focus-groups/{group_id}?added={added}", status_code=303)
+
+
+@router.post("/focus-groups/{group_id}/remove-member")
+async def focus_group_remove_member(
+    group_id: int,
+    member_id: int = Form(...),
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    """Admin / manager: remove a member from an existing focus group."""
+    g = session.get(FocusGroup, group_id)
+    if not g or not g.is_active:
+        raise HTTPException(404)
+    if not _can_manage_groups(user):
+        raise HTTPException(403, "Only admins can remove members")
+    scope = set(_scope_ids(session, user) or [])
+    if role_val(user.role) != "general_admin" and g.church_id not in scope and g.church_id != user.church_id:
+        raise HTTPException(403)
+    fm = session.exec(
+        select(FocusGroupMember).where(
+            FocusGroupMember.group_id == group_id,
+            FocusGroupMember.member_id == member_id,
+        )
+    ).first()
+    if fm:
+        session.delete(fm)
+        session.commit()
+    return RedirectResponse(f"/focus-groups/{group_id}", status_code=303)
 
 
 @router.post("/focus-groups/{group_id}/privilege")
