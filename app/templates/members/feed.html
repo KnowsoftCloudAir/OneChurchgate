@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Member interaction{% endblock %}
+{% block content %}
+<style>
+  .feed-page { font-size: 1.05rem; line-height: 1.55; }
+  .feed-page h1 { font-size: 1.65rem; }
+  .feed-page .post-body { font-size: 1.05rem; }
+  .feed-page .meta { font-size: 0.9rem; }
+  .feed-page input, .feed-page textarea, .feed-page button { font-size: 1rem; }
+</style>
+<div class="max-w-2xl mx-auto px-4 py-8 feed-page">
+  <div class="flex flex-wrap justify-between gap-3 items-center mb-6">
+    <div>
+      <h1 class="font-bold text-navy-900">Member interaction</h1>
+      <p class="text-slate-600 meta mt-1">Share with members in your <strong>global church</strong>. Posts and pictures disappear after <strong>24 hours</strong>.</p>
+    </div>
+    <a href="/member/portal" class="text-blue-700 font-medium text-sm">← My dashboard</a>
+  </div>
+
+  <form method="post" action="/member/feed/post" enctype="multipart/form-data"
+        class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm mb-8 space-y-3">
+    <label class="text-sm font-semibold text-slate-700">Share a message or picture</label>
+    <textarea name="body" rows="3" placeholder="Encourage the family, share a testimony snippet, or a short update…"
+              class="w-full px-3 py-2.5 rounded-xl border border-slate-200 focus:ring-2 focus:ring-blue-500/30"></textarea>
+    <div>
+      <label class="text-xs font-semibold text-slate-500">Optional picture</label>
+      <input type="file" name="file" accept="image/*" class="w-full mt-1 text-sm">
+    </div>
+    <button type="submit" class="w-full py-3 rounded-xl bg-indigo-700 text-white font-semibold hover:bg-indigo-800">Post (visible 24 hours)</button>
+  </form>
+
+  {% if groups %}
+  <section class="mb-8 bg-slate-50 border border-slate-200 rounded-2xl p-5">
+    <h2 class="font-semibold text-navy-900 text-lg mb-1">Focus groups</h2>
+    <p class="text-sm text-slate-600 mb-4">Request to join a group. Church admin will approve.</p>
+    <ul class="space-y-2">
+      {% for g in groups %}
+      <li class="flex flex-wrap items-center justify-between gap-2 bg-white rounded-xl border px-3 py-2.5">
+        <span class="font-medium">{{ g.name }}</span>
+        {% if g.joined %}
+        <a href="/focus-groups/{{ g.id }}" class="text-sm text-emerald-700 font-semibold">Open group →</a>
+        {% elif g.pending %}
+        <span class="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-800">Request pending</span>
+        {% else %}
+        <form method="post" action="/focus-groups/{{ g.id }}/request-join">
+          <button class="text-sm px-3 py-1.5 rounded-lg bg-blue-700 text-white font-semibold">Request to join</button>
+        </form>
+        {% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <h2 class="font-semibold text-lg text-navy-900 mb-3">Live posts</h2>
+  {% if not posts %}
+  <p class="text-center text-slate-500 py-10 border border-dashed rounded-2xl">No live posts right now. Be the first to share — posts expire after 24 hours.</p>
+  {% endif %}
+
+  <div class="space-y-5">
+    {% for post in posts %}
+    <article class="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+      <div class="p-4">
+        <div class="flex justify-between gap-2 meta text-slate-500 mb-2">
+          <span class="font-semibold text-navy-900">{{ post.author }}</span>
+          <span>Until {{ post.expires_at }}</span>
+        </div>
+        {% if post.shared %}
+        <div class="mb-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm">
+          <p class="text-xs text-slate-500 mb-1">Shared from <strong>{{ post.shared.author }}</strong></p>
+          {% if post.shared.body %}<p class="post-body text-slate-700">{{ post.shared.body }}</p>{% endif %}
+          {% if post.shared.image %}<img src="{{ post.shared.image }}" alt="" class="mt-2 max-h-48 rounded-lg object-contain">{% endif %}
+        </div>
+        {% endif %}
+        {% if post.body %}<p class="post-body text-slate-800 whitespace-pre-wrap mb-3">{{ post.body }}</p>{% endif %}
+        {% if post.image %}
+        <img src="{{ post.image }}" alt="" class="w-full max-h-80 object-contain rounded-xl bg-slate-100 mb-3">
+        {% endif %}
+        <div class="flex flex-wrap gap-3 items-center text-sm">
+          <form method="post" action="/member/feed/{{ post.id }}/like">
+            <button type="submit" class="font-semibold {% if post.liked %}text-rose-600{% else %}text-slate-600{% endif %}">
+              ♥ {{ post.likes }}
+            </button>
+          </form>
+          <form method="post" action="/member/feed/{{ post.id }}/share" class="inline">
+            <button type="submit" class="text-blue-700 font-medium">Share</button>
+          </form>
+          {% if post.author_id == user.id %}
+          <form method="post" action="/member/feed/{{ post.id }}/delete" onsubmit="return confirm('Remove this post?')">
+            <button type="submit" class="text-red-600 text-xs font-medium">Delete</button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      <div class="border-t border-slate-100 px-4 py-3 bg-slate-50/80">
+        <p class="text-xs font-semibold text-slate-500 uppercase mb-2">Comments ({{ post.comments|length }})</p>
+        <ul class="space-y-2 mb-3 max-h-40 overflow-y-auto">
+          {% for c in post.comments %}
+          <li class="text-sm"><span class="font-semibold">{{ c.user }}</span> <span class="text-slate-700">{{ c.body }}</span></li>
+          {% else %}
+          <li class="text-sm text-slate-400">No comments yet</li>
+          {% endfor %}
+        </ul>
+        <form method="post" action="/member/feed/{{ post.id }}/comment" class="flex gap-2">
+          <input name="body" required placeholder="Write a comment…" class="flex-1 px-3 py-2 rounded-lg border text-sm">
+          <button class="px-3 py-2 rounded-lg bg-blue-700 text-white text-sm font-semibold">Send</button>
+        </form>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

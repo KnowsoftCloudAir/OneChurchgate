@@ -541,3 +541,44 @@ class PastorMessage(SQLModel, table=True):
     youtube_id: Optional[str] = None
     is_active: bool = Field(default=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class MemberFeedPost(SQLModel, table=True):
+    """Member-to-member posts within the same global church tree. Auto-expire after 24h."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    global_church_id: int = Field(index=True)  # root global unit id
+    author_user_id: int = Field(foreign_key="user.id", index=True)
+    author_member_id: Optional[int] = Field(default=None, foreign_key="churchmember.id")
+    body: Optional[str] = Field(default=None, sa_column=Column(Text))
+    image_path: Optional[str] = None
+    shared_post_id: Optional[int] = Field(default=None, index=True)  # reshare of another feed post
+    is_active: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    expires_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class MemberFeedLike(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    post_id: int = Field(foreign_key="memberfeedpost.id", index=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class MemberFeedComment(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    post_id: int = Field(foreign_key="memberfeedpost.id", index=True)
+    user_id: int = Field(foreign_key="user.id")
+    body: str = Field(sa_column=Column(Text))
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class FocusGroupJoinRequest(SQLModel, table=True):
+    """Member requests to join a focus group; admin approves."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    group_id: int = Field(foreign_key="focusgroup.id", index=True)
+    member_id: int = Field(foreign_key="churchmember.id", index=True)
+    user_id: int = Field(foreign_key="user.id")
+    status: str = Field(default="pending")  # pending | approved | rejected
+    note: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    resolved_at: Optional[datetime] = None

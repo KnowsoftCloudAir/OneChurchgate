@@ -10,7 +10,7 @@ from pathlib import Path
 from app.database import create_db_and_tables, get_session, engine
 from app.models import User, UserRole
 from app.auth import get_password_hash, get_current_user, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
-from app.routers import auth, admin, church, district, members, programs, projects, community, payments, youtube_data, messages, subscriptions, backup
+from app.routers import feed, auth, admin, church, district, members, programs, projects, community, payments, youtube_data, messages, subscriptions, backup
 from app.seed_sample import ensure_all_sample_data
 
 @asynccontextmanager
@@ -151,6 +151,7 @@ app.include_router(messages.router)
 app.include_router(subscriptions.router)
 app.include_router(backup.router)
 app.include_router(youtube_data.router)
+app.include_router(feed.router)
 
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
