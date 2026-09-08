@@ -403,7 +403,7 @@
       <div class="relative z-10 flex flex-wrap items-start justify-between gap-2">
         <div class="min-w-0 flex-1">
           <p class="font-bold text-base sm:text-lg text-amber-200 tracking-wide">👼 Angel — your soul helper</p>
-          <p class="text-xs ms-muted mt-1" x-text="angel.status || 'Tap Angel above to turn on.'"></p>
+          <p class="text-xs ms-muted mt-1" x-text="angel.status || 'Tap Angel to turn on. Keep this tab open for best listening (browsers limit mic when minimized).'"></p>
           <p class="text-xs text-sky-300 mt-1" x-show="angel.enabled && !angel.busy">◐ Active · silent · waiting</p>
           <p class="text-xs text-amber-200 mt-1" x-show="angel.busy">● Working…</p>
           <p class="text-xs text-emerald-300 mt-1" x-show="angel.enabled && angel.listening && !angel.busy">🎤 Waves active · listening</p>
@@ -417,6 +417,8 @@
       </div>
       <div class="flex flex-wrap gap-2 mt-3 relative z-10" x-show="angel.enabled">
         <button type="button" @click="angelListenOnce()" class="px-3 py-1.5 rounded-full bg-amber-400 text-slate-900 text-xs font-bold">🎤 Listen</button>
+        <button type="button" @click="angelStartContinuousMusic()" class="px-3 py-1.5 rounded-full bg-emerald-500/90 text-white text-xs font-bold">🎵 Shuffle music</button>
+        <button type="button" @click="angelReadManna()" class="px-3 py-1.5 rounded-full bg-sky-500/90 text-white text-xs font-bold">📖 Daily Manna</button>
         <button type="button" @click="angelPlayMusic()" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">▶ Music</button>
         <button type="button" @click="angelReadBible('peace')" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">📖 Encourage</button>
         <button type="button" @click="angelReadBible('anxious')" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">📖 Calm</button>
@@ -522,6 +524,14 @@
       <button type="button" @click.prevent="showPanel('music')"
               :class="openPanel==='music' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
               class="nav-chip px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Music</button>
+
+      <button type="button" @click.prevent="showPanel('manna'); loadDailyManna()"
+              :class="openPanel==='manna' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
+              class="ms-card px-3 py-3 text-left">
+        <p class="font-semibold text-sm">Daily Manna</p>
+        <p class="text-xs ms-muted">Today’s full message · Angel can read it</p>
+      </button>
+
       <button type="button" @click.prevent="showPanel('subscription')"
               :class="(openPanel==='subscription' ? 'ring-2 ring-amber-300 bg-white/15 ' : '') + (notices.subscription ? 'has-notice ' : '')"
               class="nav-chip px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">
@@ -774,6 +784,37 @@
       </section>
     </div>
 
+    <section id="daily-manna" class="ms-card p-5 mb-5" x-show="openPanel==='manna'" x-cloak x-transition>
+      <div class="flex flex-wrap justify-between gap-2 items-start mb-3">
+        <div>
+          <h2 class="font-bold text-lg">Daily Manna</h2>
+          <p class="text-xs ms-muted">Full text from <a href="https://www.dailymanna.app/" target="_blank" rel="noopener" class="underline">dailymanna.app</a> · Pastor W. F. Kumuyi</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <select x-model="manna.category" @change="loadDailyManna()" class="rounded-lg px-2 py-1 text-sm text-slate-900">
+            <option value="Adult">Adult</option>
+            <option value="Youth">Youth</option>
+          </select>
+          <button type="button" @click="loadDailyManna()" class="ms-btn px-3 py-1.5 text-xs">Refresh</button>
+          <button type="button" @click="angelReadManna()" class="px-3 py-1.5 rounded-full bg-amber-400 text-slate-900 text-xs font-bold">👼 Angel read</button>
+        </div>
+      </div>
+      <p class="text-xs ms-muted mb-2" x-show="manna.loading">Loading today’s message…</p>
+      <p class="text-sm text-rose-300 mb-2" x-show="manna.error" x-text="manna.error"></p>
+      <div x-show="manna.ok" class="space-y-3">
+        <p class="text-xs ms-muted" x-text="(manna.date || '') + ' · ' + (manna.category || '')"></p>
+        <h3 class="text-xl font-bold" x-text="manna.topic"></h3>
+        <p class="text-sm italic border-l-4 border-amber-400/60 pl-3" x-text="manna.key_verse"></p>
+        <p class="text-xs font-semibold ms-accent" x-text="manna.text_ref"></p>
+        <div class="text-sm leading-relaxed whitespace-pre-wrap" x-text="manna.message"></div>
+        <p class="text-sm font-semibold" x-show="manna.thought"><span class="ms-muted">Thought for the day:</span> <span x-text="manna.thought"></span></p>
+        <p class="text-xs ms-muted" x-show="manna.bible_in_one_year">Bible in one year: <span x-text="manna.bible_in_one_year"></span></p>
+        <audio x-show="manna.audio_url" :src="manna.audio_url" controls class="w-full mt-2"></audio>
+        <p class="text-[10px] ms-muted pt-2">Source: dailymanna.app — content provided for personal devotion within Churchgate.</p>
+      </div>
+    </section>
+
+
 
     
             <section id="subscription" class="ms-card p-5 mb-5" style="min-height:24rem" x-show="openPanel==='subscription'" x-cloak x-transition>
@@ -992,6 +1033,9 @@ function memberHub() {
     bible: { book:'', chapter:'', situation:'', version:'kjv', slides:[], slideIndex:0, status:'', voiceOn:false, voiceName:'', continuous:false, announcedChapter:false, volume: 0.85 },
     voiceList: [],
     music: { id: '', playing: false },
+        manna: { loading: false, ok: false, error: '', category: 'Adult', date: '', topic: '', key_verse: '', text_ref: '', message: '', thought: '', bible_in_one_year: '', audio_url: '', full_text: '' },
+        angelMusicShuffle: false,
+        _musicShuffleTimer: null,
         musicList: [],
         churchMusic: { id: '', playing: false },
         churchMusicList: [],
@@ -1137,7 +1181,21 @@ function memberHub() {
             }
             said = (said || '').trim();
             if (said) this.handleAngelCommand(said);
-          } catch (e) { console.warn(e); }
+          } catch (e) {
+      const low = (said || '').toLowerCase();
+      if (low.includes('daily manna') || low.includes('read manna') || (low.includes('manna') && low.includes('read'))) {
+        this.angelReadManna();
+        return true;
+      }
+      if (low.includes('continuous music') || low.includes('shuffle music') || low.includes('keep playing music') || (low.includes('play music') && low.includes('continuous'))) {
+        this.angelStartContinuousMusic();
+        return true;
+      }
+      if ((low.includes('play music') || low.includes('play song') || low.includes('worship music')) && !low.includes('stop')) {
+        this.angelStartContinuousMusic();
+        return true;
+      }
+ console.warn(e); }
         };
         rec.onerror = (e) => {
           if (e.error === 'not-allowed') {
@@ -1166,6 +1224,36 @@ function memberHub() {
         }, 450);
       }
     },
+    
+    angelVisibilityHook() {
+      if (this._angelVisHooked) return;
+      this._angelVisHooked = true;
+      document.addEventListener('visibilitychange', () => {
+        if (!this.angel.enabled) return;
+        if (document.visibilityState === 'visible') {
+          this.angel.status = 'Tab active — resuming listen…';
+          this._angelResumeListen();
+        } else {
+          // Browsers often pause mic when minimized; keep trying to resume when allowed
+          this.angel.status = 'Tab in background — Angel will keep trying to listen (OS may pause the mic).';
+          this.angel.listening = false;
+          // Attempt soft resume loops while hidden (works on some Android Chrome builds)
+          if (this._angelBgTimer) clearInterval(this._angelBgTimer);
+          this._angelBgTimer = setInterval(() => {
+            if (!this.angel.enabled) { clearInterval(this._angelBgTimer); return; }
+            if (document.visibilityState === 'visible') { clearInterval(this._angelBgTimer); return; }
+            try { this._angelResumeListen(); } catch (e) {}
+          }, 4000);
+        }
+      });
+      // Keep recognition alive while enabled
+      if (this._angelKeepAlive) clearInterval(this._angelKeepAlive);
+      this._angelKeepAlive = setInterval(() => {
+        if (!this.angel.enabled || this.angel.busy) return;
+        if (!this.angel.listening) this._angelResumeListen();
+      }, 8000);
+    },
+
     toggleAngel() {
       this.angel.enabled = !this.angel.enabled;
       if (this.angel.enabled) {
@@ -1180,6 +1268,7 @@ function memberHub() {
             body: JSON.stringify({ action: 'angel_on', detail: 'Angel enabled' })
           });
         } catch (e) {}
+        this.angelVisibilityHook();
         this._angelResumeListen();
       } else {
         this.angelTurnOff(false);
@@ -1268,6 +1357,90 @@ function memberHub() {
       try { this.openPanel='music'; document.getElementById('music-row')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); } catch (e) {}
       setTimeout(() => this.angelIdleAfterAction('Music playing. Silent and waiting…'), 2200);
     },
+    
+    async loadDailyManna() {
+      this.manna.loading = true;
+      this.manna.error = '';
+      this.manna.ok = false;
+      try {
+        const cat = this.manna.category || 'Adult';
+        const r = await fetch('/member/api/daily-manna?category=' + encodeURIComponent(cat));
+        const j = await r.json();
+        if (!j.ok) {
+          this.manna.error = j.error || 'Could not load Daily Manna right now.';
+        } else {
+          this.manna.ok = true;
+          this.manna.date = j.date || '';
+          this.manna.category = j.category || cat;
+          this.manna.topic = j.topic || '';
+          this.manna.key_verse = j.key_verse || '';
+          this.manna.text_ref = j.text_ref || '';
+          this.manna.message = j.message || '';
+          this.manna.thought = j.thought || '';
+          this.manna.bible_in_one_year = j.bible_in_one_year || '';
+          this.manna.audio_url = j.audio_url || '';
+          this.manna.full_text = j.full_text || '';
+        }
+      } catch (e) {
+        this.manna.error = 'Network error loading Daily Manna.';
+      }
+      this.manna.loading = false;
+    },
+    async angelReadManna() {
+      this.openPanel = 'manna';
+      if (!this.manna.ok || !this.manna.full_text) {
+        await this.loadDailyManna();
+      }
+      if (this.manna.ok && this.manna.full_text) {
+        this.angelSpeak('Daily Manna. ' + this.manna.full_text);
+      } else {
+        this.angelSpeak(this.manna.error || 'Daily Manna is not available at the moment.');
+      }
+    },
+    angelStartContinuousMusic() {
+      this.angelMusicShuffle = true;
+      this.openPanel = 'music';
+      this.angelSpeak('Playing continuous music. Shuffling church songs and general inspiration.');
+      this._playShuffledTrack(true);
+    },
+    _combinedMusicList() {
+      const a = (this.churchMusicList || []).map(m => Object.assign({}, m, { _src: 'church' }));
+      const b = (this.musicList || []).map(m => Object.assign({}, m, { _src: 'general' }));
+      return a.concat(b);
+    },
+    _playShuffledTrack(announce) {
+      if (!this.angelMusicShuffle) return;
+      const list = this._combinedMusicList();
+      if (!list.length) {
+        this.angelSpeak('No music tracks are available yet.');
+        this.angelMusicShuffle = false;
+        return;
+      }
+      let pick = list[Math.floor(Math.random() * list.length)];
+      const cur = this.churchMusic.id || this.music.id;
+      if (list.length > 1) {
+        for (let i = 0; i < 6 && pick.id === cur; i++) {
+          pick = list[Math.floor(Math.random() * list.length)];
+        }
+      }
+      if (pick._src === 'church') {
+        this.music.playing = false;
+        this.music.id = '';
+        this.churchMusic.id = pick.id;
+        this.churchMusic.playing = true;
+      } else {
+        this.churchMusic.playing = false;
+        this.churchMusic.id = '';
+        this.music.id = pick.id;
+        this.music.playing = true;
+      }
+      if (announce) this.angel.status = 'Shuffle on · ' + (pick.title || 'track');
+      if (this._musicShuffleTimer) clearTimeout(this._musicShuffleTimer);
+      this._musicShuffleTimer = setTimeout(() => {
+        if (this.angelMusicShuffle) this._playShuffledTrack(false);
+      }, 210000);
+    },
+
     angelStopMusic() {
       this.churchMusic.playing = false;
       this.music.playing = false;

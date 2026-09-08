@@ -149,7 +149,7 @@ def expire_due_subscriptions(session: Session) -> int:
 
 def check_sample_member(session: Session, user: User) -> dict:
     """Sample account: 5 minutes from first use, then deactivate. Cannot subscribe."""
-    SAMPLE_SECONDS = 5 * 60  # 5 minutes sample trial
+    SAMPLE_SECONDS = 3 * 60  # 3 minutes per login (shared sample account)
     info = {
         "is_sample": bool(getattr(user, "is_sample_account", False)),
         "show_warning": False,
@@ -180,7 +180,7 @@ def check_sample_member(session: Session, user: User) -> dict:
     mins = left // 60
     secs = left % 60
     info["message"] = (
-        f"Sample membership (5-min trial): {mins}m {secs:02d}s left. "
+        f"Sample membership (3-min session): {mins}m {secs:02d}s left. "
         "Sample accounts cannot subscribe — please register as a full member for perpetual access."
     )
     info["show_warning"] = True  # always show while sample is active
@@ -188,7 +188,7 @@ def check_sample_member(session: Session, user: User) -> dict:
         info["expired"] = True
         info["locked"] = True
         info["message"] = (
-            "Sample trial ended. Register as a member of a church to continue. "
+            "Sample 3-minute session ended. Register as a member of a church to continue. "
             "Resources and Angel are locked until you join as a full member."
         )
         # Do NOT log out — same as paid members: waiting_approval style lock

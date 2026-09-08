@@ -21,7 +21,62 @@ def role_val(role) -> str:
         return ""
     return str(getattr(role, "value", role)).lower().replace("userrole.", "")
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
+
+# Simple in-memory login throttle (per process)
+_login_attempts: dict = {}
+
+
+def validate_password_strength(password: str) -> Optional[str]:
+    """Return error message if weak; None if OK. Min 10 chars, upper, lower, digit."""
+    if not password or len(password) < 10:
+        return "Password must be at least 10 characters"
+    if len(password) > 72:
+        return "Password must be at most 72 characters"
+    if not any(c.isupper() for c in password):
+        return "Password must include at least one uppercase letter"
+    if not any(c.islower() for c in password):
+        return "Password must include at least one lowercase letter"
+    if not any(c.isdigit() for c in password):
+        return "Password must include at least one number"
+    # reject very common weak patterns
+    low = password.lower()
+    for bad in ("password", "12345678", "qwertyuiop", "admin12345"):
+        if low == bad or low.startswith(bad):
+            return "Password is too common — choose a stronger unique password"
+    return None
+
+
+def record_login_failure(email: str) -> int:
+    from time import time
+    key = (email or "").strip().lower()
+    now = time()
+    bucket = _login_attempts.get(key, {"n": 0, "until": 0})
+    if bucket.get("until", 0) > now:
+        return int(bucket["until"] - now)
+    bucket["n"] = int(bucket.get("n", 0)) + 1
+    if bucket["n"] >= 5:
+        bucket["until"] = now + 15 * 60  # 15 min lockout
+        bucket["n"] = 0
+    _login_attempts[key] = bucket
+    return 0
+
+
+def clear_login_failures(email: str):
+    key = (email or "").strip().lower()
+    _login_attempts.pop(key, None)
+
+
+def login_lockout_seconds(email: str) -> int:
+    from time import time
+    key = (email or "").strip().lower()
+    bucket = _login_attempts.get(key)
+    if not bucket:
+        return 0
+    left = int(bucket.get("until", 0) - time())
+    return max(0, left)
+
+
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/token", auto_error=False)
 
 def verify_password(plain: str, hashed: str) -> bool:

@@ -454,7 +454,7 @@ def ensure_all_sample_data(session: Session) -> None:
     print("   Group (Ikeja):  ikeja@knowsoftchurch.org / Church@12345")
     print("   District:       allen@knowsoftchurch.org / Church@12345")
     print("   Data officer:   data@allen.knowsoftchurch.org / Data@12345")
-    print("   Sample member:  member@knowsoftchurch.org / Member@12345")
+    print("   Sample member:  angel@churchgate.com / ilovechurhgate")
 
 def seed_music_links(session: Session) -> None:
     """Default YouTube worship list; General Admin can edit later."""
@@ -502,11 +502,11 @@ def seed_music_links(session: Session) -> None:
 
 
 def seed_sample_member(session: Session) -> None:
-    """Approved sample member for testing: member@knowsoftchurch.org / Member@12345"""
+    """Approved sample member for testing: angel@churchgate.com / ilovechurhgate"""
     from app.models import ChurchMember, User, UserRole, ChurchUnit, ChurchLevel
     from app.auth import get_password_hash
-    email = "member@knowsoftchurch.org"
-    password = "Member@12345"
+    email = "angel@churchgate.com"
+    password = "ilovechurhgate"
     district = session.exec(
         select(ChurchUnit).where(ChurchUnit.code == "KC-NG-LAG-IKE-ALLEN")
     ).first()
@@ -521,7 +521,7 @@ def seed_sample_member(session: Session) -> None:
     if not member:
         member = ChurchMember(
             church_id=district.id,
-            full_name="Sister Faith Sample",
+            full_name="Angel Sample Member",
             email=email,
             sex="sister",
             age_group="adult",
@@ -543,7 +543,7 @@ def seed_sample_member(session: Session) -> None:
     if not user:
         user = User(
             email=email,
-            full_name="Sister Faith Sample",
+            full_name="Angel Sample Member",
             hashed_password=get_password_hash(password),
             role=UserRole.member,
             is_active=True,
@@ -558,7 +558,7 @@ def seed_sample_member(session: Session) -> None:
         user.is_active = True
         user.role = UserRole.member
         user.is_sample_account = True
-        user.sample_started_at = None  # fresh 5-min trial each deploy/restart
+        user.sample_started_at = None  # fresh 3-min session each deploy/restart
         user.church_id = district.id
         user.member_id = member.id
         session.add(user)
@@ -575,4 +575,4 @@ def seed_sample_member(session: Session) -> None:
         member.is_active = True
         session.add(member)
     session.commit()
-    print(f"✅ Sample member ready: {email} / {password} (5-min trial resets on each start)")
+    print(f"✅ Sample member ready: {email} / {password} (3-min session resets on each start)")

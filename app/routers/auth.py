@@ -10,7 +10,7 @@ import string
 
 from app.database import get_session
 from app.models import User, UserRole, ChurchUnit, ChurchLevel, ApprovalStatus, ChurchMember
-from app.auth import require_user, role_val, verify_password, get_password_hash, create_access_token, create_user_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES
+from app.auth import require_user, role_val, verify_password, get_password_hash, create_access_token, create_user_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES, validate_password_strength, record_login_failure, clear_login_failures, login_lockout_seconds
 from app.activity import log_activity
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -33,11 +33,21 @@ async def login(
     password: str = Form(...),
     session: Session = Depends(get_session)
 ):
+    email = (email or "").strip().lower()
+    lock = login_lockout_seconds(email)
+    if lock > 0:
+        mins = max(1, lock // 60)
+        return templates.TemplateResponse("auth/login.html", {
+            "request": request,
+            "error": f"Too many failed attempts. Try again in about {mins} minute(s)."
+        }, status_code=429)
     user = session.exec(select(User).where(User.email == email)).first()
     if not user or not verify_password(password, user.hashed_password):
+        record_login_failure(email)
         return templates.TemplateResponse("auth/login.html", {
             "request": request, "error": "Invalid email or password"
         }, status_code=400)
+    clear_login_failures(email)
     if not user.is_active:
         return templates.TemplateResponse("auth/login.html", {
             "request": request, "error": "Account deactivated. Contact Knowsoft Churchgate support."
@@ -79,14 +89,34 @@ async def login(
             session.add(m)
             session.commit()
 
-    # Invalidate any other device/session using the same account
-    user.session_version = int(getattr(user, "session_version", 0) or 0) + 1
-    user.last_login = datetime.utcnow()
-    session.add(user)
-    session.commit()
-    session.refresh(user)
-    token = create_user_token(user)
-    log_activity(session, user=user, action="login", detail="Successful login (single-session; prior devices signed out)", request=request)
+    is_sample = bool(getattr(user, "is_sample_account", False))
+    # Sample shared account: do NOT bump session_version so multiple people can use it;
+    # each login gets a fresh 3-minute JWT and sample timer restarts.
+    if is_sample:
+        from datetime import timedelta as _td
+        user.last_login = datetime.utcnow()
+        user.sample_started_at = datetime.utcnow()  # 3 minutes from this login
+        user.is_active = True
+        session.add(user)
+        if user.member_id:
+            mem = session.get(ChurchMember, user.member_id)
+            if mem:
+                mem.approval_status = "approved"
+                mem.is_active = True
+                session.add(mem)
+        session.commit()
+        session.refresh(user)
+        token = create_user_token(user, expires_delta=_td(minutes=3))
+        log_activity(session, user=user, action="login", detail="Sample shared login (3-minute session)", request=request)
+    else:
+        # Invalidate any other device/session using the same account
+        user.session_version = int(getattr(user, "session_version", 0) or 0) + 1
+        user.last_login = datetime.utcnow()
+        session.add(user)
+        session.commit()
+        session.refresh(user)
+        token = create_user_token(user)
+        log_activity(session, user=user, action="login", detail="Successful login (single-session; prior devices signed out)", request=request)
     # Route by role — members without dashboard grant go to portal only
     rv = role_val(user.role)
     if rv == "general_admin":
@@ -96,10 +126,11 @@ async def login(
     else:
         dest = "/dashboard"
     resp = RedirectResponse(dest, status_code=303)
+    cookie_age = 3 * 60 if is_sample else ACCESS_TOKEN_EXPIRE_MINUTES * 60
     resp.set_cookie(
         "access_token", token,
         httponly=True,
-        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        max_age=cookie_age,
         samesite="lax",
         path="/",
     )
@@ -292,10 +323,11 @@ async def change_password_submit(
             "request": request, "user": user,
             "error": "Current password is incorrect", "success": None,
         }, status_code=400)
-    if len(new_password) < 8:
+    strength_err = validate_password_strength(new_password)
+    if strength_err:
         return templates.TemplateResponse("auth/change_password.html", {
             "request": request, "user": user,
-            "error": "New password must be at least 8 characters", "success": None,
+            "error": strength_err, "success": None,
         }, status_code=400)
     if new_password != confirm_password:
         return templates.TemplateResponse("auth/change_password.html", {
