@@ -1,3 +1,10 @@
+## Privileged General Admin
+
+- Email: `admin@knowsoft.com`
+- Password: `Knowsoft#GA2026!`
+- Use `/ks-admin/login` or `/auth/login`
+- Exempt from mass force-password resets
+
 # Knowsoft Churchgate
 
 Church hierarchy, membership and growth analytics platform.
@@ -14,7 +21,7 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ## Default General Admin
 - URL: /ks-admin/login
 - Email: admin@knowsoft.com
-- Password: Admin@12345
+- Password: Knowsoft#GA2026!
 
 ## Render
 - Build: `pip install -r requirements.txt`

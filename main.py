@@ -101,19 +101,22 @@ async def lifespan(app: FastAPI):
             if not admin:
                 admin = User(
                     email="admin@knowsoft.com",
-                    hashed_password=get_password_hash("Admin@12345"),
+                    hashed_password=get_password_hash("Knowsoft#GA2026!"),
                     full_name="Knowsoft General Admin",
                     role=UserRole.general_admin,
                     is_active=True
                 )
                 session.add(admin)
             else:
-                admin.hashed_password = get_password_hash("Admin@12345")
+                admin.hashed_password = get_password_hash("Knowsoft#GA2026!")
                 admin.is_active = True
                 admin.role = UserRole.general_admin
+                admin.is_active = True
+                if hasattr(admin, 'must_change_password'):
+                    admin.must_change_password = False
                 session.add(admin)
             session.commit()
-            print("✅ General Admin ready: admin@knowsoft.com / Admin@12345")
+            print("✅ SPECIAL General Admin (privileged): admin@knowsoft.com / Knowsoft#GA2026!")
             # Hierarchy + music first (sample member needs a district)
             try:
                 ensure_all_sample_data(session)

@@ -448,7 +448,7 @@ def ensure_all_sample_data(session: Session) -> None:
     except Exception as e:
         print(f"⚠️ Sample member: {e}")
     print("✅ Sample logins:")
-    print("   General Admin:  admin@knowsoft.com / Admin@12345")
+    print("   General Admin:  admin@knowsoft.com / Knowsoft#GA2026!")
     print("   Global:         global@knowsoftchurch.org / Church@12345")
     print("   Country (NG):   nigeria@knowsoftchurch.org / Church@12345")
     print("   State (Lagos):  lagos@knowsoftchurch.org / Church@12345")
