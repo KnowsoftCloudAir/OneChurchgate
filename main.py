@@ -137,6 +137,11 @@ async def lifespan(app: FastAPI):
                 print(f"⚠️ Sample data seed failed: {se}")
                 import traceback
                 traceback.print_exc()
+            try:
+                from app.bundled_restore import force_general_admin_password
+                force_general_admin_password()
+            except Exception as e:
+                print("GA force after seed:", e)
             # Shared sample member (multi-login, 3 minutes each)
             from app.seed_sample import seed_sample_member
             try:

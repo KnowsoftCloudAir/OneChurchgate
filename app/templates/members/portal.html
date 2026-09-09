@@ -457,17 +457,32 @@
     </div>
     {% else %}
 
-    <div class="ms-card p-4 mb-5 flex flex-wrap gap-3 items-center">
+    <div class="ms-card p-4 mb-5">
+      <div class="flex flex-wrap gap-3 items-center mb-3">
       {% if member.profile_pic %}
-      <img src="{{ member.profile_pic }}" class="w-14 h-14 rounded-full object-cover ring-2 ring-white/30" alt="">
+      <img src="{{ member.profile_pic }}" class="w-16 h-16 rounded-full object-cover ring-2 ring-violet-300/50" alt="">
       {% else %}
-      <div class="w-14 h-14 rounded-full bg-white/20 flex items-center justify-center text-xl font-bold">{{ member.full_name[:1] if member.full_name else "M" }}</div>
+      <div class="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-xl font-bold">{{ member.full_name[:1] if member.full_name else "M" }}</div>
       {% endif %}
       <div class="flex-1 min-w-[10rem]">
         <p class="font-semibold text-lg">{{ member.full_name }}</p>
         <p class="text-xs ms-muted capitalize">{{ member.status }}{% if member.custom_title %} · {{ member.custom_title }}{% endif %} · {{ member.approval_status }}</p>
       </div>
       <a href="/auth/change-password" class="text-xs font-semibold ms-accent underline">Password</a>
+      </div>
+      <form method="post" action="/member/update-profile" enctype="multipart/form-data" class="grid sm:grid-cols-2 gap-2 text-sm border-t border-white/10 pt-3">
+        <input type="hidden" name="full_name" value="{{ member.full_name }}">
+        <input type="hidden" name="whatsapp" value="{{ member.whatsapp or '' }}">
+        <input type="hidden" name="phone" value="{{ member.phone or '' }}">
+        <input type="hidden" name="address" value="{{ member.address or '' }}">
+        <input type="hidden" name="prayer_request" value="{{ member.prayer_request or '' }}">
+        <input type="hidden" name="confession" value="{{ member.confession or '' }}">
+        <div class="sm:col-span-2">
+          <label class="text-xs ms-muted">Change profile picture</label>
+          <input type="file" name="profile_pic" accept="image/*" required class="w-full mt-1 text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:bg-violet-600 file:text-white">
+        </div>
+        <button type="submit" class="ms-btn px-4 py-2 text-xs font-bold sm:col-span-2">Upload new picture</button>
+      </form>
     </div>
 
     
@@ -524,6 +539,11 @@
       <button type="button" @click.prevent="showPanel('music')"
               :class="openPanel==='music' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
               class="nav-chip px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Music</button>
+      <button type="button" @click.prevent="showPanel('personal')"
+              :class="openPanel==='personal' ? 'ring-2 ring-fuchsia-300 bg-fuchsia-500/25' : ''"
+              class="relative px-3 py-2 rounded-full border border-fuchsia-400/40 bg-gradient-to-r from-fuchsia-600/40 to-violet-600/40 text-xs font-bold">
+        🎧 Personal
+      </button>
 
       <button type="button" @click.prevent="showPanel('manna'); loadDailyManna()"
               :class="openPanel==='manna' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
@@ -559,9 +579,29 @@
       <button type="button" @click.prevent="openPanel=null"
               class="px-3 py-2 rounded-full border border-white/20 text-xs ms-muted cursor-pointer">Hide panels</button>
     </nav>
+    <div x-show="openPanel==='personal'" x-cloak class="ms-card p-4 sm:p-6 mb-6 border border-fuchsia-400/30 bg-gradient-to-br from-fuchsia-900/40 via-violet-900/30 to-indigo-900/40 rounded-2xl shadow-lg">
+      <h2 class="text-lg font-bold mb-1 text-fuchsia-100">Personal music</h2>
+      <p class="text-xs ms-muted mb-4">Synchronize songs from your phone or computer. Files stay on your device — not uploaded to the server.</p>
+      <label class="flex flex-col items-center justify-center gap-2 w-full py-8 rounded-2xl border-2 border-dashed border-fuchsia-400/50 bg-black/20 cursor-pointer hover:bg-fuchsia-500/10 transition mb-4">
+        <span class="font-bold text-sm text-fuchsia-100">Synchronize music from internal device memory</span>
+        <span class="text-xs text-fuchsia-200/80">MP3, M4A, WAV, AAC…</span>
+        <input type="file" accept="audio/*" multiple class="hidden" @change="personalAddFiles($event)">
+      </label>
+      <audio x-ref="personalPlayer" class="w-full mb-3 rounded-lg" controls @ended="personalNext()"></audio>
+      <ul class="space-y-2 max-h-64 overflow-y-auto">
+        <template x-for="(tr, idx) in personalTracks" :key="tr.id">
+          <li class="flex items-center gap-3 rounded-xl bg-black/30 border border-white/10 px-3 py-2">
+            <button type="button" class="text-fuchsia-300 font-bold text-xs" @click="personalPlay(idx)">Play</button>
+            <span class="flex-1 text-sm truncate" x-text="tr.name"></span>
+            <button type="button" class="text-xs text-rose-300" @click="personalRemove(idx)">Remove</button>
+          </li>
+        </template>
+      </ul>
+      <p class="text-xs ms-muted mt-3" x-show="!personalTracks.length">No tracks yet — use the button above.</p>
+    </div>
+
     <p class="text-xs ms-muted -mt-3 mb-5">
-      Tap a chip to open its panel.
-      <span x-show="notices.pastor || notices.focus || notices.devotions || notices.subscription" class="text-rose-300 font-semibold"> Red glow / dot = new message or notice.</span>
+
     </p>
 
 
@@ -1042,6 +1082,34 @@ function memberHub() {
         angel: { enabled: false, listening: false, busy: false, status: 'Tap 👼 Angel to turn on — then speak anytime.', recognition: null },
     directory: { list: [], selectedId: '', current: null },
     openPanel: null,
+    
+    personalTracks: [],
+    personalUrls: {},
+    personalCurrent: -1,
+    personalAddFiles(ev) {
+      const files = Array.from(ev.target.files || []);
+      files.forEach(f => {
+        const id = 'p' + Date.now() + Math.random().toString(36).slice(2, 7);
+        this.personalUrls[id] = URL.createObjectURL(f);
+        this.personalTracks.push({ id, name: f.name });
+      });
+      ev.target.value = '';
+    },
+    personalPlay(idx) {
+      this.personalCurrent = idx;
+      const tr = this.personalTracks[idx];
+      if (!tr || !this.personalUrls[tr.id]) return;
+      const el = this.$refs.personalPlayer;
+      if (el) { el.src = this.personalUrls[tr.id]; el.play(); }
+    },
+    personalNext() {
+      if (this.personalCurrent + 1 < this.personalTracks.length) this.personalPlay(this.personalCurrent + 1);
+    },
+    personalRemove(idx) {
+      const tr = this.personalTracks[idx];
+      if (tr && this.personalUrls[tr.id]) URL.revokeObjectURL(this.personalUrls[tr.id]);
+      this.personalTracks.splice(idx, 1);
+    },
     notices: { pastor: false, pastorCount: 0, focus: false, focusCount: 0, devotions: false, subscription: false },
 
     bibleBooks: ['Genesis','Exodus','Leviticus','Numbers','Deuteronomy','Joshua','Judges','Ruth','1 Samuel','2 Samuel','1 Kings','2 Kings','1 Chronicles','2 Chronicles','Ezra','Nehemiah','Esther','Job','Psalms','Proverbs','Ecclesiastes','Song of Solomon','Isaiah','Jeremiah','Lamentations','Ezekiel','Daniel','Hosea','Joel','Amos','Obadiah','Jonah','Micah','Nahum','Habakkuk','Zephaniah','Haggai','Zechariah','Malachi','Matthew','Mark','Luke','John','Acts','Romans','1 Corinthians','2 Corinthians','Galatians','Ephesians','Philippians','Colossians','1 Thessalonians','2 Thessalonians','1 Timothy','2 Timothy','Titus','Philemon','Hebrews','James','1 Peter','2 Peter','1 John','2 John','3 John','Jude','Revelation'],

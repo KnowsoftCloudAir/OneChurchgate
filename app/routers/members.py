@@ -1,3 +1,4 @@
+import shutil
 """Public member registration + member portal after approval."""
 from pathlib import Path
 from typing import Optional
@@ -406,6 +407,7 @@ async def update_profile(
     confession: str = Form(""),
     requested_status: str = Form(""),
     requested_title: str = Form(""),
+    profile_pic: UploadFile = File(None),
     user: User = Depends(require_user),
     session: Session = Depends(get_session)
 ):
@@ -423,6 +425,19 @@ async def update_profile(
     member.prayer_request = prayer_request or None
     if confession:
         member.confession = confession
+    # Profile picture change from member page
+    if profile_pic and getattr(profile_pic, "filename", None):
+        if profile_pic.content_type and profile_pic.content_type.startswith("image/"):
+            ext = (profile_pic.filename or "jpg").rsplit(".", 1)[-1].lower()
+            if ext not in ("jpg", "jpeg", "png", "gif", "webp"):
+                ext = "jpg"
+            up = Path("app/static/uploads/profiles")
+            up.mkdir(parents=True, exist_ok=True)
+            fname = f"m{member.id}_{uuid.uuid4().hex[:8]}.{ext}"
+            dest = up / fname
+            with open(dest, "wb") as f:
+                shutil.copyfileobj(profile_pic.file, f)
+            member.profile_pic = f"/static/uploads/profiles/{fname}"
     # Member may propose status; admin confirms via Approvals / members list
     if requested_status or requested_title:
         note = f"[Status request: {requested_status or member.status}"
