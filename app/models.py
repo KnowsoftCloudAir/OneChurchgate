@@ -81,6 +81,7 @@ class ChurchUnit(SQLModel, table=True):
     longitude: Optional[float] = None
     approval_status: str = Field(default="pending")
     is_active: bool = Field(default=True)
+    must_change_password: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     members: List["ChurchMember"] = Relationship(back_populates="church")
@@ -90,6 +91,7 @@ class ChurchUnit(SQLModel, table=True):
 class User(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     email: str = Field(unique=True, index=True)
+    phone: Optional[str] = None
     hashed_password: str
     full_name: str
     role: UserRole = Field(default=UserRole.member)
@@ -582,3 +584,23 @@ class FocusGroupJoinRequest(SQLModel, table=True):
     note: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
     resolved_at: Optional[datetime] = None
+
+
+class SystemAnnouncement(SQLModel, table=True):
+    """General Admin broadcast (maintenance / upgrade notices) shown on login and in-app."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str
+    body: str = Field(sa_column=Column(Text))
+    is_active: bool = Field(default=True)
+    show_on_login: bool = Field(default=True)
+    created_by: Optional[int] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    expires_at: Optional[datetime] = None
+
+
+class AppConfig(SQLModel, table=True):
+    """Key-value app settings (force password reset after deploy, SMS config, etc.)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    key: str = Field(unique=True, index=True)
+    value: Optional[str] = Field(default=None, sa_column=Column(Text))
+    updated_at: datetime = Field(default_factory=datetime.utcnow)

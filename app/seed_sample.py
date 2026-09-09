@@ -444,6 +444,7 @@ def ensure_all_sample_data(session: Session) -> None:
         seed_sample_member(session)
         seed_church_music(session)
         seed_global_denominations(session)
+        ensure_global_branch_trees(session)
     except Exception as e:
         print(f"⚠️ Sample member: {e}")
     print("✅ Sample logins:")
@@ -501,12 +502,15 @@ def seed_music_links(session: Session) -> None:
     print("✅ Default music links seeded")
 
 
+
 def seed_sample_member(session: Session) -> None:
-    """Approved sample member for testing: angel@churchgate.com / ilovechurhgate"""
-    from app.models import ChurchMember, User, UserRole, ChurchUnit, ChurchLevel
+    """Approved sample member: angel@churchgate.com / ilovechurhgate (shared, 3-min sessions)."""
+    from app.models import ChurchMember, User, UserRole, ChurchUnit, ChurchLevel, ApprovalStatus
     from app.auth import get_password_hash
+
     email = "angel@churchgate.com"
     password = "ilovechurhgate"
+
     district = session.exec(
         select(ChurchUnit).where(ChurchUnit.code == "KC-NG-LAG-IKE-ALLEN")
     ).first()
@@ -515,8 +519,25 @@ def seed_sample_member(session: Session) -> None:
             select(ChurchUnit).where(ChurchUnit.level == ChurchLevel.district)
         ).first()
     if not district:
-        print("⚠️ No district for sample member")
-        return
+        # Minimal fallback unit so sample login never depends on full hierarchy
+        district = session.exec(
+            select(ChurchUnit).where(ChurchUnit.level == ChurchLevel.global_church)
+        ).first()
+    if not district:
+        district = ChurchUnit(
+            name="Knowsoft Sample Church",
+            code="KC-SAMPLE",
+            level=ChurchLevel.global_church,
+            approval_status="approved",
+            is_active=True,
+            country="Nigeria",
+            state="Lagos",
+        )
+        session.add(district)
+        session.commit()
+        session.refresh(district)
+        print("✅ Created fallback sample church unit")
+
     member = session.exec(select(ChurchMember).where(ChurchMember.email == email)).first()
     if not member:
         member = ChurchMember(
@@ -530,6 +551,7 @@ def seed_sample_member(session: Session) -> None:
             approval_status="approved",
             phone="+2348000000001",
             whatsapp="+2348000000001",
+            is_active=True,
         )
         session.add(member)
         session.commit()
@@ -537,42 +559,128 @@ def seed_sample_member(session: Session) -> None:
     else:
         member.approval_status = "approved"
         member.church_id = district.id
+        member.is_active = True
+        member.full_name = "Angel Sample Member"
         session.add(member)
         session.commit()
+
+    pwd_hash = get_password_hash(password)
     user = session.exec(select(User).where(User.email == email)).first()
     if not user:
         user = User(
             email=email,
             full_name="Angel Sample Member",
-            hashed_password=get_password_hash(password),
+            hashed_password=pwd_hash,
             role=UserRole.member,
             is_active=True,
             is_sample_account=True,
             sample_started_at=None,
             church_id=district.id,
             member_id=member.id,
+            session_version=0,
         )
         session.add(user)
     else:
-        user.hashed_password = get_password_hash(password)
+        user.email = email
+        user.hashed_password = pwd_hash
         user.is_active = True
         user.role = UserRole.member
         user.is_sample_account = True
-        user.sample_started_at = None  # fresh 3-min session each deploy/restart
+        user.sample_started_at = None
         user.church_id = district.id
         user.member_id = member.id
         session.add(user)
-    # Always refresh trial clock on seed so sample login works after expiry
-    user = session.exec(select(User).where(User.email == email)).first()
-    if user:
-        user.sample_started_at = None
-        user.is_active = True
-        user.is_sample_account = True
-        user.hashed_password = get_password_hash(password)
-        session.add(user)
-    if member:
-        member.approval_status = "approved"
-        member.is_active = True
-        session.add(member)
     session.commit()
-    print(f"✅ Sample member ready: {email} / {password} (3-min session resets on each start)")
+
+    # Verify hash works
+    from app.auth import verify_password
+    user = session.exec(select(User).where(User.email == email)).first()
+    if user and verify_password(password, user.hashed_password):
+        print(f"✅ Sample member ready: {email} / {password} (verified)")
+    else:
+        print(f"⚠️ Sample member hash verify FAILED for {email} — rehashing")
+        if user:
+            user.hashed_password = get_password_hash(password)
+            session.add(user)
+            session.commit()
+            print(f"✅ Sample member rehashed: {email} / {password}")
+
+    # Optional legacy alias so old instructions still work
+    legacy = "member@knowsoftchurch.org"
+    leg_user = session.exec(select(User).where(User.email == legacy)).first()
+    if leg_user:
+        leg_user.hashed_password = get_password_hash(password)
+        leg_user.is_sample_account = True
+        leg_user.is_active = True
+        leg_user.role = UserRole.member
+        leg_user.sample_started_at = None
+        if member:
+            leg_user.member_id = member.id
+            leg_user.church_id = district.id
+        session.add(leg_user)
+        session.commit()
+
+
+def ensure_global_branch_trees(session: Session) -> None:
+    """For every approved global church, ensure Country → State → Group → District + sample logins."""
+    globals_ = list(session.exec(
+        select(ChurchUnit).where(
+            ChurchUnit.level == ChurchLevel.global_church,
+            ChurchUnit.approval_status == "approved",
+        )
+    ).all())
+    for g in globals_:
+        c_code = f"{g.code}-CTY"
+        country = session.exec(select(ChurchUnit).where(ChurchUnit.code == c_code)).first()
+        if not country:
+            country = ChurchUnit(
+                code=c_code, name=f"{g.name} – Sample Country",
+                level=ChurchLevel.country, parent_id=g.id,
+                global_code=g.code, country_name=g.country_name or "Sample Country",
+                approval_status="approved", is_active=True,
+            )
+            session.add(country)
+            session.commit()
+            session.refresh(country)
+        s_code = f"{g.code}-ST"
+        state = session.exec(select(ChurchUnit).where(ChurchUnit.code == s_code)).first()
+        if not state:
+            state = ChurchUnit(
+                code=s_code, name=f"{g.name} – Sample State",
+                level=ChurchLevel.state, parent_id=country.id,
+                global_code=g.code, country_name=country.country_name,
+                state_name="Sample State",
+                approval_status="approved", is_active=True,
+            )
+            session.add(state)
+            session.commit()
+            session.refresh(state)
+        gr_code = f"{g.code}-GRP"
+        group = session.exec(select(ChurchUnit).where(ChurchUnit.code == gr_code)).first()
+        if not group:
+            group = ChurchUnit(
+                code=gr_code, name=f"{g.name} – Sample Group",
+                level=ChurchLevel.group, parent_id=state.id,
+                global_code=g.code, approval_status="approved", is_active=True,
+            )
+            session.add(group)
+            session.commit()
+            session.refresh(group)
+        d_code = f"{g.code}-DIST"
+        district = session.exec(select(ChurchUnit).where(ChurchUnit.code == d_code)).first()
+        if not district:
+            district = ChurchUnit(
+                code=d_code, name=f"{g.name} – Sample District",
+                level=ChurchLevel.district, parent_id=group.id,
+                global_code=g.code, approval_status="approved", is_active=True,
+            )
+            session.add(district)
+            session.commit()
+            session.refresh(district)
+        if g.code != "KC-GLOBAL":
+            safe = "".join(ch if ch.isalnum() else "" for ch in g.code.lower())[:20]
+            g_email = f"global.{safe}@churchgate.sample"
+            d_email = f"district.{safe}@churchgate.sample"
+            _ensure_admin(session, g_email, f"Admin {g.name}", g.id, UserRole.church_admin, SAMPLE_PASSWORD, False)
+            _ensure_admin(session, d_email, f"District Admin {g.name}", district.id, UserRole.church_admin, SAMPLE_PASSWORD, False)
+            print(f"   Branch {g.name}: {g_email} / {SAMPLE_PASSWORD} | {d_email} / {SAMPLE_PASSWORD}")

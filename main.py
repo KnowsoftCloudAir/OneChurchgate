@@ -10,7 +10,7 @@ from pathlib import Path
 from app.database import create_db_and_tables, get_session, engine
 from app.models import User, UserRole
 from app.auth import get_password_hash, get_current_user, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
-from app.routers import feed, manna, auth, admin, church, district, members, programs, projects, community, payments, youtube_data, messages, subscriptions, backup
+from app.routers import feed, manna, auth, admin, church, district, members, programs, projects, community, payments, youtube_data, messages, subscriptions, backup, announcements, device_music
 from app.seed_sample import ensure_all_sample_data
 
 @asynccontextmanager
@@ -114,19 +114,36 @@ async def lifespan(app: FastAPI):
                 session.add(admin)
             session.commit()
             print("✅ General Admin ready: admin@knowsoft.com / Admin@12345")
-            # Shared sample member (multi-login, 3 minutes each)
-            from app.seed_sample import seed_sample_member
-            try:
-                seed_sample_member(session)
-            except Exception as se:
-                print("sample member seed:", se)
-
+            # Hierarchy + music first (sample member needs a district)
             try:
                 ensure_all_sample_data(session)
             except Exception as se:
                 print(f"⚠️ Sample data seed failed: {se}")
                 import traceback
                 traceback.print_exc()
+            # Shared sample member (multi-login, 3 minutes each)
+            from app.seed_sample import seed_sample_member
+            try:
+                seed_sample_member(session)
+            except Exception as se:
+                print("sample member seed:", se)
+            # Force-reset sample password every boot so login never drifts
+            try:
+                from app.auth import get_password_hash
+                sample = session.exec(select(User).where(User.email == "angel@churchgate.com")).first()
+                if sample:
+                    sample.hashed_password = get_password_hash("ilovechurhgate")
+                    sample.is_active = True
+                    sample.is_sample_account = True
+                    sample.role = UserRole.member
+                    sample.sample_started_at = None
+                    session.add(sample)
+                    session.commit()
+                    print("✅ Sample login forced: angel@churchgate.com / ilovechurhgate")
+                else:
+                    print("⚠️ Sample user angel@churchgate.com still missing after seed")
+            except Exception as se:
+                print("sample force password:", se)
     except Exception as e:
         print(f"⚠️ Seed: {e}")
         import traceback
@@ -156,6 +173,8 @@ app.include_router(payments.router)
 app.include_router(messages.router)
 app.include_router(subscriptions.router)
 app.include_router(backup.router)
+app.include_router(announcements.router)
+app.include_router(device_music.router)
 app.include_router(youtube_data.router)
 app.include_router(feed.router)
 app.include_router(manna.router)

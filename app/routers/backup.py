@@ -14,8 +14,9 @@ from sqlmodel import Session, select, SQLModel
 from app.database import get_session, engine
 from app.models import (
     User, UserRole, ChurchUnit, ChurchMember, WeeklyStat, SpecialProgram,
-    ProgramPhoto, MusicLink, PastorMessage, FocusGroup, FocusGroupMember,
+    ProgramPhoto, MusicLink, YoutubeChannelLink, PastorMessage, FocusGroup, FocusGroupMember,
     FocusGroupMessage, MemberSubscription, SubscriptionSettings, DistrictMessage,
+    SystemAnnouncement, AppConfig,
 )
 from app.auth import require_roles, require_user, role_val
 from app.activity import log_activity
@@ -33,6 +34,7 @@ BACKUP_MODELS = [
     ("specialprogram", SpecialProgram),
     ("programphoto", ProgramPhoto),
     ("musiclink", MusicLink),
+    ("youtubechannellink", YoutubeChannelLink),  # home + login YouTube videos
     ("pastormessage", PastorMessage),
     ("focusgroup", FocusGroup),
     ("focusgroupmember", FocusGroupMember),
@@ -40,6 +42,8 @@ BACKUP_MODELS = [
     ("membersubscription", MemberSubscription),
     ("subscriptionsettings", SubscriptionSettings),
     ("districtmessage", DistrictMessage),
+    ("systemannouncement", SystemAnnouncement),
+    ("appconfig", AppConfig),
 ]
 
 

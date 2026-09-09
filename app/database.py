@@ -13,6 +13,22 @@ engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args, pool
 
 def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
+    try:
+        from sqlalchemy import text
+        with engine.begin() as conn:
+            for stmt in (
+                "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS must_change_password BOOLEAN DEFAULT FALSE",
+                "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS phone VARCHAR",
+            ):
+                try:
+                    conn.execute(text(stmt))
+                except Exception:
+                    try:
+                        conn.execute(text(stmt.replace('"user"', "user")))
+                    except Exception:
+                        pass
+    except Exception:
+        pass
     # Best-effort columns for existing DBs (SQLite + Postgres)
     try:
         from sqlalchemy import text

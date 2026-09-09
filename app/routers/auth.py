@@ -21,10 +21,36 @@ def generate_code(prefix: str = "CG") -> str:
     return f"{prefix}-{suffix}"
 
 @router.get("/login", response_class=HTMLResponse)
-async def login_page(request: Request, user: Optional[User] = Depends(get_current_user)):
-    if user:
-        return RedirectResponse("/dashboard", status_code=303)
-    return templates.TemplateResponse("auth/login.html", {"request": request})
+async def login_page(request: Request, user: Optional[User] = Depends(get_current_user), session: Session = Depends(get_session)):
+    if user and not getattr(user, "must_change_password", False):
+        return RedirectResponse("/", status_code=303)
+    from app.routers.announcements import active_login_announcements
+    from app.models import MusicLink, YoutubeChannelLink
+    announcements = active_login_announcements(session)
+    # Same YouTube source as public home page (approved channel/video links), then MusicLink fallback
+    slides = []
+    try:
+        for L in session.exec(
+            select(YoutubeChannelLink).where(
+                YoutubeChannelLink.is_approved == True,
+                YoutubeChannelLink.is_active == True,
+            ).order_by(YoutubeChannelLink.created_at.desc()).limit(8)
+        ).all():
+            vid = getattr(L, "youtube_video_id", None)
+            if not vid:
+                continue
+            slides.append(type("S", (), {"youtube_id": vid, "title": L.title or "YouTube"})())
+    except Exception as e:
+        print(f"login yt clips: {e}")
+    if not slides:
+        for L in session.exec(
+            select(MusicLink).where(MusicLink.is_active == True).order_by(MusicLink.sort_order).limit(8)
+        ).all():
+            slides.append(L)
+    return templates.TemplateResponse("auth/login.html", {
+        "request": request, "announcements": announcements, "slides": slides,
+        "force_form": bool(user and getattr(user, "must_change_password", False)),
+    })
 
 @router.post("/login")
 async def login(
@@ -42,11 +68,35 @@ async def login(
             "error": f"Too many failed attempts. Try again in about {mins} minute(s)."
         }, status_code=429)
     user = session.exec(select(User).where(User.email == email)).first()
+    if not user:
+        # case-insensitive fallback
+        for u in session.exec(select(User)).all():
+            if (u.email or "").strip().lower() == email:
+                user = u
+                break
+    # Auto-heal sample account if missing password match on known demo credentials
+    if user and getattr(user, "is_sample_account", False):
+        if not verify_password(password, user.hashed_password):
+            if password in ("ilovechurhgate", "Church@12345", "Member@12345"):
+                user.hashed_password = get_password_hash(password)
+                user.is_active = True
+                session.add(user)
+                session.commit()
+                session.refresh(user)
     if not user or not verify_password(password, user.hashed_password):
-        record_login_failure(email)
-        return templates.TemplateResponse("auth/login.html", {
-            "request": request, "error": "Invalid email or password"
-        }, status_code=400)
+        # Last chance: create/heal angel sample on the fly when credentials match
+        if email == "angel@churchgate.com" and password == "ilovechurhgate":
+            try:
+                from app.seed_sample import seed_sample_member
+                seed_sample_member(session)
+                user = session.exec(select(User).where(User.email == email)).first()
+            except Exception as _se:
+                print("on-login sample seed:", _se)
+        if not user or not verify_password(password, user.hashed_password):
+            record_login_failure(email)
+            return templates.TemplateResponse("auth/login.html", {
+                "request": request, "error": "Invalid email or password"
+            }, status_code=400)
     clear_login_failures(email)
     if not user.is_active:
         return templates.TemplateResponse("auth/login.html", {
@@ -341,4 +391,125 @@ async def change_password_submit(
     return templates.TemplateResponse("auth/change_password.html", {
         "request": request, "user": user,
         "error": None, "success": "Password updated successfully.",
+    })
+
+
+def _notify_password_changed(phone: str, email: str):
+    """Send confirmation via WhatsApp/SMS from +2348081650914 (configure TWILIO_* or WHATSAPP_* env)."""
+    import os
+    msg = "Your password has been changed successfully in Churchgate."
+    sid = os.getenv("TWILIO_ACCOUNT_SID", "")
+    token = os.getenv("TWILIO_AUTH_TOKEN", "")
+    from_num = os.getenv("TWILIO_FROM", "+2348081650914")
+    to = (phone or "").strip()
+    if sid and token and to:
+        try:
+            from urllib.request import Request as UrlReq, urlopen
+            import base64
+            from urllib.parse import urlencode
+            data = urlencode({"From": from_num, "To": to if to.startswith("+") else "+"+to, "Body": msg}).encode()
+            req = UrlReq(
+                f"https://api.twilio.com/2010-04-01/Accounts/{sid}/Messages.json",
+                data=data,
+                method="POST",
+            )
+            auth = base64.b64encode(f"{sid}:{token}".encode()).decode()
+            req.add_header("Authorization", f"Basic {auth}")
+            urlopen(req, timeout=10)
+            return True
+        except Exception as e:
+            print(f"SMS notify failed: {e}")
+    print(f"[Churchgate notify] password changed for {email} phone={to or 'n/a'} via {from_num}: {msg}")
+    return False
+
+
+@router.get("/force-password", response_class=HTMLResponse)
+async def force_password_page(
+    request: Request,
+    user: User = Depends(require_user),
+):
+    return templates.TemplateResponse("auth/force_password.html", {
+        "request": request, "user": user, "error": None,
+    })
+
+
+@router.post("/force-password", response_class=HTMLResponse)
+async def force_password_submit(
+    request: Request,
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    phone: str = Form(""),
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    err = validate_password_strength(new_password)
+    if err:
+        return templates.TemplateResponse("auth/force_password.html", {
+            "request": request, "user": user, "error": err,
+        }, status_code=400)
+    if new_password != confirm_password:
+        return templates.TemplateResponse("auth/force_password.html", {
+            "request": request, "user": user, "error": "Passwords do not match",
+        }, status_code=400)
+    db = session.get(User, user.id)
+    db.hashed_password = get_password_hash(new_password)
+    db.must_change_password = False
+    if phone.strip():
+        db.phone = phone.strip()
+    session.add(db)
+    session.commit()
+    _notify_password_changed(db.phone or phone, db.email)
+    return RedirectResponse("/", status_code=303)
+
+
+@router.get("/forgot-password", response_class=HTMLResponse)
+async def forgot_password_page(request: Request):
+    return templates.TemplateResponse("auth/forgot_password.html", {
+        "request": request, "error": None, "success": None,
+    })
+
+
+@router.post("/forgot-password", response_class=HTMLResponse)
+async def forgot_password_submit(
+    request: Request,
+    email: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
+    phone: str = Form(""),
+    session: Session = Depends(get_session),
+):
+    email = (email or "").strip().lower()
+    lock = login_lockout_seconds(email)
+    if lock > 0:
+        return templates.TemplateResponse("auth/forgot_password.html", {
+            "request": request,
+            "error": f"Too many attempts. Please wait about {max(1, lock // 60)} minute(s) and try again.",
+            "success": None,
+        }, status_code=429)
+    user = session.exec(select(User).where(User.email == email)).first()
+    if not user:
+        record_login_failure(email)
+        return templates.TemplateResponse("auth/forgot_password.html", {
+            "request": request, "error": "No account found for that email.", "success": None,
+        }, status_code=400)
+    err = validate_password_strength(new_password)
+    if err:
+        return templates.TemplateResponse("auth/forgot_password.html", {
+            "request": request, "error": err, "success": None,
+        }, status_code=400)
+    if new_password != confirm_password:
+        return templates.TemplateResponse("auth/forgot_password.html", {
+            "request": request, "error": "Passwords do not match.", "success": None,
+        }, status_code=400)
+    user.hashed_password = get_password_hash(new_password)
+    user.must_change_password = False
+    if phone.strip():
+        user.phone = phone.strip()
+    session.add(user)
+    session.commit()
+    clear_login_failures(email)
+    _notify_password_changed(user.phone or phone, user.email)
+    return templates.TemplateResponse("auth/forgot_password.html", {
+        "request": request, "error": None,
+        "success": "Password updated. A confirmation was sent to your phone when SMS is configured. You can sign in now.",
     })

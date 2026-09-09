@@ -3,7 +3,7 @@
 {% block content %}
 <div class="max-w-2xl mx-auto px-4 py-10">
   <h1 class="text-2xl font-bold text-navy-900 mb-2">System backup & restore</h1>
-  <p class="text-sm text-slate-600 mb-6">General Admin can download a full JSON backup of churches, members, users, stats, programs, music, messages, subscriptions, and more — and restore after a crash.</p>
+  <p class="text-sm text-slate-600 mb-6">General Admin can download a full JSON backup of churches, members, users, stats, programs, music, YouTube channel/video links, messages, subscriptions, and more — and restore after a crash.</p>
   {% if request.query_params.get('restored') %}
   <div class="mb-4 rounded-xl bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-900">Restored {{ request.query_params.get('restored') }} records.</div>
   {% endif %}
