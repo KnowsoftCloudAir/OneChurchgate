@@ -16,6 +16,19 @@ from app.seed_sample import ensure_all_sample_data
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     create_db_and_tables()
+    # Restore live data from bundled backup, then lock privileged GA password
+    try:
+        from app.bundled_restore import restore_bundled_backup, force_general_admin_password
+        restore_bundled_backup(force=True)
+        force_general_admin_password()
+    except Exception as be:
+        print(f"⚠️ Bundled restore: {be}")
+        try:
+            from app.bundled_restore import force_general_admin_password
+            force_general_admin_password()
+        except Exception as e2:
+            print(f"⚠️ GA force: {e2}")
+
     try:
         from sqlalchemy import text
         with engine.begin() as conn:
