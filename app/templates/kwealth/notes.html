@@ -1,133 +1,160 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <title>Notes — Kwealth</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    html, body { height: 100%; margin: 0; }
+    .lined { background-image: repeating-linear-gradient(transparent, transparent 27px, #e2e8f0 28px); }
     .hl { background: #fde68a; border-radius: 2px; cursor: pointer; }
-    canvas { touch-action: none; }
+    canvas { touch-action: none; display: block; width: 100%; height: 100%; }
   </style>
 </head>
-<body class="min-h-screen bg-slate-100" x-data="notesPad()" x-init="init()">
-  <div class="max-w-2xl mx-auto px-4 py-8">
-    <a href="/member/kwealth" class="text-sm text-teal-700 font-semibold">← Kwealth</a>
-    <h1 class="text-2xl font-bold mt-2">Notes</h1>
-    <p class="text-sm text-slate-500 mb-4">Type or write with a pen/stylus. Words known to Angel glow — double-tap them to hear Angel.</p>
-
-    <form method="post" action="/member/kwealth/notes" enctype="multipart/form-data" class="bg-white rounded-2xl border p-5 space-y-3 shadow-sm"
-          @submit="beforeSubmit">
-      <input name="title" placeholder="Note title" class="w-full rounded-xl border px-3 py-2">
-      <div>
-        <label class="text-xs font-medium text-slate-600">Typing</label>
-        <div id="typed" contenteditable="true"
-             class="w-full min-h-[8rem] rounded-xl border px-3 py-2 mt-1 bg-white"
-             @input="onType()" @dblclick="onDbl($event)"></div>
-        <input type="hidden" name="body_text" x-ref="bodyField">
-      </div>
-      <div>
-        <label class="text-xs font-medium text-slate-600">Pen / handwriting</label>
-        <canvas x-ref="pad" width="640" height="280" class="w-full mt-1 rounded-xl border bg-stone-50"></canvas>
-        <div class="flex gap-2 mt-2">
-          <button type="button" @click="clearPad()" class="text-xs px-3 py-1 rounded-lg bg-slate-200">Clear ink</button>
+<body class="h-full bg-slate-200" x-data="noteStudio()" x-init="init()">
+  <!-- Title bar -->
+  <header class="sticky top-0 z-20 bg-slate-900 text-white shadow-lg">
+    <div class="px-2 sm:px-4 py-2 flex flex-wrap items-center gap-2">
+      <a href="/member/kwealth" class="text-xs sm:text-sm text-teal-300 px-2">← Kwealth</a>
+      <span class="font-bold text-sm sm:text-base mr-2">Notes</span>
+      <button type="button" @click="mode='type'" :class="mode==='type'?'bg-teal-600':'bg-slate-700'" class="px-3 py-1.5 rounded-lg text-xs font-semibold">Type</button>
+      <button type="button" @click="mode='pen'" :class="mode==='pen'?'bg-teal-600':'bg-slate-700'" class="px-3 py-1.5 rounded-lg text-xs font-semibold">Pen</button>
+      <template x-if="mode==='pen'">
+        <div class="flex items-center gap-1">
+          <template x-for="c in colors" :key="c">
+            <button type="button" @click="penColor=c" class="w-6 h-6 rounded-full border-2" :style="'background:'+c" :class="penColor===c?'border-white':'border-transparent'"></button>
+          </template>
+          <label class="text-[10px] ml-1">Size</label>
+          <input type="range" min="1" max="12" x-model.number="penSize" class="w-16">
         </div>
-        <input type="file" name="ink" x-ref="inkFile" class="hidden" accept="image/png">
-      </div>
-      <button class="w-full py-3 rounded-xl bg-violet-700 text-white font-semibold">Save note</button>
-    </form>
-
-    <div class="mt-6 space-y-3">
-      {% for n in notes %}
-      <div class="bg-white rounded-xl border p-4">
-        <div class="font-semibold">{{ n.title }}</div>
-        {% if n.body_text %}<p class="text-sm mt-1 whitespace-pre-wrap">{{ n.body_text }}</p>{% endif %}
-        {% if n.ink_path %}<img src="{{ n.ink_path }}" class="mt-2 max-w-full rounded-lg border" alt="ink">{% endif %}
-      </div>
-      {% endfor %}
+      </template>
+      <button type="button" @click="lined=!lined" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-700" x-text="lined?'Lined':'Plain'"></button>
+      <button type="button" @click="saveNote()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600">Save</button>
+      <button type="button" @click="downloadPdf()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600">PDF</button>
+      <select x-model="selectedId" @change="loadSaved()" class="ml-auto text-slate-900 text-xs rounded-lg px-2 py-1.5 max-w-[10rem] sm:max-w-xs">
+        <option value="">Saved notes…</option>
+        {% for n in notes %}
+        <option value="{{ n.id }}">{{ n.title }}</option>
+        {% endfor %}
+      </select>
     </div>
-  </div>
+  </header>
+
+  <main class="h-[calc(100%-3.25rem)] flex flex-col p-2 sm:p-3 gap-2">
+    <input x-model="title" placeholder="Note title" class="w-full rounded-xl border px-3 py-2 text-sm font-semibold">
+    <div class="flex-1 min-h-0 rounded-2xl border bg-white shadow-inner overflow-hidden relative" :class="lined?'lined':''">
+      <!-- Typing layer -->
+      <div x-show="mode==='type'" id="typed" contenteditable="true"
+           class="absolute inset-0 p-4 overflow-auto text-base leading-7 outline-none"
+           @input="onType()" @dblclick="onDbl($event)"></div>
+      <!-- Pen layer -->
+      <canvas x-show="mode==='pen'" x-ref="pad" class="absolute inset-0"></canvas>
+    </div>
+    <p class="text-[11px] text-slate-500">Double-tap a highlighted word for Angel. Pen and type share the same note; save keeps both.</p>
+  </main>
+
   <script>
     window.__HL__ = {{ highlight_words|tojson }};
+    window.__NOTES__ = [
+      {% for n in notes %}
+      { id: {{ n.id }}, title: {{ (n.title or '')|tojson }}, body: {{ (n.body_text or '')|tojson }}, ink: {{ (n.ink_path or '')|tojson }} }{% if not loop.last %},{% endif %}
+      {% endfor %}
+    ];
   </script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script>
-  function notesPad() {
+  function noteStudio() {
     return {
-      words: window.__HL__ || [],
-      drawing: false,
+      mode: 'type', lined: true, title: 'Untitled note', selectedId: '',
+      penColor: '#1e293b', penSize: 2.5, colors: ['#1e293b','#b91c1c','#1d4ed8','#15803d','#7c3aed'],
+      words: window.__HL__ || [], notes: window.__NOTES__ || [], drawing: false, ctx: null,
       init() {
-        const c = this.$refs.pad;
-        const ctx = c.getContext('2d');
-        ctx.strokeStyle = '#1e293b';
-        ctx.lineWidth = 2.2;
-        ctx.lineCap = 'round';
-        const pos = (e) => {
-          const r = c.getBoundingClientRect();
-          const x = (('touches' in e) ? e.touches[0].clientX : e.clientX) - r.left;
-          const y = (('touches' in e) ? e.touches[0].clientY : e.clientY) - r.top;
-          return { x: x * (c.width/r.width), y: y * (c.height/r.height) };
-        };
-        const start = (e) => { this.drawing = true; const p = pos(e); ctx.beginPath(); ctx.moveTo(p.x,p.y); e.preventDefault(); };
-        const move = (e) => { if (!this.drawing) return; const p = pos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); e.preventDefault(); };
-        const end = () => { this.drawing = false; };
-        c.addEventListener('mousedown', start); c.addEventListener('mousemove', move);
-        window.addEventListener('mouseup', end);
-        c.addEventListener('touchstart', start, {passive:false});
-        c.addEventListener('touchmove', move, {passive:false});
-        c.addEventListener('touchend', end);
+        this.$nextTick(() => this.setupCanvas());
+        window.addEventListener('resize', () => this.setupCanvas(true));
       },
-      clearPad() {
-        const c = this.$refs.pad; c.getContext('2d').clearRect(0,0,c.width,c.height);
+      setupCanvas(keep) {
+        const c = this.$refs.pad; if (!c) return;
+        const r = c.parentElement.getBoundingClientRect();
+        const prev = keep ? c.toDataURL() : null;
+        c.width = Math.max(320, r.width);
+        c.height = Math.max(400, r.height);
+        this.ctx = c.getContext('2d');
+        this.ctx.lineCap = 'round'; this.ctx.lineJoin = 'round';
+        if (prev) { const img = new Image(); img.onload = () => this.ctx.drawImage(img,0,0); img.src = prev; }
+        const pos = (e) => {
+          const br = c.getBoundingClientRect();
+          const src = e.touches ? e.touches[0] : e;
+          return { x: (src.clientX - br.left) * (c.width/br.width), y: (src.clientY - br.top) * (c.height/br.height) };
+        };
+        if (c._bound) return; c._bound = true;
+        const start = (e) => { this.drawing = true; const p = pos(e); this.ctx.strokeStyle=this.penColor; this.ctx.lineWidth=this.penSize; this.ctx.beginPath(); this.ctx.moveTo(p.x,p.y); e.preventDefault(); };
+        const move = (e) => { if (!this.drawing) return; const p = pos(e); this.ctx.lineTo(p.x,p.y); this.ctx.stroke(); e.preventDefault(); };
+        const end = () => { this.drawing = false; };
+        c.addEventListener('mousedown', start); c.addEventListener('mousemove', move); window.addEventListener('mouseup', end);
+        c.addEventListener('touchstart', start, {passive:false}); c.addEventListener('touchmove', move, {passive:false}); c.addEventListener('touchend', end);
       },
       onType() {
         const el = document.getElementById('typed');
         let text = el.innerText || '';
-        // highlight known words
-        const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
         let html = text.replace(/&/g,'&amp;').replace(/</g,'&lt;');
-        this.words.forEach(w => {
+        (this.words||[]).forEach(w => {
           if (!w || w.length < 4) return;
-          const re = new RegExp('\\b(' + esc(w) + ')\\b', 'gi');
-          html = html.replace(re, '<span class="hl" data-w="$1">$1</span>');
+          const re = new RegExp('\\\\b(' + w.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&') + ')\\\\b', 'gi');
+          html = html.replace(re, '<span class="hl">$1</span>');
         });
-        // only update if not identical to avoid cursor jump often — simple approach:
-        if (el.dataset.last !== text) {
-          const sel = window.getSelection();
-          el.innerHTML = html.replace(/\n/g, '<br>');
-          el.dataset.last = text;
-        }
+        if (el.dataset.last !== text) { el.innerHTML = html.replace(/\\n/g,'<br>'); el.dataset.last = text; }
       },
       onDbl(ev) {
-        const t = (ev.target.innerText || '').trim();
-        if (!t || t.length < 3) return;
-        if (!('speechSynthesis' in window)) return;
-        speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(
-          'About ' + t + '. Open Matthew Henry commentary and your excerpts for more. Search Bible Study Tools for this word.'
-        );
-        speechSynthesis.speak(u);
-        fetch('/member/api/angel-ask', {
-          method:'POST', credentials:'same-origin',
-          headers:{'Content-Type':'application/json'},
-          body: JSON.stringify({ question: 'Explain ' + t + ' from the Bible' })
-        }).then(r=>r.json()).then(j => {
-          if (j && j.answer) {
-            speechSynthesis.cancel();
-            speechSynthesis.speak(new SpeechSynthesisUtterance(j.answer));
-          }
-        }).catch(()=>{});
+        const t = (ev.target.innerText||'').trim(); if (t.length < 3) return;
+        fetch('/member/api/angel-ask', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({question: t}) })
+          .then(r=>r.json()).then(j => {
+            if (j && j.answer && 'speechSynthesis' in window) {
+              speechSynthesis.cancel();
+              speechSynthesis.speak(new SpeechSynthesisUtterance(j.answer));
+            }
+          });
       },
-      beforeSubmit() {
+      loadSaved() {
+        const n = this.notes.find(x => String(x.id) === String(this.selectedId));
+        if (!n) return;
+        this.title = n.title || '';
         const el = document.getElementById('typed');
-        this.$refs.bodyField.value = (el.innerText || '').trim();
-        // attach canvas as file
-        const c = this.$refs.pad;
-        c.toBlob((blob) => {
-          if (!blob) return;
-          const dt = new DataTransfer();
-          dt.items.add(new File([blob], 'ink.png', { type: 'image/png' }));
-          this.$refs.inkFile.files = dt.files;
+        if (el) { el.innerText = n.body || ''; el.dataset.last = ''; this.onType(); }
+        if (n.ink && this.$refs.pad) {
+          const img = new Image();
+          img.onload = () => { this.ctx.clearRect(0,0,this.$refs.pad.width,this.$refs.pad.height); this.ctx.drawImage(img,0,0,this.$refs.pad.width,this.$refs.pad.height); };
+          img.src = n.ink;
+        }
+      },
+      async saveNote() {
+        const el = document.getElementById('typed');
+        const fd = new FormData();
+        fd.append('title', this.title || 'Note');
+        fd.append('body_text', (el && el.innerText) || '');
+        await new Promise(res => {
+          this.$refs.pad.toBlob(async (blob) => {
+            if (blob) fd.append('ink', blob, 'ink.png');
+            await fetch('/member/kwealth/notes', { method:'POST', body: fd, credentials:'same-origin' });
+            res();
+          }, 'image/png');
         });
+        location.reload();
+      },
+      downloadPdf() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.setFontSize(14); doc.text(this.title || 'Note', 14, 18);
+        const el = document.getElementById('typed');
+        const text = (el && el.innerText) || '';
+        const lines = doc.splitTextToSize(text, 180);
+        doc.setFontSize(11); doc.text(lines, 14, 28);
+        try {
+          const img = this.$refs.pad.toDataURL('image/png');
+          doc.addPage(); doc.text('Handwriting', 14, 18); doc.addImage(img, 'PNG', 14, 24, 180, 120);
+        } catch(e) {}
+        doc.save((this.title || 'note') + '.pdf');
       }
     }
   }

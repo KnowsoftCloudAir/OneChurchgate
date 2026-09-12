@@ -13,6 +13,16 @@
     @media (max-width: 1023px) {
       .login-video-wrap { max-height: 42vh; }
     }
+  
+  .hint-hover { position: relative; }
+  .hint-hover .hint-bubble {
+    display: none; position: absolute; left: 0; right: 0; top: 100%; z-index: 20;
+    margin-top: .35rem; padding: .6rem .75rem; border-radius: .75rem;
+    background: #0f172a; color: #e2e8f0; font-size: 11px; line-height: 1.4;
+    box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  }
+  .hint-hover:hover .hint-bubble, .hint-hover:focus-within .hint-bubble { display: block; }
+
   </style>
 </head>
 <body class="min-h-screen font-sans antialiased bg-slate-100">
@@ -64,17 +74,12 @@
         {% endif %}
         <div class="bg-white rounded-2xl shadow-lg border border-slate-200/80 p-6 sm:p-8">
           <h2 class="text-xl font-bold text-navy-900 mb-1">Sign in</h2>
-
-        <div class="mb-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <a href="https://drive.google.com/file/d/1Kkl1oYHfHYHdk7d09q3BJx-zqTVDxke2/view?usp=drive_link" target="_blank" rel="noopener"
-             class="text-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold py-3 px-3 shadow">Download Windows app</a>
-          <a href="https://drive.google.com/file/d/1mCQ_-pOBshOleOoPVYLOGMEhiaPM5jgN/view?usp=sharing" target="_blank" rel="noopener"
-             class="text-center rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-sm font-bold py-3 px-3 shadow">Download Android app</a>
-        </div>
+        {% if show_invite_note is not defined or show_invite_note %}
         <div class="mb-4 rounded-xl bg-teal-50 border border-teal-100 p-3 text-xs text-teal-900">
           <p class="font-bold">Invite &amp; earn</p>
           <p class="mt-1">After you sign in, open <strong>Invite &amp; earn</strong> on your member dashboard for your promo code. Friends who register with your code and keep a paid subscription count toward rewards (cashout from the 30th at 50 active).</p>
         </div>
+        {% endif %}
 
           <p class="text-sm text-slate-500 mb-5">Church administrators and approved members</p>
           {% if error %}
@@ -104,7 +109,7 @@
             <a href="/auth/forgot-password" class="text-navy-900 font-semibold hover:underline">Forgot password?</a>
           </p>
           <div class="mt-6 pt-5 border-t border-slate-100 space-y-2 text-sm text-center">
-            <p class="text-slate-600">New member? <a href="/join" class="text-navy-900 font-semibold hover:underline">Register</a></p>
+            <p class="text-slate-600">New member? <a href="/join" class="hint-hover inline-block relative" class="text-navy-900 font-semibold hover:underline">Register</a></p>
             <p class="text-slate-600">New church? <a href="/auth/register-church" class="text-navy-900 font-semibold hover:underline">Register church</a></p>
           </div>
         </div>

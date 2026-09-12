@@ -467,3 +467,24 @@ async def admin_footprints(
         "request": request, "user": user, "logs": enriched,
     })
 
+
+
+@router.get("/login-notes", response_class=HTMLResponse)
+async def login_notes_page(request: Request, user: User = Depends(require_roles(UserRole.general_admin)), session: Session = Depends(get_session)):
+    from app.models import AppConfig
+    cfg = session.exec(select(AppConfig).where(AppConfig.key == "login_invite_note")).first()
+    show = not (cfg and (cfg.value or "").strip().lower() in ("0", "false", "off", "hide"))
+    return templates.TemplateResponse("admin/login_notes.html", {"request": request, "user": user, "show_invite": show})
+
+@router.post("/login-notes/invite")
+async def login_notes_invite(enabled: str = Form("on"), user: User = Depends(require_roles(UserRole.general_admin)), session: Session = Depends(get_session)):
+    from app.models import AppConfig
+    cfg = session.exec(select(AppConfig).where(AppConfig.key == "login_invite_note")).first()
+    val = "on" if enabled == "on" else "off"
+    if not cfg:
+        cfg = AppConfig(key="login_invite_note", value=val)
+    else:
+        cfg.value = val
+    session.add(cfg)
+    session.commit()
+    return RedirectResponse("/admin/login-notes", status_code=303)

@@ -1107,7 +1107,7 @@ function memberHub() {
         musicList: [],
         churchMusic: { id: '', playing: false },
         churchMusicList: [],
-        angel: { enabled: false, listening: false, busy: false, status: 'Tap 👼 Angel to turn on — then speak anytime.', recognition: null },
+        angel: { enabled: false, listening: false, busy: false, status: 'Tap 👼 Angel to turn on.', recognition: null, probeTimer: null },
     directory: { list: [], selectedId: '', current: null },
     openPanel: null,
     
@@ -1355,7 +1355,7 @@ function memberHub() {
       if (this.angel.enabled) {
         if (!this.angel.recognition) this.initAngel();
         this.angel.busy = false;
-        this.angel.status = 'Waves active — Angel is on, silent, and attentive. Speak anytime.';
+        this.angel.status = 'Angel is on and waiting';
         this.angelSpeak('Angel is on and waiting.', true);
         try {
           fetch('/member/api/log', {
@@ -1366,11 +1366,13 @@ function memberHub() {
         } catch (e) {}
         this.angelVisibilityHook();
         this._angelResumeListen();
+        this._startAngelProbe();
       } else {
         this.angelTurnOff(false);
       }
     },
     angelTurnOff(speakBye) {
+      this._stopAngelProbe();
       this.angel.enabled = false;
       this.angel.busy = false;
       this.angel.listening = false;
@@ -1402,20 +1404,32 @@ function memberHub() {
       }
       try {
         speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(String(text));
-        u.rate = brief ? 1 : 0.95;
+        // ~30 seconds max (~90 words at normal rate)
+        let s = String(text).replace(/\s+/g, ' ').trim();
+        const words = s.split(' ');
+        if (words.length > 90) s = words.slice(0, 90).join(' ') + '.';
+        const u = new SpeechSynthesisUtterance(s);
+        u.rate = brief ? 1.05 : 0.95;
         u.volume = Math.max(0.4, Math.min(1, Number(this.bible.volume ?? 0.9)));
         const voices = speechSynthesis.getVoices();
-        const v = voices.find(x => /en/i.test(x.lang)) || voices[0];
-        if (v) u.voice = v;
+        let voice = null;
+        if (this.bible.voiceName) voice = voices.find(v => v.name === this.bible.voiceName);
+        if (!voice) voice = voices.find(v => /en/i.test(v.lang) && /female|samantha|zira|google uk/i.test(v.name)) || voices.find(v => /en/i.test(v.lang));
+        if (voice) u.voice = voice;
+        u.onend = () => {
+          this.angel.busy = false;
+          this.angelIdleAfterAction();
+          this._angelResumeListen();
+        };
+        u.onerror = () => { this.angel.busy = false; this.angelIdleAfterAction(); };
         this.angel.busy = true;
-        u.onend = () => this.angelIdleAfterAction('Done. Silent and waiting for your next instruction.');
-        u.onerror = () => this.angelIdleAfterAction('Silent and waiting…');
         speechSynthesis.speak(u);
       } catch (e) {
+        this.angel.busy = false;
         this.angelIdleAfterAction();
       }
     },
+
     angelIdleAfterAction(msg) {
       this.angel.busy = false;
       if (this.angel.enabled) {
@@ -1496,7 +1510,7 @@ function memberHub() {
     angelStartContinuousMusic() {
       this.angelMusicShuffle = true;
       this.openPanel = 'music';
-      this.angelSpeak('Playing continuous music. Shuffling church songs and general inspiration.');
+      this.angelSpeak('Playing music to lift your soul.');
       this._playShuffledTrack(true);
     },
     _combinedMusicList() {
@@ -1643,12 +1657,29 @@ function memberHub() {
       if (!t) return;
       this.angel.status = 'Heard: “' + raw + '”';
 
-      if (/\bangel\s+stop\b/.test(t) || /\b(stop angel|angel off|turn off angel|goodbye angel)\b/.test(t)
+      // Voice wake / off
+      if (/\bangel\s+turn\s+off\b/.test(t) || /\b(stop angel|angel off|turn off angel|goodbye angel|angel stop)\b/.test(t)
           || (this.angel.enabled && /^(stop|off|turn off)$/.test(t))) {
         this.angelTurnOff(true);
         return;
       }
-      if (!this.angel.enabled) return;
+      if (!this.angel.enabled) {
+        if (/^angel\b/.test(t) || /\bhey angel\b/.test(t) || t === 'angel') {
+          this.angel.enabled = true;
+          if (!this.angel.recognition) this.initAngel();
+          this.angel.busy = false;
+          this.angel.status = 'Angel is on and waiting';
+          this.angelSpeak('Angel is on and waiting.', true);
+          this.angelVisibilityHook();
+          this._angelResumeListen();
+          this._startAngelProbe();
+        }
+        return;
+      }
+      if (/^angel\b$/.test(t) || t === 'angel') {
+        this.angelSpeak('How may I help you?', true);
+        return;
+      }
 
       if (/\b(stop music|pause music|music off)\b/.test(t)) { this.angelStopMusic(); return; }
       if (/\b(change music|next (song|music|track)|another song)\b/.test(t)) { this.angelNextTrack(); return; }
@@ -1722,7 +1753,7 @@ function memberHub() {
           return;
         }
       } catch (e) {}
-      this.angelSpeak('You can ask about Jesus, God, creation, faith, holiness, the rapture, the end time, play music, stop music, my status, devotion times, programs, or say Angel stop.');
+      this.angelSpeak("Sorry I can't help with that.");
     },
     angelLeadSalvation() {
       const prayer = 'To be saved, believe that Jesus can save you, confess and forsake your sins, ask God to forgive you, and repeat after me: Lord Jesus, I know I am a sinner. I am sorry for all the bad life I have lived. I forsake them. Please forgive me and give me the grace to live a life that will please you. In Jesus name I pray. Amen. If you have just said this prayer, you are forgiven. Click the I accepted Jesus button to download your New Born in Christ certificate.';

@@ -47,9 +47,18 @@ async def login_page(request: Request, user: Optional[User] = Depends(get_curren
             select(MusicLink).where(MusicLink.is_active == True).order_by(MusicLink.sort_order).limit(8)
         ).all():
             slides.append(L)
+    show_invite = True
+    try:
+        from app.models import AppConfig
+        cfg = session.exec(select(AppConfig).where(AppConfig.key == "login_invite_note")).first()
+        if cfg and (cfg.value or "").strip().lower() in ("0", "false", "off", "hide"):
+            show_invite = False
+    except Exception:
+        pass
     return templates.TemplateResponse("auth/login.html", {
         "request": request, "announcements": announcements, "slides": slides,
         "force_form": bool(user and getattr(user, "must_change_password", False)),
+        "show_invite_note": show_invite,
     })
 
 @router.post("/login")

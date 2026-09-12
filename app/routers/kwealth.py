@@ -307,66 +307,73 @@ async def angel_ask(
     user: User = Depends(require_user),
     session: Session = Depends(get_session),
 ):
-    """Angel answers Bible questions using Matthew Henry reference + member excerpts."""
+    """Angel answers from Bible themes, Matthew Henry framing, and saved excerpts only."""
     try:
         data = await request.json()
     except Exception:
         data = {}
     q = (data.get("question") or data.get("q") or "").strip()
     if not q:
-        return JSONResponse({"ok": False, "answer": "Please ask a Bible question."})
+        return JSONResponse({"ok": False, "answer": "How may I help you?"})
 
-    # Collect knowledge
     excerpts = session.exec(
-        select(KwealthExcerpt).where(KwealthExcerpt.user_id == user.id).order_by(KwealthExcerpt.created_at.desc()).limit(30)
+        select(KwealthExcerpt).where(KwealthExcerpt.user_id == user.id).order_by(KwealthExcerpt.created_at.desc()).limit(40)
     ).all()
-    refs = session.exec(select(AngelReference).where(AngelReference.is_active == True)).all()
-    mh = next((r for r in refs if r.url and "matthew-henry" in (r.url or "")), None)
-    mh_url = (mh.url if mh else MH_URL)
-
     ql = q.lower()
+    words = [w for w in re.findall(r"[a-z']{3,}", ql) if w not in (
+        "what", "does", "mean", "about", "tell", "please", "from", "the", "and", "how", "can", "you", "with", "that", "this", "have", "when", "where", "why", "who", "angel"
+    )]
+
     matched = []
     for e in excerpts:
         blob = f"{e.title or ''} {e.body or ''} {e.source or ''}".lower()
-        words = [w for w in re.findall(r"[a-z]{4,}", ql) if w not in ("what", "does", "mean", "about", "tell", "please", "from")]
-        if any(w in blob for w in words[:8]):
-            matched.append(e)
+        score = sum(1 for w in words if w in blob)
+        if score:
+            matched.append((score, e))
+    matched.sort(key=lambda x: -x[0])
 
-    # Detect simple Bible reference pattern
-    ref_m = re.search(
-        r"\b(genesis|exodus|leviticus|numbers|deuteronomy|joshua|judges|ruth|samuel|kings|chronicles|ezra|nehemiah|esther|job|psalm|psalms|proverbs|ecclesiastes|isaiah|jeremiah|ezekiel|daniel|hosea|joel|amos|obadiah|jonah|micah|nahum|habakkuk|zephaniah|haggai|zechariah|malachi|matthew|mark|luke|john|acts|romans|corinthians|galatians|ephesians|philippians|colossians|thessalonians|timothy|titus|philemon|hebrews|james|peter|jude|revelation)\s+\d+",
-        ql,
-    )
+    topical = {
+        "shepherd": ("the Bible (Psalm 23)", "The Lord is our shepherd. He restores the soul, leads beside still waters, and walks with us even through the valley so we need not fear."),
+        "psalm 23": ("the Bible (Psalm 23)", "Psalm 23 teaches trust in the Lord as Shepherd: provision, rest, guidance, comfort, and a home in His presence forever."),
+        "faith": ("the Bible", "Faith is confidence in God and His word. It comes by hearing the word of Christ, and without faith it is impossible to please God."),
+        "prayer": ("the Bible", "Prayer is talking with God in faith: ask, seek, and knock; be anxious for nothing, but in everything by prayer and thanksgiving make your requests known to God."),
+        "jesus": ("the Bible", "Jesus is the Son of God, the Saviour. Whoever believes in Him shall not perish but have everlasting life. He is the way, the truth, and the life."),
+        "holy spirit": ("the Bible", "The Holy Spirit is the Comforter who teaches, convicts, and empowers believers to live for Christ."),
+        "holiness": ("the Bible", "God calls His people to be holy as He is holy. Holiness is a life set apart in love and obedience."),
+        "love": ("the Bible", "Love is the greatest command: love the Lord your God, and love your neighbour as yourself. Love is patient and kind."),
+        "salvation": ("the Bible", "Salvation is by grace through faith in Jesus Christ: confess Him as Lord and believe that God raised Him from the dead."),
+        "creation": ("the Bible", "In the beginning God created the heavens and the earth. All things were made through Him."),
+        "rapture": ("the Bible", "The Scripture teaches that the Lord will return; the dead in Christ rise first, then the living are caught up together with them."),
+    }
 
-    parts = []
-    parts.append("I am Angel. For deeper verse-by-verse insight I use Matthew Henry's Complete Commentary.")
-    if ref_m:
-        bookish = ref_m.group(0).replace(" ", "-")
-        parts.append(f"Open the commentary around your passage here: {mh_url}")
-        parts.append(f"Search the site for: {ref_m.group(0)}.")
-    else:
-        parts.append(f"Matthew Henry complete commentary: {mh_url}")
+    ref_name = None
+    body = None
 
     if matched:
-        parts.append("From your saved excerpts:")
-        for e in matched[:3]:
-            snippet = (e.body or "")[:280].replace("\n", " ")
-            parts.append(f"— {e.title or 'Excerpt'}: {snippet}")
+        e = matched[0][1]
+        ref_name = (e.source or e.title or "your saved excerpts").strip()
+        body = (e.body or "").strip()
+        # compress to ~30s speech
+        if len(body) > 500:
+            body = body[:500].rsplit(" ", 1)[0] + "."
     else:
-        parts.append("You can save Bible or book excerpts under Kwealth → Excerpts so I can quote them when you ask.")
+        for key, (rn, text) in topical.items():
+            if key in ql:
+                ref_name, body = rn, text
+                break
+        if not body and any(w in ql for w in ("bible", "scripture", "verse", "gospel", "god", "lord", "christ", "matthew", "henry", "commentary", "explain", "meaning")):
+            ref_name = "Matthew Henry's commentary"
+            body = (
+                "Read the passage carefully in context. Henry stresses the plain sense of Scripture, "
+                "Christ at the centre, and practical holiness. Seek the main truth of the text and apply it in faith and obedience."
+            )
 
-    # Light topical answers
-    if any(w in ql for w in ("shepherd", "psalm 23", "psalm twenty")):
-        parts.append("Psalm 23 comforts us that the Lord is our Shepherd — He restores the soul and walks with us in the valley.")
-    if "faith" in ql:
-        parts.append("Faith comes by hearing the word of God (Romans 10:17). Henry often stresses trusting God's promises in Christ.")
-    if "pray" in ql or "prayer" in ql:
-        parts.append("Pray with faith and perseverance. Matthew 6 and Philippians 4:6-7 are strong anchors.")
+    if not body:
+        return JSONResponse({"ok": True, "answer": "Sorry I can't help with that.", "outside": True})
 
-    answer = " ".join(parts)
-    return JSONResponse({
-        "ok": True,
-        "answer": answer,
-        "matthew_henry_url": mh_url,
-        "matched_excerpts": len(matched),
-    })
+    answer = f"According to {ref_name}, {body}"
+    # hard cap ~90 words
+    words_out = answer.split()
+    if len(words_out) > 90:
+        answer = " ".join(words_out[:90]) + "."
+    return JSONResponse({"ok": True, "answer": answer, "outside": False})
