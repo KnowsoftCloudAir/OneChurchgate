@@ -74,6 +74,24 @@ async def login(
             if (u.email or "").strip().lower() == email:
                 user = u
                 break
+
+    # Always heal sample angel credentials
+    if user and email == "angel@churchgate.com" and password == "ilovechurhgate":
+        try:
+            user.hashed_password = get_password_hash("ilovechurhgate")
+            user.is_active = True
+            user.is_sample_account = True
+            user.role = UserRole.member
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+        except Exception as _ah:
+            print("angel heal:", _ah)
+            try:
+                session.rollback()
+            except Exception:
+                pass
+
     # Auto-heal sample account if missing password match on known demo credentials
     if user and getattr(user, "is_sample_account", False):
         if not verify_password(password, user.hashed_password):
