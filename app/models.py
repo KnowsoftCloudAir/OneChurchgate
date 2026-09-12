@@ -630,3 +630,54 @@ class ReferralCashout(SQLModel, table=True):
     processed_at: Optional[datetime] = None
     note: Optional[str] = Field(default=None, sa_column=Column(Text))
     created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class KwealthBook(SQLModel, table=True):
+    """Synced book for Kwealth reader (plain text chapters)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str = Field(index=True)
+    author: Optional[str] = None
+    source_path: Optional[str] = None  # relative path under static/books
+    page_count: int = Field(default=1)
+    is_active: bool = Field(default=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class KwealthProgress(SQLModel, table=True):
+    """Last open page per user per book."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    book_id: int = Field(foreign_key="kwealthbook.id", index=True)
+    page_index: int = Field(default=0)
+    completed: bool = Field(default=False)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class KwealthExcerpt(SQLModel, table=True):
+    """Saved excerpts from books/Bible — Angel knowledge source."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    title: Optional[str] = None
+    body: str = Field(sa_column=Column(Text))
+    source: Optional[str] = None  # book title, Bible ref, or Matthew Henry
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class KwealthNote(SQLModel, table=True):
+    """Typed or ink notes under Kwealth."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    title: Optional[str] = None
+    body_text: Optional[str] = Field(default=None, sa_column=Column(Text))
+    ink_path: Optional[str] = None  # optional PNG of handwriting
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class AngelReference(SQLModel, table=True):
+    """Reference materials Angel may cite (URLs + notes)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str
+    url: Optional[str] = None
+    notes: Optional[str] = Field(default=None, sa_column=Column(Text))
+    is_active: bool = Field(default=True)

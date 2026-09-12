@@ -541,6 +541,14 @@
         Devotions
         <span class="nav-dot" x-show="notices.devotions" x-cloak></span>
       </button>
+
+      <a href="/member/kwealth"
+         class="rounded-2xl px-3 py-3 text-left border border-amber-400/40 bg-gradient-to-br from-amber-700/40 to-orange-900/40 hover:from-amber-600/50">
+        <span class="block text-lg">📖</span>
+        <span class="block text-sm font-bold mt-1">Kwealth</span>
+        <span class="block text-xs opacity-80">Books · Notes · Excerpts</span>
+      </a>
+
       <button type="button" @click.prevent="showPanel('bible')"
               :class="openPanel==='bible' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
               class="nav-chip px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Bible</button>
@@ -1698,6 +1706,22 @@ function memberHub() {
         if (/\bbored\b|\bsad\b/.test(t)) this.angelPlayMusic();
         return;
       }
+      // Bible / commentary questions → Kwealth + Matthew Henry
+      try {
+        this.angel.busy = true;
+        this.angel.status = 'Consulting Scripture and Matthew Henry…';
+        const r = await fetch('/member/api/angel-ask', {
+          method: 'POST', credentials: 'same-origin',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: raw })
+        });
+        const j = await r.json();
+        if (j && j.ok && j.answer) {
+          this.angelSpeak(j.answer);
+          this.angelIdleAfterAction('Answered using Kwealth references.');
+          return;
+        }
+      } catch (e) {}
       this.angelSpeak('You can ask about Jesus, God, creation, faith, holiness, the rapture, the end time, play music, stop music, my status, devotion times, programs, or say Angel stop.');
     },
     angelLeadSalvation() {

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kwealth — Churchgate</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100">
+  <div class="max-w-3xl mx-auto px-4 py-8">
+    <div class="flex justify-between items-center mb-6">
+      <a href="/member/portal" class="text-sm text-teal-300">← Member dashboard</a>
+      <span class="text-xs text-slate-400">Kwealth</span>
+    </div>
+    <h1 class="text-3xl font-black tracking-tight">Kwealth</h1>
+    <p class="text-slate-400 text-sm mt-1">Books · Notes · Excerpts — knowledge Angel can use</p>
+
+    <div class="grid grid-cols-2 gap-3 mt-6">
+      <div class="rounded-2xl bg-teal-900/50 border border-teal-700/50 p-4 text-center">
+        <div class="text-3xl font-black">{{ total_books }}</div>
+        <div class="text-xs text-teal-200/80">Synchronized books</div>
+      </div>
+      <div class="rounded-2xl bg-indigo-900/50 border border-indigo-700/50 p-4 text-center">
+        <div class="text-3xl font-black">{{ total_read }}</div>
+        <div class="text-xs text-indigo-200/80">Books you started / read</div>
+      </div>
+    </div>
+
+    <div class="mt-6 grid gap-3">
+      <a href="/member/kwealth/books" class="block rounded-2xl bg-gradient-to-r from-amber-600 to-orange-700 p-5 font-bold shadow-lg hover:brightness-110">📚 Books — read, flip pages, listen</a>
+      <form method="post" action="/member/kwealth/load-books">
+        <button class="w-full rounded-2xl bg-slate-800 border border-slate-600 p-4 font-semibold hover:bg-slate-700">⟳ Load / sync books from internal memory</button>
+      </form>
+      <a href="/member/kwealth/notes" class="block rounded-2xl bg-gradient-to-r from-violet-700 to-fuchsia-800 p-5 font-bold shadow-lg">📝 Notes — type, pen &amp; handwriting</a>
+      <a href="/member/kwealth/excerpts" class="block rounded-2xl bg-gradient-to-r from-emerald-700 to-teal-800 p-5 font-bold shadow-lg">📌 Excerpts — paste &amp; save for Angel</a>
+    </div>
+
+    <div class="mt-8 rounded-2xl border border-amber-500/30 bg-amber-950/40 p-4 text-sm">
+      <p class="font-semibold text-amber-200">Angel reference</p>
+      <p class="text-amber-100/80 mt-1">Matthew Henry Complete Commentary</p>
+      <a class="text-teal-300 underline break-all" href="{{ mh_url }}" target="_blank" rel="noopener">{{ mh_url }}</a>
+      <p class="text-xs text-slate-400 mt-2">Excerpts saved: {{ excerpts_n }} · Notes: {{ notes_n }}</p>
+    </div>
+  </div>
+</body>
+</html>
