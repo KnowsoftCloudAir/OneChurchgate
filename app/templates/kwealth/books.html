@@ -23,9 +23,12 @@
     <div class="max-w-4xl mx-auto px-3 py-2.5 flex flex-wrap items-center gap-2">
       <a href="/member/kwealth" class="text-xs text-teal-300">← Kwealth</a>
       <span class="font-bold text-sm sm:text-base">Books</span>
-      <form method="post" action="/member/kwealth/load-books" class="inline">
-        <button class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 hover:bg-slate-600">Load</button>
-      </form>
+      <!-- Device file picker (like personal music) -->
+      <input type="file" x-ref="filePick" class="hidden" accept=".pdf,.txt,application/pdf,text/plain" multiple
+             @change="uploadFiles($event)">
+      <button type="button" @click="$refs.filePick.click()"
+              class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 hover:bg-slate-600"
+              :disabled="uploading" x-text="uploading ? 'Scanning…' : 'Load'"></button>
       <button type="button" @click="toggleAngelRead()" class="px-3 py-1.5 rounded-lg text-xs font-bold"
               :class="reading ? 'bg-rose-600' : 'bg-amber-600'" x-text="reading ? 'Stop' : 'Angel'"></button>
       <button type="button" @click="saveSelection()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-700">Save highlighted → Excerpts</button>
@@ -38,6 +41,9 @@
   </header>
 
   <main class="max-w-3xl mx-auto px-4 py-6">
+    {% if request.query_params.get('uploaded') %}
+    <p class="text-center text-sm text-emerald-300 mb-3">Added {{ request.query_params.get('uploaded') }} book(s) from your device.</p>
+    {% endif %}
     {% if book %}
     <p class="text-center text-xs text-slate-400 mb-3" x-text="'Page ' + (pageIndex+1) + ' / ' + pages.length"></p>
     <div class="page-sheet p-6 sm:p-10 font-serif text-base sm:text-lg leading-relaxed whitespace-pre-wrap"
@@ -52,19 +58,37 @@
       window.__BOOK__ = { id: {{ book.id }}, pages: {{ pages|tojson }}, pageIndex: {{ page_index }} };
     </script>
     {% else %}
-    <p class="text-center text-slate-400 py-20">Click <strong>Load</strong> to sync books from memory.</p>
+    <p class="text-center text-slate-400 py-20">Tap <strong>Load</strong> to open your device and choose PDF or text books.</p>
     {% endif %}
   </main>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script>
   function bookReader() {
     return {
-      bookId: '', pages: [], pageIndex: 0, flipping: false, reading: false,
+      bookId: '', pages: [], pageIndex: 0, flipping: false, reading: false, uploading: false,
       init() {
         const B = window.__BOOK__;
         if (B) { this.pages = B.pages||[]; this.pageIndex = B.pageIndex||0; this.bookId = String(B.id); }
       },
       goBook() { location.href = '/member/kwealth/books?book_id=' + this.bookId; },
+      async uploadFiles(ev) {
+        const files = Array.from(ev.target.files || []);
+        if (!files.length) return;
+        this.uploading = true;
+        try {
+          const fd = new FormData();
+          files.forEach(f => fd.append('files', f));
+          const r = await fetch('/member/kwealth/books/upload', {
+            method: 'POST', body: fd, credentials: 'same-origin'
+          });
+          if (r.redirected) location.href = r.url;
+          else location.href = '/member/kwealth/books';
+        } catch (e) {
+          alert('Could not load books from device');
+          this.uploading = false;
+        }
+        ev.target.value = '';
+      },
       async saveProgress() {
         if (!this.bookId) return;
         const fd = new FormData(); fd.append('book_id', this.bookId); fd.append('page_index', this.pageIndex);

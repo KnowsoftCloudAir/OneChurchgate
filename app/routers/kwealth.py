@@ -22,6 +22,10 @@ BOOKS_DIR = Path("app/static/books")
 INK_DIR = Path("app/static/uploads/kwealth_ink")
 BOOKS_DIR.mkdir(parents=True, exist_ok=True)
 INK_DIR.mkdir(parents=True, exist_ok=True)
+USER_BOOKS_DIR = Path("app/static/uploads/kwealth_books")
+USER_BOOKS_DIR.mkdir(parents=True, exist_ok=True)
+USER_BOOKS_TEXT = Path("app/static/uploads/kwealth_books_text")
+USER_BOOKS_TEXT.mkdir(parents=True, exist_ok=True)
 
 MH_URL = "https://www.biblestudytools.com/commentaries/matthew-henry-complete/"
 CHARS_PER_PAGE = 900
@@ -122,6 +126,91 @@ async def kwealth_home(request: Request, user: User = Depends(require_user), ses
         "excerpts_n": excerpts_n, "notes_n": notes_n,
         "mh_url": MH_URL,
     })
+
+
+
+def _extract_pdf_pages(data: bytes) -> list:
+    """Extract text pages from a PDF; fall back to one page if empty."""
+    pages = []
+    try:
+        from pypdf import PdfReader
+        from io import BytesIO
+        reader = PdfReader(BytesIO(data))
+        for i, page in enumerate(reader.pages):
+            try:
+                text = (page.extract_text() or "").strip()
+            except Exception:
+                text = ""
+            if not text:
+                text = f"(Page {i+1} — little or no extractable text. Scanned PDFs may need OCR.)"
+            pages.append(text)
+    except Exception as e:
+        pages = [f"(Could not read PDF: {e})"]
+    return pages or ["(Empty PDF)"]
+
+
+def _extract_txt_pages(data: bytes) -> list:
+    try:
+        text = data.decode("utf-8", errors="ignore")
+    except Exception:
+        text = data.decode("latin-1", errors="ignore")
+    return _split_pages(text)
+
+
+@router.post("/member/kwealth/books/upload")
+async def upload_device_books(
+    files: list[UploadFile] = File(...),
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    """Load PDF/TXT books from the member's device (file picker), scan, and add to library."""
+    if not files:
+        raise HTTPException(400, "No files selected")
+    added = 0
+    for f in files:
+        if not f.filename:
+            continue
+        name = f.filename
+        ext = (name.rsplit(".", 1)[-1] or "").lower()
+        if ext not in ("pdf", "txt", "text"):
+            continue
+        data = await f.read()
+        if not data or len(data) > 40 * 1024 * 1024:
+            continue
+        safe = "".join(c if c.isalnum() or c in "._-" else "_" for c in name)[:80]
+        uid = uuid.uuid4().hex[:10]
+        if ext == "pdf":
+            pages = _extract_pdf_pages(data)
+            bin_path = USER_BOOKS_DIR / f"{user.id}_{uid}_{safe}"
+            bin_path.write_bytes(data)
+            text_rel = f"uploads/kwealth_books_text/{user.id}_{uid}.txt"
+            text_path = Path("app/static") / text_rel
+            text_path.parent.mkdir(parents=True, exist_ok=True)
+            body = "\n\n".join(f"Page {i+1}\n{p}" for i, p in enumerate(pages))
+            text_path.write_text(body, encoding="utf-8")
+            source_path = text_rel
+        else:
+            pages = _extract_txt_pages(data)
+            text_rel = f"uploads/kwealth_books_text/{user.id}_{uid}_{safe}"
+            if not text_rel.endswith(".txt"):
+                text_rel += ".txt"
+            text_path = Path("app/static") / text_rel
+            text_path.parent.mkdir(parents=True, exist_ok=True)
+            body = "\n\n".join(f"Page {i+1}\n{p}" for i, p in enumerate(pages))
+            text_path.write_text(body, encoding="utf-8")
+            source_path = text_rel
+
+        title = name.rsplit(".", 1)[0].replace("_", " ").strip()[:120] or "Book"
+        session.add(KwealthBook(
+            title=title,
+            author=f"Uploaded by member {user.id}",
+            source_path=source_path,
+            page_count=len(pages),
+            is_active=True,
+        ))
+        added += 1
+    session.commit()
+    return RedirectResponse(f"/member/kwealth/books?uploaded={added}", status_code=303)
 
 
 @router.post("/member/kwealth/load-books")
