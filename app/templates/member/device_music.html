@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}My device music{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8" x-data="deviceMusic()">
+  <h1 class="text-2xl font-bold text-navy-900 mb-1">Music from your device</h1>
+  <p class="text-sm text-slate-500 mb-6">
+    Synchronize audio from your phone or computer. Files stay on <strong>your device</strong>
+    (not uploaded to Churchgate). Playlist names are remembered in this browser.
+  </p>
+  <label class="flex flex-col items-center justify-center gap-2 w-full py-10 rounded-2xl border-2 border-dashed border-indigo-300 bg-indigo-50 cursor-pointer hover:bg-indigo-100 transition mb-6">
+    <span class="text-indigo-900 font-bold text-sm">Synchronize music from internal device memory</span>
+    <span class="text-xs text-indigo-700">Choose MP3, M4A, WAV, AAC…</span>
+    <input type="file" accept="audio/*" multiple class="hidden" @change="addFiles($event)">
+  </label>
+  <audio x-ref="player" class="w-full mb-4" controls @ended="next()"></audio>
+  <ul class="space-y-2">
+    <template x-for="(t, idx) in tracks" :key="t.id">
+      <li class="flex items-center gap-3 bg-white border rounded-xl p-3">
+        <button type="button" class="text-indigo-700 font-bold text-sm" @click="play(idx)">Play</button>
+        <span class="flex-1 text-sm truncate" x-text="t.name"></span>
+        <button type="button" class="text-xs text-red-600" @click="remove(idx)">Remove</button>
+      </li>
+    </template>
+  </ul>
+  <p class="text-xs text-slate-400 mt-4" x-show="!tracks.length">No tracks yet.</p>
+</div>
+<script>
+function deviceMusic() {
+  return {
+    tracks: [],
+    urls: {},
+    current: -1,
+    addFiles(ev) {
+      const files = Array.from(ev.target.files || []);
+      files.forEach(f => {
+        const id = 't' + Date.now() + Math.random().toString(36).slice(2, 7);
+        this.urls[id] = URL.createObjectURL(f);
+        this.tracks.push({ id, name: f.name, file: f });
+      });
+      ev.target.value = '';
+    },
+    play(idx) {
+      this.current = idx;
+      const t = this.tracks[idx];
+      if (!t || !this.urls[t.id]) return;
+      this.$refs.player.src = this.urls[t.id];
+      this.$refs.player.play();
+    },
+    next() {
+      if (this.current + 1 < this.tracks.length) this.play(this.current + 1);
+    },
+    remove(idx) {
+      const t = this.tracks[idx];
+      if (t && this.urls[t.id]) URL.revokeObjectURL(this.urls[t.id]);
+      this.tracks.splice(idx, 1);
+    }
+  }
+}
+</script>
+{% endblock %}
