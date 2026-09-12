@@ -111,6 +111,11 @@ class User(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     last_login: Optional[datetime] = None
     session_version: int = Field(default=0)  # increments on login; only latest session valid
+    # Referral / promo rewards
+    promo_code: Optional[str] = Field(default=None, index=True)
+    referred_by_user_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
+    referral_bonus_applied: bool = Field(default=False)
+    referral_count_anchor_at: Optional[datetime] = Field(default=None)  # after cashout, only count newer referrals
 
 class ChurchMember(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -299,7 +304,10 @@ class FocusGroupMessage(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     group_id: int = Field(foreign_key="focusgroup.id", index=True)
     sender_id: int = Field(foreign_key="user.id")
-    body: str = Field(sa_column=Column(Text))
+    topic: Optional[str] = None  # member-started thread title
+    body: str = Field(default="", sa_column=Column(Text))
+    image_path: Optional[str] = None
+    audio_path: Optional[str] = None  # max ~30s voice note
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class FocusGroupMessageComment(SQLModel, table=True):
@@ -604,3 +612,21 @@ class AppConfig(SQLModel, table=True):
     key: str = Field(unique=True, index=True)
     value: Optional[str] = Field(default=None, sa_column=Column(Text))
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ReferralCashout(SQLModel, table=True):
+    """Member referral reward cashout (GA pays on/after 30th)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    active_count: int = Field(default=0)
+    amount_ngn: float = Field(default=0.0)
+    status: str = Field(default="pending")  # pending | approved | paid | rejected
+    account_name: Optional[str] = None
+    account_number: Optional[str] = None
+    bank_name: Optional[str] = None
+    period_month: Optional[str] = None
+    identity_evidence: Optional[str] = None  # uploaded ID image path
+    processed_by: Optional[int] = None
+    processed_at: Optional[datetime] = None
+    note: Optional[str] = Field(default=None, sa_column=Column(Text))
+    created_at: datetime = Field(default_factory=datetime.utcnow)

@@ -69,6 +69,7 @@ async def join_submit(
     group_id: int = Form(...),
     district_id: int = Form(...),
     profile_pic: UploadFile = File(None),
+    promo_code: str = Form(""),
     session: Session = Depends(get_session)
 ):
     if session.exec(select(User).where(User.email == email)).first():
@@ -126,6 +127,7 @@ async def join_submit(
     session.commit()
     session.refresh(member)
 
+    from app.referral_logic import generate_promo_code, resolve_referrer
     user = User(
         email=email.strip(),
         hashed_password=get_password_hash(password),
@@ -134,7 +136,11 @@ async def join_submit(
         church_id=district_id,
         member_id=member.id,
         is_active=True,  # can login but limited until approved
+        promo_code=generate_promo_code(session, full_name),
     )
+    ref = resolve_referrer(session, promo_code or "")
+    if ref:
+        user.referred_by_user_id = ref.id
     session.add(user)
     session.commit()
 
@@ -364,6 +370,15 @@ async def member_portal(
         focus_latest_at = ""
 
 
+    promo_code = None
+    ref_stats = None
+    try:
+        from app.referral_logic import ensure_user_promo_code, count_referrals
+        promo_code = ensure_user_promo_code(session, user)
+        ref_stats = count_referrals(session, user.id)
+    except Exception as _re:
+        print("referral panel:", _re)
+
     try:
         log_activity(session, user=user, action="portal_view", detail="Opened member dashboard", request=request)
     except Exception:
@@ -393,6 +408,8 @@ async def member_portal(
         "focus_latest_at": focus_latest_at,
         "is_preview": bool(is_preview),
         "is_awaiting_payment": bool(is_awaiting_payment),
+        "promo_code": promo_code,
+        "ref_stats": ref_stats,
     })
 
 

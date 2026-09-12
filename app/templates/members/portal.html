@@ -1,6 +1,45 @@
 {% extends "base.html" %}
 {% block title %}My Space – Churchgate{% endblock %}
 {% block content %}
+
+{# --- Invite & earn rewards panel --- #}
+{% if promo_code and not is_preview %}
+<div class="mx-4 mt-4 mb-2 p-4 rounded-2xl border border-teal-200 bg-gradient-to-r from-teal-800 via-teal-700 to-slate-900 text-white shadow-lg">
+  <div class="flex flex-wrap items-center gap-4">
+    {% set pct = (ref_stats.progress_pct if ref_stats else 0) %}
+    <div class="relative w-20 h-20 shrink-0">
+      <svg viewBox="0 0 120 120" class="w-full h-full -rotate-90">
+        <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="10"/>
+        <circle cx="60" cy="60" r="52" fill="none" stroke="{% if ref_stats and ref_stats.cashout_ready %}#4ade80{% else %}#5eead4{% endif %}"
+                stroke-width="10" stroke-linecap="round"
+                stroke-dasharray="{{ 326.73 * pct / 100 }} 326.73"/>
+      </svg>
+      <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <span class="text-sm font-black leading-none">{{ ref_stats.active_subscribers if ref_stats else 0 }}</span>
+        <span class="text-[10px] opacity-80">/50</span>
+      </div>
+    </div>
+    <div class="flex-1 min-w-[12rem]">
+      <div class="font-bold text-lg">Invite &amp; earn</div>
+      <div class="text-sm text-teal-100 mt-0.5">Code <span class="font-mono font-semibold">{{ promo_code }}</span>
+        · Est. ₦{{ '%.0f'|format(ref_stats.earnings_ngn) if ref_stats else 0 }}</div>
+      <div class="text-xs text-teal-200/90 mt-1">Cashout on the 30th when the circle completes (50 active paid subscribers).</div>
+    </div>
+    <div>
+      {% if ref_stats and ref_stats.cashout_ready %}
+      <a href="/member/rewards" class="inline-block px-4 py-2.5 rounded-xl bg-emerald-400 text-emerald-950 text-sm font-black shadow">Cashout ready</a>
+      {% else %}
+      <a href="/member/rewards" class="inline-block px-4 py-2.5 rounded-xl bg-white/15 border border-white/30 text-white text-sm font-semibold">Open rewards</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
 <style>
   .theme-royal { --mp-bg: #0b1f4a; --mp-card: rgba(255,255,255,0.1); --mp-text: #f8fafc; --mp-muted: #94a3b8; --mp-accent: #60a5fa; --mp-btn: #2563eb; --mp-border: rgba(255,255,255,0.15); }
   .theme-pink { --mp-bg: #4a0d2e; --mp-card: rgba(255,255,255,0.12); --mp-text: #fff1f5; --mp-muted: #f9a8d4; --mp-accent: #f472b6; --mp-btn: #db2777; --mp-border: rgba(255,255,255,0.18); }

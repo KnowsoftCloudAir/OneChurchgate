@@ -1,8 +1,9 @@
 """Focus groups, testimonies, Heart to Heart."""
 from pathlib import Path
+import shutil
 from typing import Optional, List
 from datetime import datetime
-from fastapi import APIRouter, Depends, Request, Form, HTTPException
+from fastapi import APIRouter, Depends, Request, Form, HTTPException, File, UploadFile
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
@@ -192,6 +193,9 @@ async def focus_group_view(
         messages.append({
             "id": msg.id,
             "body": msg.body,
+            "topic": getattr(msg, "topic", None),
+            "image_path": getattr(msg, "image_path", None),
+            "audio_path": getattr(msg, "audio_path", None),
             "sender": sender.full_name if sender else "Member",
             "at": msg.created_at,
             "comments": c_rows,
@@ -221,23 +225,56 @@ async def focus_group_view(
 @router.post("/focus-groups/{group_id}/message")
 async def focus_post_message(
     group_id: int,
-    body: str = Form(...),
+    body: str = Form(""),
+    topic: str = Form(""),
+    image: UploadFile = File(None),
+    audio: UploadFile = File(None),
     user: User = Depends(require_user),
     session: Session = Depends(get_session),
 ):
+    """Any focus-group member may start a topic thread with text, image, and ≤30s audio."""
+    from pathlib import Path
+import shutil as FsPath
+    import uuid
     g = session.get(FocusGroup, group_id)
     if not g:
         raise HTTPException(404)
     can_manage = _can_manage_groups(user) and g.church_id == user.church_id
     if not can_manage and not _is_group_member(session, group_id, user):
         raise HTTPException(403)
-    # Only managers post top-level messages (members comment)
-    if not can_manage:
-        raise HTTPException(403, "Only group managers can post messages; you can comment")
-    body = body.strip()
-    if not body:
-        raise HTTPException(400, "Empty message")
-    session.add(FocusGroupMessage(group_id=group_id, sender_id=user.id, body=body))
+    body = (body or "").strip()
+    topic = (topic or "").strip() or None
+    if not body and not topic and not (image and image.filename) and not (audio and audio.filename):
+        raise HTTPException(400, "Add a topic, message, photo, or short audio")
+    img_path = None
+    audio_path = None
+    upload_root = FsPath("app/static/uploads/focus")
+    upload_root.mkdir(parents=True, exist_ok=True)
+    if image and image.filename:
+        ext = (image.filename.rsplit(".", 1)[-1] or "jpg").lower()
+        if ext in ("jpg", "jpeg", "png", "webp", "gif"):
+            fname = f"fg_{group_id}_{uuid.uuid4().hex[:10]}.{ext}"
+            dest = upload_root / fname
+            with dest.open("wb") as f:
+                shutil.copyfileobj(image.file, f)
+            img_path = f"/static/uploads/focus/{fname}"
+    if audio and audio.filename:
+        # Client should limit to ~30s; we accept common formats
+        ext = (audio.filename.rsplit(".", 1)[-1] or "webm").lower()
+        if ext in ("webm", "mp3", "m4a", "ogg", "wav", "aac"):
+            fname = f"fg_aud_{group_id}_{uuid.uuid4().hex[:10]}.{ext}"
+            dest = upload_root / fname
+            data = await audio.read()
+            # ~30s soft limit by size (~500KB typical compressed); hard cap 2MB
+            if len(data) > 2 * 1024 * 1024:
+                raise HTTPException(400, "Audio too large — keep voice notes under 30 seconds")
+            dest.write_bytes(data)
+            audio_path = f"/static/uploads/focus/{fname}"
+    session.add(FocusGroupMessage(
+        group_id=group_id, sender_id=user.id,
+        topic=topic, body=body or (topic or "Shared media"),
+        image_path=img_path, audio_path=audio_path,
+    ))
     session.commit()
     return RedirectResponse(f"/focus-groups/{group_id}", status_code=303)
 

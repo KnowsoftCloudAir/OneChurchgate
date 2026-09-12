@@ -394,6 +394,11 @@ async def admin_confirm_subscription(
             if mem:
                 mem.approval_status = "approved"
                 session.add(mem)
+        try:
+            from app.referral_logic import apply_referral_bonus_on_confirm
+            apply_referral_bonus_on_confirm(session, sub, u)
+        except Exception as _rb:
+            print("referral bonus:", _rb)
     session.commit()
     return RedirectResponse("/admin/subscriptions", status_code=303)
 
