@@ -433,8 +433,16 @@ async def root_sw():
     )
 
 @app.get("/health")
+@app.head("/health")
 async def health():
     return {"status": "ok", "app": "Knowsoft Churchgate"}
+
+@app.head("/")
+async def home_head():
+    """Render / uptime probes send HEAD; avoid 405 noise."""
+    from fastapi.responses import Response
+    return Response(status_code=200)
+
 
 # Hidden admin portal
 @app.get("/ks-admin/login", response_class=HTMLResponse)
