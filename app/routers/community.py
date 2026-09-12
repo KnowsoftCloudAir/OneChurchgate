@@ -232,9 +232,7 @@ async def focus_post_message(
     user: User = Depends(require_user),
     session: Session = Depends(get_session),
 ):
-    """Any focus-group member may start a topic thread with text, image, and ≤30s audio."""
-    from pathlib import Path
-import shutil as FsPath
+    """Any focus-group member may start a topic thread with text, image, and <=30s audio."""
     import uuid
     g = session.get(FocusGroup, group_id)
     if not g:
@@ -248,7 +246,7 @@ import shutil as FsPath
         raise HTTPException(400, "Add a topic, message, photo, or short audio")
     img_path = None
     audio_path = None
-    upload_root = FsPath("app/static/uploads/focus")
+    upload_root = Path("app/static/uploads/focus")
     upload_root.mkdir(parents=True, exist_ok=True)
     if image and image.filename:
         ext = (image.filename.rsplit(".", 1)[-1] or "jpg").lower()
@@ -259,21 +257,22 @@ import shutil as FsPath
                 shutil.copyfileobj(image.file, f)
             img_path = f"/static/uploads/focus/{fname}"
     if audio and audio.filename:
-        # Client should limit to ~30s; we accept common formats
         ext = (audio.filename.rsplit(".", 1)[-1] or "webm").lower()
         if ext in ("webm", "mp3", "m4a", "ogg", "wav", "aac"):
             fname = f"fg_aud_{group_id}_{uuid.uuid4().hex[:10]}.{ext}"
             dest = upload_root / fname
             data = await audio.read()
-            # ~30s soft limit by size (~500KB typical compressed); hard cap 2MB
             if len(data) > 2 * 1024 * 1024:
                 raise HTTPException(400, "Audio too large — keep voice notes under 30 seconds")
             dest.write_bytes(data)
             audio_path = f"/static/uploads/focus/{fname}"
     session.add(FocusGroupMessage(
-        group_id=group_id, sender_id=user.id,
-        topic=topic, body=body or (topic or "Shared media"),
-        image_path=img_path, audio_path=audio_path,
+        group_id=group_id,
+        sender_id=user.id,
+        topic=topic,
+        body=body or (topic or "Shared media"),
+        image_path=img_path,
+        audio_path=audio_path,
     ))
     session.commit()
     return RedirectResponse(f"/focus-groups/{group_id}", status_code=303)
