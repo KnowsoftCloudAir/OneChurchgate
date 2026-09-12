@@ -1,136 +1,119 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sign in — Knowsoft Churchgate</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In – Knowsoft Churchgate</title>
+  <link rel="icon" href="/static/img/knowsoft-logo.png" type="image/png">
   <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>tailwind.config={theme:{extend:{fontFamily:{sans:['Plus Jakarta Sans','system-ui','sans-serif']},colors:{navy:{900:'#0f2744',950:'#0a192f'}}}}}</script>
   <style>
-    .hint-panel { max-height: 0; opacity: 0; overflow: hidden; transition: max-height .35s ease, opacity .25s ease, margin .25s ease; }
-    .hint-wrap:hover .hint-panel, .hint-wrap:focus-within .hint-panel { max-height: 320px; opacity: 1; margin-top: .75rem; }
-    .splash-video { object-fit: cover; }
-    .yt-frame { width: 100%; height: 100%; border: 0; }
+    @media (max-width: 1023px) {
+      .login-video-wrap { max-height: 42vh; }
+    }
   </style>
 </head>
-<body class="min-h-screen bg-slate-950 text-slate-900">
+<body class="min-h-screen font-sans antialiased bg-slate-100">
   <div class="min-h-screen grid lg:grid-cols-2">
-    <!-- Brand / video -->
-    <div class="relative hidden lg:flex overflow-hidden bg-slate-900 min-h-[420px]"
-         x-data="{ i: 0, slides: [
-           {% if slides %}
-           {% for s in slides %}
-           { id: '{{ s.youtube_id }}', title: {{ (s.title or 'Worship')|tojson }} }{% if not loop.last %},{% endif %}
-           {% endfor %}
-           {% endif %}
-         ],
-         tick(){ if(this.slides.length>1){ this.i=(this.i+1)%this.slides.length } }
-         }"
-         x-init="setInterval(() => tick(), 12000)">
-      <!-- Local splash if present -->
-      <video class="splash-video absolute inset-0 w-full h-full" autoplay muted loop playsinline
-             poster="https://images.unsplash.com/photo-1438032005730-c779502df39b?auto=format&fit=crop&w=1200&q=60">
-        <source src="/static/video/splash.mp4" type="video/mp4">
-      </video>
-      <!-- YouTube overlay slides when available -->
-      <template x-if="slides.length">
-        <div class="absolute inset-0">
-          <iframe class="yt-frame"
-                  :src="'https://www.youtube.com/embed/' + slides[i].id + '?autoplay=1&mute=1&controls=0&loop=1&playlist=' + slides[i].id + '&rel=0'"
-                  allow="autoplay; encrypted-media"
-                  allowfullscreen></iframe>
-        </div>
-      </template>
-      <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent pointer-events-none"></div>
-      <div class="relative z-10 mt-auto p-10 text-white">
-        <p class="text-sm uppercase tracking-[0.2em] text-teal-200/90 mb-2">Knowsoft</p>
-        <h1 class="text-3xl font-bold leading-tight">Churchgate</h1>
-        <p class="mt-2 text-slate-300 text-sm max-w-sm" x-show="slides.length" x-text="slides[i] && slides[i].title"></p>
-        <p class="mt-2 text-slate-300 text-sm max-w-sm" x-show="!slides.length">Membership, growth analytics, and community for the church.</p>
+    <!-- Video panel: same links as home; muted autoplay -->
+    <div class="relative bg-navy-950 text-white flex flex-col p-4 sm:p-8 lg:p-10 overflow-hidden order-1 lg:order-1"
+         x-data='{ i: 0, slides: [] }'
+         x-init="slides = JSON.parse(document.getElementById('slide-data').textContent || '[]'); if (slides.length > 1) setInterval(() => { i = (i + 1) % slides.length }, 40000)">
+      <script type="application/json" id="slide-data">[{% for s in slides or [] %}{"id":"{{ s.youtube_id }}","title":{{ s.title|tojson }}}{% if not loop.last %},{% endif %}{% endfor %}]</script>
+      <div class="relative z-10 flex items-center gap-2 mb-3 lg:mb-6">
+        <img src="/static/img/knowsoft-logo.png" class="h-9 w-auto object-contain" alt="Knowsoft" onerror="this.style.display='none'">
+        <span class="font-bold text-lg sm:text-xl">Churchgate</span>
       </div>
+      <h1 class="relative z-10 text-xl sm:text-2xl lg:text-3xl font-bold mb-2">Worship and welcome</h1>
+      <p class="relative z-10 text-slate-300 text-xs sm:text-sm max-w-md mb-3 lg:mb-4">Same videos as the home page · Autoplay muted · Tap to unmute on the player if needed</p>
+      <div class="relative z-10 rounded-xl sm:rounded-2xl overflow-hidden border border-white/20 bg-black shadow-2xl aspect-video w-full max-w-xl login-video-wrap mx-auto lg:mx-0">
+        <template x-if="slides.length">
+          <iframe class="w-full h-full"
+                  :src="'https://www.youtube.com/embed/' + slides[i].id + '?autoplay=1&mute=1&rel=0&modestbranding=1&playsinline=1'"
+                  title="Worship video"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen></iframe>
+        </template>
+        <template x-if="!slides.length">
+          <div class="w-full h-full min-h-[160px] flex items-center justify-center bg-gradient-to-br from-navy-900 to-slate-900 text-slate-400 text-sm p-6 text-center">
+            Videos appear here when home-page YouTube links are approved.
+          </div>
+        </template>
+      </div>
+      <p class="relative z-10 text-xs text-slate-500 mt-2 truncate" x-show="slides.length" x-text="slides[i] && slides[i].title"></p>
     </div>
 
     <!-- Form -->
-    <div class="flex items-center justify-center p-6 sm:p-10 bg-slate-100">
+    <div class="flex items-start sm:items-center justify-center p-4 sm:p-8 lg:p-12 order-2">
       <div class="w-full max-w-md">
-        <div class="mb-6 flex items-center justify-between gap-3">
-          <a href="/" class="text-sm font-semibold text-slate-600 hover:text-slate-900">← Home</a>
-          <a href="/join" class="text-sm font-semibold text-teal-700 hover:underline">Register as member</a>
+        <a href="/"
+           class="inline-flex items-center justify-center gap-2 w-full mb-4 sm:mb-6 py-3 sm:py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg">
+          Back to home page
+        </a>
+        {% if announcements %}
+        <div class="mb-4 space-y-2">
+          {% for a in announcements %}
+          <div class="rounded-xl bg-amber-50 border border-amber-200 p-3 text-sm">
+            <p class="font-semibold text-amber-900">{{ a.title }}</p>
+            <p class="text-amber-900/80 text-xs mt-1 whitespace-pre-wrap">{{ a.body }}</p>
+          </div>
+          {% endfor %}
         </div>
-
-        <div class="bg-white rounded-2xl shadow-xl border border-slate-200/80 p-7 sm:p-8">
-          <div class="mb-6">
-            <h2 class="text-2xl font-bold text-slate-900 tracking-tight">Sign in</h2>
-            <p class="text-sm text-slate-500 mt-1">Administrators and approved members</p>
-          </div>
-
-          {% if announcements %}
-          <div class="mb-4 space-y-2">
-            {% for a in announcements %}
-            <div class="rounded-xl bg-amber-50 border border-amber-100 p-3 text-sm">
-              <p class="font-semibold text-amber-900">{{ a.title }}</p>
-              <p class="text-amber-900/80 text-xs mt-1 whitespace-pre-wrap">{{ a.body }}</p>
-            </div>
-            {% endfor %}
-          </div>
-          {% endif %}
-
+        {% endif %}
+        <div class="bg-white rounded-2xl shadow-lg border border-slate-200/80 p-6 sm:p-8">
+          <h2 class="text-xl font-bold text-navy-900 mb-1">Sign in</h2>
+          <p class="text-sm text-slate-500 mb-5">Church administrators and approved members</p>
           {% if error %}
-          <div class="mb-4 p-3 rounded-xl bg-red-50 border border-red-100 text-red-700 text-sm">{{ error }}</div>
+          <div class="mb-4 p-3 rounded-lg bg-red-50 border border-red-100 text-red-700 text-sm">
+            {{ error }}
+            <p class="mt-2 text-xs">After several attempts, wait 2 minutes. Then <a href="/auth/forgot-password" class="font-bold underline">reset your password</a>.</p>
+          </div>
           {% endif %}
-
           <form method="post" action="/auth/login" class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
               <input type="email" name="email" required autocomplete="username"
-                     class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600/30 focus:border-teal-600 outline-none text-base"
+                     class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-navy-900 outline-none text-base"
                      placeholder="name@example.com">
             </div>
             <div>
               <label class="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
               <input type="password" name="password" required autocomplete="current-password"
-                     class="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-teal-600/30 focus:border-teal-600 outline-none text-base"
-                     placeholder="••••••••">
+                     class="w-full px-4 py-3 rounded-lg border border-slate-300 focus:ring-2 focus:ring-navy-900 outline-none text-base"
+                     placeholder="Password">
             </div>
-            <div class="flex justify-end text-sm">
-              <a href="/auth/forgot-password" class="text-teal-700 font-medium hover:underline">Forgot password?</a>
-            </div>
-            <button type="submit"
-                    class="w-full py-3.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-semibold text-base shadow-lg transition">
+            <button type="submit" class="w-full py-3.5 rounded-lg bg-navy-900 text-white font-semibold hover:bg-navy-950 transition shadow-md">
               Sign in
             </button>
           </form>
-
-          <div class="hint-wrap mt-5 outline-none" tabindex="0">
-            <p class="text-xs text-slate-400 cursor-help select-none">Need help? <span class="underline decoration-dotted">Hover or tap here</span></p>
-            <div class="hint-panel text-xs text-slate-600 space-y-3 rounded-xl bg-slate-50 border border-slate-100 p-3">
-              <div>
-                <p class="font-semibold text-slate-800">Register as a member</p>
-                <p class="mt-1">Open Register → select your church hierarchy. If your church is not listed, use the <strong>Knowsoft</strong> church. After approval, sign in here.</p>
-              </div>
-              <div>
-                <p class="font-semibold text-slate-800">Invite &amp; earn</p>
-                <p class="mt-1">After login open <strong>Invite &amp; earn</strong> for your promo code. Active paid subscribers on your code count toward cashout (50 → green, from the 30th).</p>
-              </div>
-            </div>
+          <p class="text-center text-sm mt-4">
+            <a href="/auth/forgot-password" class="text-navy-900 font-semibold hover:underline">Forgot password?</a>
+          </p>
+          <div class="mt-6 pt-5 border-t border-slate-100 space-y-2 text-sm text-center">
+            <p class="text-slate-600">New member? <a href="/join" class="text-navy-900 font-semibold hover:underline">Register</a></p>
+            <p class="text-slate-600">New church? <a href="/auth/register-church" class="text-navy-900 font-semibold hover:underline">Register church</a></p>
           </div>
         </div>
-
-        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <a href="https://drive.google.com/file/d/1Kkl1oYHfHYHdk7d09q3BJx-zqTVDxke2/view?usp=drive_link" target="_blank" rel="noopener"
-             class="flex items-center gap-3 rounded-2xl bg-white border border-slate-200 px-4 py-3 shadow-sm hover:border-teal-500 transition">
-            <span class="text-2xl">🪟</span>
-            <span><span class="block text-sm font-bold text-slate-900">Windows app</span><span class="block text-xs text-slate-500">Download</span></span>
-          </a>
-          <a href="https://drive.google.com/file/d/1mCQ_-pOBshOleOoPVYLOGMEhiaPM5jgN/view?usp=sharing" target="_blank" rel="noopener"
-             class="flex items-center gap-3 rounded-2xl bg-white border border-slate-200 px-4 py-3 shadow-sm hover:border-teal-500 transition">
-            <span class="text-2xl">📱</span>
-            <span><span class="block text-sm font-bold text-slate-900">Android app</span><span class="block text-xs text-slate-500">Download APK</span></span>
-          </a>
-        </div>
-        <p class="mt-8 text-center text-xs text-slate-400">© Knowsoft Consult · Churchgate</p>
       </div>
     </div>
   </div>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+        <!-- Help on hover -->
+        <div class="mt-4 group relative" tabindex="0">
+          <p class="text-xs text-slate-400 cursor-help">Need help? <span class="underline decoration-dotted">Hover or tap</span></p>
+          <div class="hidden group-hover:block group-focus-within:block mt-2 text-xs text-slate-600 bg-slate-50 border rounded-xl p-3 space-y-2">
+            <p><strong>Register:</strong> Use Register as member. If your church is not listed, choose the Knowsoft church.</p>
+            <p><strong>Invite &amp; earn:</strong> After login, use Invite &amp; earn for your promo code.</p>
+          </div>
+        </div>
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <a href="https://drive.google.com/file/d/1Kkl1oYHfHYHdk7d09q3BJx-zqTVDxke2/view?usp=drive_link" target="_blank" rel="noopener"
+             class="flex items-center gap-3 rounded-xl bg-white border px-4 py-3 text-sm font-semibold shadow-sm hover:border-teal-500">Windows app</a>
+          <a href="https://drive.google.com/file/d/1mCQ_-pOBshOleOoPVYLOGMEhiaPM5jgN/view?usp=sharing" target="_blank" rel="noopener"
+             class="flex items-center gap-3 rounded-xl bg-white border px-4 py-3 text-sm font-semibold shadow-sm hover:border-teal-500">Android app</a>
+        </div>
+
 </body>
 </html>

@@ -2,21 +2,24 @@
 {% block title %}My Space – Churchgate{% endblock %}
 {% block content %}
 
-{# --- Invite & earn rewards panel --- #}
+{# Invite & earn — extra panel only; original dashboard unchanged below #}
 {% if promo_code and not is_preview %}
-<div class="mx-4 mt-4 mb-2 p-4 rounded-2xl border border-teal-200 bg-gradient-to-r from-teal-800 via-teal-700 to-slate-900 text-white shadow-lg">
+<div class="mx-4 mt-4 mb-2 p-4 rounded-2xl border border-teal-400/40 bg-gradient-to-r from-teal-800 via-teal-700 to-slate-900 text-white shadow-lg">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div>
       <div class="font-bold text-lg">Invite &amp; earn</div>
-      <div class="text-sm text-teal-100">Code <span class="font-mono font-semibold">{{ promo_code }}</span>
-        · Active: {{ ref_stats.active_subscribers if ref_stats else 0 }}/50
+      <div class="text-sm text-teal-100 mt-0.5">
+        Code <span class="font-mono font-semibold">{{ promo_code }}</span>
+        · Active {{ ref_stats.active_subscribers if ref_stats else 0 }}/50
         · Est. ₦{{ '%.0f'|format(ref_stats.earnings_ngn) if ref_stats and ref_stats.earnings_ngn is not none else 0 }}
       </div>
+      <div class="text-xs text-teal-200/90 mt-1">Cashout opens on the 30th at 50 active paid subscribers.</div>
     </div>
-    <a href="/member/rewards" class="px-4 py-2 rounded-xl bg-white/20 border border-white/30 text-sm font-semibold">Open rewards</a>
+    <a href="/member/rewards" class="px-4 py-2.5 rounded-xl bg-white/15 border border-white/30 text-sm font-semibold hover:bg-white/25">Open rewards</a>
   </div>
 </div>
 {% endif %}
+
 
 <style>
   .theme-royal { --mp-bg: #0b1f4a; --mp-card: rgba(255,255,255,0.1); --mp-text: #f8fafc; --mp-muted: #94a3b8; --mp-accent: #60a5fa; --mp-btn: #2563eb; --mp-border: rgba(255,255,255,0.15); }
