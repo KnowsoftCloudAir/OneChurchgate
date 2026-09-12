@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Rewards — Invite & earn{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <div class="flex flex-wrap justify-between items-center gap-2 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-slate-900">Invite &amp; earn</h1>
+      <p class="text-sm text-slate-500">Share your code · Active paid subscribers count toward cashout</p>
+    </div>
+    <a href="/member/portal" class="text-sm text-teal-700 font-semibold">← Portal</a>
+  </div>
+
+  {% if not promo_on %}
+  <div class="mb-4 p-3 rounded-xl bg-amber-50 text-amber-900 text-sm">The promo programme is temporarily paused by administration. Your code is saved; counting resumes when it is turned back on.</div>
+  {% endif %}
+  {% if request.query_params.get('cashout') %}
+  <div class="mb-4 p-3 rounded-xl bg-emerald-50 text-emerald-800 text-sm">Payment request submitted. Your cycle counter has reset — only <strong>new</strong> subscribers on your code will count next. Payout is processed after review.</div>
+  {% endif %}
+
+  <div class="grid lg:grid-cols-3 gap-6 mb-8">
+    <!-- Circular progress (subscription-style) -->
+    <div class="lg:col-span-1 bg-gradient-to-br from-teal-700 to-slate-900 rounded-3xl p-6 text-white shadow-xl flex flex-col items-center justify-center">
+      {% set pct = stats.progress_pct if stats else 0 %}
+      <div class="relative w-44 h-44">
+        <svg viewBox="0 0 120 120" class="w-full h-full -rotate-90">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="10"/>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="{% if stats.cashout_ready %}#4ade80{% else %}#2dd4bf{% endif %}"
+                  stroke-width="10" stroke-linecap="round"
+                  stroke-dasharray="{{ 326.73 * pct / 100 }} 326.73"/>
+        </svg>
+        <div class="absolute inset-0 flex flex-col items-center justify-center rotate-0">
+          <span class="text-3xl font-black">{{ stats.active_subscribers }}</span>
+          <span class="text-xs text-teal-100">/ {{ threshold }} active</span>
+        </div>
+      </div>
+      <p class="mt-4 text-center text-sm text-teal-100">Cycle progress · Est. ₦{{ '%.0f'|format(stats.earnings_ngn) }}</p>
+      <p class="text-xs text-teal-200/80 mt-1">Registered this cycle: {{ stats.total_registered }}</p>
+    </div>
+
+    <div class="lg:col-span-2 space-y-4">
+      <div class="bg-white rounded-2xl border p-4 shadow-sm">
+        <div class="text-xs text-slate-500">Your promo code</div>
+        <div class="flex flex-wrap items-center gap-3 mt-1">
+          <span class="text-2xl font-bold font-mono text-teal-700">{{ promo_code }}</span>
+          <button type="button" class="text-xs px-3 py-1 rounded-lg bg-teal-50 text-teal-800 font-semibold"
+                  onclick="navigator.clipboard.writeText('{{ promo_code }}')">Copy</button>
+        </div>
+        <div class="mt-3 flex gap-2">
+          <input id="shareUrl" class="flex-1 px-3 py-2 rounded-xl border text-sm" readonly value="{{ share_url }}">
+          <button type="button" class="px-3 py-2 rounded-xl bg-teal-600 text-white text-sm font-semibold"
+                  onclick="navigator.clipboard.writeText(document.getElementById('shareUrl').value)">Link</button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border p-4 shadow-sm">
+        <div class="font-semibold text-slate-800 mb-1">Cashout</div>
+        {% if stats.cashout_ready and is_payout_day and not pending_cashout and promo_on %}
+          <form method="post" action="/member/rewards/cashout" enctype="multipart/form-data" class="grid sm:grid-cols-2 gap-3 mt-2">
+            <div><label class="text-xs">Bank name</label><input name="bank_name" required class="w-full px-3 py-2 rounded-xl border text-sm"></div>
+            <div><label class="text-xs">Account name</label><input name="account_name" required class="w-full px-3 py-2 rounded-xl border text-sm"></div>
+            <div><label class="text-xs">Account number</label><input name="account_number" required class="w-full px-3 py-2 rounded-xl border text-sm"></div>
+            <div><label class="text-xs">Identity evidence (ID photo / PDF) *</label>
+              <input type="file" name="identity_evidence" accept="image/*,.pdf" required class="w-full text-sm"></div>
+            <div class="sm:col-span-2">
+              <button type="submit" class="w-full py-3 rounded-2xl text-white font-bold shadow-lg" style="background:#16a34a">
+                Request payment — ₦{{ '%.0f'|format(stats.earnings_ngn) }}
+              </button>
+              <p class="text-xs text-slate-500 mt-2">Submitting resets this cycle to zero for new referrals only. Lifetime history is kept for admin.</p>
+            </div>
+          </form>
+        {% elif pending_cashout %}
+          <div class="text-sm text-slate-600 mt-1">Request <strong>{{ pending_cashout.status }}</strong> — ₦{{ '%.0f'|format(pending_cashout.amount_ngn) }}. Cycle already reset for new counts.</div>
+        {% elif stats.cashout_ready and not is_payout_day %}
+          <button type="button" disabled class="mt-2 px-4 py-2 rounded-xl bg-emerald-200 text-emerald-900 text-sm font-bold cursor-not-allowed">Target reached — cashout opens on the {{ payout_day }}th</button>
+        {% else %}
+          <button type="button" disabled class="mt-2 px-4 py-2 rounded-xl bg-slate-300 text-slate-600 text-sm font-semibold cursor-not-allowed">Cashout locked</button>
+          <span class="text-xs text-slate-500 ml-2">Green &amp; clickable at {{ threshold }} active · request on day {{ payout_day }}+</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl border shadow-sm overflow-hidden mb-6">
+    <div class="px-4 py-3 border-b font-semibold text-sm flex justify-between">
+      <span>Subscribers on your promo (this cycle)</span>
+      <span class="text-slate-400 font-normal">Active = paid subscription running</span>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-left"><tr>
+          <th class="px-4 py-2">Name</th><th class="px-4 py-2">Email</th><th class="px-4 py-2">Joined</th><th class="px-4 py-2">Subscribed?</th>
+        </tr></thead>
+        <tbody>
+        {% for r in stats.rows %}
+          <tr class="border-t">
+            <td class="px-4 py-2 font-medium">{{ r.full_name }}</td>
+            <td class="px-4 py-2 text-slate-500">{{ r.email }}</td>
+            <td class="px-4 py-2 text-slate-500">{{ r.joined_at.strftime('%Y-%m-%d') if r.joined_at else '—' }}</td>
+            <td class="px-4 py-2">{% if r.is_active_subscriber %}<span class="inline-flex items-center gap-1 text-emerald-700 font-semibold">● Yes</span>{% else %}<span class="text-slate-400">Registered only</span>{% endif %}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="4" class="px-4 py-8 text-center text-slate-400">No one in this cycle yet. Share your code!</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}
