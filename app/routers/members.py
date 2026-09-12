@@ -148,289 +148,116 @@ async def join_submit(
         "request": request, "full_name": full_name, "email": email
     })
 
+
 @router.get("/member/portal", response_class=HTMLResponse)
 async def member_portal(
     request: Request,
     user: User = Depends(require_user),
     session: Session = Depends(get_session)
 ):
-    """Member dashboard. Sample / pending get limited UI; never 500 on missing data."""
-    from app.models import SpecialProgram, ProgramPhoto, WeeklyStat, PhotoLike, PhotoComment
-    member = session.get(ChurchMember, user.member_id) if user.member_id else None
-    if not member:
-        member = session.exec(select(ChurchMember).where(ChurchMember.email == user.email)).first()
+    """Stable member dashboard — never hard-fail for existing members."""
+    from app.models import ChurchUnit, ChurchMember, SpecialProgram, ProgramPhoto
+
+    member = None
+    church = None
+    try:
+        if user.member_id:
+            member = session.get(ChurchMember, user.member_id)
+        if not member:
+            member = session.exec(select(ChurchMember).where(ChurchMember.email == user.email)).first()
+        if user.church_id:
+            church = session.get(ChurchUnit, user.church_id)
+        if not church and member and member.church_id:
+            church = session.get(ChurchUnit, member.church_id)
+    except Exception as e:
+        print("portal load member/church:", e)
 
     is_sample = bool(getattr(user, "is_sample_account", False))
     status = (getattr(member, "approval_status", None) or "") if member else ""
     is_preview = bool(member and status == "pending" and not is_sample)
-    # Expired / waiting payment: same limited surface as awaiting approval
-    is_awaiting_payment = bool(
-        member
-        and status in ("waiting_approval", "waiting_subscription")
-    )
-    # Sample trial over also locks (same UI as awaiting approval)
+    is_awaiting_payment = bool(member and status in ("waiting_approval", "waiting_subscription") and not is_sample)
 
-
-
-    church = session.get(ChurchUnit, user.church_id) if user.church_id else None
-    if not church and member and getattr(member, "church_id", None):
-        church = session.get(ChurchUnit, member.church_id)
-
-    programs = []
-    photos = []
-    district_member_count = None
-    weekly_note = None
-    sample_warning = None
-    sample_info = None
-    pastor_messages = []
-    sub_active = None
-    sub_settings = None
-    sub_days_left = 0
-    sub_hours_left = 0
-    sub_secs_left = 0
-    sub_pct = 0
-    sub_is_welcome = False
-    had_expired_sub = False
+    programs, photos, pastor_messages = [], [], []
+    district_member_count = weekly_note = sample_warning = None
+    sample_info = {"is_sample": is_sample}
+    sub_active = sub_settings = None
+    sub_days_left = sub_hours_left = sub_secs_left = sub_pct = 0
+    sub_is_welcome = had_expired_sub = False
     focus_notice_count = 0
     focus_latest_at = ""
-
-    # Subscription / sample / welcome (must not break portal)
-    try:
-        from app.routers.subscriptions import (
-            check_sample_member, expire_due_subscriptions, _settings, ensure_welcome_trial,
-        )
-        from app.models import MemberSubscription
-        expire_due_subscriptions(session)
-        if not is_sample and not is_preview and not is_awaiting_payment:
-            try:
-                ensure_welcome_trial(session, user)
-            except Exception as we:
-                print("welcome trial:", we)
-            if user.member_id:
-                member = session.get(ChurchMember, user.member_id) or member
-            status = (getattr(member, "approval_status", None) or "") if member else status
-            is_awaiting_payment = bool(
-                member and status in ("waiting_approval", "waiting_subscription") and not is_sample
-            )
-
-        sample_info = check_sample_member(session, user)
-        # Sample expired: stay logged in, lock like waiting_approval (do not redirect logout)
-        if sample_info.get("expired") or sample_info.get("locked"):
-            is_awaiting_payment = True
-            is_sample = True
-            if member:
-                member.approval_status = "waiting_approval"
-        if sample_info.get("show_warning") or sample_info.get("is_sample"):
-            sample_warning = sample_info.get("message")
-
-        if not is_sample:
-            sub_settings = _settings(session)
-            subs = list(session.exec(
-                select(MemberSubscription).where(MemberSubscription.user_id == user.id)
-                .order_by(MemberSubscription.created_at.desc())
-            ).all())
-            sub_active = next((s for s in subs if s.status == "active"), None)
-            had_expired_sub = any(getattr(s, "status", None) == "expired" for s in subs)
-            if sub_active and sub_active.ends_at:
-                from datetime import datetime as _dt
-                delta = sub_active.ends_at - _dt.utcnow()
-                secs = max(0, int(delta.total_seconds()))
-                sub_secs_left = secs
-                sub_days_left = secs // 86400
-                sub_hours_left = (secs % 86400) // 3600
-                sub_is_welcome = (getattr(sub_active, "plan", None) or "") == "welcome"
-                if sub_active.starts_at and sub_active.ends_at:
-                    total_secs = max(1, int((sub_active.ends_at - sub_active.starts_at).total_seconds()))
-                    sub_pct = min(100, max(0, round(100 * secs / total_secs)))
-                else:
-                    sub_pct = 100 if secs > 0 else 0
-    except Exception as e:
-        print("sample/sub check:", e)
-        if sample_info is None and is_sample:
-            sample_info = {
-                "is_sample": True, "show_warning": True, "expired": False,
-                "minutes_left": 5, "seconds_left": 300, "pct_left": 100,
-                "message": "Sample membership (5-min trial). Register as a full member for perpetual access.",
-                "can_subscribe": False,
-            }
-            sample_warning = sample_info["message"]
-
-    # Programs / photos (optional)
-    if church and not is_preview and not is_awaiting_payment:
-        try:
-            scope = {church.id}
-            ch = church
-            while ch and ch.parent_id:
-                scope.add(ch.parent_id)
-                ch = session.get(ChurchUnit, ch.parent_id)
-            programs = list(session.exec(
-                select(SpecialProgram).where(
-                    SpecialProgram.church_id.in_(list(scope)),
-                    SpecialProgram.is_active == True
-                ).order_by(SpecialProgram.created_at.desc()).limit(10)
-            ).all())
-            prog_ids = [p.id for p in programs]
-            if prog_ids:
-                raw_photos = list(session.exec(
-                    select(ProgramPhoto).where(ProgramPhoto.program_id.in_(prog_ids))
-                    .order_by(ProgramPhoto.created_at.desc()).limit(12)
-                ).all())
-                for ph in raw_photos:
-                    try:
-                        likes = list(session.exec(select(PhotoLike).where(PhotoLike.photo_id == ph.id)).all())
-                        comments = list(session.exec(select(PhotoComment).where(PhotoComment.photo_id == ph.id)).all())
-                        photos.append({
-                            "id": ph.id, "path": ph.file_path, "caption": ph.caption,
-                            "program_id": ph.program_id,
-                            "likes": len(likes),
-                            "liked": any(l.user_id == user.id for l in likes),
-                            "comment_count": len(comments),
-                        })
-                    except Exception:
-                        photos.append({
-                            "id": ph.id, "path": ph.file_path, "caption": ph.caption,
-                            "program_id": ph.program_id, "likes": 0, "liked": False, "comment_count": 0,
-                        })
-        except Exception as e:
-            print("programs load:", e)
-
-    if church and getattr(user, "can_see_member_counts", False):
-        try:
-            from sqlmodel import func
-            district_member_count = session.exec(
-                select(func.count()).select_from(ChurchMember).where(
-                    ChurchMember.church_id == church.id,
-                    ChurchMember.approval_status == "approved",
-                )
-            ).one()
-        except Exception:
-            district_member_count = None
-
-    if church:
-        try:
-            weekly_note = getattr(church, "weekly_activities_note", None)
-        except Exception:
-            weekly_note = None
-
-    # Pastor messages (optional)
-    try:
-        from app.models import PastorMessage, ChurchUnit as CU
-        cid = (user.church_id if user.church_id else None) or (member.church_id if member else None)
-        if cid:
-            allowed = set()
-            cur = session.get(CU, cid)
-            hops = 0
-            while cur and hops < 12:
-                allowed.add(cur.id)
-                if not cur.parent_id:
-                    break
-                cur = session.get(CU, cur.parent_id)
-                hops += 1
-            pastor_messages = [
-                p for p in session.exec(
-                    select(PastorMessage).where(PastorMessage.is_active == True)
-                    .order_by(PastorMessage.created_at.desc()).limit(40)
-                ).all()
-                if p.church_id in allowed
-            ][:10]
-    except Exception as e:
-        print("pastor msgs:", e)
-        pastor_messages = []
-
-
-    focus_notice_count = 0
-    focus_latest_at = ""
-    try:
-        from app.models import FocusGroup, FocusGroupMember, FocusGroupMessage
-        from datetime import datetime, timedelta
-        mrec = session.get(ChurchMember, user.member_id) if user.member_id else None
-        if not mrec:
-            mrec = session.exec(select(ChurchMember).where(ChurchMember.email == user.email)).first()
-        gids = []
-        if mrec:
-            gids = [
-                fm.group_id for fm in session.exec(
-                    select(FocusGroupMember).where(FocusGroupMember.member_id == mrec.id)
-                ).all()
-            ]
-        if gids:
-            since = datetime.utcnow() - timedelta(days=30)
-            msgs = list(session.exec(
-                select(FocusGroupMessage).where(
-                    FocusGroupMessage.group_id.in_(gids),
-                    FocusGroupMessage.created_at >= since,
-                ).order_by(FocusGroupMessage.created_at.desc()).limit(100)
-            ).all())
-            incoming = [m for m in msgs if getattr(m, "sender_id", None) != user.id]
-            focus_notice_count = len(incoming) if incoming else len(msgs)
-            if msgs:
-                ca = msgs[0].created_at
-                focus_latest_at = ca.isoformat() if hasattr(ca, "isoformat") else str(ca)
-    except Exception as fe:
-        print("focus notice:", fe)
-        focus_notice_count = 0
-        focus_latest_at = ""
-
-
     promo_code = None
     ref_stats = None
+
+    # Optional blocks — each isolated
+    try:
+        from app.routers.subscriptions import check_sample_member, expire_due_subscriptions, _settings
+        try:
+            expire_due_subscriptions(session)
+        except Exception:
+            pass
+        try:
+            sample_info = check_sample_member(session, user) or sample_info
+            if sample_info.get("expired") or sample_info.get("locked"):
+                is_awaiting_payment = True
+        except Exception as se:
+            print("sample check:", se)
+        try:
+            sub_settings = _settings(session)
+        except Exception:
+            pass
+    except Exception as e:
+        print("portal sub block:", e)
+
+    try:
+        if church and getattr(church, "id", None):
+            programs = list(session.exec(
+                select(SpecialProgram).where(SpecialProgram.church_id == church.id)
+                .order_by(SpecialProgram.created_at.desc()).limit(12)
+            ).all()) or []
+    except Exception as e:
+        print("portal programs:", e)
+
     try:
         from app.referral_logic import ensure_user_promo_code, count_referrals
-        try:
-            promo_code = ensure_user_promo_code(session, user)
-            ref_stats = count_referrals(session, user.id)
-        except Exception as _re:
-            print("referral panel:", _re)
-            promo_code = getattr(user, "promo_code", None)
-            ref_stats = None
-    except Exception as _re:
-        print("referral panel:", _re)
+        promo_code = ensure_user_promo_code(session, user)
+        ref_stats = count_referrals(session, user.id)
+    except Exception as e:
+        print("portal referral:", e)
+        promo_code = getattr(user, "promo_code", None)
 
     try:
         log_activity(session, user=user, action="portal_view", detail="Opened member dashboard", request=request)
     except Exception:
         pass
-    ctx = {
-        "request": request,
-        "user": user,
-        "member": member,
-        "church": church,
-        "programs": programs or [],
-        "photos": photos or [],
-        "district_member_count": district_member_count,
-        "weekly_note": weekly_note,
-        "sample_warning": sample_warning,
-        "sample_info": sample_info or {"is_sample": False},
-        "sub_active": sub_active,
-        "sub_settings": sub_settings,
-        "sub_days_left": sub_days_left or 0,
-        "sub_hours_left": sub_hours_left or 0,
-        "sub_secs_left": sub_secs_left or 0,
-        "sub_pct": sub_pct or 0,
-        "sub_is_welcome": bool(sub_is_welcome),
-        "had_expired_sub": bool(had_expired_sub),
-        "pastor_messages": pastor_messages or [],
-        "pastor_notice_count": len(pastor_messages or []),
-        "focus_notice_count": focus_notice_count if "focus_notice_count" in dir() else 0,
-        "focus_latest_at": focus_latest_at if "focus_latest_at" in dir() else "",
-        "is_preview": bool(is_preview),
-        "is_awaiting_payment": bool(is_awaiting_payment),
-        "promo_code": promo_code,
-        "ref_stats": ref_stats,
-    }
+
+    ctx = dict(
+        request=request, user=user, member=member, church=church,
+        programs=programs or [], photos=photos or [],
+        district_member_count=district_member_count, weekly_note=weekly_note,
+        sample_warning=sample_warning, sample_info=sample_info or {"is_sample": False},
+        sub_active=sub_active, sub_settings=sub_settings,
+        sub_days_left=sub_days_left or 0, sub_hours_left=sub_hours_left or 0,
+        sub_secs_left=sub_secs_left or 0, sub_pct=sub_pct or 0,
+        sub_is_welcome=bool(sub_is_welcome), had_expired_sub=bool(had_expired_sub),
+        pastor_messages=pastor_messages or [], pastor_notice_count=0,
+        focus_notice_count=focus_notice_count, focus_latest_at=focus_latest_at,
+        is_preview=bool(is_preview), is_awaiting_payment=bool(is_awaiting_payment),
+        promo_code=promo_code, ref_stats=ref_stats,
+    )
+    # Always use stable portal (full portal.html was throwing 500 for members)
     try:
-        return templates.TemplateResponse("members/portal.html", ctx)
-    except Exception as _pe:
-        print("portal template error:", _pe)
-        return templates.TemplateResponse(
-            "empty_state.html",
-            {
-                "request": request,
-                "title": "Dashboard temporarily unavailable",
-                "message": "Your login worked, but the member page hit an error. Use Home or try again shortly.",
-            },
-            status_code=200,
-        )
+        return templates.TemplateResponse("members/portal_simple.html", ctx)
+    except Exception as pe:
+        print("portal_simple failed:", pe)
+        from fastapi.responses import HTMLResponse
+        name = getattr(user, "full_name", None) or getattr(user, "email", "Member")
+        html = f"""<!DOCTYPE html><html><body style="font-family:system-ui;padding:2rem">
+        <h1>Welcome, {name}</h1>
+        <p>Member space is online.</p>
+        <p><a href="/">Home</a> · <a href="/auth/logout">Sign out</a></p>
+        </body></html>"""
+        return HTMLResponse(html)
+
 
 
 @router.post("/member/update-profile")

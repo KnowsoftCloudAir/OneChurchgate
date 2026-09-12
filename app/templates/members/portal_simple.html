@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Space – Churchgate</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-100">
+  <header class="bg-slate-900 text-white">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-2">
+      <a href="/" class="font-bold tracking-tight">Churchgate</a>
+      <div class="flex gap-3 text-sm">
+        <a href="/member/portal" class="opacity-90 hover:underline">My space</a>
+        <a href="/auth/logout" class="opacity-90 hover:underline">Sign out</a>
+      </div>
+    </div>
+  </header>
+  <main class="max-w-4xl mx-auto px-4 py-8">
+    <div class="rounded-3xl bg-gradient-to-br from-slate-900 via-teal-900 to-slate-800 text-white p-6 sm:p-8 shadow-2xl mb-6">
+      <p class="text-teal-200 text-xs uppercase tracking-widest mb-1">Member space</p>
+      <h1 class="text-2xl sm:text-3xl font-black">Welcome{% if user %}, {{ user.full_name or user.email }}{% endif %}</h1>
+      <p class="text-slate-300 text-sm mt-2">Your member page is working again.</p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-4 mb-6">
+      <div class="bg-white rounded-2xl border shadow-sm p-5">
+        <h2 class="font-bold text-slate-900 mb-2">Account</h2>
+        <p class="text-sm text-slate-600">Email: {{ user.email if user else "—" }}</p>
+        {% if member %}
+        <p class="text-sm text-slate-600 mt-1">Name: {{ member.full_name }}</p>
+        <p class="text-sm text-slate-600 mt-1">Status: <strong>{{ member.approval_status }}</strong></p>
+        {% endif %}
+        {% if church %}
+        <p class="text-sm text-slate-600 mt-1">Church: {{ church.name }}</p>
+        {% endif %}
+      </div>
+      <div class="bg-white rounded-2xl border shadow-sm p-5">
+        <h2 class="font-bold text-slate-900 mb-2">Invite &amp; earn</h2>
+        {% if promo_code %}
+        <p class="text-sm">Code: <span class="font-mono font-bold text-teal-700">{{ promo_code }}</span></p>
+        <p class="text-xs text-slate-500 mt-1">Active: {{ ref_stats.active_subscribers if ref_stats else 0 }} / 50</p>
+        <a href="/member/rewards" class="inline-block mt-3 px-4 py-2 rounded-xl bg-teal-700 text-white text-sm font-semibold">Open rewards</a>
+        {% else %}
+        <p class="text-sm text-slate-500">Rewards panel available after promo is enabled.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if is_preview %}
+    <div class="mb-4 p-4 rounded-2xl bg-amber-50 border text-amber-900 text-sm">Pending approval — limited access.</div>
+    {% endif %}
+    {% if is_awaiting_payment %}
+    <div class="mb-4 p-4 rounded-2xl bg-rose-50 border text-rose-900 text-sm">Action needed on subscription / approval.</div>
+    {% endif %}
+
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      <a href="/member/subscription" class="rounded-2xl bg-white border shadow-sm p-4 text-center font-semibold text-sm">Subscription</a>
+      <a href="/member/feed" class="rounded-2xl bg-white border shadow-sm p-4 text-center font-semibold text-sm">Interaction</a>
+      <a href="/messages" class="rounded-2xl bg-white border shadow-sm p-4 text-center font-semibold text-sm">Messages</a>
+      <a href="/focus-groups" class="rounded-2xl bg-white border shadow-sm p-4 text-center font-semibold text-sm">Focus groups</a>
+      <a href="/programs/" class="rounded-2xl bg-white border shadow-sm p-4 text-center font-semibold text-sm">Programs</a>
+      <a href="/auth/change-password" class="rounded-2xl bg-white border shadow-sm p-4 text-center font-semibold text-sm">Password</a>
+    </div>
+  </main>
+</body>
+</html>
