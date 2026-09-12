@@ -374,8 +374,13 @@ async def member_portal(
     ref_stats = None
     try:
         from app.referral_logic import ensure_user_promo_code, count_referrals
-        promo_code = ensure_user_promo_code(session, user)
-        ref_stats = count_referrals(session, user.id)
+        try:
+            promo_code = ensure_user_promo_code(session, user)
+            ref_stats = count_referrals(session, user.id)
+        except Exception as _re:
+            print("referral panel:", _re)
+            promo_code = getattr(user, "promo_code", None)
+            ref_stats = None
     except Exception as _re:
         print("referral panel:", _re)
 
