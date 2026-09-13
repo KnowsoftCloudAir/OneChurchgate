@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Church Hymns — Churchgate</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    .hymn-body {
+      font-family: "Georgia", "Times New Roman", serif;
+      font-size: 1.15rem;
+      line-height: 1.85;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 text-slate-100" x-data="hymnBook()" x-init="load()">
+  <header class="sticky top-0 z-20 bg-slate-950/95 backdrop-blur border-b border-white/10">
+    <div class="max-w-3xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
+      <a href="/member/portal" class="text-sm text-teal-300 font-semibold">← Dashboard</a>
+      <a href="/member/kwealth" class="text-sm text-slate-400">Kwealth</a>
+      <h1 class="font-bold text-lg ml-1">Church Hymns</h1>
+      <span class="text-xs text-slate-400 ml-auto" x-text="(hymns.length||0)+' public-domain hymns'"></span>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4 py-6">
+    <p class="text-sm text-slate-400 mb-4">Public-domain hymns commonly used in Nigerian evangelical congregations. Official church hymnals remain copyrighted.</p>
+
+    <label class="text-xs uppercase tracking-wide text-slate-400">Hymn type / list</label>
+    <select class="w-full mt-1 mb-4 rounded-xl px-3 py-3 text-slate-900 font-medium"
+            x-model="selected" @change="openSelected()">
+      <option value="">Select a hymn…</option>
+      <template x-for="h in hymns" :key="h.number">
+        <option :value="h.number" x-text="h.number + '. ' + h.title"></option>
+      </template>
+    </select>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6 max-h-48 overflow-y-auto" x-show="!current">
+      <template x-for="h in hymns" :key="'b'+h.number">
+        <button type="button" @click="selected=String(h.number); openSelected()"
+                class="text-left rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 text-sm">
+          <span class="text-amber-300 font-mono text-xs" x-text="'No. '+h.number"></span>
+          <span class="block font-semibold" x-text="h.title"></span>
+        </button>
+      </template>
+    </div>
+
+    <template x-if="current">
+      <article class="rounded-3xl bg-[#fffef8] text-slate-900 shadow-2xl overflow-hidden">
+        <div class="bg-indigo-900 text-white px-5 py-4 flex justify-between items-start gap-3">
+          <div>
+            <p class="text-amber-200 text-xs font-mono" x-text="'Hymn No. ' + current.number"></p>
+            <h2 class="text-xl sm:text-2xl font-bold tracking-tight" x-text="current.title"></h2>
+          </div>
+          <button type="button" @click="current=null; selected=''" class="text-sm px-3 py-1 rounded-lg bg-white/15">Close</button>
+        </div>
+        <div class="hymn-body px-5 sm:px-8 py-6 max-h-[70vh] overflow-y-auto" x-text="displayBody"></div>
+      </article>
+    </template>
+  </main>
+  <script>
+  function hymnBook() {
+    return {
+      hymns: [], selected: '', current: null,
+      get displayBody() {
+        if (!this.current) return '';
+        let b = this.current.body || '';
+        // clean author line noise
+        b = b.replace(/^Author:[^\n]*\n+/i, '');
+        return b.trim();
+      },
+      async load() {
+        try {
+          const r = await fetch('/member/api/hymns', { credentials: 'same-origin' });
+          const j = await r.json();
+          this.hymns = j.hymns || [];
+        } catch (e) { this.hymns = []; }
+      },
+      openSelected() {
+        const n = Number(this.selected);
+        this.current = this.hymns.find(h => h.number === n) || null;
+      }
+    }
+  }
+  </script>
+</body>
+</html>

@@ -28,6 +28,73 @@ USER_BOOKS_TEXT = Path("app/static/uploads/kwealth_books_text")
 USER_BOOKS_TEXT.mkdir(parents=True, exist_ok=True)
 
 MH_URL = "https://www.biblestudytools.com/commentaries/matthew-henry-complete/"
+
+def _angel_resource_path(name: str) -> Path:
+    return Path("app/data/angel_resources") / name
+
+
+def _load_topic_resource() -> str:
+    path = _angel_resource_path("bible_topics_matthew_henry.txt")
+    if path.exists():
+        return path.read_text(encoding="utf-8", errors="ignore")
+    return ""
+
+
+def _find_topic_block(text: str, query: str) -> tuple:
+    """Return (ref_name, body) from study file matching query words."""
+    if not text:
+        return None, None
+    ql = (query or "").lower()
+    # split by {A1} style headers
+    blocks = re.split(r"\n(?=\{[A-Z]?\d+\})", text)
+    best = None
+    best_score = 0
+    for b in blocks:
+        header = b[:80].lower()
+        body = b.strip()
+        score = 0
+        for w in re.findall(r"[a-z']{3,}", ql):
+            if w in ("more", "please", "tell", "about", "what", "the", "and", "from", "angel"):
+                continue
+            if w in body.lower():
+                score += 2 if w in header else 1
+        # topic name boosts
+        for key in ("god", "jesus", "christ", "salvation", "prayer", "satan", "angel", "rapture",
+                    "judgment", "creation", "church", "heaven", "enoch", "noah", "abraham",
+                    "moses", "joshua", "job", "david", "daniel", "israel", "sanctification",
+                    "repentance", "baptism", "holiness", "hell", "lake", "throne", "reward",
+                    "hypocrisy", "restitution", "justification", "tribulation", "millennium",
+                    "marriage", "evangelism", "healing", "resurrection", "lucifer", "demon",
+                    "paradise", "author", "bible", "trinity", "depravity", "communion"):
+            if key in ql and key in body.lower():
+                score += 3
+        if score > best_score:
+            best_score = score
+            best = body
+    if not best or best_score < 2:
+        return None, None
+    # extract henry paragraph if present
+    lines = best.splitlines()
+    title = lines[0].strip() if lines else "Matthew Henry's commentary"
+    # prefer Henry lines then summary
+    henry_bits = [ln for ln in lines if "henry" in ln.lower() or ln.strip().startswith("Henry")]
+    summary_bits = [ln for ln in lines if ln.strip().lower().startswith("summary") or "bible:" in ln.lower()]
+    rest = [ln for ln in lines[1:] if ln.strip()]
+    body = " ".join(henry_bits + summary_bits + rest)
+    body = re.sub(r"\s+", " ", body).strip()
+    if len(body) > 700:
+        body = body[:700].rsplit(" ", 1)[0] + "."
+    ref = "Matthew Henry's commentary"
+    if "DEEPER LIFE" in best.upper():
+        ref = "public doctrinal study notes"
+    return ref, body
+
+
+# session topic memory for "more"
+_LAST_TOPIC: dict = {}
+
+
+
 CHARS_PER_PAGE = 900
 
 
@@ -468,7 +535,7 @@ async def angel_ask(
     user: User = Depends(require_user),
     session: Session = Depends(get_session),
 ):
-    """Angel answers from Bible themes, Matthew Henry framing, and saved excerpts only."""
+    """Angel answers from Bible topics (Matthew Henry study file), excerpts, and 'more' follow-ups."""
     try:
         data = await request.json()
     except Exception:
@@ -477,12 +544,39 @@ async def angel_ask(
     if not q:
         return JSONResponse({"ok": False, "answer": "How may I help you?"})
 
+    ql = q.lower().strip()
+    uid = user.id
+    resource = _load_topic_resource()
+
+    # "more" → continue last topic with extra Henry material
+    if ql in ("more", "tell me more", "more please", "continue", "go on") or ql.startswith("more "):
+        last = _LAST_TOPIC.get(uid) or {}
+        topic_q = last.get("topic") or q
+        ref, body = _find_topic_block(resource, topic_q)
+        if not body:
+            # try expanding last answer keywords
+            ref, body = _find_topic_block(resource, last.get("topic") or "salvation jesus")
+        if body:
+            # different slice if same topic asked again
+            offset = int(last.get("offset") or 0)
+            words = body.split()
+            chunk = " ".join(words[offset:offset + 85])
+            if not chunk.strip():
+                chunk = " ".join(words[:85])
+                offset = 0
+            _LAST_TOPIC[uid] = {"topic": topic_q, "offset": offset + 80}
+            answer = "According to " + (ref or "Matthew Henry's commentary") + ", " + chunk
+            if len(answer.split()) > 95:
+                answer = " ".join(answer.split()[:95]) + "."
+            return JSONResponse({"ok": True, "answer": answer, "outside": False})
+        return JSONResponse({"ok": True, "answer": "Sorry I can't help with that.", "outside": True})
+
     excerpts = session.exec(
         select(KwealthExcerpt).where(KwealthExcerpt.user_id == user.id).order_by(KwealthExcerpt.created_at.desc()).limit(40)
     ).all()
-    ql = q.lower()
     words = [w for w in re.findall(r"[a-z']{3,}", ql) if w not in (
-        "what", "does", "mean", "about", "tell", "please", "from", "the", "and", "how", "can", "you", "with", "that", "this", "have", "when", "where", "why", "who", "angel"
+        "what", "does", "mean", "about", "tell", "please", "from", "the", "and", "how", "can", "you",
+        "with", "that", "this", "have", "when", "where", "why", "who", "angel", "more"
     )]
 
     matched = []
@@ -493,20 +587,6 @@ async def angel_ask(
             matched.append((score, e))
     matched.sort(key=lambda x: -x[0])
 
-    topical = {
-        "shepherd": ("the Bible (Psalm 23)", "The Lord is our shepherd. He restores the soul, leads beside still waters, and walks with us even through the valley so we need not fear."),
-        "psalm 23": ("the Bible (Psalm 23)", "Psalm 23 teaches trust in the Lord as Shepherd: provision, rest, guidance, comfort, and a home in His presence forever."),
-        "faith": ("the Bible", "Faith is confidence in God and His word. It comes by hearing the word of Christ, and without faith it is impossible to please God."),
-        "prayer": ("the Bible", "Prayer is talking with God in faith: ask, seek, and knock; be anxious for nothing, but in everything by prayer and thanksgiving make your requests known to God."),
-        "jesus": ("the Bible", "Jesus is the Son of God, the Saviour. Whoever believes in Him shall not perish but have everlasting life. He is the way, the truth, and the life."),
-        "holy spirit": ("the Bible", "The Holy Spirit is the Comforter who teaches, convicts, and empowers believers to live for Christ."),
-        "holiness": ("the Bible", "God calls His people to be holy as He is holy. Holiness is a life set apart in love and obedience."),
-        "love": ("the Bible", "Love is the greatest command: love the Lord your God, and love your neighbour as yourself. Love is patient and kind."),
-        "salvation": ("the Bible", "Salvation is by grace through faith in Jesus Christ: confess Him as Lord and believe that God raised Him from the dead."),
-        "creation": ("the Bible", "In the beginning God created the heavens and the earth. All things were made through Him."),
-        "rapture": ("the Bible", "The Scripture teaches that the Lord will return; the dead in Christ rise first, then the living are caught up together with them."),
-    }
-
     ref_name = None
     body = None
 
@@ -514,27 +594,53 @@ async def angel_ask(
         e = matched[0][1]
         ref_name = (e.source or e.title or "your saved excerpts").strip()
         body = (e.body or "").strip()
-        # compress to ~30s speech
         if len(body) > 500:
             body = body[:500].rsplit(" ", 1)[0] + "."
     else:
+        ref_name, body = _find_topic_block(resource, q)
+
+    if not body:
+        # light topical fallbacks
+        topical = {
+            "faith": ("the Bible", "Faith is confidence in God and His word. It comes by hearing the word of Christ."),
+            "prayer": ("the Bible", "Pray without ceasing. Ask in faith, with thanksgiving, according to God's will."),
+            "jesus": ("the Bible", "Jesus is the Son of God, the Saviour. Believe in Him for everlasting life."),
+        }
         for key, (rn, text) in topical.items():
             if key in ql:
                 ref_name, body = rn, text
                 break
-        if not body and any(w in ql for w in ("bible", "scripture", "verse", "gospel", "god", "lord", "christ", "matthew", "henry", "commentary", "explain", "meaning")):
-            ref_name = "Matthew Henry's commentary"
-            body = (
-                "Read the passage carefully in context. Henry stresses the plain sense of Scripture, "
-                "Christ at the centre, and practical holiness. Seek the main truth of the text and apply it in faith and obedience."
-            )
 
     if not body:
         return JSONResponse({"ok": True, "answer": "Sorry I can't help with that.", "outside": True})
 
+    _LAST_TOPIC[uid] = {"topic": q, "offset": 70}
     answer = f"According to {ref_name}, {body}"
-    # hard cap ~90 words
     words_out = answer.split()
     if len(words_out) > 90:
         answer = " ".join(words_out[:90]) + "."
     return JSONResponse({"ok": True, "answer": answer, "outside": False})
+
+
+@router.get("/member/hymns", response_class=HTMLResponse)
+async def hymns_page(request: Request, user: User = Depends(require_user)):
+    return templates.TemplateResponse("kwealth/hymns.html", {"request": request, "user": user})
+
+
+@router.get("/member/api/hymns")
+async def hymns_api(user: User = Depends(require_user)):
+    path = _angel_resource_path("hymns_public_domain.txt")
+    if not path.exists():
+        return JSONResponse({"hymns": []})
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    hymns = []
+    # parse {N} TITLE blocks in section A
+    for m in re.finditer(r"\{(\d+)\}\s*([^\n]+)\n(.*?)(?=\n\{\d+\}|\n={3,}|\nB\. TITLE|\Z)", text, re.S):
+        num, title, body = m.group(1), m.group(2).strip(), m.group(3).strip()
+        # strip author line from title area
+        hymns.append({
+            "number": int(num),
+            "title": title.title() if title.isupper() else title,
+            "body": body,
+        })
+    return JSONResponse({"hymns": hymns, "count": len(hymns)})
