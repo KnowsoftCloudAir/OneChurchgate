@@ -62,10 +62,7 @@ def _find_topic_block(text: str, query: str) -> tuple:
         for key in ("god", "jesus", "christ", "salvation", "prayer", "satan", "angel", "rapture",
                     "judgment", "creation", "church", "heaven", "enoch", "noah", "abraham",
                     "moses", "joshua", "job", "david", "daniel", "israel", "sanctification",
-                    "repentance", "baptism", "holiness", "hell", "lake", "throne", "reward",
-                    "hypocrisy", "restitution", "justification", "tribulation", "millennium",
-                    "marriage", "evangelism", "healing", "resurrection", "lucifer", "demon",
-                    "paradise", "author", "bible", "trinity", "depravity", "communion"):
+                    "repentance", "baptism", "holiness"):
             if key in ql and key in body.lower():
                 score += 3
         if score > best_score:
