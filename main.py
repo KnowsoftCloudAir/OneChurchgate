@@ -8,7 +8,7 @@ from sqlmodel import Session, select
 from pathlib import Path
 
 from app.database import create_db_and_tables, get_session, engine
-from app.models import User, UserRole
+from app.models import User, UserRole, AngelResourceFile, ChurchHymnal  # noqa: F401 — register tables
 from app.auth import get_password_hash, get_current_user, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from app.routers import feed, manna, auth, admin, church, district, members, programs, projects, community, payments, youtube_data, messages, subscriptions, backup, announcements, device_music, referrals, kwealth
 from app.seed_sample import ensure_all_sample_data
