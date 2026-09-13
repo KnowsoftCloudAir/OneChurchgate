@@ -12,6 +12,7 @@ connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite")
 engine = create_engine(DATABASE_URL, echo=False, connect_args=connect_args, pool_pre_ping=True)
 
 def create_db_and_tables():
+    import app.models  # noqa: F401 — register all tables
     SQLModel.metadata.create_all(engine)
     try:
         from sqlalchemy import text

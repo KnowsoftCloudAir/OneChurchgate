@@ -21,40 +21,55 @@
       <a href="/member/portal" class="text-sm text-teal-300 font-semibold">← Dashboard</a>
       <a href="/member/kwealth" class="text-sm text-slate-400">Kwealth</a>
       <h1 class="font-bold text-lg ml-1">Church Hymns</h1>
-      <span class="text-xs text-slate-400 ml-auto" x-text="(hymns.length||0)+' public-domain hymns'"></span>
+      <span class="text-xs text-slate-400 ml-auto" x-text="filtered.length + ' of ' + (hymns.length||0) + ' hymns'"></span>
     </div>
   </header>
 
   <main class="max-w-3xl mx-auto px-4 py-6">
-    <p class="text-sm text-slate-400 mb-4">Public-domain hymns commonly used in Nigerian evangelical congregations. Official church hymnals remain copyrighted.</p>
+    <p class="text-sm text-slate-400 mb-3">One combined list: public-domain hymns plus any packs loaded for your global church. Search by any word in the title.</p>
 
-    <label class="text-xs uppercase tracking-wide text-slate-400">Hymn type / list</label>
-    <select class="w-full mt-1 mb-4 rounded-xl px-3 py-3 text-slate-900 font-medium"
-            x-model="selected" @change="openSelected()">
-      <option value="">Select a hymn…</option>
-      <template x-for="h in hymns" :key="h.number">
-        <option :value="h.number" x-text="h.number + '. ' + h.title"></option>
-      </template>
-    </select>
-
-    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6 max-h-48 overflow-y-auto" x-show="!current">
-      <template x-for="h in hymns" :key="'b'+h.number">
-        <button type="button" @click="selected=String(h.number); openSelected()"
-                class="text-left rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2 text-sm">
-          <span class="text-amber-300 font-mono text-xs" x-text="'No. '+h.number"></span>
-          <span class="block font-semibold" x-text="h.title"></span>
-        </button>
-      </template>
+    <!-- Search -->
+    <div class="mb-4">
+      <label class="text-xs uppercase tracking-wide text-slate-400">Search hymn title</label>
+      <div class="mt-1 flex gap-2">
+        <input type="search" x-model="q" @input="onSearch()"
+               placeholder="e.g. grace, blood, assurance, jesus…"
+               class="flex-1 rounded-xl px-3 py-3 text-slate-900 font-medium"
+               autocomplete="off">
+        <button type="button" @click="q=''; onSearch()"
+                class="rounded-xl px-3 py-2 bg-slate-700 text-sm font-semibold"
+                x-show="q">Clear</button>
+      </div>
+      <p class="text-xs text-slate-500 mt-1" x-show="q && filtered.length === 0">No hymn title matches “<span x-text="q"></span>”.</p>
+      <p class="text-xs text-emerald-400/90 mt-1" x-show="q && filtered.length > 0" x-text="'Found ' + filtered.length + ' hymn(s)'"></p>
     </div>
 
+    <!-- One combined list -->
+    <div class="space-y-2 mb-6 max-h-[50vh] overflow-y-auto rounded-2xl border border-white/10 bg-black/20 p-2"
+         x-show="!current">
+      <template x-for="h in filtered" :key="h.number + '-' + h.title">
+        <button type="button" @click="openHymn(h)"
+                class="w-full text-left rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 px-3 py-2.5 transition">
+          <div class="flex items-baseline justify-between gap-2">
+            <span class="text-amber-300 font-mono text-xs" x-text="'No. ' + h.number"></span>
+            <span class="text-[10px] text-slate-500 uppercase" x-text="h.source || ''"></span>
+          </div>
+          <span class="block font-semibold text-sm sm:text-base mt-0.5" x-text="h.title"></span>
+        </button>
+      </template>
+      <p class="text-center text-slate-500 text-sm py-6" x-show="!hymns.length">Loading hymns…</p>
+    </div>
+
+    <!-- Full hymn view -->
     <template x-if="current">
       <article class="rounded-3xl bg-[#fffef8] text-slate-900 shadow-2xl overflow-hidden">
         <div class="bg-indigo-900 text-white px-5 py-4 flex justify-between items-start gap-3">
           <div>
             <p class="text-amber-200 text-xs font-mono" x-text="'Hymn No. ' + current.number"></p>
             <h2 class="text-xl sm:text-2xl font-bold tracking-tight" x-text="current.title"></h2>
+            <p class="text-xs text-indigo-200 mt-1" x-show="current.source" x-text="current.source"></p>
           </div>
-          <button type="button" @click="current=null; selected=''" class="text-sm px-3 py-1 rounded-lg bg-white/15">Close</button>
+          <button type="button" @click="current=null" class="text-sm px-3 py-1 rounded-lg bg-white/15 shrink-0">Close</button>
         </div>
         <div class="hymn-body px-5 sm:px-8 py-6 max-h-[70vh] overflow-y-auto" x-text="displayBody"></div>
       </article>
@@ -63,11 +78,13 @@
   <script>
   function hymnBook() {
     return {
-      hymns: [], selected: '', current: null,
+      hymns: [],
+      q: '',
+      filtered: [],
+      current: null,
       get displayBody() {
         if (!this.current) return '';
         let b = this.current.body || '';
-        // clean author line noise
         b = b.replace(/^Author:[^\n]*\n+/i, '');
         return b.trim();
       },
@@ -76,11 +93,27 @@
           const r = await fetch('/member/api/hymns', { credentials: 'same-origin' });
           const j = await r.json();
           this.hymns = j.hymns || [];
-        } catch (e) { this.hymns = []; }
+          this.filtered = this.hymns.slice();
+        } catch (e) {
+          this.hymns = [];
+          this.filtered = [];
+        }
       },
-      openSelected() {
-        const n = Number(this.selected);
-        this.current = this.hymns.find(h => h.number === n) || null;
+      onSearch() {
+        const raw = (this.q || '').trim().toLowerCase();
+        if (!raw) {
+          this.filtered = this.hymns.slice();
+          return;
+        }
+        // Any word in the query may match the title (AND across words)
+        const words = raw.split(/\s+/).filter(Boolean);
+        this.filtered = this.hymns.filter(h => {
+          const title = (h.title || '').toLowerCase();
+          return words.every(w => title.includes(w));
+        });
+      },
+      openHymn(h) {
+        this.current = h;
       }
     }
   }

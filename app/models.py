@@ -681,3 +681,25 @@ class AngelReference(SQLModel, table=True):
     url: Optional[str] = None
     notes: Optional[str] = Field(default=None, sa_column=Column(Text))
     is_active: bool = Field(default=True)
+
+
+class AngelResourceFile(SQLModel, table=True):
+    """Extra text resources for Angel (uploaded by General Admin)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    title: str
+    body: str = Field(sa_column=Column(Text))
+    is_active: bool = Field(default=True)
+    created_by: Optional[int] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class ChurchHymnal(SQLModel, table=True):
+    """Hymn pack per global church (or platform-wide if church_id null)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    church_id: Optional[int] = Field(default=None, foreign_key="churchunit.id", index=True)
+    title: str = Field(default="Church Hymns")
+    body: str = Field(sa_column=Column(Text))  # plain text hymn pack
+    is_active: bool = Field(default=True)
+    updated_by: Optional[int] = None
+    updated_at: datetime = Field(default_factory=datetime.utcnow)

@@ -1,3 +1,4 @@
+from datetime import datetime
 import shutil
 import uuid
 from pathlib import Path
@@ -793,3 +794,85 @@ async def church_level_music_redirect():
     """Alias so Global and other levels clearly open church music at their unit."""
     from fastapi.responses import RedirectResponse
     return RedirectResponse("/district/music", status_code=303)
+
+
+@router.get("/church/hymnal", response_class=HTMLResponse)
+async def church_hymnal_page(
+    request: Request,
+    user: User = Depends(require_roles(UserRole.church_admin, UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    """Global church (or GA) can load their own hymn pack."""
+    from app.models import ChurchHymnal, ChurchUnit, ChurchLevel
+    unit = session.get(ChurchUnit, user.church_id) if user.church_id else None
+    # resolve global root
+    gid = None
+    if unit:
+        cur = unit
+        for _ in range(8):
+            if not cur:
+                break
+            lv = getattr(cur.level, "value", str(cur.level))
+            if lv in ("global", "global_church"):
+                gid = cur.id
+                break
+            if not cur.parent_id:
+                gid = cur.id
+                break
+            cur = session.get(ChurchUnit, cur.parent_id)
+    pack = None
+    if gid:
+        pack = session.exec(select(ChurchHymnal).where(ChurchHymnal.church_id == gid)).first()
+    return templates.TemplateResponse("church/hymnal.html", {
+        "request": request, "user": user, "unit": unit, "pack": pack, "global_id": gid,
+    })
+
+
+@router.post("/church/hymnal/save")
+async def church_hymnal_save(
+    title: str = Form("Church Hymns"),
+    body: str = Form(""),
+    user: User = Depends(require_roles(UserRole.church_admin, UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    from app.models import ChurchHymnal, ChurchUnit
+    body = (body or "").strip()
+    if not body:
+        return RedirectResponse("/church/hymnal?err=empty", status_code=303)
+    unit = session.get(ChurchUnit, user.church_id) if user.church_id else None
+    gid = None
+    if unit:
+        cur = unit
+        for _ in range(8):
+            if not cur:
+                break
+            lv = getattr(cur.level, "value", str(cur.level))
+            if lv in ("global", "global_church"):
+                gid = cur.id
+                break
+            if not cur.parent_id:
+                gid = cur.id
+                break
+            cur = session.get(ChurchUnit, cur.parent_id)
+    if not gid and user.role == UserRole.general_admin:
+        return RedirectResponse("/admin/church-hymnals", status_code=303)
+    if not gid:
+        return RedirectResponse("/church/hymnal?err=noglobal", status_code=303)
+    existing = session.exec(select(ChurchHymnal).where(ChurchHymnal.church_id == gid)).first()
+    if existing:
+        existing.title = (title or "Church Hymns").strip()[:200]
+        existing.body = body[:800000]
+        existing.updated_by = user.id
+        existing.updated_at = datetime.utcnow()
+        existing.is_active = True
+        session.add(existing)
+    else:
+        session.add(ChurchHymnal(
+            church_id=gid,
+            title=(title or "Church Hymns").strip()[:200],
+            body=body[:800000],
+            updated_by=user.id,
+            is_active=True,
+        ))
+    session.commit()
+    return RedirectResponse("/church/hymnal?ok=1", status_code=303)

@@ -488,3 +488,124 @@ async def login_notes_invite(enabled: str = Form("on"), user: User = Depends(req
     session.add(cfg)
     session.commit()
     return RedirectResponse("/admin/login-notes", status_code=303)
+
+
+# ---- Angel resources + church hymnals (GA) ----
+@router.get("/angel-resources", response_class=HTMLResponse)
+async def angel_resources_page(
+    request: Request,
+    user: User = Depends(require_roles(UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    from app.models import AngelResourceFile
+    rows = session.exec(select(AngelResourceFile).order_by(AngelResourceFile.updated_at.desc())).all()
+    return templates.TemplateResponse("admin/angel_resources.html", {
+        "request": request, "user": user, "rows": rows,
+    })
+
+
+@router.post("/angel-resources/upload")
+async def angel_resources_upload(
+    title: str = Form("Angel resource"),
+    body: str = Form(""),
+    user: User = Depends(require_roles(UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    from app.models import AngelResourceFile
+    body = (body or "").strip()
+    if not body:
+        return RedirectResponse("/admin/angel-resources?err=empty", status_code=303)
+    session.add(AngelResourceFile(
+        title=(title or "Angel resource").strip()[:200],
+        body=body[:500000],
+        created_by=user.id,
+        is_active=True,
+    ))
+    session.commit()
+    return RedirectResponse("/admin/angel-resources?ok=1", status_code=303)
+
+
+@router.post("/angel-resources/{rid}/toggle")
+async def angel_resources_toggle(
+    rid: int,
+    user: User = Depends(require_roles(UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    from app.models import AngelResourceFile
+    row = session.get(AngelResourceFile, rid)
+    if row:
+        row.is_active = not row.is_active
+        session.add(row)
+        session.commit()
+    return RedirectResponse("/admin/angel-resources", status_code=303)
+
+
+@router.post("/angel-resources/{rid}/delete")
+async def angel_resources_delete(
+    rid: int,
+    user: User = Depends(require_roles(UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    from app.models import AngelResourceFile
+    row = session.get(AngelResourceFile, rid)
+    if row:
+        session.delete(row)
+        session.commit()
+    return RedirectResponse("/admin/angel-resources", status_code=303)
+
+
+@router.get("/church-hymnals", response_class=HTMLResponse)
+async def church_hymnals_page(
+    request: Request,
+    user: User = Depends(require_roles(UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    from app.models import ChurchHymnal, ChurchUnit, ChurchLevel
+    globals_ = session.exec(
+        select(ChurchUnit).where(ChurchUnit.level == ChurchLevel.global_church).order_by(ChurchUnit.name)
+    ).all()
+    packs = session.exec(select(ChurchHymnal).order_by(ChurchHymnal.updated_at.desc())).all()
+    return templates.TemplateResponse("admin/church_hymnals.html", {
+        "request": request, "user": user, "globals": globals_, "packs": packs,
+    })
+
+
+@router.post("/church-hymnals/save")
+async def church_hymnals_save(
+    church_id: str = Form(""),
+    title: str = Form("Church Hymns"),
+    body: str = Form(""),
+    user: User = Depends(require_roles(UserRole.general_admin)),
+    session: Session = Depends(get_session),
+):
+    from app.models import ChurchHymnal
+    body = (body or "").strip()
+    if not body:
+        return RedirectResponse("/admin/church-hymnals?err=empty", status_code=303)
+    cid = None
+    try:
+        cid = int(church_id) if church_id else None
+    except Exception:
+        cid = None
+    existing = None
+    if cid:
+        existing = session.exec(select(ChurchHymnal).where(ChurchHymnal.church_id == cid)).first()
+    else:
+        existing = session.exec(select(ChurchHymnal).where(ChurchHymnal.church_id == None)).first()
+    if existing:
+        existing.title = (title or "Church Hymns").strip()[:200]
+        existing.body = body[:800000]
+        existing.updated_by = user.id
+        existing.updated_at = datetime.utcnow()
+        existing.is_active = True
+        session.add(existing)
+    else:
+        session.add(ChurchHymnal(
+            church_id=cid,
+            title=(title or "Church Hymns").strip()[:200],
+            body=body[:800000],
+            updated_by=user.id,
+            is_active=True,
+        ))
+    session.commit()
+    return RedirectResponse("/admin/church-hymnals?ok=1", status_code=303)

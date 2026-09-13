@@ -33,11 +33,23 @@ def _angel_resource_path(name: str) -> Path:
     return Path("app/data/angel_resources") / name
 
 
-def _load_topic_resource() -> str:
+def _load_topic_resource(session=None) -> str:
+    parts = []
     path = _angel_resource_path("bible_topics_matthew_henry.txt")
     if path.exists():
-        return path.read_text(encoding="utf-8", errors="ignore")
-    return ""
+        parts.append(path.read_text(encoding="utf-8", errors="ignore"))
+    if session is not None:
+        try:
+            from app.models import AngelResourceFile
+            rows = session.exec(
+                select(AngelResourceFile).where(AngelResourceFile.is_active == True)
+            ).all()
+            for r in rows:
+                if r.body:
+                    parts.append(f"\n\n=== {r.title} ===\n{r.body}")
+        except Exception:
+            pass
+    return "\n\n".join(parts)
 
 
 def _find_topic_block(text: str, query: str) -> tuple:
@@ -62,7 +74,10 @@ def _find_topic_block(text: str, query: str) -> tuple:
         for key in ("god", "jesus", "christ", "salvation", "prayer", "satan", "angel", "rapture",
                     "judgment", "creation", "church", "heaven", "enoch", "noah", "abraham",
                     "moses", "joshua", "job", "david", "daniel", "israel", "sanctification",
-                    "repentance", "baptism", "holiness"):
+                    "repentance", "baptism", "holiness", "hell", "lake", "throne", "reward",
+                    "hypocrisy", "restitution", "justification", "tribulation", "millennium",
+                    "marriage", "evangelism", "healing", "resurrection", "lucifer", "demon",
+                    "paradise", "author", "bible", "trinity", "depravity", "communion"):
             if key in ql and key in body.lower():
                 score += 3
         if score > best_score:
@@ -543,7 +558,7 @@ async def angel_ask(
 
     ql = q.lower().strip()
     uid = user.id
-    resource = _load_topic_resource()
+    resource = _load_topic_resource(session)
 
     # "more" → continue last topic with extra Henry material
     if ql in ("more", "tell me more", "more please", "continue", "go on") or ql.startswith("more "):
@@ -624,20 +639,68 @@ async def hymns_page(request: Request, user: User = Depends(require_user)):
     return templates.TemplateResponse("kwealth/hymns.html", {"request": request, "user": user})
 
 
-@router.get("/member/api/hymns")
-async def hymns_api(user: User = Depends(require_user)):
-    path = _angel_resource_path("hymns_public_domain.txt")
-    if not path.exists():
-        return JSONResponse({"hymns": []})
-    text = path.read_text(encoding="utf-8", errors="ignore")
+def _parse_hymn_text(text: str, start_num: int = 1) -> list:
     hymns = []
-    # parse {N} TITLE blocks in section A
+    if not text:
+        return hymns
     for m in re.finditer(r"\{(\d+)\}\s*([^\n]+)\n(.*?)(?=\n\{\d+\}|\n={3,}|\nB\. TITLE|\Z)", text, re.S):
         num, title, body = m.group(1), m.group(2).strip(), m.group(3).strip()
-        # strip author line from title area
         hymns.append({
             "number": int(num),
             "title": title.title() if title.isupper() else title,
             "body": body,
+            "source": "pack",
         })
+    # fallback: numbered lines "1. TITLE" only if nothing parsed
+    if not hymns:
+        chunks = re.split(r"\n(?=\d+\.\s+[A-Z])", text)
+        n = start_num
+        for c in chunks:
+            c = c.strip()
+            if not c:
+                continue
+            first, _, rest = c.partition("\n")
+            hymns.append({"number": n, "title": first[:120], "body": rest or first, "source": "pack"})
+            n += 1
+    return hymns
+
+
+@router.get("/member/api/hymns")
+async def hymns_api(user: User = Depends(require_user), session: Session = Depends(get_session)):
+    hymns = []
+    path = _angel_resource_path("hymns_public_domain.txt")
+    if path.exists():
+        text = path.read_text(encoding="utf-8", errors="ignore")
+        for h in _parse_hymn_text(text):
+            h["source"] = "public domain"
+            hymns.append(h)
+    # global church pack + platform default
+    try:
+        from app.models import ChurchHymnal, ChurchMember, ChurchUnit
+        cm = session.exec(select(ChurchMember).where(ChurchMember.user_id == user.id)).first()
+        gid = getattr(cm, "global_church_id", None) if cm else None
+        packs = []
+        if gid:
+            packs = session.exec(
+                select(ChurchHymnal).where(
+                    ChurchHymnal.is_active == True,
+                    ChurchHymnal.church_id == gid,
+                )
+            ).all()
+        packs += session.exec(
+            select(ChurchHymnal).where(
+                ChurchHymnal.is_active == True,
+                ChurchHymnal.church_id == None,
+            )
+        ).all()
+        base = max([h["number"] for h in hymns], default=0)
+        for pack in packs:
+            extra = _parse_hymn_text(pack.body or "", start_num=base + 1)
+            for h in extra:
+                h["source"] = pack.title or "Church hymnal"
+                h["number"] = base + 1
+                base += 1
+                hymns.append(h)
+    except Exception:
+        pass
     return JSONResponse({"hymns": hymns, "count": len(hymns)})
