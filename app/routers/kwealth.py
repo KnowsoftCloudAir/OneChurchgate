@@ -349,7 +349,6 @@ async def notes_page(request: Request, user: User = Depends(require_user), sessi
     notes = session.exec(
         select(KwealthNote).where(KwealthNote.user_id == user.id).order_by(KwealthNote.updated_at.desc())
     ).all()
-    # Build highlight dictionary from Bible keywords + excerpts + MH marker
     keys = set()
     for e in session.exec(select(KwealthExcerpt).where(KwealthExcerpt.user_id == user.id)).all():
         for w in re.findall(r"[A-Za-z']{4,}", e.body or ""):
@@ -363,10 +362,28 @@ async def notes_page(request: Request, user: User = Depends(require_user), sessi
     })
 
 
+@router.get("/member/kwealth/notes/api/list")
+async def notes_list_api(user: User = Depends(require_user), session: Session = Depends(get_session)):
+    notes = session.exec(
+        select(KwealthNote).where(KwealthNote.user_id == user.id).order_by(KwealthNote.updated_at.desc())
+    ).all()
+    return [
+        {
+            "id": n.id,
+            "title": n.title,
+            "body": n.body_text or "",
+            "ink": n.ink_path or "",
+            "updated_at": n.updated_at.isoformat() if n.updated_at else "",
+        }
+        for n in notes
+    ]
+
+
 @router.post("/member/kwealth/notes")
 async def save_note(
     title: str = Form(""),
     body_text: str = Form(""),
+    note_id: str = Form(""),
     ink: UploadFile = File(None),
     user: User = Depends(require_user),
     session: Session = Depends(get_session),
@@ -374,20 +391,75 @@ async def save_note(
     ink_path = None
     if ink and ink.filename:
         data = await ink.read()
-        if len(data) < 3_000_000:
+        if len(data) < 5_000_000:
             fname = f"ink_{user.id}_{uuid.uuid4().hex[:10]}.png"
             dest = INK_DIR / fname
             dest.write_bytes(data)
             ink_path = f"/static/uploads/kwealth_ink/{fname}"
-    note = KwealthNote(
-        user_id=user.id,
-        title=(title or "").strip() or "Note",
-        body_text=(body_text or "").strip() or None,
-        ink_path=ink_path,
-    )
-    session.add(note)
+
+    nid = None
+    try:
+        nid = int(note_id) if note_id else None
+    except Exception:
+        nid = None
+
+    note = session.get(KwealthNote, nid) if nid else None
+    if note and note.user_id != user.id:
+        note = None
+
+    if note:
+        note.title = (title or "").strip() or note.title or "Note"
+        note.body_text = (body_text or "").strip() or None
+        if ink_path:
+            note.ink_path = ink_path
+        note.updated_at = datetime.utcnow()
+        session.add(note)
+    else:
+        note = KwealthNote(
+            user_id=user.id,
+            title=(title or "").strip() or "Note",
+            body_text=(body_text or "").strip() or None,
+            ink_path=ink_path,
+        )
+        session.add(note)
     session.commit()
-    return RedirectResponse("/member/kwealth/notes", status_code=303)
+    session.refresh(note)
+    return JSONResponse({"ok": True, "id": note.id, "title": note.title})
+
+
+@router.post("/member/kwealth/notes/{note_id}/delete")
+async def delete_note(note_id: int, user: User = Depends(require_user), session: Session = Depends(get_session)):
+    note = session.get(KwealthNote, note_id)
+    if note and note.user_id == user.id:
+        session.delete(note)
+        session.commit()
+    return JSONResponse({"ok": True})
+
+
+@router.get("/member/api/badge-count")
+async def badge_count(user: User = Depends(require_user), session: Session = Depends(get_session)):
+    """Unread-ish activity count for PWA / app icon badge."""
+    count = 0
+    try:
+        from app.models import Announcement
+        anns = session.exec(select(Announcement).where(Announcement.is_active == True)).all()
+        count += min(len(anns or []), 9)
+    except Exception:
+        pass
+    try:
+        # best-effort message unread
+        from app import models as M
+        Message = getattr(M, "Message", None) or getattr(M, "DirectMessage", None)
+        if Message is not None:
+            q = select(Message)
+            rows = session.exec(q).all()
+            for m in rows:
+                rid = getattr(m, "recipient_id", None) or getattr(m, "to_user_id", None)
+                if rid == user.id and not getattr(m, "is_read", True):
+                    count += 1
+    except Exception:
+        pass
+    return JSONResponse({"count": int(count)})
 
 
 @router.post("/member/api/angel-ask")

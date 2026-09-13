@@ -2,60 +2,127 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Notes — Kwealth</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    html, body { height: 100%; margin: 0; }
-    .lined { background-image: repeating-linear-gradient(transparent, transparent 27px, #e2e8f0 28px); }
-    .hl { background: #fde68a; border-radius: 2px; cursor: pointer; }
+    html, body { height: 100%; margin: 0; overflow: hidden; }
+    body.theme-dark { background: #0f172a; color: #e2e8f0; }
+    body.theme-light { background: #e2e8f0; color: #0f172a; }
+    .sheet-light {
+      background: #fffef8;
+      color: #1c1917;
+    }
+    .sheet-dark {
+      background: #1e293b;
+      color: #f1f5f9;
+    }
+    .lined-light {
+      background-image: repeating-linear-gradient(
+        transparent, transparent 31px,
+        rgba(30, 58, 138, 0.55) 31px, rgba(30, 58, 138, 0.55) 33px
+      );
+    }
+    .lined-dark {
+      background-image: repeating-linear-gradient(
+        transparent, transparent 31px,
+        rgba(148, 163, 184, 0.45) 31px, rgba(148, 163, 184, 0.45) 33px
+      );
+    }
+    #typed {
+      direction: ltr;
+      text-align: left;
+      unicode-bidi: plaintext;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 32px;
+      font-size: 16px;
+      min-height: 100%;
+      outline: none;
+      caret-color: #0ea5e9;
+    }
+    body.theme-dark #typed { caret-color: #38bdf8; }
     canvas { touch-action: none; display: block; width: 100%; height: 100%; }
+    .tool-on { ring: 2px; outline: 2px solid #fbbf24; }
+    .sheet-tabs button.active { background: #0f766e; color: #fff; }
   </style>
 </head>
-<body class="h-full bg-slate-200" x-data="noteStudio()" x-init="init()">
-  <!-- Title bar -->
-  <header class="sticky top-0 z-20 bg-slate-900 text-white shadow-lg">
-    <div class="px-2 sm:px-4 py-2 flex flex-wrap items-center gap-2">
-      <a href="/member/kwealth" class="text-xs sm:text-sm text-teal-300 px-2">← Kwealth</a>
-      <span class="font-bold text-sm sm:text-base mr-2">Notes</span>
-      <button type="button" @click="mode='type'" :class="mode==='type'?'bg-teal-600':'bg-slate-700'" class="px-3 py-1.5 rounded-lg text-xs font-semibold">Type</button>
-      <button type="button" @click="mode='pen'" :class="mode==='pen'?'bg-teal-600':'bg-slate-700'" class="px-3 py-1.5 rounded-lg text-xs font-semibold">Pen</button>
+<body class="theme-light h-full" x-data="noteStudio()" x-init="init()">
+  <!-- Toolbar -->
+  <header class="sticky top-0 z-30 shadow-lg"
+          :class="pageTheme==='dark' ? 'bg-slate-950 text-white' : 'bg-slate-900 text-white'">
+    <div class="px-2 py-2 flex flex-wrap items-center gap-1.5 text-[11px] sm:text-xs">
+      <a href="/member/kwealth" class="text-teal-300 px-1.5">←</a>
+      <span class="font-bold text-sm mr-1">Notes</span>
+
+      <button type="button" @click="mode='type'" :class="mode==='type'?'bg-teal-600':'bg-slate-700'" class="px-2 py-1 rounded-lg font-semibold">Type</button>
+      <button type="button" @click="mode='pen'" :class="mode==='pen' && !eraser?'bg-teal-600':'bg-slate-700'" class="px-2 py-1 rounded-lg font-semibold">Pen</button>
+      <button type="button" @click="mode='pen'; eraser=true" :class="eraser?'bg-amber-600':'bg-slate-700'" class="px-2 py-1 rounded-lg font-semibold">Eraser</button>
+
       <template x-if="mode==='pen'">
-        <div class="flex items-center gap-1">
+        <span class="flex items-center gap-1">
           <template x-for="c in colors" :key="c">
-            <button type="button" @click="penColor=c" class="w-6 h-6 rounded-full border-2" :style="'background:'+c" :class="penColor===c?'border-white':'border-transparent'"></button>
+            <button type="button" @click="penColor=c; eraser=false"
+                    class="w-5 h-5 rounded-full border border-white/40"
+                    :style="'background:'+c"></button>
           </template>
-          <label class="text-[10px] ml-1">Size</label>
-          <input type="range" min="1" max="12" x-model.number="penSize" class="w-16">
-        </div>
+          <label class="opacity-70">Size</label>
+          <input type="range" min="1" max="16" x-model.number="penSize" class="w-14">
+        </span>
       </template>
-      <button type="button" @click="lined=!lined" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-700" x-text="lined?'Lined':'Plain'"></button>
-      <button type="button" @click="saveNote()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600">Save</button>
-      <button type="button" @click="downloadPdf()" class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600">PDF</button>
-      <select x-model="selectedId" @change="loadSaved()" class="ml-auto text-slate-900 text-xs rounded-lg px-2 py-1.5 max-w-[10rem] sm:max-w-xs">
+
+      <button type="button" @click="lined=!lined" class="px-2 py-1 rounded-lg bg-slate-700 font-semibold" x-text="lined?'Lines on':'Plain'"></button>
+      <button type="button" @click="toggleTheme()" class="px-2 py-1 rounded-lg bg-slate-700 font-semibold" x-text="pageTheme==='dark'?'White page':'Dark page'"></button>
+      <button type="button" @click="stylusOnly=!stylusOnly" class="px-2 py-1 rounded-lg font-semibold"
+              :class="stylusOnly?'bg-rose-700':'bg-slate-700'" x-text="stylusOnly?'Finger off':'Finger on'"></button>
+
+      <button type="button" @click="undo()" class="px-2 py-1 rounded-lg bg-slate-700 font-semibold">Undo</button>
+      <button type="button" @click="doCut()" class="px-2 py-1 rounded-lg bg-slate-700 font-semibold">Cut</button>
+      <button type="button" @click="doPaste()" class="px-2 py-1 rounded-lg bg-slate-700 font-semibold">Paste</button>
+      <button type="button" @click="addSheet()" class="px-2 py-1 rounded-lg bg-indigo-700 font-semibold">+ Sheet</button>
+      <button type="button" @click="saveNote()" class="px-2 py-1 rounded-lg bg-emerald-600 font-bold">Save</button>
+      <button type="button" @click="downloadPdf()" class="px-2 py-1 rounded-lg bg-violet-700 font-semibold">PDF</button>
+      <button type="button" @click="deleteCurrent()" class="px-2 py-1 rounded-lg bg-rose-800 font-semibold">Delete</button>
+
+      <select x-model="selectedId" @change="loadSaved()" class="ml-auto text-slate-900 rounded-lg px-2 py-1 max-w-[9rem] sm:max-w-xs">
         <option value="">Saved notes…</option>
-        {% for n in notes %}
-        <option value="{{ n.id }}">{{ n.title }}</option>
-        {% endfor %}
+        <template x-for="n in notes" :key="n.id">
+          <option :value="n.id" x-text="n.title"></option>
+        </template>
       </select>
+    </div>
+    <!-- Sheet tabs -->
+    <div class="px-2 pb-2 flex gap-1 overflow-x-auto sheet-tabs">
+      <template x-for="(s,i) in sheets" :key="i">
+        <button type="button" @click="switchSheet(i)"
+                class="px-2 py-1 rounded-md bg-slate-700 whitespace-nowrap"
+                :class="i===sheetIndex?'active':''"
+                x-text="'Sheet '+(i+1)"></button>
+      </template>
     </div>
   </header>
 
-  <main class="h-[calc(100%-3.25rem)] flex flex-col p-2 sm:p-3 gap-2">
-    <input x-model="title" placeholder="Note title" class="w-full rounded-xl border px-3 py-2 text-sm font-semibold">
-    <div class="flex-1 min-h-0 rounded-2xl border bg-white shadow-inner overflow-hidden relative" :class="lined?'lined':''">
-      <!-- Typing layer -->
+  <main class="h-[calc(100%-5.5rem)] p-2 flex flex-col gap-1">
+    <input x-model="title" placeholder="Note title"
+           class="w-full rounded-xl border px-3 py-2 text-sm font-semibold"
+           :class="pageTheme==='dark'?'bg-slate-800 border-slate-600 text-white':'bg-white border-slate-300'">
+    <div class="flex-1 min-h-0 rounded-2xl border overflow-hidden relative shadow-inner"
+         :class="[
+           pageTheme==='dark' ? 'sheet-dark border-slate-600' : 'sheet-light border-slate-300',
+           lined ? (pageTheme==='dark' ? 'lined-dark' : 'lined-light') : ''
+         ]">
+      <!-- Typing: native contenteditable, no live HTML rewrite (fixes LTR typing) -->
       <div x-show="mode==='type'" id="typed" contenteditable="true"
-           class="absolute inset-0 p-4 overflow-auto text-base leading-7 outline-none"
-           @input="onType()" @dblclick="onDbl($event)"></div>
-      <!-- Pen layer -->
+           class="absolute inset-0 p-4 overflow-auto"
+           spellcheck="true"
+           @input="onTypeInput()"
+           @keydown="onKey($event)"></div>
       <canvas x-show="mode==='pen'" x-ref="pad" class="absolute inset-0"></canvas>
     </div>
-    <p class="text-[11px] text-slate-500">Double-tap a highlighted word for Angel. Pen and type share the same note; save keeps both.</p>
+    <p class="text-[10px] opacity-60">Unlimited sheets · Stylus-only when Finger off · Eraser removes ink · Undo for pen strokes</p>
   </main>
 
   <script>
-    window.__HL__ = {{ highlight_words|tojson }};
     window.__NOTES__ = [
       {% for n in notes %}
       { id: {{ n.id }}, title: {{ (n.title or '')|tojson }}, body: {{ (n.body_text or '')|tojson }}, ink: {{ (n.ink_path or '')|tojson }} }{% if not loop.last %},{% endif %}
@@ -67,93 +134,284 @@
   <script>
   function noteStudio() {
     return {
-      mode: 'type', lined: true, title: 'Untitled note', selectedId: '',
-      penColor: '#1e293b', penSize: 2.5, colors: ['#1e293b','#b91c1c','#1d4ed8','#15803d','#7c3aed'],
-      words: window.__HL__ || [], notes: window.__NOTES__ || [], drawing: false, ctx: null,
+      mode: 'type', lined: true, pageTheme: 'light', stylusOnly: false, eraser: false,
+      title: 'Untitled note', selectedId: '', noteId: null,
+      penColor: '#1e293b', penSize: 3.5,
+      colors: ['#1e293b','#b91c1c','#1d4ed8','#15803d','#7c3aed','#f59e0b'],
+      notes: window.__NOTES__ || [],
+      sheets: [{ text: '', inkData: null }],
+      sheetIndex: 0,
+      strokeStack: [],
+      drawing: false, ctx: null, lastX: 0, lastY: 0,
+
       init() {
-        this.$nextTick(() => this.setupCanvas());
+        const savedTheme = localStorage.getItem('kw_note_theme');
+        if (savedTheme === 'dark' || savedTheme === 'light') this.pageTheme = savedTheme;
+        this.applyTheme();
+        this.$nextTick(() => {
+          this.setupCanvas();
+          this.restoreSheetToUI();
+        });
         window.addEventListener('resize', () => this.setupCanvas(true));
       },
+      applyTheme() {
+        document.body.classList.remove('theme-dark', 'theme-light');
+        document.body.classList.add(this.pageTheme === 'dark' ? 'theme-dark' : 'theme-light');
+        localStorage.setItem('kw_note_theme', this.pageTheme);
+      },
+      toggleTheme() {
+        this.pageTheme = this.pageTheme === 'dark' ? 'light' : 'dark';
+        this.applyTheme();
+      },
+
       setupCanvas(keep) {
         const c = this.$refs.pad; if (!c) return;
-        const r = c.parentElement.getBoundingClientRect();
+        const parent = c.parentElement;
+        const r = parent.getBoundingClientRect();
         const prev = keep ? c.toDataURL() : null;
-        c.width = Math.max(320, r.width);
-        c.height = Math.max(400, r.height);
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        c.width = Math.max(320, Math.floor(r.width * dpr));
+        c.height = Math.max(400, Math.floor(r.height * dpr));
+        c.style.width = r.width + 'px';
+        c.style.height = r.height + 'px';
         this.ctx = c.getContext('2d');
-        this.ctx.lineCap = 'round'; this.ctx.lineJoin = 'round';
-        if (prev) { const img = new Image(); img.onload = () => this.ctx.drawImage(img,0,0); img.src = prev; }
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+        this.ctx.imageSmoothingEnabled = true;
+        if (prev) {
+          const img = new Image();
+          img.onload = () => this.ctx.drawImage(img, 0, 0, c.width, c.height);
+          img.src = prev;
+        }
+        if (c._bound) return;
+        c._bound = true;
         const pos = (e) => {
           const br = c.getBoundingClientRect();
           const src = e.touches ? e.touches[0] : e;
-          return { x: (src.clientX - br.left) * (c.width/br.width), y: (src.clientY - br.top) * (c.height/br.height) };
+          return {
+            x: (src.clientX - br.left) * (c.width / br.width),
+            y: (src.clientY - br.top) * (c.height / br.height)
+          };
         };
-        if (c._bound) return; c._bound = true;
-        const start = (e) => { this.drawing = true; const p = pos(e); this.ctx.strokeStyle=this.penColor; this.ctx.lineWidth=this.penSize; this.ctx.beginPath(); this.ctx.moveTo(p.x,p.y); e.preventDefault(); };
-        const move = (e) => { if (!this.drawing) return; const p = pos(e); this.ctx.lineTo(p.x,p.y); this.ctx.stroke(); e.preventDefault(); };
-        const end = () => { this.drawing = false; };
-        c.addEventListener('mousedown', start); c.addEventListener('mousemove', move); window.addEventListener('mouseup', end);
-        c.addEventListener('touchstart', start, {passive:false}); c.addEventListener('touchmove', move, {passive:false}); c.addEventListener('touchend', end);
+        const isFinger = (e) => {
+          if (!this.stylusOnly) return false;
+          if (e.touches && e.touches[0] && e.touches[0].touchType === 'stylus') return false;
+          if (e.pointerType === 'pen') return false;
+          if (e.pointerType === 'touch' || (e.touches && e.touches.length)) return true;
+          return false;
+        };
+        const start = (e) => {
+          if (this.mode !== 'pen') return;
+          if (isFinger(e)) { e.preventDefault(); return; }
+          this.drawing = true;
+          const p = pos(e);
+          this.lastX = p.x; this.lastY = p.y;
+          // snapshot for undo
+          try { this.strokeStack.push(c.toDataURL()); if (this.strokeStack.length > 40) this.strokeStack.shift(); } catch(err) {}
+          this.ctx.beginPath();
+          this.ctx.moveTo(p.x, p.y);
+          if (this.eraser) {
+            this.ctx.globalCompositeOperation = 'destination-out';
+            this.ctx.lineWidth = Math.max(12, this.penSize * 4);
+          } else {
+            this.ctx.globalCompositeOperation = 'source-over';
+            this.ctx.strokeStyle = this.penColor;
+            this.ctx.lineWidth = this.penSize * (window.devicePixelRatio || 1);
+            this.ctx.shadowColor = this.penColor;
+            this.ctx.shadowBlur = 0.6 * (window.devicePixelRatio || 1);
+          }
+          e.preventDefault();
+        };
+        const move = (e) => {
+          if (!this.drawing) return;
+          if (isFinger(e)) return;
+          const p = pos(e);
+          // quadratic smooth stroke
+          const mx = (this.lastX + p.x) / 2;
+          const my = (this.lastY + p.y) / 2;
+          this.ctx.quadraticCurveTo(this.lastX, this.lastY, mx, my);
+          this.ctx.stroke();
+          this.ctx.beginPath();
+          this.ctx.moveTo(mx, my);
+          this.lastX = p.x; this.lastY = p.y;
+          e.preventDefault();
+        };
+        const end = () => {
+          this.drawing = false;
+          this.ctx.globalCompositeOperation = 'source-over';
+          this.ctx.shadowBlur = 0;
+          this.persistCurrentSheet();
+        };
+        c.addEventListener('mousedown', start);
+        c.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', end);
+        c.addEventListener('touchstart', start, { passive: false });
+        c.addEventListener('touchmove', move, { passive: false });
+        c.addEventListener('touchend', end);
+        c.addEventListener('pointerdown', start);
+        c.addEventListener('pointermove', move);
+        c.addEventListener('pointerup', end);
       },
-      onType() {
+
+      onTypeInput() {
+        this.persistCurrentSheet();
+      },
+      onKey(ev) {
+        // Ctrl/Cmd+Z undo for type uses browser; pen undo is separate
+        if ((ev.ctrlKey || ev.metaKey) && ev.key === 'z') {
+          // allow default for typing
+        }
+      },
+      undo() {
+        if (this.mode === 'pen' && this.strokeStack.length) {
+          const data = this.strokeStack.pop();
+          const img = new Image();
+          img.onload = () => {
+            this.ctx.clearRect(0, 0, this.$refs.pad.width, this.$refs.pad.height);
+            this.ctx.drawImage(img, 0, 0);
+            this.persistCurrentSheet();
+          };
+          img.src = data;
+        } else {
+          document.execCommand('undo');
+        }
+      },
+      async doCut() {
+        try {
+          const sel = window.getSelection();
+          const text = sel ? sel.toString() : '';
+          if (text) {
+            await navigator.clipboard.writeText(text);
+            document.execCommand('delete');
+          }
+        } catch (e) {
+          document.execCommand('cut');
+        }
+      },
+      async doPaste() {
+        try {
+          const text = await navigator.clipboard.readText();
+          if (text) document.execCommand('insertText', false, text);
+        } catch (e) {
+          document.execCommand('paste');
+        }
+      },
+
+      persistCurrentSheet() {
         const el = document.getElementById('typed');
-        let text = el.innerText || '';
-        let html = text.replace(/&/g,'&amp;').replace(/</g,'&lt;');
-        (this.words||[]).forEach(w => {
-          if (!w || w.length < 4) return;
-          const re = new RegExp('\\\\b(' + w.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&') + ')\\\\b', 'gi');
-          html = html.replace(re, '<span class="hl">$1</span>');
+        const text = el ? el.innerText : '';
+        let ink = null;
+        try { if (this.$refs.pad) ink = this.$refs.pad.toDataURL('image/png'); } catch(e) {}
+        this.sheets[this.sheetIndex] = { text, inkData: ink };
+      },
+      restoreSheetToUI() {
+        const s = this.sheets[this.sheetIndex] || { text: '', inkData: null };
+        const el = document.getElementById('typed');
+        if (el) el.innerText = s.text || '';
+        this.$nextTick(() => {
+          this.setupCanvas(false);
+          if (s.inkData && this.ctx) {
+            const img = new Image();
+            img.onload = () => this.ctx.drawImage(img, 0, 0, this.$refs.pad.width, this.$refs.pad.height);
+            img.src = s.inkData;
+          }
         });
-        if (el.dataset.last !== text) { el.innerHTML = html.replace(/\\n/g,'<br>'); el.dataset.last = text; }
       },
-      onDbl(ev) {
-        const t = (ev.target.innerText||'').trim(); if (t.length < 3) return;
-        fetch('/member/api/angel-ask', { method:'POST', credentials:'same-origin', headers:{'Content-Type':'application/json'}, body: JSON.stringify({question: t}) })
-          .then(r=>r.json()).then(j => {
-            if (j && j.answer && 'speechSynthesis' in window) {
-              speechSynthesis.cancel();
-              speechSynthesis.speak(new SpeechSynthesisUtterance(j.answer));
-            }
-          });
+      switchSheet(i) {
+        this.persistCurrentSheet();
+        this.sheetIndex = i;
+        this.strokeStack = [];
+        this.restoreSheetToUI();
       },
+      addSheet() {
+        this.persistCurrentSheet();
+        this.sheets.push({ text: '', inkData: null });
+        this.sheetIndex = this.sheets.length - 1;
+        this.strokeStack = [];
+        this.restoreSheetToUI();
+      },
+
       loadSaved() {
         const n = this.notes.find(x => String(x.id) === String(this.selectedId));
         if (!n) return;
+        this.noteId = n.id;
         this.title = n.title || '';
-        const el = document.getElementById('typed');
-        if (el) { el.innerText = n.body || ''; el.dataset.last = ''; this.onType(); }
-        if (n.ink && this.$refs.pad) {
-          const img = new Image();
-          img.onload = () => { this.ctx.clearRect(0,0,this.$refs.pad.width,this.$refs.pad.height); this.ctx.drawImage(img,0,0,this.$refs.pad.width,this.$refs.pad.height); };
-          img.src = n.ink;
+        // body may be multi-sheet joined by form-feed
+        const parts = (n.body || '').split('\f');
+        this.sheets = parts.length ? parts.map(t => ({ text: t, inkData: null })) : [{ text: n.body || '', inkData: null }];
+        if (n.ink) {
+          this.sheets[0].inkData = n.ink;
         }
+        this.sheetIndex = 0;
+        this.strokeStack = [];
+        this.restoreSheetToUI();
       },
+
       async saveNote() {
-        const el = document.getElementById('typed');
+        this.persistCurrentSheet();
+        const body = this.sheets.map(s => s.text || '').join('\f');
         const fd = new FormData();
         fd.append('title', this.title || 'Note');
-        fd.append('body_text', (el && el.innerText) || '');
-        await new Promise(res => {
+        fd.append('body_text', body);
+        if (this.noteId) fd.append('note_id', String(this.noteId));
+        // export combined ink of current sheet
+        await new Promise((res) => {
+          if (!this.$refs.pad) { res(); return; }
           this.$refs.pad.toBlob(async (blob) => {
             if (blob) fd.append('ink', blob, 'ink.png');
-            await fetch('/member/kwealth/notes', { method:'POST', body: fd, credentials:'same-origin' });
+            try {
+              const r = await fetch('/member/kwealth/notes', { method: 'POST', body: fd, credentials: 'same-origin' });
+              const j = await r.json();
+              if (j && j.ok) {
+                this.noteId = j.id;
+                // refresh list
+                const lr = await fetch('/member/kwealth/notes/api/list', { credentials: 'same-origin' });
+                this.notes = await lr.json();
+                this.selectedId = String(j.id);
+                alert('Saved');
+              }
+            } catch (e) { alert('Save failed'); }
             res();
           }, 'image/png');
         });
-        location.reload();
       },
+
+      async deleteCurrent() {
+        if (!this.noteId) {
+          // clear local
+          this.title = 'Untitled note';
+          this.sheets = [{ text: '', inkData: null }];
+          this.sheetIndex = 0;
+          this.restoreSheetToUI();
+          return;
+        }
+        if (!confirm('Delete this saved note?')) return;
+        await fetch('/member/kwealth/notes/' + this.noteId + '/delete', { method: 'POST', credentials: 'same-origin' });
+        this.noteId = null;
+        this.selectedId = '';
+        this.title = 'Untitled note';
+        this.sheets = [{ text: '', inkData: null }];
+        this.sheetIndex = 0;
+        this.restoreSheetToUI();
+        const lr = await fetch('/member/kwealth/notes/api/list', { credentials: 'same-origin' });
+        this.notes = await lr.json();
+      },
+
       downloadPdf() {
+        this.persistCurrentSheet();
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        doc.setFontSize(14); doc.text(this.title || 'Note', 14, 18);
-        const el = document.getElementById('typed');
-        const text = (el && el.innerText) || '';
-        const lines = doc.splitTextToSize(text, 180);
-        doc.setFontSize(11); doc.text(lines, 14, 28);
-        try {
-          const img = this.$refs.pad.toDataURL('image/png');
-          doc.addPage(); doc.text('Handwriting', 14, 18); doc.addImage(img, 'PNG', 14, 24, 180, 120);
-        } catch(e) {}
+        doc.setFontSize(14);
+        doc.text(this.title || 'Note', 14, 18);
+        this.sheets.forEach((s, i) => {
+          if (i > 0) doc.addPage();
+          doc.setFontSize(11);
+          const lines = doc.splitTextToSize(s.text || '', 180);
+          doc.text(lines, 14, 28);
+          if (s.inkData) {
+            try { doc.addImage(s.inkData, 'PNG', 14, Math.min(200, 28 + lines.length * 5), 180, 80); } catch(e) {}
+          }
+        });
         doc.save((this.title || 'note') + '.pdf');
       }
     }
