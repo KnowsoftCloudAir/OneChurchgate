@@ -26,6 +26,8 @@ USER_BOOKS_DIR = Path("app/static/uploads/kwealth_books")
 USER_BOOKS_DIR.mkdir(parents=True, exist_ok=True)
 USER_BOOKS_TEXT = Path("app/static/uploads/kwealth_books_text")
 USER_BOOKS_TEXT.mkdir(parents=True, exist_ok=True)
+USER_BGM_DIR = Path("app/static/uploads/kwealth_bgm")
+USER_BGM_DIR.mkdir(parents=True, exist_ok=True)
 
 MH_URL = "https://www.biblestudytools.com/commentaries/matthew-henry-complete/"
 
@@ -353,13 +355,21 @@ def _load_book_text(book: KwealthBook) -> str:
 
 
 def _extract_text_from_upload(data: bytes, filename: str) -> str:
+    """Convert PDF, text, Markdown, or Word (.docx/.doc) into plain text for the reader."""
+    import io
     name = (filename or "").lower()
-    if name.endswith(".txt") or name.endswith(".md"):
-        return data.decode("utf-8", errors="ignore")
-    if name.endswith(".pdf") or (data[:4] == b"%PDF"):
+    # Plain text / markdown
+    if name.endswith(".txt") or name.endswith(".md") or name.endswith(".text") or name.endswith(".rtf"):
+        # strip minimal RTF control words if needed
+        text = data.decode("utf-8", errors="ignore")
+        if name.endswith(".rtf") or text.lstrip().startswith("{\rtf"):
+            text = re.sub(r"\\[a-zA-Z]+\d*\s?", " ", text)
+            text = re.sub(r"[{}]", " ", text)
+        return text
+    # PDF
+    if name.endswith(".pdf") or (len(data) > 4 and data[:4] == b"%PDF"):
         try:
             from pypdf import PdfReader
-            import io
             reader = PdfReader(io.BytesIO(data))
             parts = []
             for page in reader.pages:
@@ -370,7 +380,118 @@ def _extract_text_from_upload(data: bytes, filename: str) -> str:
             return "\n\n".join(parts)
         except Exception:
             return data.decode("utf-8", errors="ignore")
+    # Word .docx
+    if name.endswith(".docx"):
+        try:
+            from docx import Document
+            doc = Document(io.BytesIO(data))
+            parts = [p.text for p in doc.paragraphs if (p.text or "").strip()]
+            # tables
+            for table in getattr(doc, "tables", []) or []:
+                for row in table.rows:
+                    cells = [c.text.strip() for c in row.cells if c.text and c.text.strip()]
+                    if cells:
+                        parts.append(" | ".join(cells))
+            return "\n\n".join(parts)
+        except Exception as e:
+            return f"(Could not read Word document: {e})"
+    # Legacy .doc — best-effort plain extract
+    if name.endswith(".doc"):
+        try:
+            # Try ole-based or binary decode of readable streams
+            text = data.decode("utf-8", errors="ignore")
+            if len(text.strip()) < 40:
+                text = data.decode("latin-1", errors="ignore")
+            # keep sequences of printable text
+            text = re.sub(r"[^\x09\x0A\x0D\x20-\x7E\u00A0-\u024F]+", " ", text)
+            text = re.sub(r"[ \t]{2,}", " ", text)
+            text = re.sub(r"\n{3,}", "\n\n", text)
+            if len(text.strip()) > 80:
+                return text.strip()
+        except Exception:
+            pass
+        return (
+            "(Legacy .doc format is limited. Please re-save the file as .docx or PDF and upload again.)"
+        )
+    # Fallback
     return data.decode("utf-8", errors="ignore")
+
+
+
+def _user_bgm_dir(user_id: int) -> Path:
+    here = Path(__file__).resolve().parent.parent
+    d = here / "static" / "uploads" / "kwealth_bgm" / str(user_id)
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+@router.get("/member/api/kwealth/bgm")
+async def list_bgm(user: User = Depends(require_user)):
+    d = _user_bgm_dir(user.id)
+    items = []
+    for f in sorted(d.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
+        if not f.is_file():
+            continue
+        if f.suffix.lower() not in {".mp3", ".m4a", ".ogg", ".wav", ".aac", ".webm"}:
+            continue
+        title = f.stem.replace("_", " ")[:80]
+        tfile = d / (f.name + ".title")
+        if tfile.exists():
+            try:
+                title = tfile.read_text(encoding="utf-8").strip()[:80] or title
+            except Exception:
+                pass
+        items.append({
+            "id": f.name,
+            "title": title,
+            "url": f"/static/uploads/kwealth_bgm/{user.id}/{f.name}",
+        })
+    return JSONResponse({"ok": True, "items": items[:10], "max": 10})
+
+
+@router.post("/member/kwealth/bgm/upload")
+async def upload_bgm(
+    files: List[UploadFile] = File(...),
+    user: User = Depends(require_user),
+):
+    d = _user_bgm_dir(user.id)
+    existing = [f for f in d.iterdir() if f.is_file()]
+    added = 0
+    for f in files or []:
+        if len(existing) + added >= 10:
+            break
+        raw = await f.read()
+        if not raw or len(raw) > 12_000_000:
+            continue
+        name = (f.filename or "track.mp3").rsplit("/", 1)[-1]
+        ext = Path(name).suffix.lower() or ".mp3"
+        if ext not in {".mp3", ".m4a", ".ogg", ".wav", ".aac", ".webm"}:
+            ext = ".mp3"
+        safe = f"{uuid.uuid4().hex[:10]}{ext}"
+        (d / safe).write_bytes(raw)
+        # keep original title sidecar
+        (d / (safe + ".title")).write_text(Path(name).stem[:80], encoding="utf-8")
+        added += 1
+    return RedirectResponse("/member/kwealth/books?bgm=1", status_code=303)
+
+
+@router.post("/member/kwealth/bgm/delete")
+async def delete_bgm(
+    track_id: str = Form(...),
+    user: User = Depends(require_user),
+):
+    d = _user_bgm_dir(user.id)
+    # prevent path escape
+    safe = Path(track_id).name
+    target = d / safe
+    if target.exists() and target.is_file():
+        target.unlink()
+        t2 = d / (safe + ".title")
+        if t2.exists():
+            t2.unlink()
+    return JSONResponse({"ok": True})
+
+
 
 
 @router.get("/member/kwealth", response_class=HTMLResponse)
@@ -814,6 +935,202 @@ async def angel_ask(
         "topic": topic_q,
         "depth": depth,
     })
+
+
+
+@router.get("/member/api/angel-actions")
+async def angel_actions(
+    action: str = "status",
+    name: str = "",
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    """Support Angel voice actions: status, pastor, focus, feed, district name, books, evangelism."""
+    action = (action or "").lower().strip()
+    try:
+        from app.models import ChurchMember, ChurchUnit, PastorMessage, FocusGroup, FocusMessage
+        from app.models import MemberPost, MemberComment
+    except Exception:
+        ChurchMember = None
+
+    cm = None
+    try:
+        cm = session.exec(select(ChurchMember).where(ChurchMember.user_id == user.id)).first()
+    except Exception:
+        pass
+
+    if action in ("status", "subscription"):
+        name_s = (user.full_name or user.email or "member")
+        approval = getattr(cm, "approval_status", None) or "unknown"
+        return JSONResponse({
+            "ok": True,
+            "speak": f"Your name is {name_s}. Membership status: {approval}. Check Subscription on your page for plan days remaining.",
+        })
+
+    if action == "pastor":
+        msgs = []
+        try:
+            from app.models import PastorMessage
+            q = select(PastorMessage).order_by(PastorMessage.created_at.desc()).limit(5)
+            rows = session.exec(q).all()
+            for r in rows:
+                title = getattr(r, "title", None) or getattr(r, "subject", None) or "Pastor message"
+                body = (getattr(r, "body", None) or getattr(r, "message", None) or "")[:400]
+                msgs.append(f"{title}. {body}")
+        except Exception:
+            pass
+        if not msgs:
+            return JSONResponse({"ok": True, "speak": "No pastor messages are posted right now. Open Pastor messages on your dashboard to check later."})
+        speak = "Pastor messages. " + " Next. ".join(msgs[:3])
+        return JSONResponse({"ok": True, "speak": speak[:900]})
+
+    if action in ("focus", "focusgroup"):
+        lines = []
+        try:
+            from app.models import FocusGroup, FocusMessage
+            groups = session.exec(select(FocusGroup).limit(10)).all()
+            for g in groups:
+                lines.append(getattr(g, "name", None) or getattr(g, "title", None) or "Focus group")
+            # latest messages if model allows
+            try:
+                fmsgs = session.exec(select(FocusMessage).order_by(FocusMessage.created_at.desc()).limit(5)).all()
+                for m in fmsgs:
+                    who = getattr(m, "author_name", None) or "A member"
+                    body = (getattr(m, "body", None) or getattr(m, "message", None) or "")[:200]
+                    if body:
+                        lines.append(f"{who} said: {body}")
+            except Exception:
+                pass
+        except Exception:
+            pass
+        if not lines:
+            return JSONResponse({"ok": True, "speak": "Open Focus groups from your dashboard to join discussions set by your church."})
+        return JSONResponse({"ok": True, "speak": "Focus groups. " + ". ".join(lines[:6])[:900]})
+
+    if action in ("feed", "interaction"):
+        lines = []
+        try:
+            from app.models import MemberPost, MemberComment
+            posts = session.exec(select(MemberPost).order_by(MemberPost.created_at.desc()).limit(8)).all()
+            for p in posts:
+                author = getattr(p, "author_name", None) or "A member"
+                body = (getattr(p, "body", None) or getattr(p, "content", None) or "")[:180]
+                lines.append(f"{author} posted: {body}")
+                try:
+                    comments = session.exec(
+                        select(MemberComment).where(MemberComment.post_id == p.id).limit(3)
+                    ).all()
+                    for c in comments:
+                        cn = getattr(c, "author_name", None) or "Someone"
+                        cb = (getattr(c, "body", None) or "")[:120]
+                        lines.append(f"{cn} commented: {cb}")
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        if not lines:
+            return JSONResponse({"ok": True, "speak": "No new posts in the member interaction panel right now. Open Interaction to share or read updates."})
+        return JSONResponse({"ok": True, "speak": "Member interaction. " + " ".join(lines[:10])[:1000]})
+
+    if action == "district_name":
+        qname = (name or "").strip().lower()
+        if not qname:
+            return JSONResponse({"ok": True, "speak": "Say a name to check, for example: is John in the district list."})
+        found = []
+        try:
+            from app.models import ChurchMember
+            members = session.exec(select(ChurchMember).limit(500)).all()
+            my_unit = getattr(cm, "church_unit_id", None) if cm else None
+            for m in members:
+                if my_unit and getattr(m, "church_unit_id", None) and m.church_unit_id != my_unit:
+                    # still allow same global if unit filter fails
+                    pass
+                full = (getattr(m, "full_name", None) or "")
+                # resolve user name
+                try:
+                    u = session.get(User, m.user_id)
+                    if u:
+                        full = full or u.full_name or u.email or ""
+                except Exception:
+                    pass
+                if qname in full.lower():
+                    found.append(full)
+        except Exception:
+            pass
+        if found:
+            return JSONResponse({"ok": True, "speak": f"Yes. Found on the list: {', '.join(found[:5])}."})
+        return JSONResponse({"ok": True, "speak": f"I did not find {name} on the district members list available to you."})
+
+    if action == "books":
+        books = session.exec(select(KwealthBook).where(KwealthBook.is_active == True).order_by(KwealthBook.title)).all()
+        if not books:
+            return JSONResponse({"ok": True, "speak": "No books loaded yet. Open Kwealth Books and tap Load to add a PDF or text from your device.", "books": []})
+        titles = [b.title for b in books[:12]]
+        return JSONResponse({
+            "ok": True,
+            "speak": "Your Kwealth books: " + ", ".join(titles) + ". Say read book and the title to hear one.",
+            "books": [{"id": b.id, "title": b.title} for b in books],
+        })
+
+    if action in ("read_ebook", "ebook"):
+        books = session.exec(select(KwealthBook).where(KwealthBook.is_active == True)).all()
+        if not books:
+            return JSONResponse({"ok": True, "speak": "No ebook loaded yet. Open Kwealth Books and load a PDF or text first.", "navigate": "/member/kwealth/books"})
+        # resume last progress if any
+        pick = books[0]
+        prog_rows = session.exec(select(KwealthProgress).where(KwealthProgress.user_id == user.id)).all()
+        if prog_rows:
+            # most recently updated
+            prog_rows = sorted(prog_rows, key=lambda p: p.updated_at or datetime.utcnow(), reverse=True)
+            for pr in prog_rows:
+                b = session.get(KwealthBook, pr.book_id)
+                if b and b.is_active:
+                    pick = b
+                    break
+        return JSONResponse({
+            "ok": True,
+            "speak": f"Continuing your ebook, {pick.title}.",
+            "navigate": f"/member/kwealth/books?book_id={pick.id}&read=1",
+        })
+
+    if action == "read_book":
+        books = session.exec(select(KwealthBook).where(KwealthBook.is_active == True)).all()
+        if not books:
+            return JSONResponse({"ok": True, "speak": "Load a book in Kwealth first."})
+        pick = books[0]
+        qn = (name or "").lower()
+        if qn:
+            for b in books:
+                if qn in (b.title or "").lower():
+                    pick = b
+                    break
+        # load text
+        text = ""
+        if pick.source_path:
+            try:
+                from pathlib import Path as P
+                cands = [P(pick.source_path)]
+                here = P(__file__).resolve().parent.parent
+                cands.append(here / "static" / "uploads" / "kwealth_books_text" / P(pick.source_path).name)
+                for c in cands:
+                    if c.exists():
+                        text = c.read_text(encoding="utf-8", errors="ignore")
+                        break
+            except Exception:
+                pass
+        chunk = " ".join((text or "").split()[:120])
+        if not chunk:
+            return JSONResponse({"ok": True, "speak": f"Opened {pick.title}, but text is empty. Reload the book file in Kwealth."})
+        return JSONResponse({"ok": True, "speak": f"Reading {pick.title}. {chunk}", "book_id": pick.id})
+
+    if action == "evangelism":
+        return JSONResponse({
+            "ok": True,
+            "speak": "Open Evangelism on your dashboard to record souls and progress. Stay faithful in personal witness — he that wins souls is wise.",
+        })
+
+    return JSONResponse({"ok": True, "speak": ""})
+
 
 
 @router.get("/member/hymns", response_class=HTMLResponse)

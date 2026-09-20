@@ -418,8 +418,66 @@ async def register_church(
 
 @router.get("/logout")
 async def logout():
-    resp = RedirectResponse("/auth/login", status_code=303)
+    """Clear session cookie and send client through a storage-clear page."""
+    resp = RedirectResponse("/auth/clear-session", status_code=303)
     resp.delete_cookie("access_token")
+    resp.delete_cookie("session")
+    resp.delete_cookie("csrftoken")
+    return resp
+
+
+@router.get("/clear-session", response_class=HTMLResponse)
+async def clear_session_page(request: Request):
+    """Wipe local storage, caches, and service workers so re-login is clean."""
+    html = """<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signing out…</title>
+<style>body{font-family:system-ui,sans-serif;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;text-align:center;padding:1.5rem}</style>
+</head><body>
+<p>Clearing site data for a clean login…</p>
+<script>
+(async function () {
+  try { localStorage.clear(); } catch (e) {}
+  try { sessionStorage.clear(); } catch (e) {}
+  try {
+    if (window.indexedDB && indexedDB.databases) {
+      const dbs = await indexedDB.databases();
+      for (const db of dbs || []) {
+        if (db && db.name) indexedDB.deleteDatabase(db.name);
+      }
+    } else {
+      indexedDB.deleteDatabase('churchgate_offline_v1');
+    }
+  } catch (e) {}
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(function (k) { return caches.delete(k); }));
+    }
+  } catch (e) {}
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(function (r) { return r.unregister(); }));
+    }
+  } catch (e) {}
+  // Clear cookies accessible from JS
+  try {
+    document.cookie.split(';').forEach(function (c) {
+      var n = c.split('=')[0].trim();
+      if (!n) return;
+      document.cookie = n + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+      document.cookie = n + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=' + location.hostname;
+    });
+  } catch (e) {}
+  location.replace('/auth/login?cleared=1');
+})();
+</script>
+</body></html>"""
+    from fastapi.responses import HTMLResponse as _HR
+    resp = _HR(html)
+    resp.delete_cookie("access_token")
+    resp.delete_cookie("session")
     return resp
 
 
