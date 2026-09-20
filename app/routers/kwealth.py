@@ -816,6 +816,181 @@ async def angel_ask(
     })
 
 
+
+@router.get("/member/api/angel-actions")
+async def angel_actions(
+    action: str = "status",
+    name: str = "",
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    """Support Angel voice actions: status, pastor, focus, feed, district name, books, evangelism."""
+    action = (action or "").lower().strip()
+    try:
+        from app.models import ChurchMember, ChurchUnit, PastorMessage, FocusGroup, FocusMessage
+        from app.models import MemberPost, MemberComment
+    except Exception:
+        ChurchMember = None
+
+    cm = None
+    try:
+        cm = session.exec(select(ChurchMember).where(ChurchMember.user_id == user.id)).first()
+    except Exception:
+        pass
+
+    if action in ("status", "subscription"):
+        name_s = (user.full_name or user.email or "member")
+        approval = getattr(cm, "approval_status", None) or "unknown"
+        return JSONResponse({
+            "ok": True,
+            "speak": f"Your name is {name_s}. Membership status: {approval}. Check Subscription on your page for plan days remaining.",
+        })
+
+    if action == "pastor":
+        msgs = []
+        try:
+            from app.models import PastorMessage
+            q = select(PastorMessage).order_by(PastorMessage.created_at.desc()).limit(5)
+            rows = session.exec(q).all()
+            for r in rows:
+                title = getattr(r, "title", None) or getattr(r, "subject", None) or "Pastor message"
+                body = (getattr(r, "body", None) or getattr(r, "message", None) or "")[:400]
+                msgs.append(f"{title}. {body}")
+        except Exception:
+            pass
+        if not msgs:
+            return JSONResponse({"ok": True, "speak": "No pastor messages are posted right now. Open Pastor messages on your dashboard to check later."})
+        speak = "Pastor messages. " + " Next. ".join(msgs[:3])
+        return JSONResponse({"ok": True, "speak": speak[:900]})
+
+    if action in ("focus", "focusgroup"):
+        lines = []
+        try:
+            from app.models import FocusGroup, FocusMessage
+            groups = session.exec(select(FocusGroup).limit(10)).all()
+            for g in groups:
+                lines.append(getattr(g, "name", None) or getattr(g, "title", None) or "Focus group")
+            # latest messages if model allows
+            try:
+                fmsgs = session.exec(select(FocusMessage).order_by(FocusMessage.created_at.desc()).limit(5)).all()
+                for m in fmsgs:
+                    who = getattr(m, "author_name", None) or "A member"
+                    body = (getattr(m, "body", None) or getattr(m, "message", None) or "")[:200]
+                    if body:
+                        lines.append(f"{who} said: {body}")
+            except Exception:
+                pass
+        except Exception:
+            pass
+        if not lines:
+            return JSONResponse({"ok": True, "speak": "Open Focus groups from your dashboard to join discussions set by your church."})
+        return JSONResponse({"ok": True, "speak": "Focus groups. " + ". ".join(lines[:6])[:900]})
+
+    if action in ("feed", "interaction"):
+        lines = []
+        try:
+            from app.models import MemberPost, MemberComment
+            posts = session.exec(select(MemberPost).order_by(MemberPost.created_at.desc()).limit(8)).all()
+            for p in posts:
+                author = getattr(p, "author_name", None) or "A member"
+                body = (getattr(p, "body", None) or getattr(p, "content", None) or "")[:180]
+                lines.append(f"{author} posted: {body}")
+                try:
+                    comments = session.exec(
+                        select(MemberComment).where(MemberComment.post_id == p.id).limit(3)
+                    ).all()
+                    for c in comments:
+                        cn = getattr(c, "author_name", None) or "Someone"
+                        cb = (getattr(c, "body", None) or "")[:120]
+                        lines.append(f"{cn} commented: {cb}")
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        if not lines:
+            return JSONResponse({"ok": True, "speak": "No new posts in the member interaction panel right now. Open Interaction to share or read updates."})
+        return JSONResponse({"ok": True, "speak": "Member interaction. " + " ".join(lines[:10])[:1000]})
+
+    if action == "district_name":
+        qname = (name or "").strip().lower()
+        if not qname:
+            return JSONResponse({"ok": True, "speak": "Say a name to check, for example: is John in the district list."})
+        found = []
+        try:
+            from app.models import ChurchMember
+            members = session.exec(select(ChurchMember).limit(500)).all()
+            my_unit = getattr(cm, "church_unit_id", None) if cm else None
+            for m in members:
+                if my_unit and getattr(m, "church_unit_id", None) and m.church_unit_id != my_unit:
+                    # still allow same global if unit filter fails
+                    pass
+                full = (getattr(m, "full_name", None) or "")
+                # resolve user name
+                try:
+                    u = session.get(User, m.user_id)
+                    if u:
+                        full = full or u.full_name or u.email or ""
+                except Exception:
+                    pass
+                if qname in full.lower():
+                    found.append(full)
+        except Exception:
+            pass
+        if found:
+            return JSONResponse({"ok": True, "speak": f"Yes. Found on the list: {', '.join(found[:5])}."})
+        return JSONResponse({"ok": True, "speak": f"I did not find {name} on the district members list available to you."})
+
+    if action == "books":
+        books = session.exec(select(KwealthBook).where(KwealthBook.is_active == True).order_by(KwealthBook.title)).all()
+        if not books:
+            return JSONResponse({"ok": True, "speak": "No books loaded yet. Open Kwealth Books and tap Load to add a PDF or text from your device.", "books": []})
+        titles = [b.title for b in books[:12]]
+        return JSONResponse({
+            "ok": True,
+            "speak": "Your Kwealth books: " + ", ".join(titles) + ". Say read book and the title to hear one.",
+            "books": [{"id": b.id, "title": b.title} for b in books],
+        })
+
+    if action == "read_book":
+        books = session.exec(select(KwealthBook).where(KwealthBook.is_active == True)).all()
+        if not books:
+            return JSONResponse({"ok": True, "speak": "Load a book in Kwealth first."})
+        pick = books[0]
+        qn = (name or "").lower()
+        if qn:
+            for b in books:
+                if qn in (b.title or "").lower():
+                    pick = b
+                    break
+        # load text
+        text = ""
+        if pick.source_path:
+            try:
+                from pathlib import Path as P
+                cands = [P(pick.source_path)]
+                here = P(__file__).resolve().parent.parent
+                cands.append(here / "static" / "uploads" / "kwealth_books_text" / P(pick.source_path).name)
+                for c in cands:
+                    if c.exists():
+                        text = c.read_text(encoding="utf-8", errors="ignore")
+                        break
+            except Exception:
+                pass
+        chunk = " ".join((text or "").split()[:120])
+        if not chunk:
+            return JSONResponse({"ok": True, "speak": f"Opened {pick.title}, but text is empty. Reload the book file in Kwealth."})
+        return JSONResponse({"ok": True, "speak": f"Reading {pick.title}. {chunk}", "book_id": pick.id})
+
+    if action == "evangelism":
+        return JSONResponse({
+            "ok": True,
+            "speak": "Open Evangelism on your dashboard to record souls and progress. Stay faithful in personal witness — he that wins souls is wise.",
+        })
+
+    return JSONResponse({"ok": True, "speak": ""})
+
+
+
 @router.get("/member/hymns", response_class=HTMLResponse)
 async def hymns_page(request: Request, user: User = Depends(require_user)):
     return templates.TemplateResponse("kwealth/hymns.html", {"request": request, "user": user})
