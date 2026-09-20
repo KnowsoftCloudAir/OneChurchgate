@@ -1,16 +1,8 @@
-/* Churchgate offline shell — cache app UI + Kwealth resources for offline use */
-const CACHE = 'churchgate-offline-v4';
+/* Churchgate offline shell — do not precache routes that 404 */
+const CACHE = 'churchgate-offline-v6';
 const PRECACHE = [
   '/',
-  '/login',
-  '/member/portal',
-  '/member/kwealth',
-  '/member/kwealth/books',
-  '/member/kwealth/notes',
-  '/member/kwealth/excerpts',
-  '/member/kwealth/borrow',
-  '/member/device-music',
-  '/member/hymns',
+  '/auth/login',
   '/static/manifest.json',
   '/static/sw.js',
   '/static/js/offline-store.js',
@@ -52,9 +44,8 @@ function isAppShell(url) {
   const p = url.pathname;
   return (
     p === '/' ||
-    p === '/login' ||
-    p.startsWith('/member/') ||
-    p.startsWith('/kwealth')
+    p.startsWith('/auth/') ||
+    p.startsWith('/member/')
   );
 }
 
@@ -63,11 +54,11 @@ self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
 
-  // Network-first for APIs; cache-first for shell & static
+  // Never trap cross-origin book vendor traffic in this SW
   if (url.pathname.startsWith('/member/api/') || url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() =>
-        new Response(JSON.stringify({ ok: false, offline: true, error: 'offline' }), {
+        new Response(JSON.stringify({ ok: false, offline: true }), {
           headers: { 'Content-Type': 'application/json' },
           status: 503,
         })
@@ -79,28 +70,26 @@ self.addEventListener('fetch', (event) => {
   if (isAsset(url) || isAppShell(url)) {
     event.respondWith(
       caches.open(CACHE).then(async (cache) => {
-        const cached = await cache.match(event.request);
-        const network = fetch(event.request)
-          .then((res) => {
-            if (res && res.ok) cache.put(event.request, res.clone()).catch(() => {});
-            return res;
-          })
-          .catch(() => cached);
-        return cached || network;
+        try {
+          const res = await fetch(event.request);
+          if (res && res.ok) cache.put(event.request, res.clone()).catch(() => {});
+          return res;
+        } catch (e) {
+          const cached = await cache.match(event.request);
+          if (cached) return cached;
+          if (url.pathname.startsWith('/member/')) {
+            return cache.match('/member/portal') || cache.match('/') || new Response('Offline', { status: 503 });
+          }
+          return cache.match('/') || new Response('Offline', { status: 503 });
+        }
       })
     );
     return;
   }
 
   event.respondWith(
-    fetch(event.request)
-      .then((res) => {
-        if (res.ok && isAppShell(url)) {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(event.request, copy)).catch(() => {});
-        }
-        return res;
-      })
-      .catch(() => caches.match(event.request).then((r) => r || caches.match('/member/portal') || caches.match('/')))
+    fetch(event.request).catch(() =>
+      caches.match(event.request).then((r) => r || caches.match('/'))
+    )
   );
 });
