@@ -31,6 +31,17 @@
               :disabled="uploading" x-text="uploading ? 'Scanning…' : 'Load'"></button>
       <button type="button" @click="toggleAngelRead()" class="px-3 py-1.5 rounded-lg text-xs font-bold"
               :class="reading ? 'bg-rose-600' : 'bg-amber-600'" x-text="reading ? 'Stop' : 'Angel'"></button>
+      <button type="button" @click="arrangeText()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600"
+              title="Clean line breaks so Angel reads more smoothly">Arrange text</button>
+      <select x-model="voiceName" @change="saveVoicePref()" class="text-slate-900 text-xs rounded-lg px-2 py-1.5 max-w-[9rem]">
+        <option value="">Default voice</option>
+        <template x-for="v in voices" :key="v.name">
+          <option :value="v.name" x-text="v.name + ' (' + v.lang + ')'"></option>
+        </template>
+      </select>
+      <label class="text-[10px] text-slate-400 flex items-center gap-1">Rate
+        <input type="range" min="0.7" max="1.2" step="0.05" x-model.number="rate" class="w-16">
+      </label>
       <button type="button" @click="saveSelection()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-700">Save highlighted → Excerpts</button>
       <select class="ml-auto text-slate-900 text-xs rounded-lg px-2 py-1.5 max-w-[50%]" x-model="bookId" @change="goBook()">
         {% for b in books %}
@@ -66,9 +77,52 @@
   function bookReader() {
     return {
       bookId: '', pages: [], pageIndex: 0, flipping: false, reading: false, uploading: false,
+      voices: [], voiceName: '', rate: 0.95, arranged: false,
       init() {
         const B = window.__BOOK__;
         if (B) { this.pages = B.pages||[]; this.pageIndex = B.pageIndex||0; this.bookId = String(B.id); }
+        this.voiceName = localStorage.getItem('kw_book_voice') || '';
+        this.rate = Number(localStorage.getItem('kw_book_rate') || 0.95);
+        this.loadVoices();
+        if (window.speechSynthesis) {
+          speechSynthesis.onvoiceschanged = () => this.loadVoices();
+        }
+      },
+      loadVoices() {
+        if (!('speechSynthesis' in window)) return;
+        let list = speechSynthesis.getVoices() || [];
+        // Prefer English voices, then others
+        list = list.slice().sort((a, b) => {
+          const ae = /en/i.test(a.lang) ? 0 : 1;
+          const be = /en/i.test(b.lang) ? 0 : 1;
+          if (ae !== be) return ae - be;
+          return (a.name || '').localeCompare(b.name || '');
+        });
+        this.voices = list;
+        if (this.voiceName && !list.find(v => v.name === this.voiceName) && list.length) {
+          // keep preference if still present; else leave default
+        }
+      },
+      saveVoicePref() {
+        localStorage.setItem('kw_book_voice', this.voiceName || '');
+        localStorage.setItem('kw_book_rate', String(this.rate));
+      },
+      /** Soft-wrap fix: join broken lines so TTS reads sentences smoothly */
+      arrangeText() {
+        if (!this.pages.length) return;
+        this.pages = this.pages.map(page => {
+          let s = String(page || '');
+          // hyphenated line breaks: word-\nword → wordword
+          s = s.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2');
+          // single newlines mid-paragraph → space (keep double newlines as paragraph breaks)
+          s = s.replace(/([^\n])\n(?!\n)/g, '$1 ');
+          // collapse excess spaces
+          s = s.replace(/[ \t]{2,}/g, ' ');
+          s = s.replace(/\n{3,}/g, '\n\n');
+          return s.trim();
+        });
+        this.arranged = true;
+        try { alert('Text arranged for smoother reading. Tap Angel to read.'); } catch(e) {}
       },
       goBook() { location.href = '/member/kwealth/books?book_id=' + this.bookId; },
       async uploadFiles(ev) {
@@ -99,13 +153,26 @@
       speakPage() {
         if (!('speechSynthesis' in window)) return;
         speechSynthesis.cancel();
-        const u = new SpeechSynthesisUtterance(this.pages[this.pageIndex]||'');
-        u.rate = 0.95;
+        this.loadVoices();
+        let text = this.pages[this.pageIndex] || '';
+        // light on-the-fly smooth if not arranged
+        if (!this.arranged) {
+          text = text.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2').replace(/([^\n])\n(?!\n)/g, '$1 ');
+        }
+        const u = new SpeechSynthesisUtterance(text);
+        u.rate = this.rate || 0.95;
+        const voices = this.voices.length ? this.voices : speechSynthesis.getVoices();
+        let voice = null;
+        if (this.voiceName) voice = voices.find(v => v.name === this.voiceName);
+        if (!voice) voice = voices.find(v => /en/i.test(v.lang) && /female|samantha|zira|karen|moira|tessa|google uk|microsoft/i.test(v.name))
+                  || voices.find(v => /en/i.test(v.lang));
+        if (voice) u.voice = voice;
         u.onend = () => { if (this.reading) this.next(); };
         speechSynthesis.speak(u);
       },
       toggleAngelRead() {
         this.reading = !this.reading;
+        this.saveVoicePref();
         if (this.reading) this.speakPage(); else try { speechSynthesis.cancel(); } catch(e) {}
       },
       async saveSelection() {

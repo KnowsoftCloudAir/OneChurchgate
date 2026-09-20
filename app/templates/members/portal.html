@@ -435,14 +435,27 @@
           <span x-text="angel.enabled ? 'Turn off' : 'Turn on'"></span>
         </button>
       </div>
-      <div class="flex flex-wrap gap-2 mt-3 relative z-10" x-show="angel.enabled">
-        <button type="button" @click="angelListenOnce()" class="px-3 py-1.5 rounded-full bg-amber-400 text-slate-900 text-xs font-bold">🎤 Listen</button>
-        <button type="button" @click="angelStartContinuousMusic()" class="px-3 py-1.5 rounded-full bg-emerald-500/90 text-white text-xs font-bold">🎵 Shuffle music</button>
-        <button type="button" @click="angelReadManna()" class="px-3 py-1.5 rounded-full bg-sky-500/90 text-white text-xs font-bold">📖 Daily Manna</button>
-        <button type="button" @click="angelPlayMusic()" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">▶ Music</button>
-        <button type="button" @click="angelReadBible('peace')" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">📖 Encourage</button>
-        <button type="button" @click="angelReadBible('anxious')" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">📖 Calm</button>
-        <button type="button" @click="angelStopMusic()" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">⏹ Stop music</button>
+      <div class="mt-3 relative z-10 space-y-2" x-show="angel.enabled">
+        <div class="flex gap-2 items-stretch">
+          <input type="text" x-model="angel.typedQ"
+                 @keydown.enter.prevent="angelAskTyped()"
+                 placeholder="Type a question for Angel… e.g. tell me about heaven"
+                 class="flex-1 min-w-0 rounded-xl px-3 py-2 text-sm text-slate-900 border border-amber-200/40">
+          <button type="button" @click="angelAskTyped()"
+                  class="shrink-0 px-3 py-2 rounded-xl bg-amber-400 text-slate-900 text-xs font-bold">
+            👼 Ask Angel
+          </button>
+        </div>
+        <p class="text-[10px] text-amber-100/80" x-show="angel.lastFollowUp" x-text="'Angel asked: ' + angel.lastFollowUp"></p>
+        <div class="flex flex-wrap gap-2">
+          <button type="button" @click="angelListenOnce()" class="px-3 py-1.5 rounded-full bg-amber-400 text-slate-900 text-xs font-bold">🎤 Listen</button>
+          <button type="button" @click="angelStartContinuousMusic()" class="px-3 py-1.5 rounded-full bg-emerald-500/90 text-white text-xs font-bold">🎵 Shuffle music</button>
+          <button type="button" @click="angelReadManna()" class="px-3 py-1.5 rounded-full bg-sky-500/90 text-white text-xs font-bold">📖 Daily Manna</button>
+          <button type="button" @click="angelPlayMusic()" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">▶ Music</button>
+          <button type="button" @click="angelReadBible('peace')" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">📖 Encourage</button>
+          <button type="button" @click="angelReadBible('anxious')" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">📖 Calm</button>
+          <button type="button" @click="angelStopMusic()" class="px-3 py-1.5 rounded-full bg-white/15 text-xs font-semibold border border-white/20">⏹ Stop music</button>
+        </div>
       </div>
     </div>
 
@@ -1115,7 +1128,7 @@ function memberHub() {
         musicList: [],
         churchMusic: { id: '', playing: false },
         churchMusicList: [],
-        angel: { enabled: false, listening: false, busy: false, status: 'Tap 👼 Angel to turn on.', recognition: null, probeTimer: null },
+        angel: { enabled: false, listening: false, busy: false, status: 'Tap 👼 Angel to turn on.', recognition: null, probeTimer: null, typedQ: '', lastFollowUp: '', awaitingFollow: false, lastTopic: '' },
     directory: { list: [], selectedId: '', current: null },
     openPanel: null,
     
@@ -1405,14 +1418,13 @@ function memberHub() {
       this.angel.status = 'Listening — still active and waiting.';
       this._angelResumeListen();
     },
-    angelSpeak(text, brief) {
+    angelSpeak(text, brief, followUp) {
       if (!('speechSynthesis' in window) || !text) {
         this.angelIdleAfterAction();
         return;
       }
       try {
         speechSynthesis.cancel();
-        // ~30 seconds max (~90 words at normal rate)
         let s = String(text).replace(/\s+/g, ' ').trim();
         const words = s.split(' ');
         if (words.length > 90) s = words.slice(0, 90).join(' ') + '.';
@@ -1422,12 +1434,30 @@ function memberHub() {
         const voices = speechSynthesis.getVoices();
         let voice = null;
         if (this.bible.voiceName) voice = voices.find(v => v.name === this.bible.voiceName);
-        if (!voice) voice = voices.find(v => /en/i.test(v.lang) && /female|samantha|zira|google uk/i.test(v.name)) || voices.find(v => /en/i.test(v.lang));
+        if (!voice) voice = voices.find(v => /en/i.test(v.lang) && /female|samantha|zira|google uk|karen|moira|tessa/i.test(v.name)) || voices.find(v => /en/i.test(v.lang));
         if (voice) u.voice = voice;
+        const fu = (followUp || '').trim();
         u.onend = () => {
-          this.angel.busy = false;
-          this.angelIdleAfterAction();
-          this._angelResumeListen();
+          if (fu) {
+            this.angel.lastFollowUp = fu;
+            this.angel.awaitingFollow = true;
+            const q = new SpeechSynthesisUtterance(fu);
+            q.rate = 1.0;
+            q.volume = u.volume;
+            if (voice) q.voice = voice;
+            q.onend = () => {
+              this.angel.busy = false;
+              this.angel.status = 'Your turn — answer Angel\'s question by voice or type below.';
+              this.angelIdleAfterAction('Waiting for your reply…');
+              this._angelResumeListen();
+            };
+            q.onerror = () => { this.angel.busy = false; this.angelIdleAfterAction(); };
+            speechSynthesis.speak(q);
+          } else {
+            this.angel.busy = false;
+            this.angelIdleAfterAction();
+            this._angelResumeListen();
+          }
         };
         u.onerror = () => { this.angel.busy = false; this.angelIdleAfterAction(); };
         this.angel.busy = true;
@@ -1436,6 +1466,18 @@ function memberHub() {
         this.angel.busy = false;
         this.angelIdleAfterAction();
       }
+    },
+    async angelAskTyped() {
+      const q = (this.angel.typedQ || '').trim();
+      if (!q) return;
+      if (!this.angel.enabled) {
+        this.angel.enabled = true;
+        if (!this.angel.recognition) this.initAngel();
+        this.angelVisibilityHook && this.angelVisibilityHook();
+        this._startAngelProbe && this._startAngelProbe();
+      }
+      this.angel.typedQ = '';
+      await this.handleAngelCommand(q);
     },
 
     angelIdleAfterAction(msg) {
@@ -1602,20 +1644,23 @@ function memberHub() {
     },
     angelTopicTalk(key) {
       const topics = {
-        jesus: 'Jesus is the Son of God, the Messiah, also called Emmanuel — God with us. Cross references: John 3:16, John 14:6, Matthew 1:23, Philippians 2:5-11, Acts 4:12.',
-        god: 'God is the Creator of heaven and earth, holy and loving. Cross references: Genesis 1:1, Deuteronomy 6:4, Isaiah 45:5, John 4:24, Psalm 90:2.',
-        creation: 'In the beginning God created the heaven and the earth. Cross references: Genesis 1:1-3, Genesis 1:27, John 1:1-3, Colossians 1:16, Hebrews 11:3.',
-        faith: 'Faith is the substance of things hoped for, the evidence of things not seen. Cross references: Hebrews 11:1, Hebrews 11:6, Romans 10:17, 2 Corinthians 5:7, Mark 11:22-24.',
-        holiness: 'Be ye holy; for I am holy. Without holiness no man shall see the Lord. Cross references: 1 Peter 1:15-16, Hebrews 12:14, 1 Thessalonians 4:7, Romans 12:1-2.',
-        rapture: 'The dead in Christ shall rise first; then we which are alive shall be caught up together with them. Cross references: 1 Thessalonians 4:16-17, 1 Corinthians 15:51-52, John 14:1-3, Titus 2:13, Matthew 24:30-31.',
-        endtime: 'Jesus spoke of signs of the end of the age and His return. Watch therefore. Cross references: Matthew 24:3-14, Matthew 24:36, 2 Timothy 3:1-5, Revelation 1:7, 2 Peter 3:10-13.',
-        holyspirit: 'The Holy Spirit is the Comforter and power of God in the believer. Cross references: John 14:26, Acts 1:8, Acts 2:1-4, Romans 8:14, Galatians 5:22-23.',
-        salvation: 'By grace are ye saved through faith. Cross references: Ephesians 2:8-9, Romans 10:9-10, John 3:16, Acts 16:31, 1 John 1:9.',
-        prayer: 'Pray without ceasing. Ask, and it shall be given you. Cross references: 1 Thessalonians 5:17, Matthew 6:9-13, Matthew 7:7, Philippians 4:6-7, James 5:16.',
-        peace: 'Peace I leave with you, my peace I give unto you. Cross references: John 14:27, Isaiah 26:3, Philippians 4:7, Romans 5:1.',
+        jesus: ['Jesus is the Son of God, the Messiah — God with us. Whoever believes in Him receives everlasting life. He is the way, the truth, and the life.', 'Would you like me to share how a person receives Jesus as Saviour?'],
+        god: ['God is the living Creator of heaven and earth — holy, loving, and one God in three Persons: Father, Son, and Holy Spirit.', 'Would you like to hear more about how God made us in His image?'],
+        creation: ['In the beginning God created the heaven and the earth. He spoke, and it was done. Man was made in His image.', 'Did you know the Sabbath points us to rest in God?'],
+        faith: ['Faith is confidence in God and His word. It comes by hearing the word of Christ, and without faith it is impossible to please God.', 'Shall I share how faith grows by the Word?'],
+        holiness: ['God calls His people to be holy as He is holy. Holiness is a life set apart in love and obedience.', 'Would you like a simple word on entire sanctification?'],
+        rapture: ['The Lord will descend with a shout and the trumpet of God. The dead in Christ rise first; then living believers are caught up to meet the Lord in the air.', 'Would you like to hear the comfort this gives to those who mourn?'],
+        endtime: ['Jesus spoke of wars, deception, and the gospel going to all nations before His coming. We watch and pray — we do not set dates.', 'Shall I share how to stay ready?'],
+        holyspirit: ['The Holy Spirit is the Comforter who teaches, convicts, and empowers believers to live for Christ and to witness.', 'Would you like to hear about the baptism with the Holy Ghost for power?'],
+        salvation: ['Salvation is by grace through faith in Jesus Christ — not by works. Confess Him as Lord and believe God raised Him from the dead.', 'Would you like the simple prayer of repentance and faith?'],
+        prayer: ['Prayer is talking with God in faith: ask, seek, and knock. Be anxious for nothing; in everything by prayer make your requests known to God.', 'Shall I walk through the Lord\'s Prayer with you?'],
+        peace: ['Jesus said, Peace I leave with you. His peace guards the heart when we trust Him.', 'Would you like a short word of encouragement from Scripture?'],
+        heaven: ['Heaven is God\'s dwelling place — holy and full of worship. Jesus prepares a place for His people; one day there will be no death, sorrow, or pain.', 'Did you know that in heaven the redeemed will see His face?'],
       };
       if (!topics[key]) return false;
-      this.angelSpeak(topics[key]);
+      const [ans, fu] = topics[key];
+      this.angel.lastTopic = key;
+      this.angelSpeak(ans, false, fu);
       return true;
     },
     angelDashboardHelp(kind) {
@@ -1665,6 +1710,32 @@ function memberHub() {
       if (!t) return;
       this.angel.status = 'Heard: “' + raw + '”';
 
+      // Continue conversation after Angel's guiding question
+      if (this.angel.awaitingFollow) {
+        this.angel.awaitingFollow = false;
+        const yes = /^(yes|yeah|yep|sure|ok|okay|please|tell me more|more|go on|continue|i want|explain)/.test(t);
+        if (yes || t.length > 2) {
+          const followQ = yes ? ('more about ' + (this.angel.lastTopic || 'this')) : raw;
+          this.angel.busy = true;
+          this.angel.status = 'Sharing more…';
+          try {
+            const r = await fetch('/member/api/angel-ask', {
+              method: 'POST', credentials: 'same-origin',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ question: followQ })
+            });
+            const j = await r.json();
+            if (j && j.ok && j.answer) {
+              if (j.topic) this.angel.lastTopic = j.topic;
+              this.angelSpeak(j.answer, false, j.follow_up || '');
+              return;
+            }
+          } catch (e) {}
+          this.angelSpeak('Would you like to ask another question about the Word?');
+          return;
+        }
+      }
+
       // Voice wake / off
       if (/\bangel\s+turn\s+off\b/.test(t) || /\b(stop angel|angel off|turn off angel|goodbye angel|angel stop)\b/.test(t)
           || (this.angel.enabled && /^(stop|off|turn off)$/.test(t))) {
@@ -1703,6 +1774,7 @@ function memberHub() {
       if (/\b(receive jesus|accept jesus|how do i (get )?saved|how can i be saved)\b/.test(t)) {
         this.angelLeadSalvation(); return;
       }
+      if (/\bheaven\b/.test(t) || /\btell me about heaven\b/.test(t)) { this.angelTopicTalk('heaven'); return; }
       if (/\brapture\b/.test(t)) { this.angelTopicTalk('rapture'); return; }
       if (/\bend\s*time|end of the age|last days\b/.test(t)) { this.angelTopicTalk('endtime'); return; }
       if (/\bcreation\b|\bin the beginning\b/.test(t)) { this.angelTopicTalk('creation'); return; }
@@ -1756,8 +1828,8 @@ function memberHub() {
         });
         const j = await r.json();
         if (j && j.ok && j.answer) {
-          this.angelSpeak(j.answer);
-          this.angelIdleAfterAction('Answered using Kwealth references.');
+          if (j.topic) this.angel.lastTopic = j.topic;
+          this.angelSpeak(j.answer, false, j.follow_up || '');
           return;
         }
       } catch (e) {}
