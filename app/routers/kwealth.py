@@ -295,6 +295,365 @@ def _make_follow_up(query: str, body: str, resource: str = "", depth: int = 0) -
 _LAST_TOPIC: dict = {}
 
 
+
+CHARS_PER_PAGE = 900
+
+
+def _split_pages(text: str) -> List[str]:
+    text = (text or "").replace("\r\n", "\n").strip()
+    if not text:
+        return ["(Empty book)"]
+    pages = []
+    buf = []
+    count = 0
+    for para in text.split("\n"):
+        line = para.strip()
+        if not line:
+            if buf:
+                buf.append("")
+            continue
+        if count + len(line) > CHARS_PER_PAGE and buf:
+            pages.append("\n".join(buf).strip())
+            buf = [line]
+            count = len(line)
+        else:
+            buf.append(line)
+            count += len(line) + 1
+    if buf:
+        pages.append("\n".join(buf).strip())
+    return pages or ["(Empty book)"]
+
+
+def _load_book_text(book: KwealthBook) -> str:
+    if book.source_path:
+        # try several bases
+        candidates = [
+            Path(book.source_path),
+            Path("app") / book.source_path.replace("app/", "", 1) if book.source_path.startswith("app/") else Path("app/static") / book.source_path,
+            USER_BOOKS_TEXT / Path(book.source_path).name,
+            BOOKS_DIR / Path(book.source_path).name,
+        ]
+        here = Path(__file__).resolve().parent.parent
+        candidates.append(here / "static" / "uploads" / "kwealth_books_text" / Path(book.source_path).name)
+        candidates.append(here / "static" / "books" / Path(book.source_path).name)
+        for c in candidates:
+            try:
+                if c.exists() and c.is_file():
+                    return c.read_text(encoding="utf-8", errors="ignore")
+            except Exception:
+                continue
+    return ""
+
+
+def _extract_text_from_upload(data: bytes, filename: str) -> str:
+    name = (filename or "").lower()
+    if name.endswith(".txt") or name.endswith(".md"):
+        return data.decode("utf-8", errors="ignore")
+    if name.endswith(".pdf") or (data[:4] == b"%PDF"):
+        try:
+            from pypdf import PdfReader
+            import io
+            reader = PdfReader(io.BytesIO(data))
+            parts = []
+            for page in reader.pages:
+                try:
+                    parts.append(page.extract_text() or "")
+                except Exception:
+                    pass
+            return "\n\n".join(parts)
+        except Exception:
+            return data.decode("utf-8", errors="ignore")
+    return data.decode("utf-8", errors="ignore")
+
+
+@router.get("/member/kwealth", response_class=HTMLResponse)
+async def kwealth_home(request: Request, user: User = Depends(require_user), session: Session = Depends(get_session)):
+    books = session.exec(select(KwealthBook).where(KwealthBook.is_active == True)).all()
+    progress = session.exec(select(KwealthProgress).where(KwealthProgress.user_id == user.id)).all()
+    excerpts_n = len(session.exec(select(KwealthExcerpt).where(KwealthExcerpt.user_id == user.id)).all())
+    notes_n = len(session.exec(select(KwealthNote).where(KwealthNote.user_id == user.id)).all())
+    return templates.TemplateResponse("kwealth/home.html", {
+        "request": request,
+        "user": user,
+        "total_books": len(books),
+        "total_read": len(progress),
+        "excerpts_n": excerpts_n,
+        "notes_n": notes_n,
+        "mh_url": MH_URL,
+    })
+
+
+@router.get("/member/kwealth/books", response_class=HTMLResponse)
+async def kwealth_books(
+    request: Request,
+    book_id: Optional[int] = None,
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    books = session.exec(select(KwealthBook).where(KwealthBook.is_active == True).order_by(KwealthBook.title)).all()
+    book = None
+    pages = []
+    page_index = 0
+    if book_id:
+        book = session.get(KwealthBook, book_id)
+    elif books:
+        book = books[0]
+    if book:
+        text = _load_book_text(book)
+        pages = _split_pages(text)
+        prog = session.exec(
+            select(KwealthProgress).where(
+                KwealthProgress.user_id == user.id,
+                KwealthProgress.book_id == book.id,
+            )
+        ).first()
+        if prog:
+            page_index = max(0, min(prog.page_index, len(pages) - 1))
+    return templates.TemplateResponse("kwealth/books.html", {
+        "request": request,
+        "user": user,
+        "books": books,
+        "book": book,
+        "pages": pages,
+        "page_index": page_index,
+        "mh_url": MH_URL,
+    })
+
+
+@router.post("/member/kwealth/books/upload")
+async def kwealth_books_upload(
+    files: List[UploadFile] = File(...),
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    count = 0
+    for f in files or []:
+        raw = await f.read()
+        if not raw or len(raw) > 15_000_000:
+            continue
+        text = _extract_text_from_upload(raw, f.filename or "book.txt")
+        text = (text or "").strip()
+        if len(text) < 20:
+            continue
+        safe = f"u{user.id}_{uuid.uuid4().hex[:10]}.txt"
+        dest = USER_BOOKS_TEXT / safe
+        # prefer package-relative path
+        here = Path(__file__).resolve().parent.parent
+        dest = here / "static" / "uploads" / "kwealth_books_text" / safe
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(text, encoding="utf-8")
+        title = (f.filename or "Book").rsplit(".", 1)[0][:180]
+        book = KwealthBook(
+            title=title,
+            author=None,
+            source_path=str(dest),
+            page_count=len(_split_pages(text)),
+            is_active=True,
+        )
+        session.add(book)
+        session.commit()
+        session.refresh(book)
+        session.add(KwealthProgress(user_id=user.id, book_id=book.id, page_index=0))
+        session.commit()
+        count += 1
+    return RedirectResponse(f"/member/kwealth/books?uploaded={count}", status_code=303)
+
+
+@router.post("/member/kwealth/books/progress")
+async def kwealth_books_progress(
+    book_id: int = Form(...),
+    page_index: int = Form(0),
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    book = session.get(KwealthBook, book_id)
+    if not book:
+        return JSONResponse({"ok": False})
+    prog = session.exec(
+        select(KwealthProgress).where(
+            KwealthProgress.user_id == user.id,
+            KwealthProgress.book_id == book_id,
+        )
+    ).first()
+    if not prog:
+        prog = KwealthProgress(user_id=user.id, book_id=book_id, page_index=page_index)
+    else:
+        prog.page_index = max(0, int(page_index))
+        prog.updated_at = datetime.utcnow()
+    session.add(prog)
+    session.commit()
+    return JSONResponse({"ok": True})
+
+
+@router.post("/member/kwealth/excerpts/from-book")
+async def excerpt_from_book(
+    book_id: int = Form(0),
+    text: str = Form(""),
+    title: str = Form("Highlight"),
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    body = (text or "").strip()
+    if not body:
+        return RedirectResponse("/member/kwealth/books", status_code=303)
+    src = "book"
+    if book_id:
+        b = session.get(KwealthBook, book_id)
+        if b:
+            src = b.title
+    session.add(KwealthExcerpt(
+        user_id=user.id,
+        title=(title or "Highlight")[:200],
+        body=body[:20000],
+        source=src,
+    ))
+    session.commit()
+    return JSONResponse({"ok": True})
+
+
+@router.get("/member/kwealth/excerpts", response_class=HTMLResponse)
+async def excerpts_page(request: Request, user: User = Depends(require_user), session: Session = Depends(get_session)):
+    rows = session.exec(
+        select(KwealthExcerpt).where(KwealthExcerpt.user_id == user.id).order_by(KwealthExcerpt.created_at.desc())
+    ).all()
+    return templates.TemplateResponse("kwealth/excerpts.html", {
+        "request": request, "user": user, "excerpts": rows, "mh_url": MH_URL,
+    })
+
+
+@router.post("/member/kwealth/excerpts")
+async def excerpts_save(
+    title: str = Form(""),
+    body: str = Form(""),
+    source: str = Form(""),
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    body = (body or "").strip()
+    if body:
+        session.add(KwealthExcerpt(
+            user_id=user.id,
+            title=(title or "Excerpt")[:200],
+            body=body[:50000],
+            source=(source or "manual")[:200],
+        ))
+        session.commit()
+    return RedirectResponse("/member/kwealth/excerpts", status_code=303)
+
+
+@router.post("/member/kwealth/excerpts/{excerpt_id}/delete")
+async def delete_excerpt(excerpt_id: int, user: User = Depends(require_user), session: Session = Depends(get_session)):
+    row = session.get(KwealthExcerpt, excerpt_id)
+    if row and row.user_id == user.id:
+        session.delete(row)
+        session.commit()
+    return RedirectResponse("/member/kwealth/excerpts", status_code=303)
+
+
+@router.get("/member/kwealth/notes", response_class=HTMLResponse)
+async def notes_page(request: Request, user: User = Depends(require_user), session: Session = Depends(get_session)):
+    notes = session.exec(
+        select(KwealthNote).where(KwealthNote.user_id == user.id).order_by(KwealthNote.updated_at.desc())
+    ).all()
+    keys = set()
+    for e in session.exec(select(KwealthExcerpt).where(KwealthExcerpt.user_id == user.id)).all():
+        for w in re.findall(r"[A-Za-z']{4,}", e.body or ""):
+            keys.add(w.lower())
+    for phrase in ["lord", "jesus", "faith", "prayer", "bible"]:
+        keys.add(phrase)
+    return templates.TemplateResponse("kwealth/notes.html", {
+        "request": request, "user": user, "notes": notes,
+        "highlight_words": sorted(keys)[:400],
+        "mh_url": MH_URL,
+    })
+
+
+@router.get("/member/kwealth/notes/api/list")
+async def notes_list_api(user: User = Depends(require_user), session: Session = Depends(get_session)):
+    notes = session.exec(
+        select(KwealthNote).where(KwealthNote.user_id == user.id).order_by(KwealthNote.updated_at.desc())
+    ).all()
+    return [
+        {
+            "id": n.id,
+            "title": n.title,
+            "body": n.body_text or "",
+            "ink": n.ink_path or "",
+            "updated_at": n.updated_at.isoformat() if n.updated_at else "",
+        }
+        for n in notes
+    ]
+
+
+@router.post("/member/kwealth/notes")
+async def save_note(
+    title: str = Form(""),
+    body_text: str = Form(""),
+    note_id: str = Form(""),
+    ink: UploadFile = File(None),
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    ink_path = None
+    if ink and ink.filename:
+        data = await ink.read()
+        if len(data) < 5_000_000:
+            fname = f"ink_{user.id}_{uuid.uuid4().hex[:10]}.png"
+            here = Path(__file__).resolve().parent.parent
+            dest = here / "static" / "uploads" / "kwealth_ink" / fname
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(data)
+            ink_path = f"/static/uploads/kwealth_ink/{fname}"
+    nid = None
+    try:
+        nid = int(note_id) if note_id else None
+    except Exception:
+        nid = None
+    note = session.get(KwealthNote, nid) if nid else None
+    if note and note.user_id != user.id:
+        note = None
+    if note:
+        note.title = (title or "").strip() or note.title or "Note"
+        note.body_text = (body_text or "").strip() or None
+        if ink_path:
+            note.ink_path = ink_path
+        note.updated_at = datetime.utcnow()
+        session.add(note)
+    else:
+        note = KwealthNote(
+            user_id=user.id,
+            title=(title or "").strip() or "Note",
+            body_text=(body_text or "").strip() or None,
+            ink_path=ink_path,
+        )
+        session.add(note)
+    session.commit()
+    session.refresh(note)
+    return JSONResponse({"ok": True, "id": note.id, "title": note.title})
+
+
+@router.post("/member/kwealth/notes/{note_id}/delete")
+async def delete_note(note_id: int, user: User = Depends(require_user), session: Session = Depends(get_session)):
+    note = session.get(KwealthNote, note_id)
+    if note and note.user_id == user.id:
+        session.delete(note)
+        session.commit()
+    return JSONResponse({"ok": True})
+
+
+@router.get("/member/api/badge-count")
+async def badge_count(user: User = Depends(require_user), session: Session = Depends(get_session)):
+    count = 0
+    try:
+        from app.models import Announcement
+        anns = session.exec(select(Announcement).where(Announcement.is_active == True)).all()
+        count += min(len(anns or []), 9)
+    except Exception:
+        pass
+    return JSONResponse({"count": int(count)})
+
+
+
 @router.post("/member/api/angel-ask")
 async def angel_ask(
     request: Request,
