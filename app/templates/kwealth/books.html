@@ -2,236 +2,69 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Books — Kwealth</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <style>
-    :root {
-      --book-bg: #0f172a;
-      --sheet-bg: linear-gradient(180deg, #fffef8 0%, #f3e9d3 100%);
-      --sheet-color: #1c1917;
-      --sheet-shadow: 12px 16px 40px rgba(0,0,0,.45);
-    }
-    body.theme-parchment { --book-bg: #0f172a; --sheet-bg: linear-gradient(180deg,#fffef8,#f3e9d3); --sheet-color:#1c1917; }
-    body.theme-night { --book-bg: #000; --sheet-bg: #0a0a0a; --sheet-color: #f5f5f5; --sheet-shadow: 0 0 40px rgba(255,255,255,.06); }
-    body.theme-sepia { --book-bg: #2c2416; --sheet-bg: #f4ecd8; --sheet-color: #3b2f1e; }
-    body.theme-forest { --book-bg: #0c1a12; --sheet-bg: #e8f5e9; --sheet-color: #1b3a2a; }
-    body.theme-ocean { --book-bg: #0a1628; --sheet-bg: #e3f2fd; --sheet-color: #0d2137; }
-
-    body { background: var(--book-bg); min-height: 100vh; transition: background .4s ease; }
-    .toolbar { background: rgba(15,23,42,.92); backdrop-filter: blur(10px); }
-    body.theme-night .toolbar { background: rgba(0,0,0,.92); border-color: #333; }
-
-    .stage {
-      perspective: 1600px;
-      touch-action: pan-y;
-      user-select: text;
-      -webkit-user-select: text;
-    }
+    body { background: radial-gradient(ellipse at top, #1e293b, #0f172a 60%); min-height: 100vh; }
     .page-sheet {
-      background: var(--sheet-bg);
-      color: var(--sheet-color);
-      border-radius: 6px 18px 18px 6px;
-      box-shadow: var(--sheet-shadow), inset -8px 0 20px rgba(120,80,20,.06);
-      min-height: 68vh;
-      transform-origin: left center;
-      transition: transform .45s cubic-bezier(.4,.0,.2,1), opacity .35s ease, box-shadow .3s;
-      will-change: transform;
-      font-size: var(--book-font-size, 1.125rem);
-      font-family: var(--book-font, Georgia, 'Times New Roman', serif);
-      line-height: 1.75;
+      background: linear-gradient(180deg, #fffef8 0%, #f3e9d3 100%);
+      color: #1c1917;
+      border-radius: 4px 16px 16px 4px;
+      box-shadow: 12px 16px 40px rgba(0,0,0,.45), inset -8px 0 20px rgba(120,80,20,.08);
+      min-height: 70vh;
+      transition: transform .35s ease;
     }
-    /* Flip styles */
-    .page-sheet.flip-curl {
-      transform: perspective(1400px) rotateY(-72deg) scaleX(.92);
-      opacity: .55;
-      box-shadow: -20px 10px 40px rgba(0,0,0,.35);
-    }
-    .page-sheet.flip-slide {
-      transform: translateX(-28%) rotateZ(-2deg);
-      opacity: .4;
-    }
-    .page-sheet.flip-fade {
-      transform: scale(.94);
-      opacity: 0;
-    }
-    .page-sheet.flip-fold {
-      transform: perspective(1200px) rotateX(12deg) rotateY(-55deg) translateZ(-40px);
-      opacity: .5;
-    }
-    .page-sheet.flip-back {
-      transform: perspective(1400px) rotateY(72deg) scaleX(.92);
-      opacity: .55;
-    }
-    .page-sheet.flip-back-slide {
-      transform: translateX(28%) rotateZ(2deg);
-      opacity: .4;
-    }
-
-    .chip {
-      display: inline-flex; align-items: center; gap: .25rem;
-      padding: .35rem .65rem; border-radius: .5rem;
-      font-size: .7rem; font-weight: 700;
-      background: rgba(255,255,255,.12); color: #e2e8f0;
-      border: 1px solid rgba(255,255,255,.15);
-      cursor: pointer;
-    }
-    .chip:hover { background: rgba(255,255,255,.2); }
-    .chip.on { background: #0d9488; border-color: #14b8a6; }
-
-    .drawer {
-      background: rgba(15,23,42,.97);
-      border-top: 1px solid rgba(255,255,255,.1);
-      max-height: 42vh; overflow-y: auto;
-    }
-    input[type=range] { accent-color: #14b8a6; }
-
-    .bgm-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: #64748b; display: inline-block;
-    }
-    .bgm-dot.live { background: #34d399; box-shadow: 0 0 8px #34d399; animation: pulse 1.4s infinite; }
-    @keyframes pulse { 50% { opacity: .45; } }
+    .page-sheet.flip { transform: perspective(1200px) rotateY(-8deg); }
   </style>
 </head>
-<body class="theme-parchment text-slate-100" x-data="bookReader()" x-init="init()"
-      :class="'theme-' + theme">
-  <header class="toolbar sticky top-0 z-30 border-b border-white/10">
-    <div class="max-w-4xl mx-auto px-2 py-2 flex flex-wrap items-center gap-1.5">
-      <a href="/member/kwealth" class="text-xs text-teal-300 px-1">← Kwealth</a>
-      <span class="font-bold text-sm mr-1">Books</span>
-
-      <input type="file" x-ref="filePick" class="hidden" accept=".pdf,.txt,application/pdf,text/plain" multiple @change="uploadFiles($event)">
-      <button type="button" class="chip" @click="$refs.filePick.click()" :disabled="uploading" x-text="uploading ? 'Scanning…' : 'Load'"></button>
-
-      <button type="button" class="chip" :class="reading && 'on'" @click="toggleAngelRead()" x-text="reading ? '⏹ Stop' : '👼 Read'"></button>
-      <button type="button" class="chip" @click="arrangeText()">Arrange</button>
-      <button type="button" class="chip" @click="showTools = !showTools" :class="showTools && 'on'">⚙ Settings</button>
-      <button type="button" class="chip" @click="showBgm = !showBgm" :class="(showBgm || bgmPlaying) && 'on'">
-        <span class="bgm-dot" :class="bgmPlaying && 'live'"></span> Music
-      </button>
-
-      <select class="ml-auto text-slate-900 text-xs rounded-lg px-2 py-1.5 max-w-[46%]" x-model="bookId" @change="goBook()">
+<body class="text-slate-100" x-data="bookReader()" x-init="init()">
+  <header class="sticky top-0 z-20 bg-slate-950/90 backdrop-blur border-b border-white/10">
+    <div class="max-w-4xl mx-auto px-3 py-2.5 flex flex-wrap items-center gap-2">
+      <a href="/member/kwealth" class="text-xs text-teal-300">← Kwealth</a>
+      <span class="font-bold text-sm sm:text-base">Books</span>
+      <!-- Device file picker (like personal music) -->
+      <input type="file" x-ref="filePick" class="hidden" accept=".pdf,.txt,application/pdf,text/plain" multiple
+             @change="uploadFiles($event)">
+      <button type="button" @click="$refs.filePick.click()"
+              class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 hover:bg-slate-600"
+              :disabled="uploading" x-text="uploading ? 'Scanning…' : 'Load'"></button>
+      <button type="button" @click="toggleAngelRead()" class="px-3 py-1.5 rounded-lg text-xs font-bold"
+              :class="reading ? 'bg-rose-600' : 'bg-amber-600'" x-text="reading ? 'Stop' : 'Angel'"></button>
+      <button type="button" @click="arrangeText()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600"
+              title="Clean line breaks so Angel reads more smoothly">Arrange text</button>
+      <select x-model="voiceName" @change="saveVoicePref()" class="text-slate-900 text-xs rounded-lg px-2 py-1.5 max-w-[9rem]">
+        <option value="">Default voice</option>
+        <template x-for="v in voices" :key="v.name">
+          <option :value="v.name" x-text="v.name + ' (' + v.lang + ')'"></option>
+        </template>
+      </select>
+      <label class="text-[10px] text-slate-400 flex items-center gap-1">Rate
+        <input type="range" min="0.7" max="1.2" step="0.05" x-model.number="rate" class="w-16">
+      </label>
+      <button type="button" @click="saveSelection()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-700">Save highlighted → Excerpts</button>
+      <select class="ml-auto text-slate-900 text-xs rounded-lg px-2 py-1.5 max-w-[50%]" x-model="bookId" @change="goBook()">
         {% for b in books %}
         <option value="{{ b.id }}" {% if book and b.id==book.id %}selected{% endif %}>{{ b.title }}</option>
         {% endfor %}
       </select>
     </div>
-
-    <!-- Settings drawer -->
-    <div class="drawer max-w-4xl mx-auto px-3 py-3 space-y-3" x-show="showTools" x-cloak>
-      <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
-        <div>
-          <p class="text-slate-400 mb-1 font-semibold">Theme</p>
-          <div class="flex flex-wrap gap-1">
-            <button type="button" class="chip" :class="theme==='parchment'&&'on'" @click="setTheme('parchment')">Parchment</button>
-            <button type="button" class="chip" :class="theme==='night'&&'on'" @click="setTheme('night')">Night</button>
-            <button type="button" class="chip" :class="theme==='sepia'&&'on'" @click="setTheme('sepia')">Sepia</button>
-            <button type="button" class="chip" :class="theme==='forest'&&'on'" @click="setTheme('forest')">Forest</button>
-            <button type="button" class="chip" :class="theme==='ocean'&&'on'" @click="setTheme('ocean')">Ocean</button>
-          </div>
-        </div>
-        <div>
-          <p class="text-slate-400 mb-1 font-semibold">Font size <span x-text="fontSize + 'px'"></span></p>
-          <input type="range" min="14" max="32" step="1" x-model.number="fontSize" @input="applyFont()" class="w-full">
-        </div>
-        <div>
-          <p class="text-slate-400 mb-1 font-semibold">Font family</p>
-          <select class="w-full text-slate-900 rounded-lg px-2 py-1.5" x-model="fontFamily" @change="applyFont()">
-            <option value="Georgia, 'Times New Roman', serif">Georgia (classic)</option>
-            <option value="'Palatino Linotype', Palatino, serif">Palatino</option>
-            <option value="'Book Antiqua', Palatino, serif">Book Antiqua</option>
-            <option value="Garamond, serif">Garamond</option>
-            <option value="'Segoe UI', system-ui, sans-serif">Segoe UI</option>
-            <option value="'Helvetica Neue', Arial, sans-serif">Helvetica</option>
-            <option value="'Courier New', monospace">Courier</option>
-          </select>
-        </div>
-        <div>
-          <p class="text-slate-400 mb-1 font-semibold">Page flip style</p>
-          <select class="w-full text-slate-900 rounded-lg px-2 py-1.5" x-model="flipStyle">
-            <option value="curl">Curl (book edge)</option>
-            <option value="slide">Slide</option>
-            <option value="fold">Fold</option>
-            <option value="fade">Fade</option>
-          </select>
-        </div>
-        <div>
-          <p class="text-slate-400 mb-1 font-semibold">Jump to page</p>
-          <div class="flex gap-1">
-            <input type="number" min="1" :max="pages.length||1" x-model.number="jumpTo"
-                   class="w-20 text-slate-900 rounded-lg px-2 py-1.5" placeholder="#">
-            <button type="button" class="chip on" @click="goToPage()">Go</button>
-          </div>
-        </div>
-        <div>
-          <p class="text-slate-400 mb-1 font-semibold">Voice</p>
-          <select x-model="voiceName" @change="saveVoicePref()" class="w-full text-slate-900 rounded-lg px-2 py-1.5 text-xs">
-            <option value="">Default voice</option>
-            <template x-for="v in voices" :key="v.name">
-              <option :value="v.name" x-text="v.name + ' (' + v.lang + ')'"></option>
-            </template>
-          </select>
-          <label class="text-[10px] text-slate-400 flex items-center gap-1 mt-1">Rate
-            <input type="range" min="0.7" max="1.15" step="0.05" x-model.number="rate" class="flex-1">
-          </label>
-        </div>
-      </div>
-    </div>
-
-    <!-- Background music drawer -->
-    <div class="drawer max-w-4xl mx-auto px-3 py-3 space-y-2" x-show="showBgm" x-cloak>
-      <p class="text-xs text-slate-300 font-semibold">Soft background music while reading</p>
-      <p class="text-[11px] text-slate-500">Pick a calm built-in tone or load your own audio file (mp3, m4a, ogg, wav).</p>
-      <div class="flex flex-wrap gap-1.5">
-        <button type="button" class="chip" :class="bgmId==='none'&&'on'" @click="setBgm('none')">None</button>
-        <button type="button" class="chip" :class="bgmId==='soft1'&&'on'" @click="setBgm('soft1')">Soft pad</button>
-        <button type="button" class="chip" :class="bgmId==='soft2'&&'on'" @click="setBgm('soft2')">Gentle wave</button>
-        <button type="button" class="chip" :class="bgmId==='soft3'&&'on'" @click="setBgm('soft3')">Warm drone</button>
-        <button type="button" class="chip" :class="bgmId==='custom'&&'on'" @click="$refs.bgmFile.click()">Load my music…</button>
-        <input type="file" x-ref="bgmFile" class="hidden" accept="audio/*,.mp3,.m4a,.ogg,.wav" @change="loadCustomBgm($event)">
-      </div>
-      <div class="flex items-center gap-3 text-xs">
-        <label class="flex items-center gap-2 text-slate-400">Volume
-          <input type="range" min="0" max="0.45" step="0.01" x-model.number="bgmVol" @input="applyBgmVol()" class="w-28">
-        </label>
-        <button type="button" class="chip" @click="toggleBgmPlay()" x-text="bgmPlaying ? 'Pause music' : 'Play music'"></button>
-        <span class="text-slate-500" x-text="bgmLabel"></span>
-      </div>
-      <audio x-ref="bgmAudio" loop preload="auto"></audio>
-    </div>
   </header>
 
-  <main class="max-w-3xl mx-auto px-3 py-4">
+  <main class="max-w-3xl mx-auto px-4 py-6">
     {% if request.query_params.get('uploaded') %}
     <p class="text-center text-sm text-emerald-300 mb-3">Added {{ request.query_params.get('uploaded') }} book(s) from your device.</p>
     {% endif %}
-
     {% if book %}
-    <p class="text-center text-xs text-slate-400 mb-2">
-      Page <span x-text="pageIndex+1"></span> / <span x-text="pages.length"></span>
-      · Swipe or drag left/right to flip
-    </p>
-
-    <div class="stage"
-         @touchstart.passive="onTouchStart($event)"
-         @touchend="onTouchEnd($event)"
-         @mousedown="onMouseDown($event)"
-         @mouseup="onMouseUp($event)"
-         @mouseleave="onMouseUp($event)">
-      <div class="page-sheet p-6 sm:p-10 whitespace-pre-wrap"
-           :class="flipClass"
-           :style="'--book-font-size:' + fontSize + 'px; --book-font:' + fontFamily"
-           x-text="pages[pageIndex] || ''"></div>
+    <p class="text-center text-xs text-slate-400 mb-3" x-text="'Page ' + (pageIndex+1) + ' / ' + pages.length"></p>
+    <div class="page-sheet p-6 sm:p-10 font-serif text-base sm:text-lg leading-relaxed whitespace-pre-wrap"
+         :class="{flip: flipping}" id="pageSurface">
+      <span x-text="pages[pageIndex]||''"></span>
     </div>
-
-    <div class="flex justify-between items-center mt-4 gap-2">
-      <button type="button" class="chip px-4 py-2" @click="prev()" :disabled="pageIndex<=0">‹ Previous</button>
-      <button type="button" class="chip" @click="saveSelection()">Save highlight → Excerpts</button>
-      <button type="button" class="chip px-4 py-2" @click="next()" :disabled="pageIndex>=pages.length-1">Next ›</button>
+    <div class="flex justify-center gap-4 mt-6">
+      <button @click="prev()" class="w-28 py-3 rounded-2xl bg-white/10 font-semibold hover:bg-white/20">← Prev</button>
+      <button @click="next()" class="w-28 py-3 rounded-2xl bg-white/10 font-semibold hover:bg-white/20">Next →</button>
     </div>
-
     <script>
       window.__BOOK__ = { id: {{ book.id }}, pages: {{ pages|tojson }}, pageIndex: {{ page_index }} };
     </script>
@@ -239,190 +72,93 @@
     <p class="text-center text-slate-400 py-20">Tap <strong>Load</strong> to open your device and choose PDF or text books.</p>
     {% endif %}
   </main>
-
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
   <script>
   function bookReader() {
     return {
       bookId: '', pages: [], pageIndex: 0, flipping: false, reading: false, uploading: false,
-      arranged: false, voices: [], voiceName: '', rate: 0.95,
-      showTools: false, showBgm: false,
-      theme: 'parchment', fontSize: 18, fontFamily: "Georgia, 'Times New Roman', serif",
-      flipStyle: 'curl', flipClass: '', jumpTo: 1,
-      bgmId: 'none', bgmPlaying: false, bgmVol: 0.12, bgmLabel: 'No background music',
-      bgmCustomUrl: null, _touchX: null, _mouseX: null, _bgmNodes: null,
-
+      voices: [], voiceName: '', rate: 0.95, arranged: false,
       init() {
         const B = window.__BOOK__;
-        if (B) {
-          this.pages = B.pages || [];
-          this.pageIndex = B.pageIndex || 0;
-          this.bookId = String(B.id);
-          this.jumpTo = this.pageIndex + 1;
-        }
+        if (B) { this.pages = B.pages||[]; this.pageIndex = B.pageIndex||0; this.bookId = String(B.id); }
         this.voiceName = localStorage.getItem('kw_book_voice') || '';
         this.rate = Number(localStorage.getItem('kw_book_rate') || 0.95);
-        this.theme = localStorage.getItem('kw_book_theme') || 'parchment';
-        this.fontSize = Number(localStorage.getItem('kw_book_fontSize') || 18);
-        this.fontFamily = localStorage.getItem('kw_book_fontFamily') || this.fontFamily;
-        this.flipStyle = localStorage.getItem('kw_book_flip') || 'curl';
-        this.bgmId = localStorage.getItem('kw_book_bgm') || 'none';
-        this.bgmVol = Number(localStorage.getItem('kw_book_bgmVol') || 0.12);
-        this.applyFont();
         this.loadVoices();
         if (window.speechSynthesis) {
           speechSynthesis.onvoiceschanged = () => this.loadVoices();
         }
-        // restore custom bgm blob ref is session-only; built-ins work after reload
-        if (this.bgmId && this.bgmId !== 'none' && this.bgmId !== 'custom') {
-          this.bgmLabel = this.bgmId === 'soft1' ? 'Soft pad' : this.bgmId === 'soft2' ? 'Gentle wave' : 'Warm drone';
-        }
       },
       loadVoices() {
-        try {
-          this.voices = (speechSynthesis.getVoices() || []).filter(v => /en/i.test(v.lang) || !v.lang);
-        } catch (e) { this.voices = []; }
+        if (!('speechSynthesis' in window)) return;
+        let list = speechSynthesis.getVoices() || [];
+        // Prefer English voices, then others
+        list = list.slice().sort((a, b) => {
+          const ae = /en/i.test(a.lang) ? 0 : 1;
+          const be = /en/i.test(b.lang) ? 0 : 1;
+          if (ae !== be) return ae - be;
+          return (a.name || '').localeCompare(b.name || '');
+        });
+        this.voices = list;
+        if (this.voiceName && !list.find(v => v.name === this.voiceName) && list.length) {
+          // keep preference if still present; else leave default
+        }
       },
       saveVoicePref() {
         localStorage.setItem('kw_book_voice', this.voiceName || '');
         localStorage.setItem('kw_book_rate', String(this.rate));
       },
-      setTheme(name) {
-        this.theme = name;
-        localStorage.setItem('kw_book_theme', name);
-      },
-      applyFont() {
-        localStorage.setItem('kw_book_fontSize', String(this.fontSize));
-        localStorage.setItem('kw_book_fontFamily', this.fontFamily);
-        localStorage.setItem('kw_book_flip', this.flipStyle);
-      },
-      goToPage() {
-        const n = Math.max(1, Math.min(this.pages.length, parseInt(this.jumpTo, 10) || 1));
-        this.animateFlip(n - 1 > this.pageIndex ? 'next' : 'prev', () => {
-          this.pageIndex = n - 1;
-          this.jumpTo = n;
-          this.saveProgress();
-          if (this.reading) this.speakPage();
-        });
-      },
+      /** Soft-wrap fix: join broken lines so TTS reads sentences smoothly */
       arrangeText() {
         if (!this.pages.length) return;
         this.pages = this.pages.map(page => {
-          let t = page || '';
-          t = t.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2');
-          t = t.replace(/([^\n])\n(?!\n)/g, '$1 ');
-          t = t.replace(/[ \t]+/g, ' ');
-          t = t.replace(/\n{3,}/g, '\n\n');
-          return t.trim();
+          let s = String(page || '');
+          // hyphenated line breaks: word-\nword → wordword
+          s = s.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2');
+          // single newlines mid-paragraph → space (keep double newlines as paragraph breaks)
+          s = s.replace(/([^\n])\n(?!\n)/g, '$1 ');
+          // collapse excess spaces
+          s = s.replace(/[ \t]{2,}/g, ' ');
+          s = s.replace(/\n{3,}/g, '\n\n');
+          return s.trim();
         });
         this.arranged = true;
-      },
-      /** Strip non-word noise for smoother TTS (keep letters, spaces, basic sentence marks). */
-      cleanForSpeech(text) {
-        let t = text || '';
-        // remove URLs, emails
-        t = t.replace(/https?:\/\/\S+/gi, ' ');
-        t = t.replace(/\S+@\S+\.\S+/g, ' ');
-        // keep letters, numbers for chapter refs lightly — drop most symbols
-        t = t.replace(/[^\w\s.,;:'"?!()\-]/g, ' ');
-        // collapse odd punctuation runs
-        t = t.replace(/[.]{2,}/g, '.');
-        t = t.replace(/[,]{2,}/g, ',');
-        // remove lone non-vowel single letters that are noise? keep all letters for words
-        // drop pure digit noise sequences longer than 4 unless year-like
-        t = t.replace(/\b\d{5,}\b/g, ' ');
-        t = t.replace(/\s+/g, ' ').trim();
-        return t;
+        try { alert('Text arranged for smoother reading. Tap Angel to read.'); } catch(e) {}
       },
       goBook() { location.href = '/member/kwealth/books?book_id=' + this.bookId; },
       async uploadFiles(ev) {
-        const files = ev.target.files;
-        if (!files || !files.length) return;
+        const files = Array.from(ev.target.files || []);
+        if (!files.length) return;
         this.uploading = true;
-        const fd = new FormData();
-        for (const f of files) fd.append('files', f);
         try {
-          const r = await fetch('/member/kwealth/books/upload', { method: 'POST', body: fd, credentials: 'same-origin' });
+          const fd = new FormData();
+          files.forEach(f => fd.append('files', f));
+          const r = await fetch('/member/kwealth/books/upload', {
+            method: 'POST', body: fd, credentials: 'same-origin'
+          });
           if (r.redirected) location.href = r.url;
           else location.href = '/member/kwealth/books';
         } catch (e) {
           alert('Could not load books from device');
-        } finally {
           this.uploading = false;
-          ev.target.value = '';
         }
+        ev.target.value = '';
       },
       async saveProgress() {
         if (!this.bookId) return;
-        const fd = new FormData();
-        fd.append('book_id', this.bookId);
-        fd.append('page_index', this.pageIndex);
-        try { await fetch('/member/kwealth/books/progress', { method: 'POST', body: fd, credentials: 'same-origin' }); } catch (e) {}
+        const fd = new FormData(); fd.append('book_id', this.bookId); fd.append('page_index', this.pageIndex);
+        try { await fetch('/member/kwealth/books/progress', { method:'POST', body: fd, credentials:'same-origin' }); } catch(e) {}
       },
-      animateFlip(dir, done) {
-        if (this.flipping) return;
-        this.flipping = true;
-        const style = this.flipStyle || 'curl';
-        if (dir === 'next') {
-          this.flipClass = style === 'slide' ? 'flip-slide' : style === 'fold' ? 'flip-fold' : style === 'fade' ? 'flip-fade' : 'flip-curl';
-        } else {
-          this.flipClass = style === 'slide' ? 'flip-back-slide' : style === 'fold' ? 'flip-fold' : style === 'fade' ? 'flip-fade' : 'flip-back';
-        }
-        setTimeout(() => {
-          done && done();
-          this.flipClass = '';
-          this.flipping = false;
-        }, 380);
-      },
-      prev() {
-        if (this.pageIndex <= 0) return;
-        this.animateFlip('prev', () => {
-          this.pageIndex--;
-          this.jumpTo = this.pageIndex + 1;
-          this.saveProgress();
-          if (this.reading) this.speakPage();
-        });
-      },
-      next() {
-        if (this.pageIndex >= this.pages.length - 1) { this.reading = false; return; }
-        this.animateFlip('next', () => {
-          this.pageIndex++;
-          this.jumpTo = this.pageIndex + 1;
-          this.saveProgress();
-          if (this.reading) this.speakPage();
-        });
-      },
-      onTouchStart(ev) {
-        if (ev.touches && ev.touches[0]) this._touchX = ev.touches[0].clientX;
-      },
-      onTouchEnd(ev) {
-        if (this._touchX == null) return;
-        const x = (ev.changedTouches && ev.changedTouches[0]) ? ev.changedTouches[0].clientX : this._touchX;
-        const dx = x - this._touchX;
-        this._touchX = null;
-        if (Math.abs(dx) < 40) return;
-        if (dx < 0) this.next(); else this.prev();
-      },
-      onMouseDown(ev) {
-        if (ev.button !== 0) return;
-        this._mouseX = ev.clientX;
-      },
-      onMouseUp(ev) {
-        if (this._mouseX == null) return;
-        const dx = ev.clientX - this._mouseX;
-        this._mouseX = null;
-        if (Math.abs(dx) < 50) return;
-        if (dx < 0) this.next(); else this.prev();
-      },
+      prev() { if (this.pageIndex<=0) return; this.flipping=true; setTimeout(()=>{ this.pageIndex--; this.flipping=false; this.saveProgress(); if(this.reading) this.speakPage(); }, 180); },
+      next() { if (this.pageIndex>=this.pages.length-1){ this.reading=false; return;} this.flipping=true; setTimeout(()=>{ this.pageIndex++; this.flipping=false; this.saveProgress(); if(this.reading) this.speakPage(); }, 180); },
       speakPage() {
         if (!('speechSynthesis' in window)) return;
         speechSynthesis.cancel();
         this.loadVoices();
         let text = this.pages[this.pageIndex] || '';
+        // light on-the-fly smooth if not arranged
         if (!this.arranged) {
           text = text.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2').replace(/([^\n])\n(?!\n)/g, '$1 ');
         }
-        text = this.cleanForSpeech(text);
-        if (!text) { if (this.reading) this.next(); return; }
         const u = new SpeechSynthesisUtterance(text);
         u.rate = this.rate || 0.95;
         const voices = this.voices.length ? this.voices : speechSynthesis.getVoices();
@@ -437,137 +173,14 @@
       toggleAngelRead() {
         this.reading = !this.reading;
         this.saveVoicePref();
-        if (this.reading) {
-          // soft auto-start bgm if one is selected
-          if (this.bgmId !== 'none' && !this.bgmPlaying) this.toggleBgmPlay(true);
-          this.speakPage();
-        } else {
-          try { speechSynthesis.cancel(); } catch (e) {}
-        }
+        if (this.reading) this.speakPage(); else try { speechSynthesis.cancel(); } catch(e) {}
       },
       async saveSelection() {
         const sel = (window.getSelection && window.getSelection().toString() || '').trim();
         if (!sel) { alert('Highlight text on the page first'); return; }
-        const fd = new FormData();
-        fd.append('book_id', this.bookId);
-        fd.append('text', sel);
-        fd.append('title', 'Highlight');
-        await fetch('/member/kwealth/excerpts/from-book', { method: 'POST', body: fd, credentials: 'same-origin' });
+        const fd = new FormData(); fd.append('book_id', this.bookId); fd.append('text', sel); fd.append('title', 'Highlight');
+        await fetch('/member/kwealth/excerpts/from-book', { method:'POST', body: fd, credentials:'same-origin' });
         alert('Saved to Excerpts');
-      },
-
-      /* ---- Soft background music (Web Audio drones + optional user file) ---- */
-      setBgm(id) {
-        this.stopBgmAudio();
-        this.bgmId = id;
-        localStorage.setItem('kw_book_bgm', id);
-        if (id === 'none') {
-          this.bgmLabel = 'No background music';
-          this.bgmPlaying = false;
-          return;
-        }
-        if (id === 'custom') {
-          this.bgmLabel = 'Your music';
-          return;
-        }
-        this.bgmLabel = id === 'soft1' ? 'Soft pad' : id === 'soft2' ? 'Gentle wave' : 'Warm drone';
-        this.startSynthBgm(id);
-      },
-      loadCustomBgm(ev) {
-        const f = ev.target.files && ev.target.files[0];
-        if (!f) return;
-        if (this.bgmCustomUrl) URL.revokeObjectURL(this.bgmCustomUrl);
-        this.bgmCustomUrl = URL.createObjectURL(f);
-        this.bgmId = 'custom';
-        this.bgmLabel = f.name || 'Your music';
-        localStorage.setItem('kw_book_bgm', 'custom');
-        this.stopBgmAudio();
-        const audio = this.$refs.bgmAudio;
-        if (audio) {
-          audio.src = this.bgmCustomUrl;
-          audio.volume = this.bgmVol;
-          audio.loop = true;
-          audio.play().then(() => { this.bgmPlaying = true; }).catch(() => {});
-        }
-        ev.target.value = '';
-      },
-      applyBgmVol() {
-        localStorage.setItem('kw_book_bgmVol', String(this.bgmVol));
-        if (this.$refs.bgmAudio) this.$refs.bgmAudio.volume = this.bgmVol;
-        if (this._bgmNodes && this._bgmNodes.gain) {
-          this._bgmNodes.gain.gain.value = this.bgmVol * 0.35;
-        }
-      },
-      toggleBgmPlay(forceOn) {
-        if (this.bgmId === 'none') {
-          this.setBgm('soft1');
-          return;
-        }
-        if (forceOn || !this.bgmPlaying) {
-          if (this.bgmId === 'custom') {
-            const a = this.$refs.bgmAudio;
-            if (a && a.src) a.play().then(() => { this.bgmPlaying = true; }).catch(() => {});
-          } else {
-            this.startSynthBgm(this.bgmId);
-          }
-        } else {
-          this.stopBgmAudio();
-          this.bgmPlaying = false;
-        }
-      },
-      stopBgmAudio() {
-        try {
-          if (this.$refs.bgmAudio) { this.$refs.bgmAudio.pause(); }
-        } catch (e) {}
-        if (this._bgmNodes) {
-          try { this._bgmNodes.osc1.stop(); } catch (e) {}
-          try { this._bgmNodes.osc2.stop(); } catch (e) {}
-          try { this._bgmNodes.ctx.close(); } catch (e) {}
-          this._bgmNodes = null;
-        }
-        this.bgmPlaying = false;
-      },
-      startSynthBgm(id) {
-        this.stopBgmAudio();
-        try {
-          const ctx = new (window.AudioContext || window.webkitAudioContext)();
-          const gain = ctx.createGain();
-          gain.gain.value = this.bgmVol * 0.35;
-          gain.connect(ctx.destination);
-
-          const o1 = ctx.createOscillator();
-          const o2 = ctx.createOscillator();
-          const g1 = ctx.createGain();
-          const g2 = ctx.createGain();
-          g1.gain.value = 0.45;
-          g2.gain.value = 0.25;
-          o1.connect(g1); g1.connect(gain);
-          o2.connect(g2); g2.connect(gain);
-
-          if (id === 'soft1') {
-            o1.type = 'sine'; o2.type = 'sine';
-            o1.frequency.value = 110; o2.frequency.value = 164.81;
-          } else if (id === 'soft2') {
-            o1.type = 'triangle'; o2.type = 'sine';
-            o1.frequency.value = 98; o2.frequency.value = 146.83;
-            // slow tremolo
-            const lfo = ctx.createOscillator();
-            const lfoG = ctx.createGain();
-            lfo.frequency.value = 0.08;
-            lfoG.gain.value = 0.08;
-            lfo.connect(lfoG); lfoG.connect(gain.gain);
-            lfo.start();
-            this._bgmLfo = lfo;
-          } else {
-            o1.type = 'sine'; o2.type = 'triangle';
-            o1.frequency.value = 82.41; o2.frequency.value = 123.47;
-          }
-          o1.start(); o2.start();
-          this._bgmNodes = { ctx, gain, osc1: o1, osc2: o2 };
-          this.bgmPlaying = true;
-        } catch (e) {
-          this.bgmPlaying = false;
-        }
       }
     }
   }
