@@ -30,14 +30,17 @@ USER_BOOKS_TEXT.mkdir(parents=True, exist_ok=True)
 MH_URL = "https://www.biblestudytools.com/commentaries/matthew-henry-complete/"
 
 def _angel_resource_path(name: str) -> Path:
-    return Path("app/data/angel_resources") / name
+    # Resolve relative to this package so files load on Render and locally
+    here = Path(__file__).resolve().parent.parent  # app/
+    return here / "data" / "angel_resources" / name
 
 
 def _load_topic_resource(session=None) -> str:
     parts = []
-    path = _angel_resource_path("bible_topics_matthew_henry.txt")
-    if path.exists():
-        parts.append(path.read_text(encoding="utf-8", errors="ignore"))
+    for name in ("bible_topics_matthew_henry.txt", "angel_deep_bible_studies.txt", "deeper_life_22_doctrines_deep.txt"):
+        path = _angel_resource_path(name)
+        if path.exists():
+            parts.append(path.read_text(encoding="utf-8", errors="ignore"))
     if session is not None:
         try:
             from app.models import AngelResourceFile
@@ -52,493 +55,244 @@ def _load_topic_resource(session=None) -> str:
     return "\n\n".join(parts)
 
 
+
 def _find_topic_block(text: str, query: str) -> tuple:
-    """Return (ref_name, body) from study file matching query words."""
+    """Return (ref_name, body, block_key) from study files matching query."""
     if not text:
-        return None, None
-    ql = (query or "").lower()
-    # split by {A1} style headers
-    blocks = re.split(r"\n(?=\{[A-Z]?\d+\})", text)
+        return None, None, None
+    ql = (query or "").lower().strip()
+    # Headers like {S1} {Q1} {A1} {D01} {DL01} {DL22}
+    blocks = re.split(r"\n(?=\{[A-Za-z]*\d+\})", text)
+    stop = {
+        "more", "please", "tell", "about", "what", "the", "and", "from", "angel",
+        "this", "that", "with", "your", "have", "does", "mean", "explain",
+        "continue", "deeper", "again", "some", "info", "information", "know",
+        "can", "you", "how", "why", "who", "when", "where", "say", "speak",
+    }
+    words = [w for w in re.findall(r"[a-z']{3,}", ql) if w not in stop]
+
+    topic_map = {
+        "god": ("godhead", "god is", "who god", "trinity"),
+        "jesus": ("jesus", "christ", "son of god", "virgin"),
+        "heaven": ("heaven", "new earth", "new jerusalem"),
+        "hell": ("hell", "lake of fire", "second death"),
+        "prayer": ("prayer",),
+        "praise": ("praise", "worship"),
+        "worship": ("worship", "praise"),
+        "rapture": ("rapture", "caught up"),
+        "sanctification": ("sanctification", "holiness", "entire sanctification"),
+        "holiness": ("sanctification", "holiness"),
+        "repentance": ("repentance", "repent"),
+        "restitution": ("restitution",),
+        "justification": ("justification", "justified"),
+        "baptism": ("water baptism", "baptism"),
+        "communion": ("lord's supper", "communion"),
+        "spirit": ("holy ghost", "holy spirit"),
+        "ghost": ("holy ghost", "holy spirit"),
+        "healing": ("healing", "redemption"),
+        "evangelism": ("evangelism", "soul"),
+        "marriage": ("marriage",),
+        "resurrection": ("resurrection",),
+        "tribulation": ("tribulation", "end time", "last days"),
+        "millennium": ("millennial", "millennium", "thousand"),
+        "judgment": ("white throne", "judgment"),
+        "bible": ("holy bible", "scripture"),
+        "depravity": ("depravity", "sinfulness"),
+        "sin": ("depravity", "sinfulness", "sin"),
+        "salvation": ("salvation", "justification", "saved"),
+        "faith": ("faith",),
+        "death": ("death", "soul", "life"),
+        "soul": ("soul", "death", "life"),
+        "creation": ("creation", "created"),
+        "satan": ("satan", "lucifer", "demon", "angel"),
+        "enoch": ("enoch", "walked with god", "noah", "abraham"),
+        "noah": ("noah", "enoch", "abraham"),
+        "abraham": ("abraham", "walked with god"),
+        "moses": ("moses",),
+        "david": ("david",),
+        "daniel": ("daniel",),
+    }
+
     best = None
     best_score = 0
+    best_key = None
+
     for b in blocks:
-        header = b[:80].lower()
+        if not b.strip():
+            continue
+        header_m = re.match(r"\{([A-Za-z]*\d+)\}([^\n]*)", b)
+        header = (header_m.group(0) if header_m else b[:100]).lower()
+        title = (header_m.group(2) if header_m else "").lower()
         body = b.strip()
+        bl = body.lower()
         score = 0
-        for w in re.findall(r"[a-z']{3,}", ql):
-            if w in ("more", "please", "tell", "about", "what", "the", "and", "from", "angel"):
-                continue
-            if w in body.lower():
-                score += 2 if w in header else 1
-        # topic name boosts
-        for key in ("god", "jesus", "christ", "salvation", "prayer", "satan", "angel", "rapture",
-                    "judgment", "creation", "church", "heaven", "enoch", "noah", "abraham",
-                    "moses", "joshua", "job", "david", "daniel", "israel", "sanctification",
-                    "repentance", "baptism", "holiness", "hell", "lake", "throne", "reward",
-                    "hypocrisy", "restitution", "justification", "tribulation", "millennium",
-                    "marriage", "evangelism", "healing", "resurrection", "lucifer", "demon",
-                    "paradise", "author", "bible", "trinity", "depravity", "communion"):
-            if key in ql and key in body.lower():
-                score += 3
+
+        for w in words:
+            if w in header or w in title:
+                score += 8
+            elif w in bl:
+                score += 1
+        # Strong title match: "heaven" question -> DESCRIBE HEAVEN / WHO GOD etc.
+        if title:
+            title_words = set(re.findall(r"[a-z']{3,}", title))
+            overlap = title_words & set(words)
+            if overlap:
+                score += 12 * len(overlap)
+
+        for key, aliases in topic_map.items():
+            if key in ql or any(a in ql for a in aliases):
+                if key in bl or any(a in bl for a in aliases) or key in header:
+                    score += 8
+                if any(a in header or a in title for a in aliases):
+                    score += 6
+
+        # direct phrase boosts
+        phrases = [
+            ("who is god", "godhead"),
+            ("who god is", "godhead"),
+            ("who is jesus", "jesus"),
+            ("tell me about heaven", "heaven"),
+            ("holy bible", "bible"),
+            ("entire sanctification", "sanctification"),
+            ("holy ghost", "holy ghost"),
+            ("holy spirit", "holy spirit"),
+            ("lord's supper", "supper"),
+            ("great tribulation", "tribulation"),
+            ("second coming", "second coming"),
+            ("white throne", "white throne"),
+            ("new heaven", "new heaven"),
+            ("lake of fire", "lake of fire"),
+            ("millennial", "millennial"),
+            ("restitution", "restitution"),
+        ]
+        for phrase, hint in phrases:
+            if phrase in ql and hint in bl:
+                score += 10
+
+        # Prefer multi-layer deep studies over short FAQ when scores are close
+        if "LAYER 2" in body.upper():
+            score += 4
+        if len(body) > 1500:
+            score += 2
+        # If user asked mainly about heaven (not hell/judgment), prefer pure heaven blocks
+        if "heaven" in ql and "hell" not in ql and "judgment" not in ql and "death" not in ql:
+            if "describe heaven" in header or "{s3}" in header.replace(" ","").lower() or "heaven is god" in bl[:200]:
+                score += 20
+            if "LAYER 1" in body.upper() and "heaven" in header:
+                score += 15
+            if "judgment" in header or ("hell" in header and "heaven and hell" in header):
+                score -= 10
         if score > best_score:
             best_score = score
             best = body
-    if not best or best_score < 2:
-        return None, None
-    # extract henry paragraph if present
-    lines = best.splitlines()
-    title = lines[0].strip() if lines else "Matthew Henry's commentary"
-    # prefer Henry lines then summary
-    henry_bits = [ln for ln in lines if "henry" in ln.lower() or ln.strip().startswith("Henry")]
-    summary_bits = [ln for ln in lines if ln.strip().lower().startswith("summary") or "bible:" in ln.lower()]
-    rest = [ln for ln in lines[1:] if ln.strip()]
-    body = " ".join(henry_bits + summary_bits + rest)
-    body = re.sub(r"\s+", " ", body).strip()
-    if len(body) > 700:
-        body = body[:700].rsplit(" ", 1)[0] + "."
-    ref = "Matthew Henry's commentary"
-    if "DEEPER LIFE" in best.upper():
-        ref = "public doctrinal study notes"
-    return ref, body
+            best_key = header_m.group(1) if header_m else "topic"
 
+    if not best or best_score < 1:
+        return None, None, None
 
-# session topic memory for "more"
-_LAST_TOPIC: dict = {}
-
-
-
-CHARS_PER_PAGE = 900
-
-
-def _split_pages(text: str) -> List[str]:
-    text = (text or "").replace("\r\n", "\n").strip()
-    if not text:
-        return ["(Empty book)"]
-    # Prefer explicit "Page N" markers
-    parts = re.split(r"\n\s*Page\s+\d+\s*\n", text, flags=re.I)
-    pages = [p.strip() for p in parts if p.strip()]
-    if len(pages) >= 2:
-        return pages
-    # Fallback: chunk by characters at paragraph boundaries
-    pages = []
-    buf = []
-    n = 0
-    for para in text.split("\n\n"):
-        if n + len(para) > CHARS_PER_PAGE and buf:
-            pages.append("\n\n".join(buf).strip())
-            buf = [para]
-            n = len(para)
-        else:
-            buf.append(para)
-            n += len(para)
-    if buf:
-        pages.append("\n\n".join(buf).strip())
-    return pages or [text]
-
-
-def sync_books_from_disk(session: Session) -> int:
-    """Load .txt books from static/books into DB."""
-    added = 0
-    for path in sorted(BOOKS_DIR.glob("*.txt")):
-        rel = f"books/{path.name}"
-        existing = session.exec(select(KwealthBook).where(KwealthBook.source_path == rel)).first()
-        body = path.read_text(encoding="utf-8", errors="ignore")
-        pages = _split_pages(body)
-        title_line = body.split("\n", 1)[0].strip()[:120] or path.stem.replace("_", " ").title()
-        if existing:
-            existing.page_count = len(pages)
-            existing.title = title_line
-            existing.is_active = True
-            session.add(existing)
-        else:
-            session.add(KwealthBook(
-                title=title_line,
-                author=None,
-                source_path=rel,
-                page_count=len(pages),
-                is_active=True,
-            ))
-            added += 1
-    # Ensure Matthew Henry reference row
-    ref = session.exec(select(AngelReference).where(AngelReference.name == "Matthew Henry Complete")).first()
-    if not ref:
-        session.add(AngelReference(
-            name="Matthew Henry Complete",
-            url=MH_URL,
-            notes="Classic whole-Bible commentary. Angel cites this for verse-by-verse questions.",
-            is_active=True,
-        ))
-    session.commit()
-    return added
-
-
-def _book_pages(book: KwealthBook) -> List[str]:
-    if not book.source_path:
-        return ["(No file)"]
-    path = Path("app/static") / book.source_path
-    if not path.exists():
-        path = Path(book.source_path)
-    if not path.exists():
-        return ["(File missing)"]
-    return _split_pages(path.read_text(encoding="utf-8", errors="ignore"))
-
-
-def _stats(session: Session, user: User):
-    books = session.exec(select(KwealthBook).where(KwealthBook.is_active == True)).all()
-    progs = session.exec(select(KwealthProgress).where(KwealthProgress.user_id == user.id)).all()
-    read = sum(1 for p in progs if p.completed or p.page_index > 0)
-    return len(books), read, books, progs
-
-
-@router.get("/member/kwealth", response_class=HTMLResponse)
-async def kwealth_home(request: Request, user: User = Depends(require_user), session: Session = Depends(get_session)):
-    try:
-        sync_books_from_disk(session)
-    except Exception as e:
-        print("kwealth sync:", e)
-    total, read, books, _ = _stats(session, user)
-    excerpts_n = len(session.exec(select(KwealthExcerpt).where(KwealthExcerpt.user_id == user.id)).all())
-    notes_n = len(session.exec(select(KwealthNote).where(KwealthNote.user_id == user.id)).all())
-    return templates.TemplateResponse("kwealth/home.html", {
-        "request": request, "user": user,
-        "total_books": total, "total_read": read,
-        "excerpts_n": excerpts_n, "notes_n": notes_n,
-        "mh_url": MH_URL,
-    })
-
-
-
-def _extract_pdf_pages(data: bytes) -> list:
-    """Extract text pages from a PDF; fall back to one page if empty."""
-    pages = []
-    try:
-        from pypdf import PdfReader
-        from io import BytesIO
-        reader = PdfReader(BytesIO(data))
-        for i, page in enumerate(reader.pages):
-            try:
-                text = (page.extract_text() or "").strip()
-            except Exception:
-                text = ""
-            if not text:
-                text = f"(Page {i+1} — little or no extractable text. Scanned PDFs may need OCR.)"
-            pages.append(text)
-    except Exception as e:
-        pages = [f"(Could not read PDF: {e})"]
-    return pages or ["(Empty PDF)"]
-
-
-def _extract_txt_pages(data: bytes) -> list:
-    try:
-        text = data.decode("utf-8", errors="ignore")
-    except Exception:
-        text = data.decode("latin-1", errors="ignore")
-    return _split_pages(text)
-
-
-@router.post("/member/kwealth/books/upload")
-async def upload_device_books(
-    files: list[UploadFile] = File(...),
-    user: User = Depends(require_user),
-    session: Session = Depends(get_session),
-):
-    """Load PDF/TXT books from the member's device (file picker), scan, and add to library."""
-    if not files:
-        raise HTTPException(400, "No files selected")
-    added = 0
-    for f in files:
-        if not f.filename:
-            continue
-        name = f.filename
-        ext = (name.rsplit(".", 1)[-1] or "").lower()
-        if ext not in ("pdf", "txt", "text"):
-            continue
-        data = await f.read()
-        if not data or len(data) > 40 * 1024 * 1024:
-            continue
-        safe = "".join(c if c.isalnum() or c in "._-" else "_" for c in name)[:80]
-        uid = uuid.uuid4().hex[:10]
-        if ext == "pdf":
-            pages = _extract_pdf_pages(data)
-            bin_path = USER_BOOKS_DIR / f"{user.id}_{uid}_{safe}"
-            bin_path.write_bytes(data)
-            text_rel = f"uploads/kwealth_books_text/{user.id}_{uid}.txt"
-            text_path = Path("app/static") / text_rel
-            text_path.parent.mkdir(parents=True, exist_ok=True)
-            body = "\n\n".join(f"Page {i+1}\n{p}" for i, p in enumerate(pages))
-            text_path.write_text(body, encoding="utf-8")
-            source_path = text_rel
-        else:
-            pages = _extract_txt_pages(data)
-            text_rel = f"uploads/kwealth_books_text/{user.id}_{uid}_{safe}"
-            if not text_rel.endswith(".txt"):
-                text_rel += ".txt"
-            text_path = Path("app/static") / text_rel
-            text_path.parent.mkdir(parents=True, exist_ok=True)
-            body = "\n\n".join(f"Page {i+1}\n{p}" for i, p in enumerate(pages))
-            text_path.write_text(body, encoding="utf-8")
-            source_path = text_rel
-
-        title = name.rsplit(".", 1)[0].replace("_", " ").strip()[:120] or "Book"
-        session.add(KwealthBook(
-            title=title,
-            author=f"Uploaded by member {user.id}",
-            source_path=source_path,
-            page_count=len(pages),
-            is_active=True,
-        ))
-        added += 1
-    session.commit()
-    return RedirectResponse(f"/member/kwealth/books?uploaded={added}", status_code=303)
-
-
-@router.post("/member/kwealth/load-books")
-async def load_books(user: User = Depends(require_user), session: Session = Depends(get_session)):
-    n = sync_books_from_disk(session)
-    return RedirectResponse("/member/kwealth/books", status_code=303)
-
-
-@router.get("/member/kwealth/books", response_class=HTMLResponse)
-async def books_page(
-    request: Request,
-    book_id: Optional[int] = None,
-    user: User = Depends(require_user),
-    session: Session = Depends(get_session),
-):
-    try:
-        sync_books_from_disk(session)
-    except Exception as e:
-        print("sync:", e)
-    books = session.exec(select(KwealthBook).where(KwealthBook.is_active == True).order_by(KwealthBook.title)).all()
-    book = None
-    pages: List[str] = []
-    page_index = 0
-    if book_id:
-        book = session.get(KwealthBook, book_id)
-    if not book and books:
-        book = books[0]
-    if book:
-        pages = _book_pages(book)
-        prog = session.exec(
-            select(KwealthProgress).where(
-                KwealthProgress.user_id == user.id,
-                KwealthProgress.book_id == book.id,
-            )
-        ).first()
-        if prog:
-            page_index = max(0, min(prog.page_index, len(pages) - 1))
-    return templates.TemplateResponse("kwealth/books.html", {
-        "request": request, "user": user, "books": books, "book": book,
-        "pages": pages, "page_index": page_index, "mh_url": MH_URL,
-    })
-
-
-@router.post("/member/kwealth/books/progress")
-async def save_progress(
-    book_id: int = Form(...),
-    page_index: int = Form(0),
-    user: User = Depends(require_user),
-    session: Session = Depends(get_session),
-):
-    book = session.get(KwealthBook, book_id)
-    if not book:
-        raise HTTPException(404)
-    pages = _book_pages(book)
-    page_index = max(0, min(int(page_index), max(0, len(pages) - 1)))
-    prog = session.exec(
-        select(KwealthProgress).where(
-            KwealthProgress.user_id == user.id,
-            KwealthProgress.book_id == book_id,
-        )
-    ).first()
-    if not prog:
-        prog = KwealthProgress(user_id=user.id, book_id=book_id)
-    prog.page_index = page_index
-    prog.completed = page_index >= len(pages) - 1
-    prog.updated_at = datetime.utcnow()
-    session.add(prog)
-    session.commit()
-    return JSONResponse({"ok": True, "page_index": page_index})
-
-
-@router.post("/member/kwealth/excerpts/from-book")
-async def excerpt_from_book(
-    book_id: int = Form(...),
-    text: str = Form(...),
-    title: str = Form(""),
-    user: User = Depends(require_user),
-    session: Session = Depends(get_session),
-):
-    book = session.get(KwealthBook, book_id)
-    body = (text or "").strip()
-    if not body:
-        raise HTTPException(400, "Nothing to save")
-    session.add(KwealthExcerpt(
-        user_id=user.id,
-        title=(title or "").strip() or (book.title if book else "Excerpt"),
-        body=body[:8000],
-        source=book.title if book else "Book",
-    ))
-    session.commit()
-    return JSONResponse({"ok": True})
-
-
-@router.get("/member/kwealth/excerpts", response_class=HTMLResponse)
-async def excerpts_page(request: Request, user: User = Depends(require_user), session: Session = Depends(get_session)):
-    rows = session.exec(
-        select(KwealthExcerpt).where(KwealthExcerpt.user_id == user.id).order_by(KwealthExcerpt.created_at.desc())
-    ).all()
-    return templates.TemplateResponse("kwealth/excerpts.html", {
-        "request": request, "user": user, "excerpts": rows, "mh_url": MH_URL,
-    })
-
-
-@router.post("/member/kwealth/excerpts")
-async def save_excerpt(
-    body: str = Form(...),
-    title: str = Form(""),
-    source: str = Form(""),
-    user: User = Depends(require_user),
-    session: Session = Depends(get_session),
-):
-    body = (body or "").strip()
-    if not body:
-        raise HTTPException(400, "Paste an excerpt first")
-    session.add(KwealthExcerpt(
-        user_id=user.id,
-        title=(title or "").strip() or "Excerpt",
-        body=body[:12000],
-        source=(source or "").strip() or "Manual paste",
-    ))
-    session.commit()
-    return RedirectResponse("/member/kwealth/excerpts", status_code=303)
-
-
-@router.post("/member/kwealth/excerpts/{excerpt_id}/delete")
-async def delete_excerpt(excerpt_id: int, user: User = Depends(require_user), session: Session = Depends(get_session)):
-    row = session.get(KwealthExcerpt, excerpt_id)
-    if row and row.user_id == user.id:
-        session.delete(row)
-        session.commit()
-    return RedirectResponse("/member/kwealth/excerpts", status_code=303)
-
-
-@router.get("/member/kwealth/notes", response_class=HTMLResponse)
-async def notes_page(request: Request, user: User = Depends(require_user), session: Session = Depends(get_session)):
-    notes = session.exec(
-        select(KwealthNote).where(KwealthNote.user_id == user.id).order_by(KwealthNote.updated_at.desc())
-    ).all()
-    keys = set()
-    for e in session.exec(select(KwealthExcerpt).where(KwealthExcerpt.user_id == user.id)).all():
-        for w in re.findall(r"[A-Za-z']{4,}", e.body or ""):
-            keys.add(w.lower())
-    for phrase in ["lord", "jesus", "faith", "prayer", "shepherd", "gospel", "matthew", "henry", "commentary", "bible"]:
-        keys.add(phrase)
-    return templates.TemplateResponse("kwealth/notes.html", {
-        "request": request, "user": user, "notes": notes,
-        "highlight_words": sorted(keys)[:400],
-        "mh_url": MH_URL,
-    })
-
-
-@router.get("/member/kwealth/notes/api/list")
-async def notes_list_api(user: User = Depends(require_user), session: Session = Depends(get_session)):
-    notes = session.exec(
-        select(KwealthNote).where(KwealthNote.user_id == user.id).order_by(KwealthNote.updated_at.desc())
-    ).all()
-    return [
-        {
-            "id": n.id,
-            "title": n.title,
-            "body": n.body_text or "",
-            "ink": n.ink_path or "",
-            "updated_at": n.updated_at.isoformat() if n.updated_at else "",
-        }
-        for n in notes
-    ]
-
-
-@router.post("/member/kwealth/notes")
-async def save_note(
-    title: str = Form(""),
-    body_text: str = Form(""),
-    note_id: str = Form(""),
-    ink: UploadFile = File(None),
-    user: User = Depends(require_user),
-    session: Session = Depends(get_session),
-):
-    ink_path = None
-    if ink and ink.filename:
-        data = await ink.read()
-        if len(data) < 5_000_000:
-            fname = f"ink_{user.id}_{uuid.uuid4().hex[:10]}.png"
-            dest = INK_DIR / fname
-            dest.write_bytes(data)
-            ink_path = f"/static/uploads/kwealth_ink/{fname}"
-
-    nid = None
-    try:
-        nid = int(note_id) if note_id else None
-    except Exception:
-        nid = None
-
-    note = session.get(KwealthNote, nid) if nid else None
-    if note and note.user_id != user.id:
-        note = None
-
-    if note:
-        note.title = (title or "").strip() or note.title or "Note"
-        note.body_text = (body_text or "").strip() or None
-        if ink_path:
-            note.ink_path = ink_path
-        note.updated_at = datetime.utcnow()
-        session.add(note)
+    # Prefer LAYER sections for progressive depth
+    layers = re.split(r"\n(?=LAYER\s+\d)", best, flags=re.I)
+    if len(layers) > 1:
+        # keep title line + layers
+        title_line = layers[0].strip()
+        layer_parts = [x.strip() for x in layers[1:] if x.strip()]
+        body = "\n\n".join([title_line] + layer_parts) if layer_parts else best
     else:
-        note = KwealthNote(
-            user_id=user.id,
-            title=(title or "").strip() or "Note",
-            body_text=(body_text or "").strip() or None,
-            ink_path=ink_path,
-        )
-        session.add(note)
-    session.commit()
-    session.refresh(note)
-    return JSONResponse({"ok": True, "id": note.id, "title": note.title})
+        body = best
+
+    ref = "the Bible"
+    if "matthew henry" in best.lower() or "HENRY" in best:
+        ref = "Scripture and classic teaching"
+    if "DEEPER LIFE" in best.upper() or re.search(r"\{DL\d+", best):
+        ref = "biblical doctrine"
+    return ref, body, best_key
 
 
-@router.post("/member/kwealth/notes/{note_id}/delete")
-async def delete_note(note_id: int, user: User = Depends(require_user), session: Session = Depends(get_session)):
-    note = session.get(KwealthNote, note_id)
-    if note and note.user_id == user.id:
-        session.delete(note)
-        session.commit()
-    return JSONResponse({"ok": True})
+def _extract_layer(body: str, depth: int) -> str:
+    """Return LAYER depth text (depth 0 = Layer 1). Falls back to progressive chunks."""
+    if not body:
+        return ""
+    numbered = []
+    for m in re.finditer(r"LAYER\s+(\d+)\s*([\s\S]*?)(?=\nLAYER\s+\d+|\nEncouragement:|\n={3,}|\Z)", body, re.I):
+        numbered.append((int(m.group(1)), m.group(2).strip()))
+    if numbered:
+        numbered.sort(key=lambda x: x[0])
+        idx = min(max(depth, 0), len(numbered) - 1)
+        text = numbered[idx][1]
+        # append encouragement on last available layer
+        if idx >= len(numbered) - 1:
+            enc = re.search(r"Encouragement:\s*([\s\S]+?)(?=\n={3,}|\n\{|\Z)", body, re.I)
+            if enc:
+                text = text + " " + enc.group(1).strip()
+        return text
+    # FAQ-style: progressive paragraphs
+    paras = [p.strip() for p in re.split(r"\n\s*\n", body) if p.strip()]
+    if len(paras) > 1:
+        idx = min(max(depth, 0), len(paras) - 1)
+        # take from idx to idx+1 for some flow
+        return " ".join(paras[idx:idx + 2] if idx < len(paras) - 1 else paras[idx:])
+    words = body.split()
+    start = depth * 80
+    chunk = words[start:start + 95]
+    if not chunk:
+        chunk = words[max(0, len(words) - 95):]
+    return " ".join(chunk)
 
 
-@router.get("/member/api/badge-count")
-async def badge_count(user: User = Depends(require_user), session: Session = Depends(get_session)):
-    """Unread-ish activity count for PWA / app icon badge."""
-    count = 0
-    try:
-        from app.models import Announcement
-        anns = session.exec(select(Announcement).where(Announcement.is_active == True)).all()
-        count += min(len(anns or []), 9)
-    except Exception:
-        pass
-    try:
-        # best-effort message unread
-        from app import models as M
-        Message = getattr(M, "Message", None) or getattr(M, "DirectMessage", None)
-        if Message is not None:
-            q = select(Message)
-            rows = session.exec(q).all()
-            for m in rows:
-                rid = getattr(m, "recipient_id", None) or getattr(m, "to_user_id", None)
-                if rid == user.id and not getattr(m, "is_read", True):
-                    count += 1
-    except Exception:
-        pass
-    return JSONResponse({"count": int(count)})
+def _clean_speak(text: str) -> str:
+    clean = text or ""
+    for prefix in (
+        "Matthew Henry emphasis:", "Henry:", "Matthew Henry:", "Logical summary:",
+        "Summary:", "Bible portions:", "Bible:", "Scripture:", "Definition:",
+        "Explanation:", "Illustration:", "Doctrinal explanation:",
+    ):
+        clean = re.sub(re.escape(prefix), "", clean, flags=re.I)
+    # remove bullet markers for smoother speech
+    clean = re.sub(r"[•\-]\s*", "", clean)
+    clean = re.sub(r"\s+", " ", clean).strip()
+    words = clean.split()
+    if len(words) > 95:
+        clean = " ".join(words[:95]) + "."
+    return clean
+
+
+def _make_follow_up(query: str, body: str, resource: str = "", depth: int = 0) -> str:
+    ql = (query or "").lower()
+    bl = (body or "").lower()
+    pairs = [
+        (("heaven", "new earth", "new jerusalem"), "Would you like to hear more about the hope of seeing God face to face?"),
+        (("rapture", "caught up"), "Shall I share more about the trumpet and the comfort this gives believers?"),
+        (("jesus", "christ", "son of god", "virgin"), "Would you like to go deeper on how Jesus saves and what it means to believe in Him?"),
+        (("prayer",), "Shall I also explain how Jesus taught us to pray?"),
+        (("faith",), "Would you like more on how faith grows by hearing the Word?"),
+        (("salvation", "saved", "grace", "justification"), "Shall I explain repentance and faith more clearly?"),
+        (("holiness", "sanctif"), "Would you like a deeper word on entire sanctification for daily living?"),
+        (("holy spirit", "holy ghost"), "Shall I share more about the power the Holy Spirit gives for witness?"),
+        (("creation", "created"), "Would you like more on man made in the image of God?"),
+        (("hell", "lake of fire"), "Shall I explain more about the second death and the way of escape in Christ?"),
+        (("angel", "satan", "lucifer", "demon"), "Would you like more on the enemy's limits and final end?"),
+        (("repent",), "Shall I illustrate true repentance more practically?"),
+        (("baptism",), "Would you like more on why baptism follows conversion?"),
+        (("marriage",), "Shall I share more on the biblical picture of marriage?"),
+        (("bible", "scripture"), "Would you like more on how to use the Bible as final authority?"),
+        (("godhead", "trinity", "who god"), "Shall I go deeper on the Father, Son, and Holy Spirit?"),
+        (("restitution",), "Would you like practical steps on making wrongs right?"),
+        (("tribulation", "last days", "end time"), "Shall I share more of Jesus' call to watch and pray?"),
+        (("millennium", "thousand"), "Would you like more on Christ's peaceful reign?"),
+        (("judgment", "white throne"), "Shall I explain more about the book of life?"),
+        (("death", "soul", "resurrection"), "Would you like more on the hope of resurrection?"),
+        (("evangelism", "soul win"), "Shall I encourage you further on personal witness?"),
+        (("healing", "redemption"), "Would you like more on trusting God with both soul and body?"),
+    ]
+    for keys, qtext in pairs:
+        if any(k in ql or k in bl for k in keys):
+            return qtext
+    if depth >= 2:
+        return "Keep loving God, walking with Him daily, and trusting Him — would you like another topic from the Word?"
+    return "Would you like me to go deeper on this from the Word?"
+
+
+_LAST_TOPIC: dict = {}
 
 
 @router.post("/member/api/angel-ask")
@@ -547,51 +301,48 @@ async def angel_ask(
     user: User = Depends(require_user),
     session: Session = Depends(get_session),
 ):
-    """Angel answers from Bible topics (Matthew Henry study file), excerpts, and 'more' follow-ups."""
+    """Conversational Angel: match study layers, continue on more, rarely refuse."""
     try:
         data = await request.json()
     except Exception:
         data = {}
     q = (data.get("question") or data.get("q") or "").strip()
+    topic_hint = (data.get("topic") or "").strip()
     if not q:
-        return JSONResponse({"ok": False, "answer": "How may I help you?"})
+        return JSONResponse({"ok": True, "answer": "How may I help you?", "follow_up": "What would you like to learn from the Word?", "outside": False})
 
     ql = q.lower().strip()
     uid = user.id
     resource = _load_topic_resource(session)
+    last = _LAST_TOPIC.get(uid) or {}
 
-    # "more" → continue last topic with extra Henry material
-    if ql in ("more", "tell me more", "more please", "continue", "go on") or ql.startswith("more "):
-        last = _LAST_TOPIC.get(uid) or {}
-        topic_q = last.get("topic") or q
-        ref, body = _find_topic_block(resource, topic_q)
-        if not body:
-            # try expanding last answer keywords
-            ref, body = _find_topic_block(resource, last.get("topic") or "salvation jesus")
-        if body:
-            # different slice if same topic asked again
-            offset = int(last.get("offset") or 0)
-            words = body.split()
-            chunk = " ".join(words[offset:offset + 85])
-            if not chunk.strip():
-                chunk = " ".join(words[:85])
-                offset = 0
-            _LAST_TOPIC[uid] = {"topic": topic_q, "offset": offset + 80}
-            answer = chunk
-            if len(answer.split()) > 90:
-                answer = " ".join(answer.split()[:90]) + "."
-            follow = _make_follow_up(topic_q, chunk, resource)
-            return JSONResponse({"ok": True, "answer": answer, "follow_up": follow, "outside": False, "topic": topic_q})
-        return JSONResponse({"ok": True, "answer": "Sorry I can't help with that.", "outside": True})
+    is_more = (
+        ql in ("more", "tell me more", "more please", "continue", "go on", "yes", "yeah", "yep", "sure", "ok", "okay", "please")
+        or ql.startswith("more ")
+        or "tell me more" in ql
+        or "go deeper" in ql
+        or "explain more" in ql
+    )
 
+    # Resolve topic question
+    topic_q = q
+    depth = 0
+    if is_more:
+        topic_q = last.get("topic") or topic_hint or last.get("query") or "faith jesus salvation"
+        depth = int(last.get("depth") or 0) + 1
+    else:
+        # if short reply while we had a topic, treat as continue
+        if last.get("topic") and len(ql.split()) <= 4 and not any(
+            k in ql for k in ("play", "music", "stop", "manna", "off", "status")
+        ):
+            # could be a new short topic or continue — prefer match first
+            pass
+
+    # Excerpts first
     excerpts = session.exec(
         select(KwealthExcerpt).where(KwealthExcerpt.user_id == user.id).order_by(KwealthExcerpt.created_at.desc()).limit(40)
     ).all()
-    words = [w for w in re.findall(r"[a-z']{3,}", ql) if w not in (
-        "what", "does", "mean", "about", "tell", "please", "from", "the", "and", "how", "can", "you",
-        "with", "that", "this", "have", "when", "where", "why", "who", "angel", "more"
-    )]
-
+    words = [w for w in re.findall(r"[a-z']{3,}", topic_q.lower()) if len(w) > 2]
     matched = []
     for e in excerpts:
         blob = f"{e.title or ''} {e.body or ''} {e.source or ''}".lower()
@@ -602,62 +353,85 @@ async def angel_ask(
 
     ref_name = None
     body = None
+    block_key = None
 
-    if matched:
+    if matched and not is_more:
         e = matched[0][1]
         ref_name = (e.source or e.title or "your saved excerpts").strip()
         body = (e.body or "").strip()
-        if len(body) > 500:
-            body = body[:500].rsplit(" ", 1)[0] + "."
+        block_key = "excerpt"
     else:
-        ref_name, body = _find_topic_block(resource, q)
+        ref_name, body, block_key = _find_topic_block(resource, topic_q)
+        if not body and topic_hint:
+            ref_name, body, block_key = _find_topic_block(resource, topic_hint)
+
+    # If more and same block stored, use stored full body for layering
+    if is_more and last.get("full_body"):
+        body = last.get("full_body") or body
+        ref_name = last.get("ref") or ref_name
+        block_key = last.get("block_key") or block_key
 
     if not body:
-        # light topical fallbacks
+        # broad fallbacks so we rarely say sorry
         topical = {
-            "faith": ("the Bible", "Faith is confidence in God and His word. It comes by hearing the word of Christ."),
-            "prayer": ("the Bible", "Pray without ceasing. Ask in faith, with thanksgiving, according to God's will."),
-            "jesus": ("the Bible", "Jesus is the Son of God, the Saviour. Believe in Him for everlasting life."),
+            "faith": "Faith is confidence in God and His word. It comes by hearing the word of Christ. Without faith it is impossible to please God. Hebrews 11:1, Romans 10:17, Hebrews 11:6.",
+            "prayer": "Prayer is talking with God in faith. Ask, seek, and knock. Be anxious for nothing; in everything by prayer and thanksgiving make your requests known to God. Matthew 7:7, Philippians 4:6, 1 Thessalonians 5:17.",
+            "jesus": "Jesus is the Son of God, the Saviour. Whoever believes in Him shall not perish but have everlasting life. He is the way, the truth, and the life. John 3:16, John 14:6, Acts 4:12.",
+            "god": "God is the living Creator of heaven and earth, holy and loving. There is one God — Father, Son, and Holy Spirit. Genesis 1:1, Deuteronomy 6:4, Matthew 28:19.",
+            "heaven": "Heaven is God's dwelling place. Jesus prepares a place for His people. One day God will wipe away every tear; there will be no death, sorrow, or pain. John 14:2-3, Revelation 21:4, Revelation 22:4.",
+            "hell": "Scripture warns of eternal punishment for the unrepentant, and the lake of fire as the second death. The way of escape is Jesus Christ today. Matthew 25:41, Revelation 20:15, John 3:16-18.",
+            "rapture": "The Lord will descend with a shout and the trumpet of God. The dead in Christ rise first; then living believers are caught up to meet the Lord in the air. 1 Thessalonians 4:16-17, 1 Corinthians 15:51-52, John 14:3.",
+            "bible": "All scripture is given by inspiration of God and is profitable for doctrine, reproof, correction, and instruction in righteousness. 2 Timothy 3:16-17, Psalm 119:105, 2 Peter 1:21.",
+            "love": "Love the Lord your God with all your heart. Love one another as Christ loved us. 1 John 4:7-8, John 13:34, Deuteronomy 6:5.",
+            "peace": "Jesus said, Peace I leave with you. His peace guards the heart when we trust Him. John 14:27, Philippians 4:7, Isaiah 26:3.",
         }
-        for key, (rn, text) in topical.items():
-            if key in ql:
-                ref_name, body = rn, text
+        for key, text_fb in topical.items():
+            if key in topic_q.lower() or key in ql:
+                ref_name, body = "the Bible", text_fb
                 break
 
+    if not body and last.get("full_body"):
+        body = last["full_body"]
+        ref_name = last.get("ref") or "the Bible"
+        depth = int(last.get("depth") or 0) + 1
+        is_more = True
+        topic_q = last.get("topic") or topic_q
+
     if not body:
+        # soft recovery instead of hard sorry
         return JSONResponse({
             "ok": True,
-            "answer": "Sorry I can't help with that.",
-            "follow_up": "",
-            "outside": True,
+            "answer": "Let us open the Word together. You can ask about God, Jesus, heaven, prayer, repentance, holiness, the rapture, or any of the Bible doctrines. What would you like to hear?",
+            "follow_up": "Would you like me to start with who Jesus is?",
+            "outside": False,
         })
 
-    _LAST_TOPIC[uid] = {"topic": q, "offset": 70, "body": body, "ref": ref_name or ""}
+    full_body = body
+    layer_text = _extract_layer(full_body, depth)
+    answer = _clean_speak(layer_text)
 
-    # Conversational: strip heavy citation labels; speak the content
-    clean = body
-    for prefix in (
-        "Matthew Henry emphasis:", "Henry:", "Matthew Henry:", "Logical summary:",
-        "Summary:", "Bible:", "Scripture:", "Definition:", "Explanation:", "Illustration:",
-    ):
-        clean = re.sub(re.escape(prefix), "", clean, flags=re.I)
-    clean = re.sub(r"\s+", " ", clean).strip()
-    # Soft lead-in only when helpful, not every time
-    if ref_name and "excerpt" in (ref_name or "").lower():
-        answer = clean
-    else:
-        answer = clean
-    words_out = answer.split()
-    if len(words_out) > 85:
-        answer = " ".join(words_out[:85]) + "."
+    # encouragement tail on deeper layers
+    if depth >= 1 and "trust" not in answer.lower() and len(answer.split()) < 80:
+        answer = answer.rstrip(".") + ". Love God, walk with Him daily, and trust Him with your life."
 
-    follow = _make_follow_up(q, body, resource)
+    _LAST_TOPIC[uid] = {
+        "topic": topic_q if not is_more else (last.get("topic") or topic_q),
+        "query": q,
+        "depth": depth,
+        "full_body": full_body,
+        "ref": ref_name or "",
+        "block_key": block_key,
+        "offset": depth,
+    }
+
+    follow = _make_follow_up(topic_q, full_body, resource, depth)
     return JSONResponse({
         "ok": True,
         "answer": answer,
         "follow_up": follow,
         "outside": False,
-        "topic": q,
+        "topic": _LAST_TOPIC[uid]["topic"],
+        "depth": depth,
     })
 
 
