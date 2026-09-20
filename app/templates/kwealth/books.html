@@ -2,188 +2,554 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Books — Kwealth</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { background: radial-gradient(ellipse at top, #1e293b, #0f172a 60%); min-height: 100vh; }
-    .page-sheet {
-      background: linear-gradient(180deg, #fffef8 0%, #f3e9d3 100%);
-      color: #1c1917;
-      border-radius: 4px 16px 16px 4px;
-      box-shadow: 12px 16px 40px rgba(0,0,0,.45), inset -8px 0 20px rgba(120,80,20,.08);
-      min-height: 70vh;
-      transition: transform .35s ease;
+    [x-cloak] { display: none !important; }
+    :root {
+      --book-bg: #0f172a;
+      --sheet-bg: linear-gradient(180deg, #fffef8 0%, #f3e9d3 100%);
+      --sheet-color: #1c1917;
+      --sheet-shadow: 12px 16px 40px rgba(0,0,0,.45);
     }
-    .page-sheet.flip { transform: perspective(1200px) rotateY(-8deg); }
+    body.theme-parchment { --book-bg: #0f172a; --sheet-bg: linear-gradient(180deg,#fffef8,#f3e9d3); --sheet-color:#1c1917; }
+    body.theme-night { --book-bg: #000; --sheet-bg: #0a0a0a; --sheet-color: #f5f5f5; --sheet-shadow: 0 0 40px rgba(255,255,255,.08); }
+    body.theme-sepia { --book-bg: #2c2416; --sheet-bg: #f4ecd8; --sheet-color: #3b2f1e; }
+    body.theme-forest { --book-bg: #0c1a12; --sheet-bg: #e8f5e9; --sheet-color: #1b3a2a; }
+    body.theme-ocean { --book-bg: #0a1628; --sheet-bg: #e3f2fd; --sheet-color: #0d2137; }
+    body { background: var(--book-bg); min-height: 100vh; transition: background .35s ease; margin: 0; }
+    .bar { background: rgba(15,23,42,.95); border-bottom: 1px solid rgba(255,255,255,.12); }
+    body.theme-night .bar { background: #000; border-color: #333; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 700;
+      background: rgba(255,255,255,.12); color: #e2e8f0; border: 1px solid rgba(255,255,255,.18);
+      cursor: pointer; white-space: nowrap;
+    }
+    .chip:hover { background: rgba(255,255,255,.22); }
+    .chip.on { background: #0d9488; border-color: #2dd4bf; color: #fff; }
+    .chip:disabled { opacity: .4; cursor: not-allowed; }
+    .stage { perspective: 1600px; touch-action: pan-y; }
+    .page-sheet {
+      background: var(--sheet-bg); color: var(--sheet-color);
+      border-radius: 6px 18px 18px 6px;
+      box-shadow: var(--sheet-shadow), inset -8px 0 18px rgba(120,80,20,.06);
+      min-height: 62vh; padding: 1.5rem 1.75rem;
+      transform-origin: left center;
+      transition: transform .4s cubic-bezier(.4,0,.2,1), opacity .3s ease;
+      font-size: var(--fs, 18px);
+      font-family: var(--ff, Georgia, 'Times New Roman', serif);
+      line-height: 1.75; white-space: pre-wrap; word-break: break-word;
+    }
+    .flip-curl { transform: perspective(1400px) rotateY(-70deg) scaleX(.92); opacity: .5; }
+    .flip-slide { transform: translateX(-30%) rotateZ(-2deg); opacity: .4; }
+    .flip-fold { transform: perspective(1200px) rotateX(10deg) rotateY(-50deg); opacity: .5; }
+    .flip-fade { transform: scale(.94); opacity: 0; }
+    .flip-back { transform: perspective(1400px) rotateY(70deg) scaleX(.92); opacity: .5; }
+    .flip-back-slide { transform: translateX(30%) rotateZ(2deg); opacity: .4; }
+    label.lbl { font-size: 11px; color: #94a3b8; font-weight: 600; display: block; margin-bottom: 4px; }
+    select.ctl, input.ctl {
+      width: 100%; border-radius: 8px; padding: 6px 8px; font-size: 12px;
+      color: #0f172a; border: 1px solid #cbd5e1; background: #fff;
+    }
+    input[type=range] { accent-color: #14b8a6; width: 100%; }
+    .grid-tools { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+    @media (min-width: 640px) { .grid-tools { grid-template-columns: repeat(3, minmax(0,1fr)); } }
+    .live { width: 8px; height: 8px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px #34d399; display: inline-block; animation: p 1.2s infinite; }
+    .off { width: 8px; height: 8px; border-radius: 50%; background: #64748b; display: inline-block; }
+    @keyframes p { 50% { opacity: .4; } }
   </style>
 </head>
-<body class="text-slate-100" x-data="bookReader()" x-init="init()">
-  <header class="sticky top-0 z-20 bg-slate-950/90 backdrop-blur border-b border-white/10">
-    <div class="max-w-4xl mx-auto px-3 py-2.5 flex flex-wrap items-center gap-2">
-      <a href="/member/kwealth" class="text-xs text-teal-300">← Kwealth</a>
-      <span class="font-bold text-sm sm:text-base">Books</span>
-      <!-- Device file picker (like personal music) -->
-      <input type="file" x-ref="filePick" class="hidden" accept=".pdf,.txt,application/pdf,text/plain" multiple
-             @change="uploadFiles($event)">
-      <button type="button" @click="$refs.filePick.click()"
-              class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-700 hover:bg-slate-600"
-              :disabled="uploading" x-text="uploading ? 'Scanning…' : 'Load'"></button>
-      <button type="button" @click="toggleAngelRead()" class="px-3 py-1.5 rounded-lg text-xs font-bold"
-              :class="reading ? 'bg-rose-600' : 'bg-amber-600'" x-text="reading ? 'Stop' : 'Angel'"></button>
-      <button type="button" @click="arrangeText()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-indigo-600"
-              title="Clean line breaks so Angel reads more smoothly">Arrange text</button>
-      <select x-model="voiceName" @change="saveVoicePref()" class="text-slate-900 text-xs rounded-lg px-2 py-1.5 max-w-[9rem]">
-        <option value="">Default voice</option>
-        <template x-for="v in voices" :key="v.name">
-          <option :value="v.name" x-text="v.name + ' (' + v.lang + ')'"></option>
-        </template>
-      </select>
-      <label class="text-[10px] text-slate-400 flex items-center gap-1">Rate
-        <input type="range" min="0.7" max="1.2" step="0.05" x-model.number="rate" class="w-16">
-      </label>
-      <button type="button" @click="saveSelection()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-700">Save highlighted → Excerpts</button>
-      <select class="ml-auto text-slate-900 text-xs rounded-lg px-2 py-1.5 max-w-[50%]" x-model="bookId" @change="goBook()">
-        {% for b in books %}
-        <option value="{{ b.id }}" {% if book and b.id==book.id %}selected{% endif %}>{{ b.title }}</option>
-        {% endfor %}
-      </select>
-    </div>
-  </header>
+<body class="theme-parchment" id="bookBody">
+  <div id="app">
+    <!-- TOP BAR -->
+    <div class="bar sticky top-0 z-30">
+      <div style="max-width:56rem;margin:0 auto;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+        <a href="/member/kwealth" style="color:#5eead4;font-size:12px;text-decoration:none;">← Kwealth</a>
+        <strong style="color:#f1f5f9;font-size:14px;">Books</strong>
+        <input type="file" id="filePick" hidden accept=".pdf,.txt,application/pdf,text/plain" multiple>
+        <button type="button" class="chip" id="btnLoad">Load</button>
+        <button type="button" class="chip" id="btnRead">👼 Read</button>
+        <button type="button" class="chip" id="btnArrange">Arrange</button>
+        <button type="button" class="chip on" id="btnTools">⚙ Settings</button>
+        <button type="button" class="chip" id="btnMusic"><span id="bgmDot" class="off"></span> Music</button>
+        <select id="bookSelect" class="ctl" style="max-width:45%;margin-left:auto;width:auto;">
+          {% for b in books %}
+          <option value="{{ b.id }}" {% if book and b.id==book.id %}selected{% endif %}>{{ b.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
 
-  <main class="max-w-3xl mx-auto px-4 py-6">
-    {% if request.query_params.get('uploaded') %}
-    <p class="text-center text-sm text-emerald-300 mb-3">Added {{ request.query_params.get('uploaded') }} book(s) from your device.</p>
-    {% endif %}
-    {% if book %}
-    <p class="text-center text-xs text-slate-400 mb-3" x-text="'Page ' + (pageIndex+1) + ' / ' + pages.length"></p>
-    <div class="page-sheet p-6 sm:p-10 font-serif text-base sm:text-lg leading-relaxed whitespace-pre-wrap"
-         :class="{flip: flipping}" id="pageSurface">
-      <span x-text="pages[pageIndex]||''"></span>
+      <!-- SETTINGS — always in DOM, toggled visible -->
+      <div id="panelTools" style="max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
+        <p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Book settings (theme · font · flip · jump)</p>
+        <div class="grid-tools">
+          <div>
+            <span class="lbl">Theme</span>
+            <div style="display:flex;flex-wrap:wrap;gap:4px;">
+              <button type="button" class="chip theme-btn on" data-theme="parchment">Parchment</button>
+              <button type="button" class="chip theme-btn" data-theme="night">Night (black)</button>
+              <button type="button" class="chip theme-btn" data-theme="sepia">Sepia</button>
+              <button type="button" class="chip theme-btn" data-theme="forest">Forest</button>
+              <button type="button" class="chip theme-btn" data-theme="ocean">Ocean</button>
+            </div>
+          </div>
+          <div>
+            <span class="lbl">Font size: <span id="fontSizeLabel">18</span>px</span>
+            <input type="range" id="fontSize" min="14" max="32" value="18">
+          </div>
+          <div>
+            <span class="lbl">Font type</span>
+            <select id="fontFamily" class="ctl">
+              <option value="Georgia, 'Times New Roman', serif">Georgia (classic)</option>
+              <option value="'Palatino Linotype', Palatino, serif">Palatino</option>
+              <option value="'Book Antiqua', Palatino, serif">Book Antiqua</option>
+              <option value="Garamond, serif">Garamond</option>
+              <option value="'Segoe UI', system-ui, sans-serif">Segoe UI</option>
+              <option value="'Helvetica Neue', Arial, sans-serif">Helvetica</option>
+              <option value="'Courier New', monospace">Courier</option>
+            </select>
+          </div>
+          <div>
+            <span class="lbl">Page flip style</span>
+            <select id="flipStyle" class="ctl">
+              <option value="curl">Curl (book edge)</option>
+              <option value="slide">Slide</option>
+              <option value="fold">Fold</option>
+              <option value="fade">Fade</option>
+            </select>
+          </div>
+          <div>
+            <span class="lbl">Jump to page</span>
+            <div style="display:flex;gap:6px;">
+              <input type="number" id="jumpTo" class="ctl" min="1" value="1" style="width:5rem;">
+              <button type="button" class="chip on" id="btnJump">Go</button>
+            </div>
+          </div>
+          <div>
+            <span class="lbl">Voice</span>
+            <select id="voiceName" class="ctl"><option value="">Default voice</option></select>
+            <span class="lbl" style="margin-top:6px;">Rate</span>
+            <input type="range" id="rate" min="0.7" max="1.15" step="0.05" value="0.95">
+          </div>
+        </div>
+      </div>
+
+      <!-- MUSIC — always in DOM -->
+      <div id="panelMusic" style="display:none;max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
+        <p style="color:#6ee7b7;font-size:12px;font-weight:700;margin:0 0 6px;">Soft background music while reading</p>
+        <p style="color:#64748b;font-size:11px;margin:0 0 8px;">Built-in calm tones, or load your own audio (mp3, m4a, ogg, wav).</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+          <button type="button" class="chip bgm-btn on" data-bgm="none">None</button>
+          <button type="button" class="chip bgm-btn" data-bgm="soft1">Soft pad</button>
+          <button type="button" class="chip bgm-btn" data-bgm="soft2">Gentle wave</button>
+          <button type="button" class="chip bgm-btn" data-bgm="soft3">Warm drone</button>
+          <button type="button" class="chip" id="btnLoadBgm">Load my music…</button>
+          <input type="file" id="bgmFile" hidden accept="audio/*,.mp3,.m4a,.ogg,.wav">
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+          <label class="lbl" style="display:flex;align-items:center;gap:8px;margin:0;">Volume
+            <input type="range" id="bgmVol" min="0" max="0.45" step="0.01" value="0.12" style="width:7rem;">
+          </label>
+          <button type="button" class="chip" id="btnBgmPlay">Play music</button>
+          <span id="bgmLabel" style="color:#94a3b8;font-size:11px;">No background music</span>
+        </div>
+        <audio id="bgmAudio" loop preload="auto"></audio>
+      </div>
     </div>
-    <div class="flex justify-center gap-4 mt-6">
-      <button @click="prev()" class="w-28 py-3 rounded-2xl bg-white/10 font-semibold hover:bg-white/20">← Prev</button>
-      <button @click="next()" class="w-28 py-3 rounded-2xl bg-white/10 font-semibold hover:bg-white/20">Next →</button>
-    </div>
-    <script>
-      window.__BOOK__ = { id: {{ book.id }}, pages: {{ pages|tojson }}, pageIndex: {{ page_index }} };
-    </script>
-    {% else %}
-    <p class="text-center text-slate-400 py-20">Tap <strong>Load</strong> to open your device and choose PDF or text books.</p>
-    {% endif %}
-  </main>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <main style="max-width:48rem;margin:0 auto;padding:16px 12px 32px;">
+      {% if request.query_params.get('uploaded') %}
+      <p style="text-align:center;color:#6ee7b7;font-size:13px;">Added {{ request.query_params.get('uploaded') }} book(s).</p>
+      {% endif %}
+
+      {% if book %}
+      <p id="pageInfo" style="text-align:center;color:#94a3b8;font-size:12px;margin-bottom:8px;">
+        Page <span id="pageCur">1</span> / <span id="pageTotal">1</span> · Swipe left/right to flip
+      </p>
+      <div class="stage" id="stage">
+        <div class="page-sheet" id="sheet"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;gap:8px;margin-top:14px;">
+        <button type="button" class="chip" id="btnPrev">‹ Previous</button>
+        <button type="button" class="chip" id="btnHighlight">Save highlight → Excerpts</button>
+        <button type="button" class="chip" id="btnNext">Next ›</button>
+      </div>
+      <script>
+        window.__BOOK__ = { id: {{ book.id }}, pages: {{ pages|tojson }}, pageIndex: {{ page_index }} };
+      </script>
+      {% else %}
+      <p style="text-align:center;color:#94a3b8;padding:4rem 1rem;">Tap <strong>Load</strong> to choose PDF or text books from your device.</p>
+      {% endif %}
+    </main>
+  </div>
+
   <script>
-  function bookReader() {
-    return {
-      bookId: '', pages: [], pageIndex: 0, flipping: false, reading: false, uploading: false,
-      voices: [], voiceName: '', rate: 0.95, arranged: false,
-      init() {
-        const B = window.__BOOK__;
-        if (B) { this.pages = B.pages||[]; this.pageIndex = B.pageIndex||0; this.bookId = String(B.id); }
-        this.voiceName = localStorage.getItem('kw_book_voice') || '';
-        this.rate = Number(localStorage.getItem('kw_book_rate') || 0.95);
-        this.loadVoices();
-        if (window.speechSynthesis) {
-          speechSynthesis.onvoiceschanged = () => this.loadVoices();
-        }
-      },
-      loadVoices() {
-        if (!('speechSynthesis' in window)) return;
-        let list = speechSynthesis.getVoices() || [];
-        // Prefer English voices, then others
-        list = list.slice().sort((a, b) => {
-          const ae = /en/i.test(a.lang) ? 0 : 1;
-          const be = /en/i.test(b.lang) ? 0 : 1;
-          if (ae !== be) return ae - be;
-          return (a.name || '').localeCompare(b.name || '');
-        });
-        this.voices = list;
-        if (this.voiceName && !list.find(v => v.name === this.voiceName) && list.length) {
-          // keep preference if still present; else leave default
-        }
-      },
-      saveVoicePref() {
-        localStorage.setItem('kw_book_voice', this.voiceName || '');
-        localStorage.setItem('kw_book_rate', String(this.rate));
-      },
-      /** Soft-wrap fix: join broken lines so TTS reads sentences smoothly */
-      arrangeText() {
-        if (!this.pages.length) return;
-        this.pages = this.pages.map(page => {
-          let s = String(page || '');
-          // hyphenated line breaks: word-\nword → wordword
-          s = s.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2');
-          // single newlines mid-paragraph → space (keep double newlines as paragraph breaks)
-          s = s.replace(/([^\n])\n(?!\n)/g, '$1 ');
-          // collapse excess spaces
-          s = s.replace(/[ \t]{2,}/g, ' ');
-          s = s.replace(/\n{3,}/g, '\n\n');
-          return s.trim();
-        });
-        this.arranged = true;
-        try { alert('Text arranged for smoother reading. Tap Angel to read.'); } catch(e) {}
-      },
-      goBook() { location.href = '/member/kwealth/books?book_id=' + this.bookId; },
-      async uploadFiles(ev) {
-        const files = Array.from(ev.target.files || []);
-        if (!files.length) return;
-        this.uploading = true;
-        try {
-          const fd = new FormData();
-          files.forEach(f => fd.append('files', f));
-          const r = await fetch('/member/kwealth/books/upload', {
-            method: 'POST', body: fd, credentials: 'same-origin'
-          });
-          if (r.redirected) location.href = r.url;
-          else location.href = '/member/kwealth/books';
-        } catch (e) {
-          alert('Could not load books from device');
-          this.uploading = false;
-        }
-        ev.target.value = '';
-      },
-      async saveProgress() {
-        if (!this.bookId) return;
-        const fd = new FormData(); fd.append('book_id', this.bookId); fd.append('page_index', this.pageIndex);
-        try { await fetch('/member/kwealth/books/progress', { method:'POST', body: fd, credentials:'same-origin' }); } catch(e) {}
-      },
-      prev() { if (this.pageIndex<=0) return; this.flipping=true; setTimeout(()=>{ this.pageIndex--; this.flipping=false; this.saveProgress(); if(this.reading) this.speakPage(); }, 180); },
-      next() { if (this.pageIndex>=this.pages.length-1){ this.reading=false; return;} this.flipping=true; setTimeout(()=>{ this.pageIndex++; this.flipping=false; this.saveProgress(); if(this.reading) this.speakPage(); }, 180); },
-      speakPage() {
-        if (!('speechSynthesis' in window)) return;
-        speechSynthesis.cancel();
-        this.loadVoices();
-        let text = this.pages[this.pageIndex] || '';
-        // light on-the-fly smooth if not arranged
-        if (!this.arranged) {
-          text = text.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2').replace(/([^\n])\n(?!\n)/g, '$1 ');
-        }
-        const u = new SpeechSynthesisUtterance(text);
-        u.rate = this.rate || 0.95;
-        const voices = this.voices.length ? this.voices : speechSynthesis.getVoices();
-        let voice = null;
-        if (this.voiceName) voice = voices.find(v => v.name === this.voiceName);
-        if (!voice) voice = voices.find(v => /en/i.test(v.lang) && /female|samantha|zira|karen|moira|tessa|google uk|microsoft/i.test(v.name))
-                  || voices.find(v => /en/i.test(v.lang));
-        if (voice) u.voice = voice;
-        u.onend = () => { if (this.reading) this.next(); };
-        speechSynthesis.speak(u);
-      },
-      toggleAngelRead() {
-        this.reading = !this.reading;
-        this.saveVoicePref();
-        if (this.reading) this.speakPage(); else try { speechSynthesis.cancel(); } catch(e) {}
-      },
-      async saveSelection() {
-        const sel = (window.getSelection && window.getSelection().toString() || '').trim();
-        if (!sel) { alert('Highlight text on the page first'); return; }
-        const fd = new FormData(); fd.append('book_id', this.bookId); fd.append('text', sel); fd.append('title', 'Highlight');
-        await fetch('/member/kwealth/excerpts/from-book', { method:'POST', body: fd, credentials:'same-origin' });
-        alert('Saved to Excerpts');
-      }
+  (function () {
+    const B = window.__BOOK__ || { id: null, pages: [], pageIndex: 0 };
+    const state = {
+      pages: B.pages || [],
+      pageIndex: B.pageIndex || 0,
+      bookId: B.id ? String(B.id) : '',
+      reading: false,
+      flipping: false,
+      arranged: false,
+      theme: localStorage.getItem('kw_book_theme') || 'parchment',
+      fontSize: Number(localStorage.getItem('kw_book_fontSize') || 18),
+      fontFamily: localStorage.getItem('kw_book_fontFamily') || "Georgia, 'Times New Roman', serif",
+      flipStyle: localStorage.getItem('kw_book_flip') || 'curl',
+      voiceName: localStorage.getItem('kw_book_voice') || '',
+      rate: Number(localStorage.getItem('kw_book_rate') || 0.95),
+      bgmId: localStorage.getItem('kw_book_bgm') || 'none',
+      bgmVol: Number(localStorage.getItem('kw_book_bgmVol') || 0.12),
+      bgmPlaying: false,
+      bgmCustomUrl: null,
+      _bgm: null,
+      _tx: null,
+      _mx: null,
+    };
+
+    const $ = (id) => document.getElementById(id);
+    const sheet = $('sheet');
+    const body = document.getElementById('bookBody');
+
+    function applyTheme() {
+      body.className = 'theme-' + state.theme;
+      document.querySelectorAll('.theme-btn').forEach(b => {
+        b.classList.toggle('on', b.dataset.theme === state.theme);
+      });
     }
-  }
+    function applyFont() {
+      if (!sheet) return;
+      sheet.style.setProperty('--fs', state.fontSize + 'px');
+      sheet.style.setProperty('--ff', state.fontFamily);
+      $('fontSizeLabel').textContent = state.fontSize;
+      localStorage.setItem('kw_book_fontSize', state.fontSize);
+      localStorage.setItem('kw_book_fontFamily', state.fontFamily);
+      localStorage.setItem('kw_book_flip', state.flipStyle);
+    }
+    function renderPage() {
+      if (!sheet) return;
+      sheet.textContent = state.pages[state.pageIndex] || '';
+      if ($('pageCur')) $('pageCur').textContent = state.pageIndex + 1;
+      if ($('pageTotal')) $('pageTotal').textContent = state.pages.length || 1;
+      if ($('jumpTo')) $('jumpTo').value = state.pageIndex + 1;
+      $('btnPrev').disabled = state.pageIndex <= 0;
+      $('btnNext').disabled = state.pageIndex >= state.pages.length - 1;
+    }
+    function saveProgress() {
+      if (!state.bookId) return;
+      const fd = new FormData();
+      fd.append('book_id', state.bookId);
+      fd.append('page_index', state.pageIndex);
+      fetch('/member/kwealth/books/progress', { method: 'POST', body: fd, credentials: 'same-origin' }).catch(() => {});
+    }
+    function animateFlip(dir, done) {
+      if (!sheet || state.flipping) return;
+      state.flipping = true;
+      const style = state.flipStyle || 'curl';
+      let cls = 'flip-curl';
+      if (dir === 'next') {
+        cls = style === 'slide' ? 'flip-slide' : style === 'fold' ? 'flip-fold' : style === 'fade' ? 'flip-fade' : 'flip-curl';
+      } else {
+        cls = style === 'slide' ? 'flip-back-slide' : style === 'fold' ? 'flip-fold' : style === 'fade' ? 'flip-fade' : 'flip-back';
+      }
+      sheet.classList.add(cls);
+      setTimeout(() => {
+        done && done();
+        sheet.classList.remove('flip-curl', 'flip-slide', 'flip-fold', 'flip-fade', 'flip-back', 'flip-back-slide');
+        state.flipping = false;
+      }, 380);
+    }
+    function prev() {
+      if (state.pageIndex <= 0) return;
+      animateFlip('prev', () => {
+        state.pageIndex--;
+        renderPage();
+        saveProgress();
+        if (state.reading) speakPage();
+      });
+    }
+    function next() {
+      if (state.pageIndex >= state.pages.length - 1) {
+        state.reading = false;
+        $('btnRead').textContent = '👼 Read';
+        return;
+      }
+      animateFlip('next', () => {
+        state.pageIndex++;
+        renderPage();
+        saveProgress();
+        if (state.reading) speakPage();
+      });
+    }
+    function cleanForSpeech(text) {
+      let t = text || '';
+      t = t.replace(/https?:\/\/\S+/gi, ' ');
+      t = t.replace(/\S+@\S+\.\S+/g, ' ');
+      t = t.replace(/[^\w\s.,;:'"?!()\-]/g, ' ');
+      t = t.replace(/[.]{2,}/g, '.').replace(/[,]{2,}/g, ',');
+      t = t.replace(/\b\d{5,}\b/g, ' ');
+      t = t.replace(/\s+/g, ' ').trim();
+      return t;
+    }
+    function loadVoices() {
+      const sel = $('voiceName');
+      if (!sel || !window.speechSynthesis) return;
+      const voices = speechSynthesis.getVoices() || [];
+      const cur = state.voiceName;
+      sel.innerHTML = '<option value="">Default voice</option>';
+      voices.forEach(v => {
+        const o = document.createElement('option');
+        o.value = v.name;
+        o.textContent = v.name + ' (' + v.lang + ')';
+        if (v.name === cur) o.selected = true;
+        sel.appendChild(o);
+      });
+    }
+    function speakPage() {
+      if (!window.speechSynthesis) return;
+      speechSynthesis.cancel();
+      let text = state.pages[state.pageIndex] || '';
+      if (!state.arranged) {
+        text = text.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2').replace(/([^\n])\n(?!\n)/g, '$1 ');
+      }
+      text = cleanForSpeech(text);
+      if (!text) { if (state.reading) next(); return; }
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = state.rate || 0.95;
+      const voices = speechSynthesis.getVoices() || [];
+      let voice = state.voiceName ? voices.find(v => v.name === state.voiceName) : null;
+      if (!voice) voice = voices.find(v => /en/i.test(v.lang) && /female|samantha|zira|karen|moira|tessa|google/i.test(v.name))
+                || voices.find(v => /en/i.test(v.lang));
+      if (voice) u.voice = voice;
+      u.onend = () => { if (state.reading) next(); };
+      speechSynthesis.speak(u);
+    }
+
+    /* Background music */
+    function stopBgm() {
+      try { $('bgmAudio').pause(); } catch (e) {}
+      if (state._bgm) {
+        try { state._bgm.o1.stop(); } catch (e) {}
+        try { state._bgm.o2.stop(); } catch (e) {}
+        try { state._bgm.ctx.close(); } catch (e) {}
+        state._bgm = null;
+      }
+      state.bgmPlaying = false;
+      $('btnBgmPlay').textContent = 'Play music';
+      $('bgmDot').className = 'off';
+    }
+    function startSynth(id) {
+      stopBgm();
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const gain = ctx.createGain();
+        gain.gain.value = state.bgmVol * 0.35;
+        gain.connect(ctx.destination);
+        const o1 = ctx.createOscillator();
+        const o2 = ctx.createOscillator();
+        const g1 = ctx.createGain(); const g2 = ctx.createGain();
+        g1.gain.value = 0.45; g2.gain.value = 0.25;
+        o1.connect(g1); g1.connect(gain);
+        o2.connect(g2); g2.connect(gain);
+        if (id === 'soft1') { o1.type = 'sine'; o2.type = 'sine'; o1.frequency.value = 110; o2.frequency.value = 164.81; }
+        else if (id === 'soft2') { o1.type = 'triangle'; o2.type = 'sine'; o1.frequency.value = 98; o2.frequency.value = 146.83; }
+        else { o1.type = 'sine'; o2.type = 'triangle'; o1.frequency.value = 82.41; o2.frequency.value = 123.47; }
+        o1.start(); o2.start();
+        state._bgm = { ctx, gain, o1, o2 };
+        state.bgmPlaying = true;
+        $('btnBgmPlay').textContent = 'Pause music';
+        $('bgmDot').className = 'live';
+      } catch (e) {}
+    }
+    function setBgm(id) {
+      stopBgm();
+      state.bgmId = id;
+      localStorage.setItem('kw_book_bgm', id);
+      document.querySelectorAll('.bgm-btn').forEach(b => b.classList.toggle('on', b.dataset.bgm === id));
+      if (id === 'none') { $('bgmLabel').textContent = 'No background music'; return; }
+      if (id === 'custom') { $('bgmLabel').textContent = 'Your music'; return; }
+      $('bgmLabel').textContent = id === 'soft1' ? 'Soft pad' : id === 'soft2' ? 'Gentle wave' : 'Warm drone';
+      startSynth(id);
+    }
+
+    /* Wire UI */
+    $('btnLoad').onclick = () => $('filePick').click();
+    $('filePick').onchange = async (ev) => {
+      const files = ev.target.files;
+      if (!files || !files.length) return;
+      $('btnLoad').textContent = 'Scanning…';
+      const fd = new FormData();
+      for (const f of files) fd.append('files', f);
+      try {
+        const r = await fetch('/member/kwealth/books/upload', { method: 'POST', body: fd, credentials: 'same-origin' });
+        location.href = r.redirected ? r.url : '/member/kwealth/books';
+      } catch (e) { alert('Could not load books'); }
+      $('btnLoad').textContent = 'Load';
+      ev.target.value = '';
+    };
+    $('bookSelect').onchange = () => { location.href = '/member/kwealth/books?book_id=' + $('bookSelect').value; };
+    $('btnTools').onclick = () => {
+      const p = $('panelTools');
+      p.style.display = p.style.display === 'none' ? 'block' : (p.style.display ? 'none' : 'none');
+      // toggle: if currently visible (default block), hide
+      if (!p.dataset.open) { p.style.display = 'none'; p.dataset.open = '0'; }
+      else if (p.dataset.open === '1') { p.style.display = 'none'; p.dataset.open = '0'; }
+      else { p.style.display = 'block'; p.dataset.open = '1'; }
+    };
+    // start with settings OPEN so user sees features
+    $('panelTools').style.display = 'block';
+    $('panelTools').dataset.open = '1';
+
+    $('btnMusic').onclick = () => {
+      const p = $('panelMusic');
+      const show = p.style.display === 'none';
+      p.style.display = show ? 'block' : 'none';
+    };
+
+    document.querySelectorAll('.theme-btn').forEach(b => {
+      b.onclick = () => {
+        state.theme = b.dataset.theme;
+        localStorage.setItem('kw_book_theme', state.theme);
+        applyTheme();
+      };
+    });
+    $('fontSize').oninput = () => { state.fontSize = Number($('fontSize').value); applyFont(); };
+    $('fontFamily').onchange = () => { state.fontFamily = $('fontFamily').value; applyFont(); };
+    $('flipStyle').onchange = () => { state.flipStyle = $('flipStyle').value; localStorage.setItem('kw_book_flip', state.flipStyle); };
+    $('btnJump').onclick = () => {
+      const n = Math.max(1, Math.min(state.pages.length, parseInt($('jumpTo').value, 10) || 1));
+      const dir = n - 1 > state.pageIndex ? 'next' : 'prev';
+      animateFlip(dir, () => {
+        state.pageIndex = n - 1;
+        renderPage();
+        saveProgress();
+        if (state.reading) speakPage();
+      });
+    };
+    $('voiceName').onchange = () => {
+      state.voiceName = $('voiceName').value;
+      localStorage.setItem('kw_book_voice', state.voiceName);
+    };
+    $('rate').oninput = () => {
+      state.rate = Number($('rate').value);
+      localStorage.setItem('kw_book_rate', state.rate);
+    };
+    $('btnArrange').onclick = () => {
+      state.pages = state.pages.map(page => {
+        let t = page || '';
+        t = t.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2');
+        t = t.replace(/([^\n])\n(?!\n)/g, '$1 ');
+        t = t.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n');
+        return t.trim();
+      });
+      state.arranged = true;
+      renderPage();
+      alert('Text arranged for smoother reading.');
+    };
+    $('btnRead').onclick = () => {
+      state.reading = !state.reading;
+      $('btnRead').textContent = state.reading ? '⏹ Stop' : '👼 Read';
+      if (state.reading) {
+        if (state.bgmId !== 'none' && !state.bgmPlaying) {
+          if (state.bgmId === 'custom') {
+            const a = $('bgmAudio');
+            if (a.src) a.play().then(() => { state.bgmPlaying = true; $('btnBgmPlay').textContent = 'Pause music'; $('bgmDot').className = 'live'; }).catch(()=>{});
+          } else startSynth(state.bgmId);
+        }
+        speakPage();
+      } else {
+        try { speechSynthesis.cancel(); } catch (e) {}
+      }
+    };
+    $('btnPrev').onclick = prev;
+    $('btnNext').onclick = next;
+    $('btnHighlight').onclick = async () => {
+      const sel = (window.getSelection && window.getSelection().toString() || '').trim();
+      if (!sel) { alert('Highlight text on the page first'); return; }
+      const fd = new FormData();
+      fd.append('book_id', state.bookId);
+      fd.append('text', sel);
+      fd.append('title', 'Highlight');
+      await fetch('/member/kwealth/excerpts/from-book', { method: 'POST', body: fd, credentials: 'same-origin' });
+      alert('Saved to Excerpts');
+    };
+
+    /* swipe / drag flip */
+    const stage = $('stage');
+    if (stage) {
+      stage.addEventListener('touchstart', (e) => { if (e.touches[0]) state._tx = e.touches[0].clientX; }, { passive: true });
+      stage.addEventListener('touchend', (e) => {
+        if (state._tx == null) return;
+        const x = e.changedTouches[0] ? e.changedTouches[0].clientX : state._tx;
+        const dx = x - state._tx; state._tx = null;
+        if (Math.abs(dx) < 40) return;
+        if (dx < 0) next(); else prev();
+      });
+      stage.addEventListener('mousedown', (e) => { if (e.button === 0) state._mx = e.clientX; });
+      stage.addEventListener('mouseup', (e) => {
+        if (state._mx == null) return;
+        const dx = e.clientX - state._mx; state._mx = null;
+        if (Math.abs(dx) < 50) return;
+        if (dx < 0) next(); else prev();
+      });
+    }
+
+    document.querySelectorAll('.bgm-btn').forEach(b => {
+      b.onclick = () => setBgm(b.dataset.bgm);
+    });
+    $('btnLoadBgm').onclick = () => $('bgmFile').click();
+    $('bgmFile').onchange = (ev) => {
+      const f = ev.target.files && ev.target.files[0];
+      if (!f) return;
+      if (state.bgmCustomUrl) URL.revokeObjectURL(state.bgmCustomUrl);
+      state.bgmCustomUrl = URL.createObjectURL(f);
+      state.bgmId = 'custom';
+      localStorage.setItem('kw_book_bgm', 'custom');
+      document.querySelectorAll('.bgm-btn').forEach(b => b.classList.remove('on'));
+      $('bgmLabel').textContent = f.name || 'Your music';
+      const a = $('bgmAudio');
+      a.src = state.bgmCustomUrl;
+      a.volume = state.bgmVol;
+      a.play().then(() => {
+        state.bgmPlaying = true;
+        $('btnBgmPlay').textContent = 'Pause music';
+        $('bgmDot').className = 'live';
+      }).catch(() => {});
+      ev.target.value = '';
+    };
+    $('bgmVol').oninput = () => {
+      state.bgmVol = Number($('bgmVol').value);
+      localStorage.setItem('kw_book_bgmVol', state.bgmVol);
+      $('bgmAudio').volume = state.bgmVol;
+      if (state._bgm && state._bgm.gain) state._bgm.gain.gain.value = state.bgmVol * 0.35;
+    };
+    $('btnBgmPlay').onclick = () => {
+      if (state.bgmId === 'none') { setBgm('soft1'); return; }
+      if (state.bgmPlaying) { stopBgm(); return; }
+      if (state.bgmId === 'custom') {
+        $('bgmAudio').play().then(() => {
+          state.bgmPlaying = true;
+          $('btnBgmPlay').textContent = 'Pause music';
+          $('bgmDot').className = 'live';
+        }).catch(() => {});
+      } else startSynth(state.bgmId);
+    };
+
+    // init
+    applyTheme();
+    applyFont();
+    $('fontSize').value = state.fontSize;
+    $('fontFamily').value = state.fontFamily;
+    $('flipStyle').value = state.flipStyle;
+    $('rate').value = state.rate;
+    $('bgmVol').value = state.bgmVol;
+    renderPage();
+    loadVoices();
+    if (window.speechSynthesis) speechSynthesis.onvoiceschanged = loadVoices;
+  })();
   </script>
 </body>
 </html>
