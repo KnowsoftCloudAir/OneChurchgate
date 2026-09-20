@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Books — Kwealth</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="/static/js/offline-store.js"></script>
+  <link rel="manifest" href="/static/manifest.json">
   <style>
     [x-cloak] { display: none !important; }
     :root {
@@ -542,6 +544,30 @@
     $('bgmVol').value = state.bgmVol;
     renderPage();
     loadVoices();
+    // Store book on device for offline reading
+    if (window.CGOffline && state.bookId && state.pages.length) {
+      CGOffline.putBook({
+        id: state.bookId,
+        title: (document.getElementById('bookSelect') && document.getElementById('bookSelect').selectedOptions[0])
+          ? document.getElementById('bookSelect').selectedOptions[0].text : 'Book',
+        pages: state.pages,
+        pageIndex: state.pageIndex
+      }).catch(function(){});
+    }
+    // Offline fallback: if no pages from server, try device store
+    if ((!state.pages || !state.pages.length) && window.CGOffline && state.bookId) {
+      CGOffline.getBook(state.bookId).then(function(b) {
+        if (b && b.pages && b.pages.length) {
+          state.pages = b.pages;
+          state.pageIndex = b.pageIndex || 0;
+          renderPage();
+        }
+      }).catch(function(){});
+    }
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function(){});
+    }
+
     if (window.speechSynthesis) speechSynthesis.onvoiceschanged = loadVoices;
     loadBgmList().then(() => {
       // resume last track choice if still in library
