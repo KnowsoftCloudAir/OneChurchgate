@@ -1376,8 +1376,8 @@ function memberHub() {
       if (this.angel.enabled) {
         if (!this.angel.recognition) this.initAngel();
         this.angel.busy = false;
-        this.angel.status = 'Angel is on and waiting';
-        this.angelSpeak('Angel is on and waiting.', true);
+        this.angel.status = 'Angel is on — silent and listening. Speak or type a question.';
+        // stay quiet until user asks
         try {
           fetch('/member/api/log', {
             method: 'POST',
@@ -1436,28 +1436,12 @@ function memberHub() {
         if (this.bible.voiceName) voice = voices.find(v => v.name === this.bible.voiceName);
         if (!voice) voice = voices.find(v => /en/i.test(v.lang) && /female|samantha|zira|google uk|karen|moira|tessa/i.test(v.name)) || voices.find(v => /en/i.test(v.lang));
         if (voice) u.voice = voice;
-        const fu = (followUp || '').trim();
         u.onend = () => {
-          if (fu) {
-            this.angel.lastFollowUp = fu;
-            this.angel.awaitingFollow = true;
-            const q = new SpeechSynthesisUtterance(fu);
-            q.rate = 1.0;
-            q.volume = u.volume;
-            if (voice) q.voice = voice;
-            q.onend = () => {
-              this.angel.busy = false;
-              this.angel.status = 'Your turn — answer Angel\'s question by voice or type below.';
-              this.angelIdleAfterAction('Waiting for your reply…');
-              this._angelResumeListen();
-            };
-            q.onerror = () => { this.angel.busy = false; this.angelIdleAfterAction(); };
-            speechSynthesis.speak(q);
-          } else {
-            this.angel.busy = false;
-            this.angelIdleAfterAction();
-            this._angelResumeListen();
-          }
+          this.angel.busy = false;
+          this.angel.awaitingFollow = false;
+          this.angel.lastFollowUp = '';
+          this.angelIdleAfterAction('Silent · waiting for your next question.');
+          this._angelResumeListen();
         };
         u.onerror = () => { this.angel.busy = false; this.angelIdleAfterAction(); };
         this.angel.busy = true;
@@ -1660,8 +1644,22 @@ function memberHub() {
       if (!topics[key]) return false;
       const [ans, fu] = topics[key];
       this.angel.lastTopic = key;
-      this.angelSpeak(ans, false, fu);
+      this.angelSpeak(ans, false, '');
       return true;
+    },
+    async angelAction(action, name) {
+      try {
+        let url = '/member/api/angel-actions?action=' + encodeURIComponent(action || '');
+        if (name) url += '&name=' + encodeURIComponent(name);
+        const r = await fetch(url, { credentials: 'same-origin' });
+        const j = await r.json();
+        if (j && j.speak) this.angelSpeak(j.speak);
+        else this.angelIdleAfterAction();
+        return true;
+      } catch (e) {
+        this.angelIdleAfterAction();
+        return false;
+      }
     },
     angelDashboardHelp(kind) {
       const s = window.__MEMBER_STATUS__ || {};
@@ -1671,7 +1669,7 @@ function memberHub() {
         if (s.awaiting === true || s.awaiting === 'true') {
           msg += 'Access is locked. Renew subscription or register fully, then wait for confirmation.';
         } else if (s.sub_active === true || s.sub_active === 'true') {
-          msg += 'Subscription is active. About ' + (s.sub_days || 0) + ' days remaining. Stay in the Word and quiet time.';
+          msg += 'Subscription is active. About ' + (s.sub_days || 0) + ' days remaining.';
         } else {
           msg += 'No active plan showing. Open Subscription to choose a plan and submit payment evidence.';
         }
@@ -1681,7 +1679,10 @@ function memberHub() {
       if (kind === 'devotion') {
         this.openPanel = 'devotions'; try { document.getElementById('devotions')?.scrollIntoView({ behavior: 'smooth' }); } catch (e) {}
         const d = this.devotion || {};
-        this.angelSpeak('Quiet time ' + (d.quiet || 'not set') + ', morning ' + (d.morning || 'not set') + ', evening ' + (d.evening || 'not set') + '. Set alarms on this page.');
+        this.angelSpeak('Quiet time ' + (d.quiet || 'not set') + (d.quietOn ? ' alarm on' : ' alarm off')
+          + ', morning ' + (d.morning || 'not set') + (d.morningOn ? ' alarm on' : ' alarm off')
+          + ', evening ' + (d.evening || 'not set') + (d.eveningOn ? ' alarm on' : ' alarm off')
+          + '. Say turn on morning alarm or turn off quiet time alarm to change.');
         return true;
       }
       if (kind === 'programs') {
@@ -1691,16 +1692,27 @@ function memberHub() {
       }
       if (kind === 'pastor') {
         this.openPanel = 'pastor';
-        this.angelSpeak('Pastor messages and church contact are on your dashboard and under Pastor messages.');
+        this.angelAction('pastor');
         return true;
       }
       if (kind === 'focus') {
-        this.angelSpeak('Open Focus groups to join discussions set by your church admin.');
+        this.angelAction('focus');
         return true;
       }
       if (kind === 'activities') {
         this.openPanel = 'church';
         this.angelSpeak('Church activity days and weekly notes appear under church information when published.');
+        return true;
+      }
+      if (kind === 'feed') {
+        this.angelAction('feed');
+        return true;
+      }
+      if (kind === 'evangelism') {
+        this.openPanel = 'evangelism';
+        const e = this.evangelism || {};
+        const souls = e.souls || e.count || e.total || 0;
+        this.angelSpeak('Evangelism panel open. Recorded progress shows ' + souls + ' entries on this device. Keep witnessing faithfully.');
         return true;
       }
       return false;
@@ -1711,29 +1723,28 @@ function memberHub() {
       this.angel.status = 'Heard: “' + raw + '”';
 
       // Continue conversation after Angel's guiding question
-      if (this.angel.awaitingFollow) {
+      if (this.angel.awaitingFollow || /^(yes|yeah|yep|sure|ok|okay|please|tell me more|more|go on|continue|go deeper|explain more)$/.test(t)) {
         this.angel.awaitingFollow = false;
-        const yes = /^(yes|yeah|yep|sure|ok|okay|please|tell me more|more|go on|continue|i want|explain)/.test(t);
-        if (yes || t.length > 2) {
-          const followQ = yes ? ('more about ' + (this.angel.lastTopic || 'this')) : raw;
-          this.angel.busy = true;
-          this.angel.status = 'Sharing more…';
-          try {
-            const r = await fetch('/member/api/angel-ask', {
-              method: 'POST', credentials: 'same-origin',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ question: followQ })
-            });
-            const j = await r.json();
-            if (j && j.ok && j.answer) {
-              if (j.topic) this.angel.lastTopic = j.topic;
-              this.angelSpeak(j.answer, false, j.follow_up || '');
-              return;
-            }
-          } catch (e) {}
-          this.angelSpeak('Would you like to ask another question about the Word?');
-          return;
-        }
+        const followQ = (/^(yes|yeah|yep|sure|ok|okay|please|more|go on|continue|go deeper|tell me more|explain more)$/.test(t))
+          ? ('more')
+          : raw;
+        this.angel.busy = true;
+        this.angel.status = 'Sharing more…';
+        try {
+          const r = await fetch('/member/api/angel-ask', {
+            method: 'POST', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ question: followQ, topic: this.angel.lastTopic || '' })
+          });
+          const j = await r.json();
+          if (j && j.ok && j.answer) {
+            if (j.topic) this.angel.lastTopic = j.topic;
+            this.angelSpeak(j.answer, false, j.follow_up || '');
+            return;
+          }
+        } catch (e) {}
+        this.angel.busy = false; this.angelIdleAfterAction();
+        return;
       }
 
       // Voice wake / off
@@ -1747,8 +1758,8 @@ function memberHub() {
           this.angel.enabled = true;
           if (!this.angel.recognition) this.initAngel();
           this.angel.busy = false;
-          this.angel.status = 'Angel is on and waiting';
-          this.angelSpeak('Angel is on and waiting.', true);
+          this.angel.status = 'Angel is on — silent and listening.';
+          // quiet until asked
           this.angelVisibilityHook();
           this._angelResumeListen();
           this._startAngelProbe();
@@ -1756,21 +1767,75 @@ function memberHub() {
         return;
       }
       if (/^angel\b$/.test(t) || t === 'angel') {
-        this.angelSpeak('How may I help you?', true);
+        this.angel.status = 'Listening…';
         return;
       }
 
       if (/\b(stop music|pause music|music off)\b/.test(t)) { this.angelStopMusic(); return; }
-      if (/\b(change music|next (song|music|track)|another song)\b/.test(t)) { this.angelNextTrack(); return; }
-      if (/\b(play music|play a song|start music)\b/.test(t) || (/\bmusic\b/.test(t) && /\b(play|start)\b/.test(t))) {
+      if (/\b(change music|next (song|music|track)|another song|change track)\b/.test(t)) { this.angelNextTrack(); return; }
+      if (/\b(play music|play a song|start music|church music)\b/.test(t) || (/\bmusic\b/.test(t) && /\b(play|start)\b/.test(t) && !/\bpersonal\b/.test(t))) {
         this.angelPlayMusic(); return;
       }
+      if (/\b(personal music|my music|play my music|device music)\b/.test(t)) {
+        this.angelSpeak('Opening personal music from your device.');
+        try { location.href = '/member/device-music'; } catch (e) {}
+        return;
+      }
+      if (/\b(daily manna|read manna|manna)\b/.test(t)) { this.angelReadManna(); return; }
       if (/\b(my status|subscription|my account|how many days)\b/.test(t)) { this.angelDashboardHelp('subscription'); return; }
-      if (/\b(quiet time|morning devotion|evening devotion|devotion)\b/.test(t)) { this.angelDashboardHelp('devotion'); return; }
+      if (/\b(quiet time|morning devotion|evening devotion|devotion times|devotion)\b/.test(t)
+          && !/\b(turn on|turn off|alarm|set)\b/.test(t)) {
+        this.angelDashboardHelp('devotion'); return;
+      }
+      if (/\b(turn on|enable|switch on)\b/.test(t) && /\b(quiet|morning|evening)\b/.test(t) && /\balarm\b/.test(t)) {
+        this.openPanel = 'devotions';
+        if (/\bquiet\b/.test(t)) this.devotion.quietOn = true;
+        if (/\bmorning\b/.test(t)) this.devotion.morningOn = true;
+        if (/\bevening\b/.test(t)) this.devotion.eveningOn = true;
+        this.saveDevotion();
+        this.angelSpeak('Alarm turned on.');
+        return;
+      }
+      if (/\b(turn off|disable|switch off)\b/.test(t) && /\b(quiet|morning|evening)\b/.test(t) && /\balarm\b/.test(t)) {
+        this.openPanel = 'devotions';
+        if (/\bquiet\b/.test(t)) this.devotion.quietOn = false;
+        if (/\bmorning\b/.test(t)) this.devotion.morningOn = false;
+        if (/\bevening\b/.test(t)) this.devotion.eveningOn = false;
+        this.saveDevotion();
+        this.angelSpeak('Alarm turned off.');
+        return;
+      }
+      if (/\b(set|change)\b/.test(t) && /\b(quiet|morning|evening)\b/.test(t)) {
+        const tm = t.match(/(\d{1,2})\s*[:\s]\s*(\d{2})/);
+        if (tm) {
+          const val = String(Math.min(23, parseInt(tm[1],10))).padStart(2,'0') + ':' + String(Math.min(59, parseInt(tm[2],10))).padStart(2,'0');
+          this.openPanel = 'devotions';
+          if (/\bquiet\b/.test(t)) { this.devotion.quiet = val; this.devotion.quietOn = true; }
+          else if (/\bmorning\b/.test(t)) { this.devotion.morning = val; this.devotion.morningOn = true; }
+          else if (/\bevening\b/.test(t)) { this.devotion.evening = val; this.devotion.eveningOn = true; }
+          this.saveDevotion();
+          this.angelSpeak('Time set to ' + val + ' and alarm on.');
+          return;
+        }
+      }
       if (/\b(special program|programs|events)\b/.test(t)) { this.angelDashboardHelp('programs'); return; }
-      if (/\b(pastor message|pastor contact|pastor)\b/.test(t)) { this.angelDashboardHelp('pastor'); return; }
-      if (/\bfocus group\b/.test(t)) { this.angelDashboardHelp('focus'); return; }
+      if (/\b(pastor message|pastor messages|read pastor|pastor contact|pastor)\b/.test(t)) { this.angelDashboardHelp('pastor'); return; }
+      if (/\bfocus group\b/.test(t) || /\bread focus\b/.test(t) || /\bfocus messages?\b/.test(t)) { this.angelDashboardHelp('focus'); return; }
       if (/\b(church activit|activity days)\b/.test(t)) { this.angelDashboardHelp('activities'); return; }
+      if (/\b(interaction|member feed|new posts?|comments?)\b/.test(t)) { this.angelDashboardHelp('feed'); return; }
+      if (/\bevangelism\b/.test(t) || (/\bsouls?\b/.test(t) && /\b(progress|won|record)\b/.test(t))) { this.angelDashboardHelp('evangelism'); return; }
+      if (/\b(is|check)\b/.test(t) && /\b(in the (district )?list|district member|on the list)\b/.test(t)) {
+        const nm = t.replace(/.*\b(?:is|check)\b/, '').replace(/\b(in the (district )?list|district member|on the list|a member)\b/g, '').trim();
+        this.angelAction('district_name', nm || raw);
+        return;
+      }
+      if (/\bread (a )?book\b/.test(t) || /\bkwealth book\b/.test(t) || /\bread from kwealth\b/.test(t)) {
+        const title = t.replace(/.*\b(?:read (?:a )?book|kwealth book|read from kwealth)\b/, '').trim();
+        this.angelAction('read_book', title);
+        return;
+      }
+      if (/\b(list books|my books|kwealth books)\b/.test(t)) { this.angelAction('books'); return; }
+      if (/\bread bible\b/.test(t) || /\bbible reading\b/.test(t)) { this.angelReadBible('peace'); return; }
       if (/\b(receive jesus|accept jesus|how do i (get )?saved|how can i be saved)\b/.test(t)) {
         this.angelLeadSalvation(); return;
       }
@@ -1784,7 +1849,7 @@ function memberHub() {
       if (/\b(tell me about jesus|who is jesus|about jesus)\b/.test(t)) { this.angelTopicTalk('jesus'); return; }
       if (/\b(tell me about god|who is god|about god)\b/.test(t)) { this.angelTopicTalk('god'); return; }
       if (/\bsanctif/.test(t)) {
-        this.angelSpeak('Sanctification is being set apart for God. Cross references: 1 Thessalonians 4:3, John 17:17, Hebrews 12:14, 1 Peter 1:15-16.');
+        this.angelSpeak('Sanctification is being set apart for God. God wills your holiness; without holiness no one shall see the Lord.');
         return;
       }
       if (/\bexplain\b/.test(t)) {
@@ -1820,20 +1885,26 @@ function memberHub() {
       // Bible / commentary questions → Kwealth + Matthew Henry
       try {
         this.angel.busy = true;
-        this.angel.status = 'Consulting Scripture and Matthew Henry…';
+        this.angel.status = 'Searching…';
         const r = await fetch('/member/api/angel-ask', {
           method: 'POST', credentials: 'same-origin',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ question: raw })
+          body: JSON.stringify({ question: raw, topic: this.angel.lastTopic || '' })
         });
         const j = await r.json();
         if (j && j.ok && j.answer) {
           if (j.topic) this.angel.lastTopic = j.topic;
-          this.angelSpeak(j.answer, false, j.follow_up || '');
+          this.angelSpeak(j.answer, false, '');
           return;
         }
+        // no match — stay quiet
+        this.angel.busy = false;
+        this.angel.status = 'No matching word found. Try another question.';
+        this.angelIdleAfterAction();
+        return;
       } catch (e) {}
-      this.angelSpeak("Sorry I can't help with that.");
+      this.angel.busy = false;
+      this.angelIdleAfterAction();
     },
     angelLeadSalvation() {
       const prayer = 'To be saved, believe that Jesus can save you, confess and forsake your sins, ask God to forgive you, and repeat after me: Lord Jesus, I know I am a sinner. I am sorry for all the bad life I have lived. I forsake them. Please forgive me and give me the grace to live a life that will please you. In Jesus name I pray. Amen. If you have just said this prayer, you are forgiven. Click the I accepted Jesus button to download your New Born in Christ certificate.';
