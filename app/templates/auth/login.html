@@ -132,5 +132,32 @@
              class="flex items-center gap-3 rounded-xl bg-white border px-4 py-3 text-sm font-semibold shadow-sm hover:border-teal-500">Android app</a>
         </div>
 
+
+<script>
+/* Fresh open: drop stale offline caches that cause blank page after re-login */
+(function () {
+  var params = new URLSearchParams(location.search);
+  var need = params.get('cleared') === '1' || params.get('fresh') === '1' || sessionStorage.getItem('cg_need_fresh') === '1';
+  // Always on login page: update SW and clear old churchgate offline caches
+  if ('caches' in window) {
+    caches.keys().then(function (keys) {
+      keys.filter(function (k) { return /churchgate-offline/i.test(k); }).forEach(function (k) {
+        caches.delete(k);
+      });
+    }).catch(function () {});
+  }
+  if (need) {
+    try { sessionStorage.removeItem('cg_need_fresh'); } catch (e) {}
+  }
+  // Re-register clean SW after logout clear
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function (regs) {
+      if (!regs.length) {
+        navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function () {});
+      }
+    });
+  }
+})();
+</script>
 </body>
 </html>

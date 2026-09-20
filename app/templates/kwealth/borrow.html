@@ -5,70 +5,124 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Borrow &amp; Read — Kwealth</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    #readerFrame {
+      width: 100%;
+      height: calc(100vh - 7.5rem);
+      border: 0;
+      background: #0f172a;
+      border-radius: 12px;
+    }
+    .chip {
+      display: inline-flex; align-items: center;
+      padding: 0.4rem 0.75rem; border-radius: 0.5rem;
+      font-size: 0.75rem; font-weight: 700;
+      background: rgba(255,255,255,.1); color: #e2e8f0;
+      border: 1px solid rgba(255,255,255,.15); cursor: pointer;
+    }
+    .chip:hover { background: rgba(255,255,255,.18); }
+    .chip.on { background: #0d9488; border-color: #2dd4bf; }
+  </style>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-100">
-  <div class="max-w-3xl mx-auto px-4 py-8">
-    <div class="flex justify-between items-center mb-6">
+  <div class="max-w-5xl mx-auto px-3 py-4">
+    <div class="flex flex-wrap items-center gap-2 mb-3">
       <a href="/member/kwealth" class="text-sm text-teal-300">← Kwealth</a>
-      <span class="text-xs text-slate-400">Online libraries</span>
+      <strong class="text-sm">Borrow &amp; Read</strong>
+      <span class="text-xs text-slate-500">inside Churchgate when possible</span>
     </div>
-    <h1 class="text-2xl font-black">Borrow &amp; Read online</h1>
-    <p class="text-slate-400 text-sm mt-2">
-      Legal public libraries and free ebooks. You can <strong>read online</strong> (borrow / stream).
-      These partners do not require storing a full download in Churchgate — follow each site’s borrow rules.
+
+    <p class="text-sm text-slate-400 mb-3">
+      Choose a library. Many partners allow reading <strong>inside this app</strong> (in-app window).
+      If a site blocks embedding, use <strong>Open in new tab</strong> — still from Churchgate, same account session on your phone/PC.
     </p>
 
-    <div class="mt-6 space-y-4">
-      <div class="rounded-2xl border border-amber-500/30 bg-amber-950/30 p-5">
-        <h2 class="font-bold text-amber-200 text-lg">Open Library</h2>
-        <p class="text-sm text-slate-300 mt-1">Millions of books. Many can be borrowed free with a free account (controlled digital lending).</p>
-        <a class="inline-block mt-3 px-4 py-2 rounded-xl bg-amber-600 font-bold text-sm" href="https://openlibrary.org/" target="_blank" rel="noopener">Browse Open Library →</a>
-        <a class="inline-block mt-3 ml-2 px-4 py-2 rounded-xl bg-slate-700 font-bold text-sm" href="https://openlibrary.org/subjects/christianity" target="_blank" rel="noopener">Christianity shelf →</a>
-      </div>
+    <div class="flex flex-wrap gap-2 mb-3">
+      <button type="button" class="chip on lib-btn" data-url="https://openlibrary.org/" data-name="Open Library">Open Library</button>
+      <button type="button" class="chip lib-btn" data-url="https://openlibrary.org/subjects/christianity" data-name="Christianity">Christianity shelf</button>
+      <button type="button" class="chip lib-btn" data-url="https://archive.org/details/texts" data-name="Internet Archive">Internet Archive</button>
+      <button type="button" class="chip lib-btn" data-url="https://www.gutenberg.org/" data-name="Gutenberg">Project Gutenberg</button>
+      <button type="button" class="chip lib-btn" data-url="https://standardebooks.org/ebooks" data-name="Standard Ebooks">Standard Ebooks</button>
+    </div>
 
-      <div class="rounded-2xl border border-sky-500/30 bg-sky-950/30 p-5">
-        <h2 class="font-bold text-sky-200 text-lg">Internet Archive</h2>
-        <p class="text-sm text-slate-300 mt-1">Borrow scanned books and magazines online. Free account required for lending.</p>
-        <a class="inline-block mt-3 px-4 py-2 rounded-xl bg-sky-600 font-bold text-sm" href="https://archive.org/details/texts" target="_blank" rel="noopener">Archive texts →</a>
-        <a class="inline-block mt-3 ml-2 px-4 py-2 rounded-xl bg-slate-700 font-bold text-sm" href="https://archive.org/details/americana" target="_blank" rel="noopener">Americana →</a>
-      </div>
+    <form class="flex gap-2 mb-3" onsubmit="return doSearch(event)">
+      <input id="q" type="search" placeholder="Search title or author (Open Library)"
+             class="flex-1 rounded-xl px-3 py-2 text-slate-900 text-sm" required>
+      <button type="submit" class="chip on">Search in app</button>
+    </form>
 
-      <div class="rounded-2xl border border-emerald-500/30 bg-emerald-950/30 p-5">
-        <h2 class="font-bold text-emerald-200 text-lg">Project Gutenberg</h2>
-        <p class="text-sm text-slate-300 mt-1">Public-domain classics — read online in the browser (HTML / online reader).</p>
-        <a class="inline-block mt-3 px-4 py-2 rounded-xl bg-emerald-600 font-bold text-sm" href="https://www.gutenberg.org/" target="_blank" rel="noopener">Gutenberg home →</a>
-        <a class="inline-block mt-3 ml-2 px-4 py-2 rounded-xl bg-slate-700 font-bold text-sm" href="https://www.gutenberg.org/ebooks/search/?query=bible" target="_blank" rel="noopener">Search Bible / faith →</a>
-      </div>
+    <div class="flex flex-wrap gap-2 mb-2 items-center">
+      <span class="text-xs text-slate-400" id="nowReading">Select a library to read inside Churchgate</span>
+      <button type="button" class="chip ml-auto" id="btnNewTab">Open in new tab</button>
+      <button type="button" class="chip" id="btnReload">Reload</button>
+    </div>
 
-      <div class="rounded-2xl border border-violet-500/30 bg-violet-950/30 p-5">
-        <h2 class="font-bold text-violet-200 text-lg">Standard Ebooks</h2>
-        <p class="text-sm text-slate-300 mt-1">Beautifully formatted public-domain ebooks; read online or use their web reader.</p>
-        <a class="inline-block mt-3 px-4 py-2 rounded-xl bg-violet-600 font-bold text-sm" href="https://standardebooks.org/ebooks" target="_blank" rel="noopener">Browse Standard Ebooks →</a>
-      </div>
-
-      <div class="rounded-2xl border border-rose-500/30 bg-rose-950/30 p-5">
-        <h2 class="font-bold text-rose-200 text-lg">Quick search</h2>
-        <p class="text-sm text-slate-300 mt-1 mb-3">Search Open Library and open results in a new tab to borrow/read.</p>
-        <form id="olForm" class="flex gap-2" onsubmit="return olSearch(event)">
-          <input id="olQ" type="search" placeholder="Book title or author" class="flex-1 rounded-xl px-3 py-2 text-slate-900 text-sm" required>
-          <button type="submit" class="px-4 py-2 rounded-xl bg-white text-slate-900 font-bold text-sm">Search</button>
-        </form>
+    <div class="rounded-xl border border-white/10 overflow-hidden bg-black relative">
+      <iframe id="readerFrame" title="Partner library reader"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-downloads"
+              referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <div id="blockHint" class="hidden absolute inset-0 flex flex-col items-center justify-center bg-slate-950/95 p-6 text-center">
+        <p class="font-bold text-lg mb-2">This library prefers its own full window</p>
+        <p class="text-sm text-slate-400 mb-4 max-w-md">Some partners block in-app frames for security. You can still read from Churchgate via a new tab (same device, started here).</p>
+        <button type="button" class="chip on" id="btnOpenBlocked">Open library in new tab</button>
       </div>
     </div>
 
-    <p class="text-xs text-slate-500 mt-8">
-      Churchgate does not host copyrighted vendor files. Borrowing and reading happen on the partner sites under their terms.
-      For fully offline reading on this device, load your own PDFs/text under <a class="text-teal-400 underline" href="/member/kwealth/books">Kwealth Books</a>.
+    <p class="text-xs text-slate-500 mt-3">
+      Reading is on the partner’s site under their borrow rules. Churchgate does not store their copyrighted files.
+      For fully offline reading on this device, use <a class="text-teal-400 underline" href="/member/kwealth/books">Kwealth Books</a> with your own files.
     </p>
   </div>
   <script>
-    function olSearch(e) {
+    var currentUrl = 'https://openlibrary.org/';
+    var frame = document.getElementById('readerFrame');
+    var hint = document.getElementById('blockHint');
+    var now = document.getElementById('nowReading');
+
+    function loadInApp(url, name) {
+      currentUrl = url;
+      now.textContent = 'Reading: ' + (name || url);
+      hint.classList.add('hidden');
+      frame.src = url;
+      // If partner blocks iframe, user may see blank — offer escape after delay
+      setTimeout(function () {
+        try {
+          // cross-origin: cannot read contentDocument; leave hint available via button
+        } catch (e) {}
+      }, 2500);
+      document.querySelectorAll('.lib-btn').forEach(function (b) {
+        b.classList.toggle('on', b.getAttribute('data-url') === url);
+      });
+    }
+
+    document.querySelectorAll('.lib-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        loadInApp(btn.getAttribute('data-url'), btn.getAttribute('data-name'));
+      });
+    });
+
+    document.getElementById('btnNewTab').onclick = function () {
+      window.open(currentUrl, '_blank', 'noopener');
+    };
+    document.getElementById('btnOpenBlocked').onclick = function () {
+      window.open(currentUrl, '_blank', 'noopener');
+    };
+    document.getElementById('btnReload').onclick = function () {
+      frame.src = currentUrl;
+      hint.classList.add('hidden');
+    };
+
+    function doSearch(e) {
       e.preventDefault();
-      const q = document.getElementById('olQ').value.trim();
+      var q = document.getElementById('q').value.trim();
       if (!q) return false;
-      window.open('https://openlibrary.org/search?q=' + encodeURIComponent(q), '_blank', 'noopener');
+      var url = 'https://openlibrary.org/search?q=' + encodeURIComponent(q);
+      loadInApp(url, 'Search: ' + q);
       return false;
     }
+
+    // Default: open Open Library inside Churchgate
+    loadInApp('https://openlibrary.org/', 'Open Library');
   </script>
 </body>
 </html>
