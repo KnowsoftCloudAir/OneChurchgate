@@ -12,15 +12,16 @@
       --sheet-bg: linear-gradient(180deg, #fffef8 0%, #f3e9d3 100%);
       --sheet-color: #1c1917;
       --sheet-shadow: 12px 16px 40px rgba(0,0,0,.45);
+      --sheet-border: transparent;
     }
-    body.theme-parchment { --book-bg: #0f172a; --sheet-bg: linear-gradient(180deg,#fffef8,#f3e9d3); --sheet-color:#1c1917; }
-    body.theme-night { --book-bg: #000; --sheet-bg: #0a0a0a; --sheet-color: #f5f5f5; --sheet-shadow: 0 0 40px rgba(255,255,255,.08); }
-    body.theme-sepia { --book-bg: #2c2416; --sheet-bg: #f4ecd8; --sheet-color: #3b2f1e; }
-    body.theme-forest { --book-bg: #0c1a12; --sheet-bg: #e8f5e9; --sheet-color: #1b3a2a; }
-    body.theme-ocean { --book-bg: #0a1628; --sheet-bg: #e3f2fd; --sheet-color: #0d2137; }
+    body.theme-parchment { --book-bg: #0f172a; --sheet-bg: linear-gradient(180deg,#fffef8,#f3e9d3); --sheet-color:#1c1917; --sheet-border: transparent; }
+    body.theme-night { --book-bg: #000; --sheet-bg: #0a0a0a; --sheet-color: #f5f5f5; --sheet-shadow: 0 0 40px rgba(255,255,255,.08); --sheet-border: 1px solid rgba(255,255,255,.85); }
+    body.theme-sepia { --book-bg: #2c2416; --sheet-bg: #f4ecd8; --sheet-color: #3b2f1e; --sheet-border: 1px solid rgba(90,70,40,.25); }
+    body.theme-forest { --book-bg: #0c1a12; --sheet-bg: #e8f5e9; --sheet-color: #1b3a2a; --sheet-border: transparent; }
+    body.theme-ocean { --book-bg: #0a1628; --sheet-bg: #e3f2fd; --sheet-color: #0d2137; --sheet-border: transparent; }
     body { background: var(--book-bg); min-height: 100vh; transition: background .35s ease; margin: 0; }
     .bar { background: rgba(15,23,42,.95); border-bottom: 1px solid rgba(255,255,255,.12); }
-    body.theme-night .bar { background: #000; border-color: #333; }
+    body.theme-night .bar { background: #000; border-color: #444; }
     .chip {
       display: inline-flex; align-items: center; gap: 4px;
       padding: 6px 10px; border-radius: 8px; font-size: 12px; font-weight: 700;
@@ -30,18 +31,48 @@
     .chip:hover { background: rgba(255,255,255,.22); }
     .chip.on { background: #0d9488; border-color: #2dd4bf; color: #fff; }
     .chip:disabled { opacity: .4; cursor: not-allowed; }
-    .stage { perspective: 1600px; touch-action: pan-y; }
+    .stage { perspective: 1600px; touch-action: pan-y; position: relative; }
     .page-sheet {
       background: var(--sheet-bg); color: var(--sheet-color);
+      border: var(--sheet-border);
       border-radius: 6px 18px 18px 6px;
       box-shadow: var(--sheet-shadow), inset -8px 0 18px rgba(120,80,20,.06);
-      min-height: 62vh; padding: 1.5rem 1.75rem;
+      min-height: 62vh; padding: 2.75rem 1.75rem 1.75rem;
       transform-origin: left center;
       transition: transform .4s cubic-bezier(.4,0,.2,1), opacity .3s ease;
       font-size: var(--fs, 18px);
       font-family: var(--ff, Georgia, 'Times New Roman', serif);
       line-height: 1.75; white-space: pre-wrap; word-break: break-word;
+      position: relative;
     }
+    .page-badge {
+      position: absolute; top: 10px; right: 14px; z-index: 5;
+      display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+      pointer-events: none;
+    }
+    .page-badge .num {
+      font-size: 13px; font-weight: 800; letter-spacing: .02em;
+      padding: 4px 10px; border-radius: 999px;
+      background: rgba(15,23,42,.82); color: #f8fafc;
+      border: 1px solid rgba(255,255,255,.25);
+      box-shadow: 0 2px 8px rgba(0,0,0,.25);
+    }
+    body.theme-night .page-badge .num {
+      background: rgba(0,0,0,.75); color: #fff; border: 1px solid rgba(255,255,255,.9);
+    }
+    body.theme-parchment .page-badge .num,
+    body.theme-sepia .page-badge .num,
+    body.theme-forest .page-badge .num,
+    body.theme-ocean .page-badge .num {
+      background: rgba(28,25,23,.88); color: #fff;
+    }
+    .page-badge .status {
+      font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em;
+      padding: 3px 8px; border-radius: 6px;
+    }
+    .status-starting { background: #1d4ed8; color: #eff6ff; }
+    .status-progress { background: #b45309; color: #fffbeb; }
+    .status-finished { background: #047857; color: #ecfdf5; }
     .flip-curl { transform: perspective(1400px) rotateY(-70deg) scaleX(.92); opacity: .5; }
     .flip-slide { transform: translateX(-30%) rotateZ(-2deg); opacity: .4; }
     .flip-fold { transform: perspective(1200px) rotateX(10deg) rotateY(-50deg); opacity: .5; }
@@ -59,11 +90,17 @@
     .live { width: 8px; height: 8px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px #34d399; display: inline-block; animation: p 1.2s infinite; }
     .off { width: 8px; height: 8px; border-radius: 50%; background: #64748b; display: inline-block; }
     @keyframes p { 50% { opacity: .4; } }
+    .bgm-row {
+      display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+      border-radius: 10px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
+      margin-bottom: 6px;
+    }
+    .bgm-row.active { border-color: #2dd4bf; background: rgba(13,148,136,.2); }
+    .bgm-row button { flex-shrink: 0; }
   </style>
 </head>
 <body class="theme-parchment" id="bookBody">
   <div id="app">
-    <!-- TOP BAR -->
     <div class="bar sticky top-0 z-30">
       <div style="max-width:56rem;margin:0 auto;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
         <a href="/member/kwealth" style="color:#5eead4;font-size:12px;text-decoration:none;">← Kwealth</a>
@@ -81,7 +118,6 @@
         </select>
       </div>
 
-      <!-- SETTINGS — always in DOM, toggled visible -->
       <div id="panelTools" style="max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
         <p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Book settings (theme · font · flip · jump)</p>
         <div class="grid-tools">
@@ -89,7 +125,7 @@
             <span class="lbl">Theme</span>
             <div style="display:flex;flex-wrap:wrap;gap:4px;">
               <button type="button" class="chip theme-btn on" data-theme="parchment">Parchment</button>
-              <button type="button" class="chip theme-btn" data-theme="night">Night (black)</button>
+              <button type="button" class="chip theme-btn" data-theme="night">Night (black + white border)</button>
               <button type="button" class="chip theme-btn" data-theme="sepia">Sepia</button>
               <button type="button" class="chip theme-btn" data-theme="forest">Forest</button>
               <button type="button" class="chip theme-btn" data-theme="ocean">Ocean</button>
@@ -136,25 +172,20 @@
         </div>
       </div>
 
-      <!-- MUSIC — always in DOM -->
       <div id="panelMusic" style="display:none;max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
-        <p style="color:#6ee7b7;font-size:12px;font-weight:700;margin:0 0 6px;">Soft background music while reading</p>
-        <p style="color:#64748b;font-size:11px;margin:0 0 8px;">Built-in calm tones, or load your own audio (mp3, m4a, ogg, wav).</p>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
-          <button type="button" class="chip bgm-btn on" data-bgm="none">None</button>
-          <button type="button" class="chip bgm-btn" data-bgm="soft1">Soft pad</button>
-          <button type="button" class="chip bgm-btn" data-bgm="soft2">Gentle wave</button>
-          <button type="button" class="chip bgm-btn" data-bgm="soft3">Warm drone</button>
-          <button type="button" class="chip" id="btnLoadBgm">Load my music…</button>
-          <input type="file" id="bgmFile" hidden accept="audio/*,.mp3,.m4a,.ogg,.wav">
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;">
+        <p style="color:#6ee7b7;font-size:12px;font-weight:700;margin:0 0 6px;">Your background music library (max 10)</p>
+        <p style="color:#64748b;font-size:11px;margin:0 0 8px;">Upload calm tracks from your device. They stay in your list for reading sessions.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+          <button type="button" class="chip on" id="btnLoadBgm">+ Upload / sync from device</button>
+          <input type="file" id="bgmFile" hidden accept="audio/*,.mp3,.m4a,.ogg,.wav,.aac" multiple>
+          <button type="button" class="chip" id="btnBgmStop">Stop music</button>
           <label class="lbl" style="display:flex;align-items:center;gap:8px;margin:0;">Volume
-            <input type="range" id="bgmVol" min="0" max="0.45" step="0.01" value="0.12" style="width:7rem;">
+            <input type="range" id="bgmVol" min="0" max="0.6" step="0.01" value="0.18" style="width:7rem;">
           </label>
-          <button type="button" class="chip" id="btnBgmPlay">Play music</button>
-          <span id="bgmLabel" style="color:#94a3b8;font-size:11px;">No background music</span>
+          <span id="bgmCount" style="color:#94a3b8;font-size:11px;">0 / 10</span>
         </div>
+        <div id="bgmList"></div>
+        <p id="bgmEmpty" style="color:#64748b;font-size:12px;">No tracks yet. Upload up to 10 soft background songs.</p>
         <audio id="bgmAudio" loop preload="auto"></audio>
       </div>
     </div>
@@ -163,13 +194,19 @@
       {% if request.query_params.get('uploaded') %}
       <p style="text-align:center;color:#6ee7b7;font-size:13px;">Added {{ request.query_params.get('uploaded') }} book(s).</p>
       {% endif %}
+      {% if request.query_params.get('bgm') %}
+      <p style="text-align:center;color:#6ee7b7;font-size:13px;">Background music library updated.</p>
+      {% endif %}
 
       {% if book %}
-      <p id="pageInfo" style="text-align:center;color:#94a3b8;font-size:12px;margin-bottom:8px;">
-        Page <span id="pageCur">1</span> / <span id="pageTotal">1</span> · Swipe left/right to flip
-      </p>
       <div class="stage" id="stage">
-        <div class="page-sheet" id="sheet"></div>
+        <div class="page-sheet" id="sheet">
+          <div class="page-badge">
+            <span class="num" id="pageBadgeNum">Page 1 / 1</span>
+            <span class="status status-starting" id="pageBadgeStatus">Starting</span>
+          </div>
+          <div id="sheetText"></div>
+        </div>
       </div>
       <div style="display:flex;justify-content:space-between;gap:8px;margin-top:14px;">
         <button type="button" class="chip" id="btnPrev">‹ Previous</button>
@@ -178,9 +215,11 @@
       </div>
       <script>
         window.__BOOK__ = { id: {{ book.id }}, pages: {{ pages|tojson }}, pageIndex: {{ page_index }} };
+        window.__AUTO_READ__ = {{ 'true' if request.query_params.get('read') else 'false' }};
       </script>
       {% else %}
-      <p style="text-align:center;color:#94a3b8;padding:4rem 1rem;">Tap <strong>Load</strong> to choose PDF or text books from your device.</p>
+      <p style="text-align:center;color:#94a3b8;padding:4rem 1rem;">Tap <strong>Load</strong> for books, or <strong>Music</strong> to upload up to 10 background tracks.</p>
+      <script>window.__BOOK__ = { id: null, pages: [], pageIndex: 0 }; window.__AUTO_READ__ = false;</script>
       {% endif %}
     </main>
   </div>
@@ -201,42 +240,52 @@
       flipStyle: localStorage.getItem('kw_book_flip') || 'curl',
       voiceName: localStorage.getItem('kw_book_voice') || '',
       rate: Number(localStorage.getItem('kw_book_rate') || 0.95),
-      bgmId: localStorage.getItem('kw_book_bgm') || 'none',
-      bgmVol: Number(localStorage.getItem('kw_book_bgmVol') || 0.12),
+      bgmId: localStorage.getItem('kw_book_bgm_id') || '',
+      bgmVol: Number(localStorage.getItem('kw_book_bgmVol') || 0.18),
       bgmPlaying: false,
-      bgmCustomUrl: null,
-      _bgm: null,
-      _tx: null,
-      _mx: null,
+      bgmItems: [],
+      _tx: null, _mx: null,
     };
 
     const $ = (id) => document.getElementById(id);
     const sheet = $('sheet');
+    const sheetText = $('sheetText');
     const body = document.getElementById('bookBody');
 
+    function progressLabel() {
+      const total = state.pages.length || 1;
+      const i = state.pageIndex;
+      if (i <= 0) return { text: 'Starting', cls: 'status-starting' };
+      if (i >= total - 1) return { text: 'Finished', cls: 'status-finished' };
+      return { text: 'In progress', cls: 'status-progress' };
+    }
     function applyTheme() {
       body.className = 'theme-' + state.theme;
-      document.querySelectorAll('.theme-btn').forEach(b => {
-        b.classList.toggle('on', b.dataset.theme === state.theme);
-      });
+      document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('on', b.dataset.theme === state.theme));
     }
     function applyFont() {
       if (!sheet) return;
       sheet.style.setProperty('--fs', state.fontSize + 'px');
       sheet.style.setProperty('--ff', state.fontFamily);
-      $('fontSizeLabel').textContent = state.fontSize;
+      if ($('fontSizeLabel')) $('fontSizeLabel').textContent = state.fontSize;
       localStorage.setItem('kw_book_fontSize', state.fontSize);
       localStorage.setItem('kw_book_fontFamily', state.fontFamily);
       localStorage.setItem('kw_book_flip', state.flipStyle);
     }
     function renderPage() {
-      if (!sheet) return;
-      sheet.textContent = state.pages[state.pageIndex] || '';
-      if ($('pageCur')) $('pageCur').textContent = state.pageIndex + 1;
-      if ($('pageTotal')) $('pageTotal').textContent = state.pages.length || 1;
-      if ($('jumpTo')) $('jumpTo').value = state.pageIndex + 1;
-      $('btnPrev').disabled = state.pageIndex <= 0;
-      $('btnNext').disabled = state.pageIndex >= state.pages.length - 1;
+      if (sheetText) sheetText.textContent = state.pages[state.pageIndex] || '';
+      const total = state.pages.length || 1;
+      const cur = state.pageIndex + 1;
+      if ($('pageBadgeNum')) $('pageBadgeNum').textContent = 'Page ' + cur + ' / ' + total;
+      const st = progressLabel();
+      const badge = $('pageBadgeStatus');
+      if (badge) {
+        badge.textContent = st.text;
+        badge.className = 'status ' + st.cls;
+      }
+      if ($('jumpTo')) $('jumpTo').value = cur;
+      if ($('btnPrev')) $('btnPrev').disabled = state.pageIndex <= 0;
+      if ($('btnNext')) $('btnNext').disabled = state.pageIndex >= total - 1;
     }
     function saveProgress() {
       if (!state.bookId) return;
@@ -249,12 +298,9 @@
       if (!sheet || state.flipping) return;
       state.flipping = true;
       const style = state.flipStyle || 'curl';
-      let cls = 'flip-curl';
-      if (dir === 'next') {
-        cls = style === 'slide' ? 'flip-slide' : style === 'fold' ? 'flip-fold' : style === 'fade' ? 'flip-fade' : 'flip-curl';
-      } else {
-        cls = style === 'slide' ? 'flip-back-slide' : style === 'fold' ? 'flip-fold' : style === 'fade' ? 'flip-fade' : 'flip-back';
-      }
+      let cls = dir === 'next'
+        ? (style === 'slide' ? 'flip-slide' : style === 'fold' ? 'flip-fold' : style === 'fade' ? 'flip-fade' : 'flip-curl')
+        : (style === 'slide' ? 'flip-back-slide' : style === 'fold' ? 'flip-fold' : style === 'fade' ? 'flip-fade' : 'flip-back');
       sheet.classList.add(cls);
       setTimeout(() => {
         done && done();
@@ -264,25 +310,16 @@
     }
     function prev() {
       if (state.pageIndex <= 0) return;
-      animateFlip('prev', () => {
-        state.pageIndex--;
-        renderPage();
-        saveProgress();
-        if (state.reading) speakPage();
-      });
+      animateFlip('prev', () => { state.pageIndex--; renderPage(); saveProgress(); if (state.reading) speakPage(); });
     }
     function next() {
       if (state.pageIndex >= state.pages.length - 1) {
         state.reading = false;
-        $('btnRead').textContent = '👼 Read';
+        if ($('btnRead')) $('btnRead').textContent = '👼 Read';
+        renderPage();
         return;
       }
-      animateFlip('next', () => {
-        state.pageIndex++;
-        renderPage();
-        saveProgress();
-        if (state.reading) speakPage();
-      });
+      animateFlip('next', () => { state.pageIndex++; renderPage(); saveProgress(); if (state.reading) speakPage(); });
     }
     function cleanForSpeech(text) {
       let t = text || '';
@@ -291,8 +328,7 @@
       t = t.replace(/[^\w\s.,;:'"?!()\-]/g, ' ');
       t = t.replace(/[.]{2,}/g, '.').replace(/[,]{2,}/g, ',');
       t = t.replace(/\b\d{5,}\b/g, ' ');
-      t = t.replace(/\s+/g, ' ').trim();
-      return t;
+      return t.replace(/\s+/g, ' ').trim();
     }
     function loadVoices() {
       const sel = $('voiceName');
@@ -302,8 +338,7 @@
       sel.innerHTML = '<option value="">Default voice</option>';
       voices.forEach(v => {
         const o = document.createElement('option');
-        o.value = v.name;
-        o.textContent = v.name + ' (' + v.lang + ')';
+        o.value = v.name; o.textContent = v.name + ' (' + v.lang + ')';
         if (v.name === cur) o.selected = true;
         sel.appendChild(o);
       });
@@ -312,9 +347,7 @@
       if (!window.speechSynthesis) return;
       speechSynthesis.cancel();
       let text = state.pages[state.pageIndex] || '';
-      if (!state.arranged) {
-        text = text.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2').replace(/([^\n])\n(?!\n)/g, '$1 ');
-      }
+      if (!state.arranged) text = text.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2').replace(/([^\n])\n(?!\n)/g, '$1 ');
       text = cleanForSpeech(text);
       if (!text) { if (state.reading) next(); return; }
       const u = new SpeechSynthesisUtterance(text);
@@ -328,54 +361,69 @@
       speechSynthesis.speak(u);
     }
 
-    /* Background music */
-    function stopBgm() {
-      try { $('bgmAudio').pause(); } catch (e) {}
-      if (state._bgm) {
-        try { state._bgm.o1.stop(); } catch (e) {}
-        try { state._bgm.o2.stop(); } catch (e) {}
-        try { state._bgm.ctx.close(); } catch (e) {}
-        state._bgm = null;
-      }
-      state.bgmPlaying = false;
-      $('btnBgmPlay').textContent = 'Play music';
-      $('bgmDot').className = 'off';
-    }
-    function startSynth(id) {
-      stopBgm();
+    async function loadBgmList() {
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const gain = ctx.createGain();
-        gain.gain.value = state.bgmVol * 0.35;
-        gain.connect(ctx.destination);
-        const o1 = ctx.createOscillator();
-        const o2 = ctx.createOscillator();
-        const g1 = ctx.createGain(); const g2 = ctx.createGain();
-        g1.gain.value = 0.45; g2.gain.value = 0.25;
-        o1.connect(g1); g1.connect(gain);
-        o2.connect(g2); g2.connect(gain);
-        if (id === 'soft1') { o1.type = 'sine'; o2.type = 'sine'; o1.frequency.value = 110; o2.frequency.value = 164.81; }
-        else if (id === 'soft2') { o1.type = 'triangle'; o2.type = 'sine'; o1.frequency.value = 98; o2.frequency.value = 146.83; }
-        else { o1.type = 'sine'; o2.type = 'triangle'; o1.frequency.value = 82.41; o2.frequency.value = 123.47; }
-        o1.start(); o2.start();
-        state._bgm = { ctx, gain, o1, o2 };
-        state.bgmPlaying = true;
-        $('btnBgmPlay').textContent = 'Pause music';
-        $('bgmDot').className = 'live';
-      } catch (e) {}
+        const r = await fetch('/member/api/kwealth/bgm', { credentials: 'same-origin' });
+        const j = await r.json();
+        state.bgmItems = (j && j.items) || [];
+      } catch (e) { state.bgmItems = []; }
+      renderBgmList();
     }
-    function setBgm(id) {
-      stopBgm();
-      state.bgmId = id;
-      localStorage.setItem('kw_book_bgm', id);
-      document.querySelectorAll('.bgm-btn').forEach(b => b.classList.toggle('on', b.dataset.bgm === id));
-      if (id === 'none') { $('bgmLabel').textContent = 'No background music'; return; }
-      if (id === 'custom') { $('bgmLabel').textContent = 'Your music'; return; }
-      $('bgmLabel').textContent = id === 'soft1' ? 'Soft pad' : id === 'soft2' ? 'Gentle wave' : 'Warm drone';
-      startSynth(id);
+    function renderBgmList() {
+      const box = $('bgmList');
+      const empty = $('bgmEmpty');
+      if ($('bgmCount')) $('bgmCount').textContent = state.bgmItems.length + ' / 10';
+      if (!box) return;
+      box.innerHTML = '';
+      if (!state.bgmItems.length) {
+        if (empty) empty.style.display = 'block';
+        return;
+      }
+      if (empty) empty.style.display = 'none';
+      state.bgmItems.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'bgm-row' + (state.bgmId === item.id ? ' active' : '');
+        row.innerHTML = '<div style="flex:1;min-width:0;"><div style="color:#e2e8f0;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div></div>';
+        row.querySelector('div div').textContent = item.title;
+        const play = document.createElement('button');
+        play.type = 'button'; play.className = 'chip on'; play.textContent = 'Play';
+        play.onclick = () => playTrack(item);
+        const del = document.createElement('button');
+        del.type = 'button'; del.className = 'chip'; del.textContent = 'Remove';
+        del.onclick = async () => {
+          const fd = new FormData(); fd.append('track_id', item.id);
+          await fetch('/member/kwealth/bgm/delete', { method: 'POST', body: fd, credentials: 'same-origin' });
+          if (state.bgmId === item.id) stopBgm();
+          loadBgmList();
+        };
+        row.appendChild(play);
+        row.appendChild(del);
+        box.appendChild(row);
+      });
+    }
+    function stopBgm() {
+      try { $('bgmAudio').pause(); $('bgmAudio').removeAttribute('src'); } catch (e) {}
+      state.bgmPlaying = false;
+      state.bgmId = '';
+      localStorage.removeItem('kw_book_bgm_id');
+      if ($('bgmDot')) $('bgmDot').className = 'off';
+      renderBgmList();
+    }
+    function playTrack(item) {
+      const a = $('bgmAudio');
+      if (!a) return;
+      a.src = item.url;
+      a.volume = state.bgmVol;
+      a.loop = true;
+      a.play().then(() => {
+        state.bgmPlaying = true;
+        state.bgmId = item.id;
+        localStorage.setItem('kw_book_bgm_id', item.id);
+        if ($('bgmDot')) $('bgmDot').className = 'live';
+        renderBgmList();
+      }).catch(() => alert('Could not play this track. Try another file.'));
     }
 
-    /* Wire UI */
     $('btnLoad').onclick = () => $('filePick').click();
     $('filePick').onchange = async (ev) => {
       const files = ev.target.files;
@@ -390,94 +438,60 @@
       $('btnLoad').textContent = 'Load';
       ev.target.value = '';
     };
-    $('bookSelect').onchange = () => { location.href = '/member/kwealth/books?book_id=' + $('bookSelect').value; };
+    if ($('bookSelect')) $('bookSelect').onchange = () => { location.href = '/member/kwealth/books?book_id=' + $('bookSelect').value; };
     $('btnTools').onclick = () => {
       const p = $('panelTools');
-      p.style.display = p.style.display === 'none' ? 'block' : (p.style.display ? 'none' : 'none');
-      // toggle: if currently visible (default block), hide
-      if (!p.dataset.open) { p.style.display = 'none'; p.dataset.open = '0'; }
-      else if (p.dataset.open === '1') { p.style.display = 'none'; p.dataset.open = '0'; }
+      if (p.dataset.open === '1') { p.style.display = 'none'; p.dataset.open = '0'; }
       else { p.style.display = 'block'; p.dataset.open = '1'; }
     };
-    // start with settings OPEN so user sees features
     $('panelTools').style.display = 'block';
     $('panelTools').dataset.open = '1';
-
     $('btnMusic').onclick = () => {
       const p = $('panelMusic');
       const show = p.style.display === 'none';
       p.style.display = show ? 'block' : 'none';
+      if (show) loadBgmList();
     };
 
     document.querySelectorAll('.theme-btn').forEach(b => {
-      b.onclick = () => {
-        state.theme = b.dataset.theme;
-        localStorage.setItem('kw_book_theme', state.theme);
-        applyTheme();
-      };
+      b.onclick = () => { state.theme = b.dataset.theme; localStorage.setItem('kw_book_theme', state.theme); applyTheme(); };
     });
     $('fontSize').oninput = () => { state.fontSize = Number($('fontSize').value); applyFont(); };
     $('fontFamily').onchange = () => { state.fontFamily = $('fontFamily').value; applyFont(); };
     $('flipStyle').onchange = () => { state.flipStyle = $('flipStyle').value; localStorage.setItem('kw_book_flip', state.flipStyle); };
     $('btnJump').onclick = () => {
       const n = Math.max(1, Math.min(state.pages.length, parseInt($('jumpTo').value, 10) || 1));
-      const dir = n - 1 > state.pageIndex ? 'next' : 'prev';
-      animateFlip(dir, () => {
-        state.pageIndex = n - 1;
-        renderPage();
-        saveProgress();
-        if (state.reading) speakPage();
+      animateFlip(n - 1 > state.pageIndex ? 'next' : 'prev', () => {
+        state.pageIndex = n - 1; renderPage(); saveProgress(); if (state.reading) speakPage();
       });
     };
-    $('voiceName').onchange = () => {
-      state.voiceName = $('voiceName').value;
-      localStorage.setItem('kw_book_voice', state.voiceName);
-    };
-    $('rate').oninput = () => {
-      state.rate = Number($('rate').value);
-      localStorage.setItem('kw_book_rate', state.rate);
-    };
+    $('voiceName').onchange = () => { state.voiceName = $('voiceName').value; localStorage.setItem('kw_book_voice', state.voiceName); };
+    $('rate').oninput = () => { state.rate = Number($('rate').value); localStorage.setItem('kw_book_rate', state.rate); };
     $('btnArrange').onclick = () => {
       state.pages = state.pages.map(page => {
         let t = page || '';
-        t = t.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2');
-        t = t.replace(/([^\n])\n(?!\n)/g, '$1 ');
-        t = t.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n');
+        t = t.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2').replace(/([^\n])\n(?!\n)/g, '$1 ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n');
         return t.trim();
       });
-      state.arranged = true;
-      renderPage();
-      alert('Text arranged for smoother reading.');
+      state.arranged = true; renderPage();
     };
     $('btnRead').onclick = () => {
       state.reading = !state.reading;
       $('btnRead').textContent = state.reading ? '⏹ Stop' : '👼 Read';
-      if (state.reading) {
-        if (state.bgmId !== 'none' && !state.bgmPlaying) {
-          if (state.bgmId === 'custom') {
-            const a = $('bgmAudio');
-            if (a.src) a.play().then(() => { state.bgmPlaying = true; $('btnBgmPlay').textContent = 'Pause music'; $('bgmDot').className = 'live'; }).catch(()=>{});
-          } else startSynth(state.bgmId);
-        }
-        speakPage();
-      } else {
-        try { speechSynthesis.cancel(); } catch (e) {}
-      }
+      if (state.reading) speakPage();
+      else try { speechSynthesis.cancel(); } catch (e) {}
     };
-    $('btnPrev').onclick = prev;
-    $('btnNext').onclick = next;
-    $('btnHighlight').onclick = async () => {
+    if ($('btnPrev')) $('btnPrev').onclick = prev;
+    if ($('btnNext')) $('btnNext').onclick = next;
+    if ($('btnHighlight')) $('btnHighlight').onclick = async () => {
       const sel = (window.getSelection && window.getSelection().toString() || '').trim();
       if (!sel) { alert('Highlight text on the page first'); return; }
       const fd = new FormData();
-      fd.append('book_id', state.bookId);
-      fd.append('text', sel);
-      fd.append('title', 'Highlight');
+      fd.append('book_id', state.bookId); fd.append('text', sel); fd.append('title', 'Highlight');
       await fetch('/member/kwealth/excerpts/from-book', { method: 'POST', body: fd, credentials: 'same-origin' });
       alert('Saved to Excerpts');
     };
 
-    /* swipe / drag flip */
     const stage = $('stage');
     if (stage) {
       stage.addEventListener('touchstart', (e) => { if (e.touches[0]) state._tx = e.touches[0].clientX; }, { passive: true });
@@ -497,50 +511,30 @@
       });
     }
 
-    document.querySelectorAll('.bgm-btn').forEach(b => {
-      b.onclick = () => setBgm(b.dataset.bgm);
-    });
     $('btnLoadBgm').onclick = () => $('bgmFile').click();
-    $('bgmFile').onchange = (ev) => {
-      const f = ev.target.files && ev.target.files[0];
-      if (!f) return;
-      if (state.bgmCustomUrl) URL.revokeObjectURL(state.bgmCustomUrl);
-      state.bgmCustomUrl = URL.createObjectURL(f);
-      state.bgmId = 'custom';
-      localStorage.setItem('kw_book_bgm', 'custom');
-      document.querySelectorAll('.bgm-btn').forEach(b => b.classList.remove('on'));
-      $('bgmLabel').textContent = f.name || 'Your music';
-      const a = $('bgmAudio');
-      a.src = state.bgmCustomUrl;
-      a.volume = state.bgmVol;
-      a.play().then(() => {
-        state.bgmPlaying = true;
-        $('btnBgmPlay').textContent = 'Pause music';
-        $('bgmDot').className = 'live';
-      }).catch(() => {});
+    $('bgmFile').onchange = async (ev) => {
+      const files = ev.target.files;
+      if (!files || !files.length) return;
+      if (state.bgmItems.length >= 10) { alert('Maximum 10 background tracks. Remove one first.'); return; }
+      const fd = new FormData();
+      for (const f of files) fd.append('files', f);
+      $('btnLoadBgm').textContent = 'Uploading…';
+      try {
+        const r = await fetch('/member/kwealth/bgm/upload', { method: 'POST', body: fd, credentials: 'same-origin' });
+        if (r.redirected) location.href = r.url + (r.url.includes('?') ? '&' : '?') + 'bgm=1';
+        else location.href = '/member/kwealth/books?bgm=1';
+      } catch (e) { alert('Upload failed'); }
+      $('btnLoadBgm').textContent = '+ Upload / sync from device';
       ev.target.value = '';
     };
+    $('btnBgmStop').onclick = stopBgm;
     $('bgmVol').oninput = () => {
       state.bgmVol = Number($('bgmVol').value);
       localStorage.setItem('kw_book_bgmVol', state.bgmVol);
       $('bgmAudio').volume = state.bgmVol;
-      if (state._bgm && state._bgm.gain) state._bgm.gain.gain.value = state.bgmVol * 0.35;
-    };
-    $('btnBgmPlay').onclick = () => {
-      if (state.bgmId === 'none') { setBgm('soft1'); return; }
-      if (state.bgmPlaying) { stopBgm(); return; }
-      if (state.bgmId === 'custom') {
-        $('bgmAudio').play().then(() => {
-          state.bgmPlaying = true;
-          $('btnBgmPlay').textContent = 'Pause music';
-          $('bgmDot').className = 'live';
-        }).catch(() => {});
-      } else startSynth(state.bgmId);
     };
 
-    // init
-    applyTheme();
-    applyFont();
+    applyTheme(); applyFont();
     $('fontSize').value = state.fontSize;
     $('fontFamily').value = state.fontFamily;
     $('flipStyle').value = state.flipStyle;
@@ -549,6 +543,22 @@
     renderPage();
     loadVoices();
     if (window.speechSynthesis) speechSynthesis.onvoiceschanged = loadVoices;
+    loadBgmList().then(() => {
+      // resume last track choice if still in library
+      if (state.bgmId) {
+        const item = state.bgmItems.find(x => x.id === state.bgmId);
+        if (item) { /* user can press Play */ }
+      }
+    });
+
+    // Angel "Read ebook" → auto start reading
+    if (window.__AUTO_READ__ && state.pages.length) {
+      setTimeout(() => {
+        state.reading = true;
+        $('btnRead').textContent = '⏹ Stop';
+        speakPage();
+      }, 600);
+    }
   })();
   </script>
 </body>

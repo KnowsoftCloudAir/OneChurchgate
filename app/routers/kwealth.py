@@ -26,6 +26,8 @@ USER_BOOKS_DIR = Path("app/static/uploads/kwealth_books")
 USER_BOOKS_DIR.mkdir(parents=True, exist_ok=True)
 USER_BOOKS_TEXT = Path("app/static/uploads/kwealth_books_text")
 USER_BOOKS_TEXT.mkdir(parents=True, exist_ok=True)
+USER_BGM_DIR = Path("app/static/uploads/kwealth_bgm")
+USER_BGM_DIR.mkdir(parents=True, exist_ok=True)
 
 MH_URL = "https://www.biblestudytools.com/commentaries/matthew-henry-complete/"
 
@@ -371,6 +373,82 @@ def _extract_text_from_upload(data: bytes, filename: str) -> str:
         except Exception:
             return data.decode("utf-8", errors="ignore")
     return data.decode("utf-8", errors="ignore")
+
+
+
+def _user_bgm_dir(user_id: int) -> Path:
+    here = Path(__file__).resolve().parent.parent
+    d = here / "static" / "uploads" / "kwealth_bgm" / str(user_id)
+    d.mkdir(parents=True, exist_ok=True)
+    return d
+
+
+@router.get("/member/api/kwealth/bgm")
+async def list_bgm(user: User = Depends(require_user)):
+    d = _user_bgm_dir(user.id)
+    items = []
+    for f in sorted(d.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
+        if not f.is_file():
+            continue
+        if f.suffix.lower() not in {".mp3", ".m4a", ".ogg", ".wav", ".aac", ".webm"}:
+            continue
+        title = f.stem.replace("_", " ")[:80]
+        tfile = d / (f.name + ".title")
+        if tfile.exists():
+            try:
+                title = tfile.read_text(encoding="utf-8").strip()[:80] or title
+            except Exception:
+                pass
+        items.append({
+            "id": f.name,
+            "title": title,
+            "url": f"/static/uploads/kwealth_bgm/{user.id}/{f.name}",
+        })
+    return JSONResponse({"ok": True, "items": items[:10], "max": 10})
+
+
+@router.post("/member/kwealth/bgm/upload")
+async def upload_bgm(
+    files: List[UploadFile] = File(...),
+    user: User = Depends(require_user),
+):
+    d = _user_bgm_dir(user.id)
+    existing = [f for f in d.iterdir() if f.is_file()]
+    added = 0
+    for f in files or []:
+        if len(existing) + added >= 10:
+            break
+        raw = await f.read()
+        if not raw or len(raw) > 12_000_000:
+            continue
+        name = (f.filename or "track.mp3").rsplit("/", 1)[-1]
+        ext = Path(name).suffix.lower() or ".mp3"
+        if ext not in {".mp3", ".m4a", ".ogg", ".wav", ".aac", ".webm"}:
+            ext = ".mp3"
+        safe = f"{uuid.uuid4().hex[:10]}{ext}"
+        (d / safe).write_bytes(raw)
+        # keep original title sidecar
+        (d / (safe + ".title")).write_text(Path(name).stem[:80], encoding="utf-8")
+        added += 1
+    return RedirectResponse("/member/kwealth/books?bgm=1", status_code=303)
+
+
+@router.post("/member/kwealth/bgm/delete")
+async def delete_bgm(
+    track_id: str = Form(...),
+    user: User = Depends(require_user),
+):
+    d = _user_bgm_dir(user.id)
+    # prevent path escape
+    safe = Path(track_id).name
+    target = d / safe
+    if target.exists() and target.is_file():
+        target.unlink()
+        t2 = d / (safe + ".title")
+        if t2.exists():
+            t2.unlink()
+    return JSONResponse({"ok": True})
+
 
 
 @router.get("/member/kwealth", response_class=HTMLResponse)
@@ -949,6 +1027,27 @@ async def angel_actions(
             "ok": True,
             "speak": "Your Kwealth books: " + ", ".join(titles) + ". Say read book and the title to hear one.",
             "books": [{"id": b.id, "title": b.title} for b in books],
+        })
+
+    if action in ("read_ebook", "ebook"):
+        books = session.exec(select(KwealthBook).where(KwealthBook.is_active == True)).all()
+        if not books:
+            return JSONResponse({"ok": True, "speak": "No ebook loaded yet. Open Kwealth Books and load a PDF or text first.", "navigate": "/member/kwealth/books"})
+        # resume last progress if any
+        pick = books[0]
+        prog_rows = session.exec(select(KwealthProgress).where(KwealthProgress.user_id == user.id)).all()
+        if prog_rows:
+            # most recently updated
+            prog_rows = sorted(prog_rows, key=lambda p: p.updated_at or datetime.utcnow(), reverse=True)
+            for pr in prog_rows:
+                b = session.get(KwealthBook, pr.book_id)
+                if b and b.is_active:
+                    pick = b
+                    break
+        return JSONResponse({
+            "ok": True,
+            "speak": f"Continuing your ebook, {pick.title}.",
+            "navigate": f"/member/kwealth/books?book_id={pick.id}&read=1",
         })
 
     if action == "read_book":
