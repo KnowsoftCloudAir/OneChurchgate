@@ -577,10 +577,11 @@ async def angel_ask(
                 chunk = " ".join(words[:85])
                 offset = 0
             _LAST_TOPIC[uid] = {"topic": topic_q, "offset": offset + 80}
-            answer = "According to " + (ref or "Matthew Henry's commentary") + ", " + chunk
-            if len(answer.split()) > 95:
-                answer = " ".join(answer.split()[:95]) + "."
-            return JSONResponse({"ok": True, "answer": answer, "outside": False})
+            answer = chunk
+            if len(answer.split()) > 90:
+                answer = " ".join(answer.split()[:90]) + "."
+            follow = _make_follow_up(topic_q, chunk, resource)
+            return JSONResponse({"ok": True, "answer": answer, "follow_up": follow, "outside": False, "topic": topic_q})
         return JSONResponse({"ok": True, "answer": "Sorry I can't help with that.", "outside": True})
 
     excerpts = session.exec(
@@ -624,14 +625,40 @@ async def angel_ask(
                 break
 
     if not body:
-        return JSONResponse({"ok": True, "answer": "Sorry I can't help with that.", "outside": True})
+        return JSONResponse({
+            "ok": True,
+            "answer": "Sorry I can't help with that.",
+            "follow_up": "",
+            "outside": True,
+        })
 
-    _LAST_TOPIC[uid] = {"topic": q, "offset": 70}
-    answer = f"According to {ref_name}, {body}"
+    _LAST_TOPIC[uid] = {"topic": q, "offset": 70, "body": body, "ref": ref_name or ""}
+
+    # Conversational: strip heavy citation labels; speak the content
+    clean = body
+    for prefix in (
+        "Matthew Henry emphasis:", "Henry:", "Matthew Henry:", "Logical summary:",
+        "Summary:", "Bible:", "Scripture:", "Definition:", "Explanation:", "Illustration:",
+    ):
+        clean = re.sub(re.escape(prefix), "", clean, flags=re.I)
+    clean = re.sub(r"\s+", " ", clean).strip()
+    # Soft lead-in only when helpful, not every time
+    if ref_name and "excerpt" in (ref_name or "").lower():
+        answer = clean
+    else:
+        answer = clean
     words_out = answer.split()
-    if len(words_out) > 90:
-        answer = " ".join(words_out[:90]) + "."
-    return JSONResponse({"ok": True, "answer": answer, "outside": False})
+    if len(words_out) > 85:
+        answer = " ".join(words_out[:85]) + "."
+
+    follow = _make_follow_up(q, body, resource)
+    return JSONResponse({
+        "ok": True,
+        "answer": answer,
+        "follow_up": follow,
+        "outside": False,
+        "topic": q,
+    })
 
 
 @router.get("/member/hymns", response_class=HTMLResponse)
