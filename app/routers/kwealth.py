@@ -245,11 +245,18 @@ def _clean_speak(text: str) -> str:
         "Matthew Henry emphasis:", "Henry:", "Matthew Henry:", "Logical summary:",
         "Summary:", "Bible portions:", "Bible:", "Scripture:", "Definition:",
         "Explanation:", "Illustration:", "Doctrinal explanation:",
+        "According to the Bible,", "According to Matthew Henry's commentary,",
+        "According to biblical doctrine,", "According to classic teaching,",
+        "According to your saved excerpts,", "According to",
+        "Core truth", "Still deeper", "Deeper",
     ):
         clean = re.sub(re.escape(prefix), "", clean, flags=re.I)
-    # remove bullet markers for smoother speech
-    clean = re.sub(r"[•\-]\s*", "", clean)
+    clean = re.sub(r"\{[A-Za-z]*\d+\}", "", clean)
+    clean = re.sub(r"LAYER\s+\d+", "", clean, flags=re.I)
+    clean = re.sub(r"[•]\s*", "", clean)
     clean = re.sub(r"\s+", " ", clean).strip()
+    # drop lines that only cite "Cross reference"
+    clean = re.sub(r"(?i)cross references?:[^.]*\.?", "", clean)
     words = clean.split()
     if len(words) > 95:
         clean = " ".join(words[:95]) + "."
@@ -654,13 +661,14 @@ async def badge_count(user: User = Depends(require_user), session: Session = Dep
 
 
 
+
 @router.post("/member/api/angel-ask")
 async def angel_ask(
     request: Request,
     user: User = Depends(require_user),
     session: Session = Depends(get_session),
 ):
-    """Conversational Angel: match study layers, continue on more, rarely refuse."""
+    """Search library by words in the user's sentence; answer with content only."""
     try:
         data = await request.json()
     except Exception:
@@ -668,128 +676,142 @@ async def angel_ask(
     q = (data.get("question") or data.get("q") or "").strip()
     topic_hint = (data.get("topic") or "").strip()
     if not q:
-        return JSONResponse({"ok": True, "answer": "How may I help you?", "follow_up": "What would you like to learn from the Word?", "outside": False})
+        return JSONResponse({"ok": True, "answer": "", "follow_up": "", "outside": True})
 
     ql = q.lower().strip()
     uid = user.id
     resource = _load_topic_resource(session)
     last = _LAST_TOPIC.get(uid) or {}
 
+    # "more" continues last topic quietly
     is_more = (
-        ql in ("more", "tell me more", "more please", "continue", "go on", "yes", "yeah", "yep", "sure", "ok", "okay", "please")
+        ql in ("more", "yes", "yeah", "yep", "sure", "ok", "okay", "continue", "go on", "please")
         or ql.startswith("more ")
         or "tell me more" in ql
         or "go deeper" in ql
-        or "explain more" in ql
     )
-
-    # Resolve topic question
     topic_q = q
     depth = 0
     if is_more:
-        topic_q = last.get("topic") or topic_hint or last.get("query") or "faith jesus salvation"
+        topic_q = last.get("topic") or topic_hint or last.get("query") or q
         depth = int(last.get("depth") or 0) + 1
-    else:
-        # if short reply while we had a topic, treat as continue
-        if last.get("topic") and len(ql.split()) <= 4 and not any(
-            k in ql for k in ("play", "music", "stop", "manna", "off", "status")
-        ):
-            # could be a new short topic or continue — prefer match first
-            pass
 
-    # Excerpts first
+    stop = {
+        "more", "please", "tell", "about", "what", "the", "and", "from", "angel",
+        "this", "that", "with", "your", "have", "does", "mean", "explain",
+        "continue", "deeper", "again", "some", "info", "can", "you", "how",
+        "why", "who", "when", "where", "say", "speak", "want", "know", "give",
+        "me", "for", "any", "just", "like", "would", "could", "should",
+    }
+    words = [w for w in re.findall(r"[a-z']{3,}", topic_q.lower()) if w not in stop]
+
+    # --- gather matches from excerpts ---
+    gathered = []
     excerpts = session.exec(
-        select(KwealthExcerpt).where(KwealthExcerpt.user_id == user.id).order_by(KwealthExcerpt.created_at.desc()).limit(40)
+        select(KwealthExcerpt).where(KwealthExcerpt.user_id == user.id).order_by(KwealthExcerpt.created_at.desc()).limit(50)
     ).all()
-    words = [w for w in re.findall(r"[a-z']{3,}", topic_q.lower()) if len(w) > 2]
-    matched = []
     for e in excerpts:
         blob = f"{e.title or ''} {e.body or ''} {e.source or ''}".lower()
-        score = sum(1 for w in words if w in blob)
+        score = sum(2 for w in words if w in blob)
         if score:
-            matched.append((score, e))
-    matched.sort(key=lambda x: -x[0])
+            gathered.append((score + 5, (e.body or "").strip()))
 
-    ref_name = None
-    body = None
-    block_key = None
+    # --- gather from study library (multiple blocks) ---
+    if resource:
+        blocks = re.split(r"\n(?=\{[A-Za-z]*\d+\})", resource)
+        for b in blocks:
+            if not b.strip():
+                continue
+            bl = b.lower()
+            score = sum(1 for w in words if w in bl)
+            header_m = re.match(r"\{([A-Za-z]*\d+)\}([^\n]*)", b)
+            title = (header_m.group(2) if header_m else "").lower()
+            for w in words:
+                if w in title:
+                    score += 6
+            if "LAYER 2" in b.upper():
+                score += 2
+            if score >= 2 or (len(words) == 1 and score >= 1):
+                gathered.append((score, b.strip()))
 
-    if matched and not is_more:
-        e = matched[0][1]
-        ref_name = (e.source or e.title or "your saved excerpts").strip()
-        body = (e.body or "").strip()
-        block_key = "excerpt"
-    else:
-        ref_name, body, block_key = _find_topic_block(resource, topic_q)
-        if not body and topic_hint:
-            ref_name, body, block_key = _find_topic_block(resource, topic_hint)
+    gathered.sort(key=lambda x: -x[0])
 
-    # If more and same block stored, use stored full body for layering
+    # use last full body on more
     if is_more and last.get("full_body"):
-        body = last.get("full_body") or body
-        ref_name = last.get("ref") or ref_name
-        block_key = last.get("block_key") or block_key
-
-    if not body:
-        # broad fallbacks so we rarely say sorry
-        topical = {
-            "faith": "Faith is confidence in God and His word. It comes by hearing the word of Christ. Without faith it is impossible to please God. Hebrews 11:1, Romans 10:17, Hebrews 11:6.",
-            "prayer": "Prayer is talking with God in faith. Ask, seek, and knock. Be anxious for nothing; in everything by prayer and thanksgiving make your requests known to God. Matthew 7:7, Philippians 4:6, 1 Thessalonians 5:17.",
-            "jesus": "Jesus is the Son of God, the Saviour. Whoever believes in Him shall not perish but have everlasting life. He is the way, the truth, and the life. John 3:16, John 14:6, Acts 4:12.",
-            "god": "God is the living Creator of heaven and earth, holy and loving. There is one God — Father, Son, and Holy Spirit. Genesis 1:1, Deuteronomy 6:4, Matthew 28:19.",
-            "heaven": "Heaven is God's dwelling place. Jesus prepares a place for His people. One day God will wipe away every tear; there will be no death, sorrow, or pain. John 14:2-3, Revelation 21:4, Revelation 22:4.",
-            "hell": "Scripture warns of eternal punishment for the unrepentant, and the lake of fire as the second death. The way of escape is Jesus Christ today. Matthew 25:41, Revelation 20:15, John 3:16-18.",
-            "rapture": "The Lord will descend with a shout and the trumpet of God. The dead in Christ rise first; then living believers are caught up to meet the Lord in the air. 1 Thessalonians 4:16-17, 1 Corinthians 15:51-52, John 14:3.",
-            "bible": "All scripture is given by inspiration of God and is profitable for doctrine, reproof, correction, and instruction in righteousness. 2 Timothy 3:16-17, Psalm 119:105, 2 Peter 1:21.",
-            "love": "Love the Lord your God with all your heart. Love one another as Christ loved us. 1 John 4:7-8, John 13:34, Deuteronomy 6:5.",
-            "peace": "Jesus said, Peace I leave with you. His peace guards the heart when we trust Him. John 14:27, Philippians 4:7, Isaiah 26:3.",
-        }
-        for key, text_fb in topical.items():
-            if key in topic_q.lower() or key in ql:
-                ref_name, body = "the Bible", text_fb
-                break
-
-    if not body and last.get("full_body"):
         body = last["full_body"]
-        ref_name = last.get("ref") or "the Bible"
-        depth = int(last.get("depth") or 0) + 1
-        is_more = True
-        topic_q = last.get("topic") or topic_q
-
-    if not body:
-        # soft recovery instead of hard sorry
+        layer = _extract_layer(body, depth)
+        answer = _clean_speak(layer)
+        if not answer.strip():
+            answer = _clean_speak(body)
+        _LAST_TOPIC[uid] = {
+            "topic": last.get("topic") or topic_q,
+            "query": q,
+            "depth": depth,
+            "full_body": body,
+            "ref": "",
+            "block_key": last.get("block_key"),
+        }
         return JSONResponse({
             "ok": True,
-            "answer": "Let us open the Word together. You can ask about God, Jesus, heaven, prayer, repentance, holiness, the rapture, or any of the Bible doctrines. What would you like to hear?",
-            "follow_up": "Would you like me to start with who Jesus is?",
+            "answer": answer,
+            "follow_up": "",
             "outside": False,
+            "topic": _LAST_TOPIC[uid]["topic"],
+            "depth": depth,
         })
 
-    full_body = body
-    layer_text = _extract_layer(full_body, depth)
-    answer = _clean_speak(layer_text)
+    if not gathered:
+        # one more try: single best block finder
+        ref_name, body, block_key = _find_topic_block(resource, topic_q)
+        if body:
+            gathered = [(5, body)]
 
-    # encouragement tail on deeper layers
-    if depth >= 1 and "trust" not in answer.lower() and len(answer.split()) < 80:
-        answer = answer.rstrip(".") + ". Love God, walk with Him daily, and trust Him with your life."
+    if not gathered:
+        return JSONResponse({
+            "ok": True,
+            "answer": "",
+            "follow_up": "",
+            "outside": True,
+        })
+
+    # take top matches and build answer from best block layers + extra snippets
+    top = gathered[:4]
+    primary = top[0][1]
+    layer = _extract_layer(primary, depth)
+    answer = _clean_speak(layer)
+    # if still thin, pull another high-scoring snippet
+    if len(answer.split()) < 25 and len(top) > 1:
+        extra = _clean_speak(_extract_layer(top[1][1], 0))
+        if extra and extra not in answer:
+            answer = (answer + " " + extra).strip()
+    if len(answer.split()) > 100:
+        answer = " ".join(answer.split()[:100]) + "."
+
+    # strip any leftover meta / reference labels
+    for bad in (
+        "according to", "matthew henry", "cross reference", "cross references",
+        "angel is designed", "i am designed", "my instructions", "as an ai",
+        "biblical doctrine", "classic teaching", "probe instruction",
+    ):
+        if bad in answer.lower():
+            # remove sentences containing meta
+            sents = re.split(r"(?<=[.!?])\s+", answer)
+            answer = " ".join(s for s in sents if bad not in s.lower()).strip()
 
     _LAST_TOPIC[uid] = {
-        "topic": topic_q if not is_more else (last.get("topic") or topic_q),
+        "topic": topic_q,
         "query": q,
         "depth": depth,
-        "full_body": full_body,
-        "ref": ref_name or "",
-        "block_key": block_key,
-        "offset": depth,
+        "full_body": primary,
+        "ref": "",
+        "block_key": None,
     }
-
-    follow = _make_follow_up(topic_q, full_body, resource, depth)
     return JSONResponse({
         "ok": True,
-        "answer": answer,
-        "follow_up": follow,
-        "outside": False,
-        "topic": _LAST_TOPIC[uid]["topic"],
+        "answer": answer or "",
+        "follow_up": "",
+        "outside": not bool(answer),
+        "topic": topic_q,
         "depth": depth,
     })
 
