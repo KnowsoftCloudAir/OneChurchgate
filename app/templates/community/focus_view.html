@@ -53,10 +53,21 @@
     </div>
     {% endif %}
 
-    <form method="post" action="/focus-groups/{{ group.id }}/message" class="rounded-3xl bg-white/10 border border-white/15 p-4 mb-6 space-y-3">
-      <label class="text-xs text-indigo-200 font-semibold">Share on this topic</label>
-      <textarea name="body" required rows="3" placeholder="Write encouragement, a prayer point, or an update…" class="w-full px-4 py-3 rounded-2xl bg-white text-slate-900 text-base"></textarea>
-      <button class="px-5 py-2.5 rounded-2xl bg-amber-400 text-indigo-950 font-bold text-sm">Post message</button>
+    <form method="post" action="/focus-groups/{{ group.id }}/message" enctype="multipart/form-data" class="rounded-3xl bg-white/10 border border-white/15 p-4 mb-6 space-y-3">
+      <label class="text-xs text-indigo-200 font-semibold">Start a topic or share with the group</label>
+      <input name="topic" placeholder="New topic title (optional)" class="w-full px-4 py-2 rounded-2xl bg-white text-slate-900 text-base">
+      <textarea name="body" rows="3" placeholder="Write encouragement, a prayer point, or an update…" class="w-full px-4 py-3 rounded-2xl bg-white text-slate-900 text-base"></textarea>
+      <div class="grid sm:grid-cols-2 gap-3">
+        <div>
+          <label class="text-xs text-indigo-200">Picture</label>
+          <input type="file" name="image" accept="image/*" class="w-full text-sm text-indigo-100">
+        </div>
+        <div>
+          <label class="text-xs text-indigo-200">Audio (max ~30 seconds)</label>
+          <input type="file" name="audio" accept="audio/*,.webm,.mp3,.m4a,.ogg" class="w-full text-sm text-indigo-100">
+        </div>
+      </div>
+      <button class="px-5 py-2.5 rounded-2xl bg-amber-400 text-indigo-950 font-bold text-sm">Post to group</button>
     </form>
 
     <div class="space-y-4">
@@ -64,7 +75,10 @@
       <article class="rounded-3xl bg-white text-slate-900 border border-white/20 shadow-xl overflow-hidden">
         <div class="p-4">
           <p class="text-xs text-slate-500"><span class="font-bold text-indigo-900">{{ msg.sender }}</span> · {{ msg.at }}</p>
+          {% if msg.topic %}<p class="mt-1 text-sm font-bold text-indigo-800">{{ msg.topic }}</p>{% endif %}
           <p class="mt-2 whitespace-pre-wrap leading-relaxed text-base sm:text-lg">{{ msg.body }}</p>
+          {% if msg.image_path %}<img src="{{ msg.image_path }}" alt="" class="mt-3 rounded-xl max-h-64 object-cover">{% endif %}
+          {% if msg.audio_path %}<audio controls class="mt-3 w-full" src="{{ msg.audio_path }}"></audio>{% endif %}
           <div class="mt-3 flex flex-wrap items-center gap-3">
             <form method="post" action="/focus-groups/messages/{{ msg.id }}/like">
               <button class="text-sm font-semibold {% if msg.liked %}text-rose-600{% else %}text-slate-500{% endif %}">
