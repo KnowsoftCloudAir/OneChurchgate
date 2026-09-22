@@ -640,6 +640,7 @@ class KwealthBook(SQLModel, table=True):
     source_path: Optional[str] = None  # relative path under static/books
     page_count: int = Field(default=1)
     is_active: bool = Field(default=True)
+    uploaded_by: Optional[int] = Field(default=None, index=True)  # user id; None = general admin / system
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 

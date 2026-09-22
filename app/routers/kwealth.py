@@ -599,6 +599,7 @@ async def kwealth_books_upload(
             source_path=str(dest),
             page_count=len(_split_pages(text)),
             is_active=True,
+            uploaded_by=user.id,
         )
         session.add(book)
         session.commit()
@@ -608,6 +609,29 @@ async def kwealth_books_upload(
         count += 1
     return RedirectResponse(f"/member/kwealth/books?uploaded={count}", status_code=303)
 
+
+
+
+@router.post("/member/kwealth/books/delete")
+async def kwealth_books_delete(
+    book_id: int = Form(...),
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    book = session.get(KwealthBook, book_id)
+    if not book:
+        return RedirectResponse("/member/kwealth/books?err=missing", status_code=303)
+    # Only owner may delete; admin-shared books have uploaded_by None
+    if book.uploaded_by is not None and book.uploaded_by != user.id:
+        return RedirectResponse("/member/kwealth/books?err=forbidden", status_code=303)
+    if book.uploaded_by is None:
+        return RedirectResponse("/member/kwealth/books?err=shared", status_code=303)
+    # Remove progress rows for this user/book
+    for prog in session.exec(select(KwealthProgress).where(KwealthProgress.book_id == book_id)).all():
+        session.delete(prog)
+    session.delete(book)
+    session.commit()
+    return RedirectResponse("/member/kwealth/books?deleted=1", status_code=303)
 
 @router.post("/member/kwealth/books/progress")
 async def kwealth_books_progress(

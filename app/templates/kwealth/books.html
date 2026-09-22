@@ -546,6 +546,147 @@
       to { opacity: 1; }
     }
 
+    /* === 6. EARTH → JUPITER PROBE === */
+    #sceneStage.sc-probe {
+      background: radial-gradient(ellipse at 30% 60%, #0f172a 0%, #020617 70%);
+      overflow: hidden;
+    }
+    #sceneStage.sc-probe .stars {
+      position: absolute; inset: -20%;
+      background-image:
+        radial-gradient(2px 2px at 10% 20%, #fff, transparent),
+        radial-gradient(1px 1px at 30% 50%, #fff, transparent),
+        radial-gradient(2px 2px at 55% 15%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 75% 40%, #fff, transparent),
+        radial-gradient(1px 1px at 90% 70%, #fff, transparent),
+        radial-gradient(2px 2px at 20% 80%, #fff, transparent);
+      animation: starTwinkle 4s ease-in-out infinite alternate;
+    }
+    #sceneStage.sc-probe .earth-home {
+      position: absolute; left: 8%; bottom: 18%;
+      width: 28vmin; height: 28vmin; border-radius: 50%;
+      background:
+        radial-gradient(circle at 30% 30%, rgba(125,211,252,.85), transparent 45%),
+        radial-gradient(circle at 60% 55%, rgba(34,197,94,.75), transparent 40%),
+        radial-gradient(circle at 50% 50%, #1d4ed8, #020617);
+      box-shadow: 0 0 30px rgba(56,189,248,.4);
+      animation: earthRecede 22s ease-in-out infinite;
+    }
+    #sceneStage.sc-probe .jupiter {
+      position: absolute; right: 5%; top: 20%;
+      width: 22vmin; height: 22vmin; border-radius: 50%;
+      background: repeating-linear-gradient(180deg, #fef3c7, #f59e0b 12%, #ea580c 25%, #fbbf24 40%, #d97706 55%, #fef3c7 70%, #b45309 100%);
+      box-shadow: 0 0 35px rgba(245,158,11,.45);
+      animation: jupiterApproach 22s ease-in-out infinite;
+    }
+    #sceneStage.sc-probe .probe {
+      position: absolute; left: 20%; top: 45%;
+      width: 4vmin; height: 2vmin;
+      background: linear-gradient(90deg, #94a3b8, #e2e8f0 40%, #64748b);
+      border-radius: 2px;
+      box-shadow: 0 0 12px rgba(226,232,240,.5);
+      animation: probeFlight 22s ease-in-out infinite;
+    }
+    #sceneStage.sc-probe .probe::after {
+      content: '';
+      position: absolute; right: -3vmin; top: 20%;
+      width: 3vmin; height: 1px;
+      background: linear-gradient(90deg, rgba(56,189,248,.8), transparent);
+    }
+    #sceneStage.sc-probe .probe-dish {
+      position: absolute; left: 20%; top: 45%;
+      width: 2.2vmin; height: 2.2vmin; margin: -1.5vmin 0 0 1vmin;
+      border: 2px solid #cbd5e1; border-radius: 50%;
+      animation: probeFlight 22s ease-in-out infinite;
+    }
+    @keyframes earthRecede {
+      0%, 10% { transform: scale(1.2) translate(0,0); opacity: 1; }
+      50% { transform: scale(0.35) translate(-30%, 20%); opacity: 0.7; }
+      90%, 100% { transform: scale(0.2) translate(-50%, 30%); opacity: 0.4; }
+    }
+    @keyframes jupiterApproach {
+      0%, 15% { transform: scale(0.3) translate(40%, -10%); opacity: 0.3; }
+      55% { transform: scale(0.9) translate(0,0); opacity: 1; }
+      90%, 100% { transform: scale(1.3) translate(-5%, 5%); opacity: 1; }
+    }
+    @keyframes probeFlight {
+      0% { transform: translate(0,0) rotate(-5deg); }
+      40% { transform: translate(35vw, -8vh) rotate(8deg); }
+      70% { transform: translate(55vw, 5vh) rotate(15deg); }
+      100% { transform: translate(70vw, -3vh) rotate(20deg); }
+    }
+
+    /* === 7. DEEP SPACE DRIFT (meteors + ship) === */
+    #sceneStage.sc-deep {
+      background: radial-gradient(ellipse at 40% 50%, #1e1b4b 0%, #020617 60%);
+      overflow: hidden;
+    }
+    #sceneStage.sc-deep .stars {
+      position: absolute; inset: -30%;
+      background-image:
+        radial-gradient(2px 2px at 15% 25%, #fff, transparent),
+        radial-gradient(1px 1px at 40% 60%, #fff, transparent),
+        radial-gradient(2px 2px at 70% 20%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 85% 50%, #fff, transparent),
+        radial-gradient(1px 1px at 25% 80%, #fff, transparent),
+        radial-gradient(2px 2px at 55% 40%, #e0e7ff, transparent),
+        radial-gradient(1px 1px at 90% 85%, #fff, transparent);
+      animation: starFlyDeep 20s linear infinite;
+    }
+    #sceneStage.sc-deep .nebula {
+      position: absolute; width: 70%; height: 55%; left: 15%; top: 20%;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(129,140,248,.3), rgba(244,114,182,.12), transparent 70%);
+      filter: blur(28px);
+      animation: nebulaDrift 14s ease-in-out infinite alternate;
+    }
+    #sceneStage.sc-deep .meteor {
+      position: absolute; width: 80px; height: 2px;
+      background: linear-gradient(90deg, transparent, #fff 30%, #7dd3fc 70%, transparent);
+      border-radius: 2px;
+      opacity: 0;
+      animation: meteorStreak 4s linear infinite;
+    }
+    #sceneStage.sc-deep .m1 { top: 20%; left: 10%; animation-delay: 0s; }
+    #sceneStage.sc-deep .m2 { top: 45%; left: 40%; animation-delay: 1.2s; width: 100px; }
+    #sceneStage.sc-deep .m3 { top: 70%; left: 20%; animation-delay: 2.4s; width: 60px; }
+    #sceneStage.sc-deep .m4 { top: 30%; left: 60%; animation-delay: 0.6s; width: 90px; }
+    #sceneStage.sc-deep .ship {
+      position: absolute; left: 15%; top: 55%;
+      width: 8vmin; height: 3vmin;
+      background: linear-gradient(180deg, #e2e8f0, #64748b);
+      clip-path: polygon(0% 50%, 15% 0%, 85% 15%, 100% 50%, 85% 85%, 15% 100%);
+      box-shadow: 0 0 16px rgba(148,163,184,.4);
+      animation: shipDrift 18s ease-in-out infinite;
+    }
+    #sceneStage.sc-deep .ship-glow {
+      position: absolute; left: 12%; top: 56%;
+      width: 4vmin; height: 1.5vmin;
+      background: radial-gradient(ellipse, rgba(56,189,248,.7), transparent);
+      filter: blur(4px);
+      animation: shipDrift 18s ease-in-out infinite;
+    }
+    @keyframes starFlyDeep {
+      from { transform: scale(1) translate(0,0); }
+      to { transform: scale(1.5) translate(-6%, -4%); }
+    }
+    @keyframes nebulaDrift {
+      from { transform: translate(0,0) scale(1); }
+      to { transform: translate(5%, -3%) scale(1.15); }
+    }
+    @keyframes meteorStreak {
+      0% { opacity: 0; transform: translate(0,0) rotate(-35deg); }
+      10% { opacity: 1; }
+      60% { opacity: 0.8; transform: translate(40vw, 25vh) rotate(-35deg); }
+      100% { opacity: 0; transform: translate(55vw, 35vh) rotate(-35deg); }
+    }
+    @keyframes shipDrift {
+      0% { transform: translate(0,0) rotate(-3deg); }
+      50% { transform: translate(25vw, -12vh) rotate(5deg); }
+      100% { transform: translate(50vw, 5vh) rotate(-2deg); }
+    }
+
+
     
     /* Word highlight on scenes */
     #stage.scene-on #sheetText .ab-sentence {
@@ -616,48 +757,62 @@
     }
 
     #fsControls {
-      display: none;
-      position: fixed;
-      bottom: 16px; left: 50%;
-      transform: translateX(-50%);
-      z-index: 9998;
+      display: none !important;
+      position: fixed !important;
+      bottom: 20px !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      z-index: 2147483000 !important;
       gap: 8px;
       flex-wrap: wrap;
       justify-content: center;
       align-items: center;
-      padding: 10px 14px;
-      border-radius: 14px;
-      background: rgba(15,23,42,.88);
-      border: 1px solid rgba(255,255,255,.18);
-      backdrop-filter: blur(10px);
+      padding: 12px 16px;
+      border-radius: 16px;
+      background: rgba(15,23,42,.94) !important;
+      border: 1px solid rgba(255,255,255,.28);
+      backdrop-filter: blur(12px);
       max-width: 96vw;
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
     }
-    body.scene-fs-on #fsControls { display: flex; }
-    #fsControls .chip, #fsControls select {
-      font-size: 12px;
+    body.scene-fs-on #fsControls,
+    #stage.scene-fs ~ #fsControls,
+    .scene-fs-on #fsControls {
+      display: flex !important;
+    }
+    #fsControls .chip, #fsControls select, #fsControls button {
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.25);
+      background: rgba(30,41,59,.9);
+      color: #f1f5f9;
+      cursor: pointer;
     }
     #fsControls #fsRead.is-on {
-      border-color: #2dd4bf; color: #5eead4; background: rgba(13,148,136,.35);
+      border-color: #2dd4bf; color: #5eead4; background: rgba(13,148,136,.45);
     }
-
+    #sceneFsExit {
+      display: none !important;
+      position: fixed !important;
+      top: 14px !important;
+      right: 14px !important;
+      z-index: 2147483001 !important;
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.3);
+      background: rgba(15,23,42,.92) !important;
+      color: #f8fafc !important;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(0,0,0,.4);
+    }
+    body.scene-fs-on #sceneFsExit {
+      display: block !important;
+    }
     #btnSceneFs.is-on {
       border-color: #a78bfa; color: #c4b5fd; background: rgba(91,33,182,.35);
     }
-    #sceneFsExit {
-      display: none;
-      position: fixed;
-      top: 12px; right: 12px;
-      z-index: 9999;
-      padding: 8px 14px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,.25);
-      background: rgba(15,23,42,.85);
-      color: #e2e8f0;
-      font-size: 13px;
-      cursor: pointer;
-      backdrop-filter: blur(8px);
-    }
-    body.scene-fs-on #sceneFsExit { display: block; }
     body.scene-fs-on { overflow: hidden; }
 
     #btnScene.is-on {
@@ -669,18 +824,19 @@
 </head>
 <body class="theme-parchment" id="bookBody">
 <div id="fsControls">
-  <select id="fsScenePick" class="ctl" style="max-width:11rem;font-size:12px;" title="Change scene">
-    <option value="sun">Sunrise → Sunset</option>
-    <option value="orbit">Earth around the Sun</option>
-    <option value="voyage">Earth revelation</option>
-    <option value="moon">Night Moon</option>
-    <option value="planets">Planets around the Sun</option>
-  </select>
+  <select id="fsScenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
+          <option value="sun">Sunrise → Sunset</option>
+          <option value="orbit">Earth around the Sun</option>
+          <option value="voyage">Earth revelation</option>
+          <option value="moon">Night Moon</option>
+          <option value="planets">Planets around the Sun</option>
+          <option value="probe">Probe to Jupiter</option>
+          <option value="deep">Deep space drift</option>
+        </select>
   <button type="button" class="chip on" id="fsRead">👼 Read</button>
   <button type="button" class="chip" id="fsSceneToggle">Scene on/off</button>
 </div>
 <button type="button" id="sceneFsExit" aria-label="Exit full screen">✕ Exit full screen</button>
-</div>
 
   <div id="app">
     <div class="bar sticky top-0 z-30">
@@ -689,6 +845,7 @@
         <strong style="color:#f1f5f9;font-size:14px;">Books</strong>
         <input type="file" id="filePick" hidden accept=".pdf,.txt,.text,.md,.doc,.docx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple>
         <button type="button" class="chip" id="btnLoad">Load</button>
+        <button type="button" class="chip" id="btnDelBook" title="Delete selected book you uploaded">Delete book</button>
         <button type="button" class="chip" id="btnRead">👼 Read</button>
         <button type="button" class="chip" id="btnArrange">Arrange</button>
         <button type="button" class="chip on" id="btnTools">⚙ Settings</button>
@@ -700,6 +857,8 @@
           <option value="voyage">Earth revelation</option>
           <option value="moon">Night Moon</option>
           <option value="planets">Planets around the Sun</option>
+          <option value="probe">Probe to Jupiter</option>
+          <option value="deep">Deep space drift</option>
         </select>
         <button type="button" class="chip" id="btnSceneFs" title="Full screen scene">Full screen</button>
         <select id="wordStyle" class="ctl" style="max-width:8rem;font-size:11px;" title="Word style">
@@ -863,6 +1022,23 @@
               <div class="arm a5"><div class="pl pl-ju"></div></div>
               <div class="arm a6"><div class="pl pl-sa"></div><div class="sa-ring"></div></div>
             </div>
+          </div>
+          <div class="sc-layer sc-probe-bits" style="display:none">
+            <div class="stars"></div>
+            <div class="earth-home"></div>
+            <div class="jupiter"></div>
+            <div class="probe"></div>
+            <div class="probe-dish"></div>
+          </div>
+          <div class="sc-layer sc-deep-bits" style="display:none">
+            <div class="nebula"></div>
+            <div class="stars"></div>
+            <div class="meteor m1"></div>
+            <div class="meteor m2"></div>
+            <div class="meteor m3"></div>
+            <div class="meteor m4"></div>
+            <div class="ship-glow"></div>
+            <div class="ship"></div>
           </div>
         </div>
         <div class="page-sheet" id="sheet">
@@ -1235,12 +1411,19 @@
         play.onclick = () => playTrack(item);
         const del = document.createElement('button');
         del.type = 'button'; del.className = 'chip'; del.textContent = 'Remove';
-        del.onclick = async () => {
-          const fd = new FormData(); fd.append('track_id', item.id);
-          await fetch('/member/kwealth/bgm/delete', { method: 'POST', body: fd, credentials: 'same-origin' });
-          if (state.bgmId === item.id) stopBgm();
-          loadBgmList();
-        };
+        if (item.shared || String(item.id).indexOf('shared:') === 0) {
+          del.textContent = 'Shared';
+          del.disabled = true;
+          del.title = 'Shared by General Admin — cannot delete';
+        } else {
+          del.onclick = async () => {
+            if (!confirm('Remove this track?')) return;
+            const fd = new FormData(); fd.append('track_id', item.id);
+            await fetch('/member/kwealth/bgm/delete', { method: 'POST', body: fd, credentials: 'same-origin' });
+            if (state.bgmId === item.id) stopBgm();
+            loadBgmList();
+          };
+        }
         row.appendChild(play);
         row.appendChild(del);
         box.appendChild(row);
@@ -1268,6 +1451,17 @@
         renderBgmList();
       }).catch(() => alert('Could not play this track. Try another file.'));
     }
+
+    
+    on('btnDelBook', 'onclick', async () => {
+      if (!state.bookId) { alert('Select a book first'); return; }
+      if (!confirm('Delete this book from your library? (Shared admin books cannot be removed here.)')) return;
+      const fd = new FormData();
+      fd.append('book_id', state.bookId);
+      const r = await fetch('/member/kwealth/books/delete', { method: 'POST', body: fd, credentials: 'same-origin' });
+      if (r.redirected) { location.href = r.url; return; }
+      location.href = '/member/kwealth/books?deleted=1';
+    });
 
     on('btnLoad', 'onclick', () => { const f = $('filePick'); if (f) f.click(); });
     on('filePick', 'onchange', async (ev) => {
@@ -1436,11 +1630,20 @@
     function applySceneFs(force) {
       const stage = document.getElementById('stage');
       const btn = document.getElementById('btnSceneFs');
+      const fsBar = document.getElementById('fsControls');
+      const fsExit = document.getElementById('sceneFsExit');
       if (typeof force === 'boolean') state.sceneFs = force;
       const on = !!state.sceneFs;
       if (stage) stage.classList.toggle('scene-fs', on);
       document.body.classList.toggle('scene-fs-on', on);
       if (btn) btn.classList.toggle('is-on', on);
+      if (fsBar) {
+        fsBar.style.setProperty('display', on ? 'flex' : 'none', 'important');
+        fsBar.style.zIndex = '2147483000';
+      }
+      if (fsExit) {
+        fsExit.style.setProperty('display', on ? 'block' : 'none', 'important');
+      }
       if (on && !state.sceneOn) {
         state.sceneOn = true;
         try { applyScene(); } catch (e) {}
@@ -1483,7 +1686,7 @@
         surface.style.setProperty('display', 'none', 'important');
       }
       // Show only bits for selected scene
-      ['sun','orbit','voyage','moon','planets'].forEach(function (n) {
+      ['sun','orbit','voyage','moon','planets','probe','deep'].forEach(function (n) {
         const el = surface.querySelector('.sc-' + n + '-bits');
         if (el) el.style.display = (on && n === name) ? 'block' : 'none';
       });
