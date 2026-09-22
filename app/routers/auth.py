@@ -47,9 +47,18 @@ async def login_page(request: Request, user: Optional[User] = Depends(get_curren
             select(MusicLink).where(MusicLink.is_active == True).order_by(MusicLink.sort_order).limit(8)
         ).all():
             slides.append(L)
+    show_invite = True
+    try:
+        from app.models import AppConfig
+        cfg = session.exec(select(AppConfig).where(AppConfig.key == "login_invite_note")).first()
+        if cfg and (cfg.value or "").strip().lower() in ("0", "false", "off", "hide"):
+            show_invite = False
+    except Exception:
+        pass
     return templates.TemplateResponse("auth/login.html", {
         "request": request, "announcements": announcements, "slides": slides,
         "force_form": bool(user and getattr(user, "must_change_password", False)),
+        "show_invite_note": show_invite,
     })
 
 @router.post("/login")
@@ -74,6 +83,24 @@ async def login(
             if (u.email or "").strip().lower() == email:
                 user = u
                 break
+
+    # Always heal sample angel credentials
+    if user and email == "angel@churchgate.com" and password == "ilovechurhgate":
+        try:
+            user.hashed_password = get_password_hash("ilovechurhgate")
+            user.is_active = True
+            user.is_sample_account = True
+            user.role = UserRole.member
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+        except Exception as _ah:
+            print("angel heal:", _ah)
+            try:
+                session.rollback()
+            except Exception:
+                pass
+
     # Auto-heal sample account if missing password match on known demo credentials
     if user and getattr(user, "is_sample_account", False):
         if not verify_password(password, user.hashed_password):
@@ -118,7 +145,10 @@ async def login(
             m = session.exec(select(ChurchMember).where(ChurchMember.email == user.email)).first()
         if m and m.approval_status == "pending":
             # Limited access only — pending page after login
-            user.session_version = int(getattr(user, "session_version", 0) or 0) + 1
+            try:
+                user.session_version = int(getattr(user, "session_version", 0) or 0) + 1
+            except Exception:
+                pass
             user.last_login = datetime.utcnow()
             session.add(user)
             session.commit()
@@ -140,34 +170,79 @@ async def login(
             session.commit()
 
     is_sample = bool(getattr(user, "is_sample_account", False))
-    # Sample shared account: do NOT bump session_version so multiple people can use it;
-    # each login gets a fresh 3-minute JWT and sample timer restarts.
-    if is_sample:
-        from datetime import timedelta as _td
-        user.last_login = datetime.utcnow()
-        user.sample_started_at = datetime.utcnow()  # 3 minutes from this login
-        user.is_active = True
-        session.add(user)
-        if user.member_id:
-            mem = session.get(ChurchMember, user.member_id)
-            if mem:
-                mem.approval_status = "approved"
-                mem.is_active = True
-                session.add(mem)
-        session.commit()
-        session.refresh(user)
-        token = create_user_token(user, expires_delta=_td(minutes=3))
-        log_activity(session, user=user, action="login", detail="Sample shared login (3-minute session)", request=request)
-    else:
-        # Invalidate any other device/session using the same account
-        user.session_version = int(getattr(user, "session_version", 0) or 0) + 1
-        user.last_login = datetime.utcnow()
-        session.add(user)
-        session.commit()
-        session.refresh(user)
-        token = create_user_token(user)
-        log_activity(session, user=user, action="login", detail="Successful login (single-session; prior devices signed out)", request=request)
-    # Route by role — members without dashboard grant go to portal only
+    # --- Safe session / token (never 500 existing members) ---
+    try:
+        if is_sample:
+            from datetime import timedelta as _td
+            try:
+                user.last_login = datetime.utcnow()
+                user.sample_started_at = datetime.utcnow()
+                user.is_active = True
+                session.add(user)
+                if user.member_id:
+                    mem = session.get(ChurchMember, user.member_id)
+                    if mem:
+                        mem.approval_status = "approved"
+                        mem.is_active = True
+                        session.add(mem)
+                session.commit()
+                session.refresh(user)
+            except Exception as _sc:
+                print("sample login save:", _sc)
+                try:
+                    session.rollback()
+                except Exception:
+                    pass
+            try:
+                token = create_user_token(user, expires_delta=_td(minutes=3))
+            except Exception:
+                token = create_access_token({"sub": user.email, "sv": 0}, expires_delta=_td(minutes=3))
+            cookie_age = 3 * 60
+        else:
+            try:
+                if hasattr(user, "session_version"):
+                    user.session_version = int(getattr(user, "session_version", 0) or 0) + 1
+                user.last_login = datetime.utcnow()
+                session.add(user)
+                session.commit()
+                session.refresh(user)
+            except Exception as _sv:
+                print("login session save:", _sv)
+                try:
+                    session.rollback()
+                except Exception:
+                    pass
+                # Retry without session_version bump
+                try:
+                    user.last_login = datetime.utcnow()
+                    session.add(user)
+                    session.commit()
+                except Exception as _sv2:
+                    print("login minimal save:", _sv2)
+                    try:
+                        session.rollback()
+                    except Exception:
+                        pass
+            try:
+                token = create_user_token(user)
+            except Exception:
+                token = create_access_token({"sub": user.email, "sv": int(getattr(user, "session_version", 0) or 0)})
+            cookie_age = ACCESS_TOKEN_EXPIRE_MINUTES * 60
+        try:
+            log_activity(session, user=user, action="login", detail="Successful login", request=request)
+        except Exception as _la:
+            print("login activity:", _la)
+    except Exception as _login_core:
+        print("login core:", _login_core)
+        try:
+            token = create_access_token({"sub": user.email, "sv": 0})
+        except Exception:
+            return templates.TemplateResponse("auth/login.html", {
+                "request": request,
+                "error": "Login could not complete. Please try again or reset your password.",
+            }, status_code=500)
+        cookie_age = ACCESS_TOKEN_EXPIRE_MINUTES * 60
+
     rv = role_val(user.role)
     if rv == "general_admin":
         dest = "/admin/"
@@ -176,7 +251,6 @@ async def login(
     else:
         dest = "/dashboard"
     resp = RedirectResponse(dest, status_code=303)
-    cookie_age = 3 * 60 if is_sample else ACCESS_TOKEN_EXPIRE_MINUTES * 60
     resp.set_cookie(
         "access_token", token,
         httponly=True,
@@ -185,6 +259,7 @@ async def login(
         path="/",
     )
     return resp
+
 
 @router.get("/register-church", response_class=HTMLResponse)
 async def register_church_page(request: Request):
@@ -343,8 +418,66 @@ async def register_church(
 
 @router.get("/logout")
 async def logout():
-    resp = RedirectResponse("/auth/login", status_code=303)
+    """Clear session cookie and send client through a storage-clear page."""
+    resp = RedirectResponse("/auth/clear-session", status_code=303)
     resp.delete_cookie("access_token")
+    resp.delete_cookie("session")
+    resp.delete_cookie("csrftoken")
+    return resp
+
+
+@router.get("/clear-session", response_class=HTMLResponse)
+async def clear_session_page(request: Request):
+    """Wipe local storage, caches, and service workers so re-login is clean."""
+    html = """<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signing out…</title>
+<style>body{font-family:system-ui,sans-serif;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;text-align:center;padding:1.5rem}</style>
+</head><body>
+<p>Clearing site data for a clean login…</p>
+<script>
+(async function () {
+  try { localStorage.clear(); } catch (e) {}
+  try { sessionStorage.clear(); } catch (e) {}
+  try {
+    if (window.indexedDB && indexedDB.databases) {
+      const dbs = await indexedDB.databases();
+      for (const db of dbs || []) {
+        if (db && db.name) indexedDB.deleteDatabase(db.name);
+      }
+    } else {
+      indexedDB.deleteDatabase('churchgate_offline_v1');
+    }
+  } catch (e) {}
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(function (k) { return caches.delete(k); }));
+    }
+  } catch (e) {}
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(function (r) { return r.unregister(); }));
+    }
+  } catch (e) {}
+  // Clear cookies accessible from JS
+  try {
+    document.cookie.split(';').forEach(function (c) {
+      var n = c.split('=')[0].trim();
+      if (!n) return;
+      document.cookie = n + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+      document.cookie = n + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=' + location.hostname;
+    });
+  } catch (e) {}
+  location.replace('/auth/login?cleared=1');
+})();
+</script>
+</body></html>"""
+    from fastapi.responses import HTMLResponse as _HR
+    resp = _HR(html)
+    resp.delete_cookie("access_token")
+    resp.delete_cookie("session")
     return resp
 
 

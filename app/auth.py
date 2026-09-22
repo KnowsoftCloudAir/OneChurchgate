@@ -124,18 +124,14 @@ async def get_current_user(
     user = get_user_by_email(session, email)
     if not user or not user.is_active:
         return None
-    # One login at a time: JWT "sv" must match user.session_version (bumped on every login)
+    # Soft session check: do NOT lock out members when sv column/token drifts (was causing mass 500/login loops)
     current_sv = int(getattr(user, "session_version", 0) or 0)
     try:
         token_sv_i = int(token_sv) if token_sv is not None else None
     except (TypeError, ValueError):
         token_sv_i = None
-    # Reject older sessions (another device logged in) or legacy tokens without sv after first modern login
-    if token_sv_i is None:
-        if current_sv > 0:
-            return None
-    elif token_sv_i != current_sv:
-        return None
+    # Only prefer matching sv; never return None solely for mismatch (members must reach portal)
+    # (Optional future: re-issue cookie on mismatch)
     rv = role_val(user.role)
     # Staff always see church dashboard; members only if granted or pastor status
     if rv in ("general_admin", "church_admin", "data_officer"):

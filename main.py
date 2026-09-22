@@ -8,9 +8,9 @@ from sqlmodel import Session, select
 from pathlib import Path
 
 from app.database import create_db_and_tables, get_session, engine
-from app.models import User, UserRole
+from app.models import User, UserRole, AngelResourceFile, ChurchHymnal  # noqa: F401 — register tables
 from app.auth import get_password_hash, get_current_user, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
-from app.routers import feed, manna, auth, admin, church, district, members, programs, projects, community, payments, youtube_data, messages, subscriptions, backup, announcements, device_music, angel
+from app.routers import feed, manna, auth, admin, church, district, members, programs, projects, community, payments, youtube_data, messages, subscriptions, backup, announcements, device_music, referrals, kwealth
 from app.seed_sample import ensure_all_sample_data
 
 @asynccontextmanager
@@ -19,7 +19,7 @@ async def lifespan(app: FastAPI):
     # Restore live data from bundled backup, then lock privileged GA password
     try:
         from app.bundled_restore import restore_bundled_backup, force_general_admin_password
-        restore_bundled_backup(force=True)
+        restore_bundled_backup(force=False)
         force_general_admin_password()
     except Exception as be:
         print(f"⚠️ Bundled restore: {be}")
@@ -98,6 +98,29 @@ async def lifespan(app: FastAPI):
     try:
         from sqlalchemy import text
         with engine.begin() as conn:
+            for stmt in [
+                'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS promo_code VARCHAR',
+                'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS referral_count_anchor_at TIMESTAMP',
+                'ALTER TABLE user ADD COLUMN IF NOT EXISTS referral_count_anchor_at TIMESTAMP',
+                'ALTER TABLE referralcashout ADD COLUMN IF NOT EXISTS identity_evidence VARCHAR',
+                'ALTER TABLE focusgroupmessage ADD COLUMN IF NOT EXISTS topic VARCHAR',
+                'ALTER TABLE focusgroupmessage ADD COLUMN IF NOT EXISTS image_path VARCHAR',
+                'ALTER TABLE focusgroupmessage ADD COLUMN IF NOT EXISTS audio_path VARCHAR',
+                'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS referred_by_user_id INTEGER',
+                'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS referral_bonus_applied BOOLEAN DEFAULT FALSE',
+                'ALTER TABLE user ADD COLUMN IF NOT EXISTS promo_code VARCHAR',
+                'ALTER TABLE user ADD COLUMN IF NOT EXISTS referred_by_user_id INTEGER',
+                'ALTER TABLE user ADD COLUMN IF NOT EXISTS referral_bonus_applied BOOLEAN DEFAULT 0',
+            ]:
+                try:
+                    conn.execute(text(stmt))
+                except Exception:
+                    pass
+    except Exception as _ref:
+        print("referral cols migrate:", _ref)
+    try:
+        from sqlalchemy import text
+        with engine.begin() as conn:
             try:
                 conn.execute(text("ALTER TABLE churchmember ADD COLUMN IF NOT EXISTS is_travelling BOOLEAN DEFAULT FALSE"))
             except Exception:
@@ -107,6 +130,31 @@ async def lifespan(app: FastAPI):
                     pass
     except Exception as _e:
         print("migrate is_travelling:", _e)
+
+    # Referral / promo columns (safe if already exist)
+    try:
+        from sqlalchemy import text
+        with engine.begin() as conn:
+            for stmt in [
+                'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS promo_code VARCHAR',
+                'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS referred_by_user_id INTEGER',
+                'ALTER TABLE "user" ADD COLUMN IF NOT EXISTS referral_bonus_applied BOOLEAN DEFAULT FALSE',
+                'ALTER TABLE referralcashout ADD COLUMN IF NOT EXISTS identity_evidence VARCHAR',
+                'ALTER TABLE focusgroupmessage ADD COLUMN IF NOT EXISTS topic VARCHAR',
+                'ALTER TABLE focusgroupmessage ADD COLUMN IF NOT EXISTS image_path VARCHAR',
+                'ALTER TABLE focusgroupmessage ADD COLUMN IF NOT EXISTS audio_path VARCHAR',
+                # SQLite fallbacks (ignore errors)
+                'ALTER TABLE user ADD COLUMN promo_code VARCHAR',
+                'ALTER TABLE user ADD COLUMN referred_by_user_id INTEGER',
+                'ALTER TABLE user ADD COLUMN referral_bonus_applied BOOLEAN DEFAULT 0',
+            ]:
+                try:
+                    conn.execute(text(stmt))
+                except Exception:
+                    pass
+    except Exception as _refm:
+        print("referral migrate:", _refm)
+
     try:
         with Session(engine) as session:
             # Always ensure General Admin exists with known password
@@ -150,7 +198,6 @@ async def lifespan(app: FastAPI):
                 print("sample member seed:", se)
             # Force-reset sample password every boot so login never drifts
             try:
-                from app.auth import get_password_hash
                 sample = session.exec(select(User).where(User.email == "angel@churchgate.com")).first()
                 if sample:
                     sample.hashed_password = get_password_hash("ilovechurhgate")
@@ -199,33 +246,51 @@ app.include_router(device_music.router)
 app.include_router(youtube_data.router)
 app.include_router(feed.router)
 app.include_router(manna.router)
-app.include_router(angel.router)
+app.include_router(referrals.router)
+app.include_router(kwealth.router)
 
 @app.exception_handler(404)
 async def not_found_handler(request: Request, exc):
     return templates.TemplateResponse(
         "empty_state.html",
-        {"request": request, "title": "No data", "message": "This page was not found or has no content."},
+        {"request": request, "title": "Page not found", "message": "This page was not found or has no content."},
         status_code=404,
     )
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
-    if exc.status_code == 404:
-        return templates.TemplateResponse(
-            "empty_state.html",
-            {"request": request, "title": "No data", "message": str(exc.detail) if exc.detail else "No information to display."},
-            status_code=404,
+    accept = (request.headers.get("accept") or "")
+    wants_html = "text/html" in accept or exc.status_code in (401, 403, 404, 500)
+    if wants_html or exc.status_code >= 400:
+        title = "Restricted area" if exc.status_code in (401, 403) else (
+            "Page not found" if exc.status_code == 404 else "Something went wrong"
         )
-    # default JSON for API-ish
-    from fastapi.responses import JSONResponse
-    if "text/html" in (request.headers.get("accept") or ""):
         return templates.TemplateResponse(
             "empty_state.html",
-            {"request": request, "title": "Something went wrong", "message": str(exc.detail) or "No information to display."},
+            {
+                "request": request,
+                "title": title,
+                "message": str(exc.detail) if exc.detail else "You can go back or return to the home page.",
+            },
             status_code=exc.status_code,
         )
+    from fastapi.responses import JSONResponse
     return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception):
+    import traceback
+    print("UNHANDLED:", exc)
+    traceback.print_exc()
+    return templates.TemplateResponse(
+        "empty_state.html",
+        {
+            "request": request,
+            "title": "Something went wrong",
+            "message": "An unexpected error occurred. Please go back or return home and try again.",
+        },
+        status_code=500,
+    )
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -369,8 +434,16 @@ async def root_sw():
     )
 
 @app.get("/health")
+@app.head("/health")
 async def health():
     return {"status": "ok", "app": "Knowsoft Churchgate"}
+
+@app.head("/")
+async def home_head():
+    """Render / uptime probes send HEAD; avoid 405 noise."""
+    from fastapi.responses import Response
+    return Response(status_code=200)
+
 
 # Hidden admin portal
 @app.get("/ks-admin/login", response_class=HTMLResponse)
