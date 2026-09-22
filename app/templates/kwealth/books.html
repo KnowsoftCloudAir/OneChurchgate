@@ -101,38 +101,46 @@
     .bgm-row button { flex-shrink: 0; }
   
 
-    /* —— Abstract: dramatic yet relaxing —— */
-    #stage { position: relative; isolation: isolate; }
-    #abstractSurface {
+    /* —— Reading ambience scenes —— */
+    #stage {
+      position: relative;
+      isolation: isolate;
+      min-height: 62vh;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    #sceneStage {
       display: none;
       position: absolute;
       inset: 0;
-      z-index: 0;
-      border-radius: inherit;
+      z-index: 1;
       overflow: hidden;
+      border-radius: 12px;
       pointer-events: none;
+      background: #0c1222;
     }
-    #stage.abstract-mode #abstractSurface { display: block; }
-    #stage.abstract-mode .page-sheet {
-      background: rgba(4, 8, 20, 0.2) !important;
-      box-shadow: 0 28px 80px rgba(0,0,0,.6), inset 0 0 80px rgba(45,212,191,.06) !important;
-      border: 1px solid rgba(255,255,255,.14) !important;
-      color: #f8fafc !important;
+    #stage.scene-on #sceneStage {
+      display: block !important;
+    }
+    #stage.scene-on .page-sheet {
+      background: transparent !important;
+      box-shadow: none !important;
+      border: 1px solid rgba(255,255,255,.2) !important;
       position: relative;
       z-index: 2;
       min-height: 62vh;
       display: flex;
       flex-direction: column;
     }
-    #stage.abstract-mode .page-badge {
+    #stage.scene-on .page-badge {
       background: rgba(15,23,42,.75);
       color: #e2e8f0;
       z-index: 4;
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(6px);
     }
-    #stage.abstract-mode #sheetText {
+    #stage.scene-on #sheetText {
       position: relative;
-      z-index: 2;
+      z-index: 3;
       flex: 1;
       display: flex;
       align-items: center;
@@ -144,245 +152,216 @@
       font-size: calc(var(--fs, 18px) * 1.18);
       font-family: var(--ff, Georgia, serif);
       min-height: 40vh;
-      text-shadow: 0 2px 24px rgba(0,0,0,.45);
+      text-shadow: 0 2px 18px rgba(0,0,0,.65);
+    }
+    #sceneStage .sc-layer { position: absolute; inset: 0; }
+
+    /* === WAVES === */
+    #sceneStage.sc-waves { background: linear-gradient(#0a1628 0%, #0c4a6e 45%, #0369a1 100%); }
+    #sceneStage.sc-waves .wave {
+      position: absolute; left: -10%; width: 120%; height: 40%;
+      border-radius: 45%;
+      opacity: 0.55;
+      animation: waveMove 7s ease-in-out infinite;
+    }
+    #sceneStage.sc-waves .w1 { bottom: -5%; background: #38bdf8; animation-duration: 6s; }
+    #sceneStage.sc-waves .w2 { bottom: 8%; background: #0ea5e9; opacity: 0.4; animation-duration: 8s; animation-delay: -2s; }
+    #sceneStage.sc-waves .w3 { bottom: 18%; background: #7dd3fc; opacity: 0.3; animation-duration: 10s; animation-delay: -4s; }
+    #sceneStage.sc-waves .sky-glow {
+      position: absolute; top: 0; left: 0; right: 0; height: 45%;
+      background: radial-gradient(ellipse at 50% 100%, rgba(56,189,248,.35), transparent 70%);
+      animation: softPulse 6s ease-in-out infinite;
+    }
+    @keyframes waveMove {
+      0%, 100% { transform: translateX(0) translateY(0) scaleX(1); }
+      50% { transform: translateX(6%) translateY(-8%) scaleX(1.05); }
     }
 
-    /* Base slow-moving colour field */
-    #abstractSurface .ab-layer {
-      position: absolute; inset: -40%;
-      background:
-        radial-gradient(ellipse 80% 60% at 20% 30%, rgba(45,212,191,.55), transparent 55%),
-        radial-gradient(ellipse 70% 50% at 80% 20%, rgba(129,140,248,.5), transparent 50%),
-        radial-gradient(ellipse 60% 70% at 50% 90%, rgba(251,191,36,.28), transparent 55%),
-        radial-gradient(ellipse 50% 40% at 60% 50%, rgba(244,114,182,.18), transparent 50%),
-        linear-gradient(145deg, #020617 0%, #0f172a 30%, #1e1b4b 65%, #042f2e 100%);
-      animation: abDrift 22s ease-in-out infinite alternate;
-      filter: saturate(1.25) brightness(1.05);
-    }
-    #abstractSurface .ab-layer2 {
-      position: absolute; inset: -50%;
-      background:
-        radial-gradient(circle at 30% 70%, rgba(56,189,248,.35), transparent 40%),
-        radial-gradient(circle at 70% 30%, rgba(168,85,247,.3), transparent 42%),
-        radial-gradient(circle at 50% 50%, rgba(15,23,42,0), transparent 60%);
-      animation: abDriftRev 30s ease-in-out infinite alternate;
-      mix-blend-mode: screen;
+    /* === RIVER === */
+    #sceneStage.sc-river { background: linear-gradient(#14532d 0%, #166534 25%, #0c4a6e 70%, #082f49 100%); }
+    #sceneStage.sc-river .bank-l, #sceneStage.sc-river .bank-r {
+      position: absolute; top: 0; bottom: 0; width: 28%;
+      background: linear-gradient(90deg, #14532d, transparent);
       opacity: 0.85;
     }
-    #abstractSurface.th-ocean .ab-layer {
-      background:
-        radial-gradient(ellipse 90% 70% at 25% 35%, rgba(34,211,238,.6), transparent 55%),
-        radial-gradient(ellipse 70% 60% at 75% 65%, rgba(14,165,233,.45), transparent 50%),
-        radial-gradient(ellipse 50% 50% at 50% 20%, rgba(56,189,248,.3), transparent 45%),
-        linear-gradient(165deg, #082f49, #0c4a6e 40%, #164e63 100%);
-      animation: abDrift 26s ease-in-out infinite alternate;
-    }
-    #abstractSurface.th-ocean .ab-layer2 {
-      background:
-        radial-gradient(circle at 20% 80%, rgba(103,232,249,.4), transparent 45%),
-        radial-gradient(circle at 90% 20%, rgba(14,165,233,.35), transparent 40%);
-    }
-    #abstractSurface.th-sunset .ab-layer {
-      background:
-        radial-gradient(ellipse 80% 60% at 30% 25%, rgba(251,146,60,.65), transparent 55%),
-        radial-gradient(ellipse 70% 55% at 80% 55%, rgba(244,63,94,.5), transparent 48%),
-        radial-gradient(ellipse 60% 50% at 50% 90%, rgba(251,191,36,.35), transparent 50%),
-        linear-gradient(155deg, #1c0a05, #7c2d12 40%, #431407 100%);
-    }
-    #abstractSurface.th-sunset .ab-layer2 {
-      background:
-        radial-gradient(circle at 40% 60%, rgba(249,115,22,.4), transparent 45%),
-        radial-gradient(circle at 70% 20%, rgba(236,72,153,.3), transparent 40%);
-    }
-    #abstractSurface.th-aurora .ab-layer {
-      background:
-        radial-gradient(ellipse 80% 60% at 20% 40%, rgba(52,211,153,.6), transparent 55%),
-        radial-gradient(ellipse 70% 50% at 70% 15%, rgba(129,140,248,.55), transparent 50%),
-        radial-gradient(ellipse 60% 60% at 90% 80%, rgba(244,114,182,.4), transparent 48%),
-        linear-gradient(180deg, #020617, #0f172a 50%, #064e3b 100%);
-    }
-    #abstractSurface.th-aurora .ab-layer2 {
-      background:
-        radial-gradient(circle at 50% 30%, rgba(167,243,208,.35), transparent 40%),
-        radial-gradient(circle at 15% 70%, rgba(165,180,252,.3), transparent 42%);
-    }
-    #abstractSurface.th-nebula .ab-layer {
-      background:
-        radial-gradient(ellipse 80% 60% at 20% 25%, rgba(168,85,247,.55), transparent 55%),
-        radial-gradient(ellipse 70% 55% at 80% 60%, rgba(59,130,246,.5), transparent 50%),
-        radial-gradient(ellipse 50% 50% at 50% 80%, rgba(236,72,153,.35), transparent 45%),
-        linear-gradient(135deg, #020617, #1e1b4b 50%, #0f172a 100%);
-    }
-    #abstractSurface.th-nebula .ab-layer2 {
-      background:
-        radial-gradient(circle at 60% 40%, rgba(192,132,252,.4), transparent 40%),
-        radial-gradient(circle at 25% 75%, rgba(96,165,250,.3), transparent 42%);
-    }
-
-    /* Soft glowing orbs */
-    #abstractSurface .ab-orb {
-      position: absolute; border-radius: 50%;
-      filter: blur(55px);
-      opacity: 0.65;
-      animation: abFloat 16s ease-in-out infinite;
-      will-change: transform;
-    }
-    #abstractSurface .ab-orb.o1 {
-      width: 55%; height: 55%; background: #2dd4bf; top: -8%; left: -10%;
-      animation-duration: 18s;
-    }
-    #abstractSurface .ab-orb.o2 {
-      width: 48%; height: 48%; background: #818cf8; top: 35%; right: -12%;
-      animation-delay: -5s; animation-duration: 22s;
-    }
-    #abstractSurface .ab-orb.o3 {
-      width: 42%; height: 42%; background: #fbbf24; bottom: -10%; left: 28%;
-      animation-delay: -10s; animation-duration: 20s;
-    }
-    #abstractSurface .ab-orb.o4 {
-      width: 30%; height: 30%; background: #f472b6; top: 15%; left: 40%;
-      animation-delay: -3s; animation-duration: 14s; opacity: 0.45;
-    }
-    #abstractSurface .ab-orb.o5 {
-      width: 28%; height: 28%; background: #38bdf8; bottom: 20%; right: 15%;
-      animation-delay: -8s; animation-duration: 17s; opacity: 0.5;
-    }
-
-    /* Shimmer ribbon */
-    #abstractSurface .ab-shimmer {
-      position: absolute; inset: -20%;
-      background: linear-gradient(
-        115deg,
-        transparent 0%,
-        transparent 40%,
-        rgba(255,255,255,.08) 45%,
-        rgba(255,255,255,.16) 50%,
-        rgba(255,255,255,.08) 55%,
-        transparent 60%,
-        transparent 100%
+    #sceneStage.sc-river .bank-r { right: 0; left: auto; background: linear-gradient(270deg, #14532d, transparent); }
+    #sceneStage.sc-river .flow {
+      position: absolute; left: 20%; right: 20%; top: 0; bottom: 0;
+      background: repeating-linear-gradient(
+        180deg,
+        rgba(56,189,248,.0) 0px,
+        rgba(125,211,252,.35) 40px,
+        rgba(14,165,233,.25) 80px,
+        rgba(56,189,248,.0) 120px
       );
-      animation: abShimmer 12s ease-in-out infinite;
-      mix-blend-mode: soft-light;
+      background-size: 100% 240px;
+      animation: riverFlow 4s linear infinite;
+      opacity: 0.7;
+      filter: blur(1px);
     }
-
-    /* Breathing pulse */
-    #abstractSurface .ab-pulse {
-      position: absolute;
-      left: 50%; top: 50%;
-      width: 120%; height: 120%;
-      transform: translate(-50%, -50%);
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(255,255,255,.12) 0%, transparent 55%);
-      animation: abPulse 8s ease-in-out infinite;
-    }
-
-    #abstractSurface .ab-stars {
+    #sceneStage.sc-river .sparkle {
       position: absolute; inset: 0;
       background-image:
-        radial-gradient(2px 2px at 8% 18%, rgba(255,255,255,.9), transparent),
-        radial-gradient(1.5px 1.5px at 22% 55%, rgba(255,255,255,.7), transparent),
-        radial-gradient(2px 2px at 48% 12%, rgba(255,255,255,.85), transparent),
-        radial-gradient(1px 1px at 65% 38%, rgba(255,255,255,.6), transparent),
-        radial-gradient(2px 2px at 82% 70%, rgba(255,255,255,.75), transparent),
-        radial-gradient(1.5px 1.5px at 12% 82%, rgba(255,255,255,.55), transparent),
-        radial-gradient(1px 1px at 55% 48%, rgba(255,255,255,.65), transparent),
-        radial-gradient(2px 2px at 90% 25%, rgba(255,255,255,.7), transparent),
-        radial-gradient(1px 1px at 35% 70%, rgba(255,255,255,.5), transparent),
-        radial-gradient(1.5px 1.5px at 75% 88%, rgba(255,255,255,.6), transparent);
-      animation: abTwinkle 6s ease-in-out infinite alternate;
-      opacity: 0.8;
+        radial-gradient(2px 2px at 30% 20%, rgba(255,255,255,.8), transparent),
+        radial-gradient(2px 2px at 55% 60%, rgba(255,255,255,.6), transparent),
+        radial-gradient(1.5px 1.5px at 70% 35%, rgba(255,255,255,.7), transparent);
+      animation: softPulse 3s ease-in-out infinite alternate;
     }
-    #abstractSurface .ab-veil {
-      position: absolute; inset: 0;
-      background:
-        radial-gradient(ellipse at center, rgba(2,6,23,.05) 0%, rgba(2,6,23,.5) 70%, rgba(2,6,23,.65) 100%);
+    @keyframes riverFlow {
+      from { background-position: 0 0; }
+      to { background-position: 0 240px; }
     }
 
-    @keyframes abDrift {
-      0%   { transform: scale(1) translate(0%, 0%) rotate(0deg); }
-      50%  { transform: scale(1.12) translate(-4%, 3%) rotate(2deg); }
-      100% { transform: scale(1.18) translate(3%, -4%) rotate(-1.5deg); }
+    /* === SUNRISE / SUNSET cycle === */
+    #sceneStage.sc-sun {
+      background: linear-gradient(180deg, #0c1445 0%, #7c2d12 40%, #fb923c 70%, #fef3c7 100%);
+      animation: skyCycle 24s ease-in-out infinite alternate;
     }
-    @keyframes abDriftRev {
-      0%   { transform: scale(1.1) translate(3%, -2%) rotate(-1deg); }
-      100% { transform: scale(1) translate(-5%, 4%) rotate(2deg); }
+    #sceneStage.sc-sun .sun {
+      position: absolute;
+      left: 50%; width: 18vmin; height: 18vmin;
+      margin-left: -9vmin;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fef9c3, #fbbf24 45%, #f97316 75%, transparent 78%);
+      box-shadow: 0 0 60px 20px rgba(251,191,36,.55), 0 0 120px 40px rgba(249,115,22,.35);
+      animation: sunPath 24s ease-in-out infinite alternate;
     }
-    @keyframes abFloat {
-      0%, 100% { transform: translate(0, 0) scale(1); }
-      33% { transform: translate(8%, -10%) scale(1.12); }
-      66% { transform: translate(-6%, 7%) scale(0.92); }
+    #sceneStage.sc-sun .horizon {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 32%;
+      background: linear-gradient(180deg, transparent, rgba(28,25,23,.55) 40%, rgba(15,23,42,.75));
     }
-    @keyframes abShimmer {
-      0% { transform: translateX(-30%) translateY(10%) rotate(0deg); opacity: 0.3; }
-      50% { transform: translateX(10%) translateY(-5%) rotate(2deg); opacity: 0.7; }
-      100% { transform: translateX(35%) translateY(8%) rotate(-1deg); opacity: 0.35; }
+    #sceneStage.sc-sun .rays {
+      position: absolute; inset: -20%;
+      background: conic-gradient(from 0deg at 50% 55%, transparent 0deg, rgba(254,243,199,.12) 20deg, transparent 40deg, rgba(254,243,199,.1) 80deg, transparent 100deg);
+      animation: raySpin 30s linear infinite;
+      opacity: 0.6;
     }
-    @keyframes abPulse {
-      0%, 100% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.25; }
-      50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.55; }
+    @keyframes skyCycle {
+      0% { filter: hue-rotate(0deg) brightness(0.85); }
+      50% { filter: hue-rotate(15deg) brightness(1.1); }
+      100% { filter: hue-rotate(-10deg) brightness(0.7); }
     }
-    @keyframes abTwinkle {
-      from { opacity: 0.35; }
-      to { opacity: 0.95; }
+    @keyframes sunPath {
+      0% { top: 55%; transform: scale(0.9); }
+      50% { top: 18%; transform: scale(1.1); }
+      100% { top: 48%; transform: scale(0.95); }
+    }
+    @keyframes raySpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* === AURORA NIGHT === */
+    #sceneStage.sc-aurora { background: #020617; }
+    #sceneStage.sc-aurora .curtain {
+      position: absolute; left: -20%; right: -20%; top: -10%; height: 70%;
+      background: linear-gradient(180deg,
+        rgba(52,211,153,.0) 0%,
+        rgba(52,211,153,.45) 30%,
+        rgba(129,140,248,.4) 55%,
+        rgba(244,114,182,.25) 75%,
+        transparent 100%);
+      filter: blur(20px);
+      animation: auroraSway 9s ease-in-out infinite alternate;
+      transform-origin: top center;
+    }
+    #sceneStage.sc-aurora .curtain.c2 {
+      animation-delay: -3s;
+      opacity: 0.7;
+      background: linear-gradient(180deg, transparent, rgba(56,189,248,.4) 35%, rgba(167,139,250,.35) 60%, transparent);
+    }
+    #sceneStage.sc-aurora .stars {
+      position: absolute; inset: 0;
+      background-image:
+        radial-gradient(2px 2px at 12% 18%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 40% 30%, #fff, transparent),
+        radial-gradient(2px 2px at 70% 12%, #fff, transparent),
+        radial-gradient(1px 1px at 85% 40%, #fff, transparent),
+        radial-gradient(2px 2px at 25% 55%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 60% 70%, #fff, transparent);
+      animation: softPulse 5s ease-in-out infinite alternate;
+    }
+    @keyframes auroraSway {
+      0% { transform: skewX(-8deg) translateX(-4%); }
+      100% { transform: skewX(8deg) translateX(4%); }
+    }
+
+    /* === FOREST LIGHT === */
+    #sceneStage.sc-forest {
+      background: linear-gradient(180deg, #0c1a12 0%, #14532d 40%, #166534 70%, #052e16 100%);
+    }
+    #sceneStage.sc-forest .canopy {
+      position: absolute; top: 0; left: 0; right: 0; height: 40%;
+      background:
+        radial-gradient(ellipse at 20% 0%, rgba(22,101,52,.9) 0%, transparent 50%),
+        radial-gradient(ellipse at 60% 0%, rgba(20,83,45,.85) 0%, transparent 45%),
+        radial-gradient(ellipse at 90% 0%, rgba(22,101,52,.8) 0%, transparent 50%);
+      animation: canopySway 12s ease-in-out infinite alternate;
+    }
+    #sceneStage.sc-forest .beams {
+      position: absolute; inset: 0;
+      background: linear-gradient(115deg, transparent 30%, rgba(253,224,71,.15) 42%, transparent 48%, rgba(254,240,138,.12) 58%, transparent 65%);
+      animation: beamDrift 10s ease-in-out infinite alternate;
+    }
+    #sceneStage.sc-forest .mist {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 35%;
+      background: linear-gradient(transparent, rgba(226,232,240,.15));
+      animation: softPulse 7s ease-in-out infinite;
+    }
+    @keyframes canopySway {
+      from { transform: scaleX(1) translateY(0); }
+      to { transform: scaleX(1.05) translateY(2%); }
+    }
+    @keyframes beamDrift {
+      from { transform: translateX(-5%); opacity: 0.5; }
+      to { transform: translateX(8%); opacity: 0.9; }
+    }
+    @keyframes softPulse {
+      from { opacity: 0.5; }
+      to { opacity: 1; }
+    }
+
+    /* Word highlight on scenes */
+    #stage.scene-on #sheetText .ab-sentence {
+      display: none; max-width: 36rem; margin: 0 auto;
+    }
+    #stage.scene-on #sheetText .ab-sentence.active {
+      display: block; animation: abWordIn 0.6s ease-out;
+    }
+    #stage.scene-on #sheetText .ab-sentence.leaving {
+      display: block; animation: abWordOut 0.4s ease-in forwards;
     }
     @keyframes abWordIn {
-      from { opacity: 0; transform: translateY(12px) scale(0.98); filter: blur(6px); }
-      to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+      from { opacity: 0; transform: translateY(10px); filter: blur(4px); }
+      to { opacity: 1; transform: none; filter: none; }
     }
     @keyframes abWordOut {
-      from { opacity: 1; filter: blur(0); }
-      to { opacity: 0; filter: blur(5px); transform: translateY(-6px); }
+      from { opacity: 1; }
+      to { opacity: 0; filter: blur(4px); }
     }
-    #stage.abstract-mode #sheetText .ab-sentence {
-      display: none;
-      max-width: 36rem;
-      margin: 0 auto;
+    #sheetText .kw { transition: color .15s ease, background .15s ease, text-shadow .15s ease; border-radius: 3px; }
+    #stage.scene-on.ws-fill #sheetText .kw { color: rgba(226,232,240,.4); }
+    #stage.scene-on.ws-fill #sheetText .kw.spoken { color: rgba(167,243,208,.95); }
+    #stage.scene-on.ws-fill #sheetText .kw.current {
+      color: #fff; background: linear-gradient(90deg, rgba(45,212,191,.85), rgba(94,234,212,.5));
+      text-shadow: 0 0 16px rgba(45,212,191,.9); padding: 0 3px;
     }
-    #stage.abstract-mode #sheetText .ab-sentence.active {
-      display: block;
-      animation: abWordIn 0.7s ease-out;
+    #stage.scene-on.ws-write #sheetText .kw { opacity: 0; }
+    #stage.scene-on.ws-write #sheetText .kw.spoken,
+    #stage.scene-on.ws-write #sheetText .kw.current { opacity: 1; color: #f0fdfa; }
+    #stage.scene-on.ws-write #sheetText .kw.current { color: #5eead4; text-shadow: 0 0 18px #2dd4bf; }
+    #stage.scene-on.ws-glow #sheetText .kw { color: rgba(203,213,225,.35); }
+    #stage.scene-on.ws-glow #sheetText .kw.spoken { color: rgba(226,232,240,.85); }
+    #stage.scene-on.ws-glow #sheetText .kw.current {
+      color: #fff; text-shadow: 0 0 12px #fff, 0 0 28px #2dd4bf;
     }
-    #stage.abstract-mode #sheetText .ab-sentence.leaving {
-      display: block;
-      animation: abWordOut 0.45s ease-in forwards;
+    #stage.scene-on.ws-underline #sheetText .kw { color: rgba(226,232,240,.45); border-bottom: 2px solid transparent; }
+    #stage.scene-on.ws-underline #sheetText .kw.spoken { color: #e2e8f0; border-bottom-color: rgba(45,212,191,.5); }
+    #stage.scene-on.ws-underline #sheetText .kw.current {
+      color: #fff; border-bottom-color: #2dd4bf; background: rgba(45,212,191,.2);
     }
-    #sheetText .kw {
-      transition: color .18s ease, background .18s ease, text-shadow .18s ease;
-      border-radius: 3px;
-    }
-    #stage.abstract-mode.ws-fill #sheetText .kw { color: rgba(226,232,240,.38); }
-    #stage.abstract-mode.ws-fill #sheetText .kw.spoken { color: rgba(167,243,208,.92); }
-    #stage.abstract-mode.ws-fill #sheetText .kw.current {
-      color: #fff;
-      background: linear-gradient(90deg, rgba(45,212,191,.8), rgba(94,234,212,.55));
-      text-shadow: 0 0 18px rgba(45,212,191,1);
-      padding: 0 3px;
-    }
-    #stage.abstract-mode.ws-write #sheetText .kw { opacity: 0; }
-    #stage.abstract-mode.ws-write #sheetText .kw.spoken,
-    #stage.abstract-mode.ws-write #sheetText .kw.current {
-      opacity: 1; color: #f0fdfa;
-    }
-    #stage.abstract-mode.ws-write #sheetText .kw.current {
-      color: #5eead4; text-shadow: 0 0 20px rgba(45,212,191,1);
-    }
-    #stage.abstract-mode.ws-glow #sheetText .kw { color: rgba(203,213,225,.35); }
-    #stage.abstract-mode.ws-glow #sheetText .kw.spoken { color: rgba(226,232,240,.85); }
-    #stage.abstract-mode.ws-glow #sheetText .kw.current {
-      color: #fff;
-      text-shadow: 0 0 12px #fff, 0 0 28px #2dd4bf, 0 0 48px #a78bfa;
-    }
-    #stage.abstract-mode.ws-underline #sheetText .kw {
-      color: rgba(226,232,240,.45); border-bottom: 2px solid transparent;
-    }
-    #stage.abstract-mode.ws-underline #sheetText .kw.spoken {
-      color: #e2e8f0; border-bottom-color: rgba(45,212,191,.55);
-    }
-    #stage.abstract-mode.ws-underline #sheetText .kw.current {
-      color: #fff; border-bottom-color: #2dd4bf; background: rgba(45,212,191,.22);
-    }
-    #btnAbstract.is-on {
-      border-color: #2dd4bf; color: #5eead4; background: rgba(13,148,136,.3);
+    #btnScene.is-on {
+      border-color: #2dd4bf; color: #5eead4; background: rgba(13,148,136,.35);
     }
 
 
@@ -402,14 +381,15 @@
         <button type="button" class="chip" id="btnArrange">Arrange</button>
         <button type="button" class="chip on" id="btnTools">⚙ Settings</button>
         <button type="button" class="chip" id="btnMusic"><span id="bgmDot" class="off"></span> Music</button>
-        <button type="button" class="chip" id="btnAbstract" title="Replace book panel with abstract reading surface">Abstract</button>
-        <select id="abstractTheme" class="ctl" style="max-width:7rem;font-size:11px;" title="Abstract theme">
-          <option value="aurora">Aurora</option>
-          <option value="ocean">Ocean</option>
-          <option value="sunset">Sunset</option>
-          <option value="nebula">Nebula</option>
+        <button type="button" class="chip" id="btnScene" title="Reading ambience animation">Scene</button>
+        <select id="scenePick" class="ctl" style="max-width:9rem;font-size:11px;" title="Ambience">
+          <option value="waves">Ocean waves</option>
+          <option value="river">Flowing river</option>
+          <option value="sun">Sunrise → Sunset</option>
+          <option value="aurora">Night aurora</option>
+          <option value="forest">Forest light</option>
         </select>
-        <select id="wordStyle" class="ctl" style="max-width:8.5rem;font-size:11px;" title="How words appear while reading">
+        <select id="wordStyle" class="ctl" style="max-width:8rem;font-size:11px;" title="Word style">
           <option value="fill">Fill colour</option>
           <option value="write">Writing</option>
           <option value="glow">Glow</option>
@@ -516,20 +496,41 @@
 
       {% if book %}
       <div class="stage" id="stage">
-        <div class="page-sheet" id="sheet">
-          <div id="abstractSurface" class="th-aurora" aria-hidden="true">
-            <div class="ab-layer"></div>
-            <div class="ab-layer2"></div>
-            <div class="ab-shimmer"></div>
-            <div class="ab-pulse"></div>
-            <div class="ab-stars"></div>
-            <div class="ab-orb o1"></div>
-            <div class="ab-orb o2"></div>
-            <div class="ab-orb o3"></div>
-            <div class="ab-orb o4"></div>
-            <div class="ab-orb o5"></div>
-            <div class="ab-veil"></div>
+        <div id="sceneStage" class="sc-waves" aria-hidden="true">
+          <!-- waves -->
+          <div class="sc-layer sc-waves-bits">
+            <div class="sky-glow"></div>
+            <div class="wave w1"></div>
+            <div class="wave w2"></div>
+            <div class="wave w3"></div>
           </div>
+          <!-- river -->
+          <div class="sc-layer sc-river-bits" style="display:none">
+            <div class="bank-l"></div>
+            <div class="bank-r"></div>
+            <div class="flow"></div>
+            <div class="sparkle"></div>
+          </div>
+          <!-- sun -->
+          <div class="sc-layer sc-sun-bits" style="display:none">
+            <div class="rays"></div>
+            <div class="sun"></div>
+            <div class="horizon"></div>
+          </div>
+          <!-- aurora -->
+          <div class="sc-layer sc-aurora-bits" style="display:none">
+            <div class="stars"></div>
+            <div class="curtain"></div>
+            <div class="curtain c2"></div>
+          </div>
+          <!-- forest -->
+          <div class="sc-layer sc-forest-bits" style="display:none">
+            <div class="canopy"></div>
+            <div class="beams"></div>
+            <div class="mist"></div>
+          </div>
+        </div>
+        <div class="page-sheet" id="sheet">
           <div class="page-badge">
             <span class="num" id="pageBadgeNum">Page 1 / 1</span>
             <span class="status status-starting" id="pageBadgeStatus">Starting</span>
@@ -571,6 +572,8 @@
       rate: Number(localStorage.getItem('kw_book_rate') || 0.95),
       paraPause: Number(localStorage.getItem('kw_book_paraPause') || 5),
       wordStyle: localStorage.getItem('kw_book_wordStyle') || 'fill',
+      sceneOn: false,
+      sceneName: localStorage.getItem('kw_scene') || 'waves',
       bgmId: localStorage.getItem('kw_book_bgm_id') || '',
       bgmVol: Number(localStorage.getItem('kw_book_bgmVol') || 0.18),
       bgmPlaying: false,
@@ -617,7 +620,7 @@
     function renderPage() {
       const raw = state.pages[state.pageIndex] || '';
       if (sheetText) {
-        if (state.abstractOn) {
+        if (state.sceneOn) {
           // Sentence blocks; only active sentence shown
           const sents = splitSentences(raw);
           state._sentences = sents;
@@ -657,7 +660,7 @@
       if ($('btnNext')) $('btnNext').disabled = state.pageIndex >= total - 1;
     }
     function showSentence(si) {
-      if (!sheetText || !state.abstractOn) return;
+      if (!sheetText || !state.sceneOn) return;
       const nodes = sheetText.querySelectorAll('.ab-sentence');
       nodes.forEach(function (n) {
         const i = Number(n.getAttribute('data-si'));
@@ -723,7 +726,7 @@
       });
     }
             function highlightWord(idx) {
-      if (!sheetText || !state.abstractOn) return;
+      if (!sheetText || !state.sceneOn) return;
       const nodes = sheetText.querySelectorAll('.kw');
       let activeSi = 0;
       nodes.forEach(function (n) {
@@ -774,7 +777,7 @@
       if (!state.arranged) text = text.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2').replace(/([^\n])\n(?!\n)/g, '$1 ');
       // Abstract mode: one sentence at a time; otherwise paragraph chunks
       let rawParas;
-      if (state.abstractOn) {
+      if (state.sceneOn) {
         rawParas = splitSentences(text);
         state._sentIndex = 0;
         try { showSentence(0); } catch (e) {}
@@ -783,7 +786,7 @@
       }
       const paras = rawParas.map(function (p) { return cleanForSpeech(p); }).filter(Boolean);
       if (!paras.length) { if (state.reading) next(); return; }
-      if (state.abstractOn) {
+      if (state.sceneOn) {
         try { renderPage(); } catch (e) {}
       }
       const voices = speechSynthesis.getVoices() || [];
@@ -807,7 +810,7 @@
         if (voice) u.voice = voice;
         state._kwIndex = globalWordBase;
         u.onboundary = function (ev) {
-          if (!state.abstractOn) return;
+          if (!state.sceneOn) return;
           if (ev.name === 'word' || ev.charIndex != null) {
             const upto = chunk.slice(0, ev.charIndex || 0);
             const local = (upto.match(/\S+/g) || []).length;
@@ -818,7 +821,7 @@
         };
         let fallbackTimer = null;
         const words = chunk.match(/\S+/g) || [];
-        if (state.abstractOn && words.length) {
+        if (state.sceneOn && words.length) {
           const msPerWord = Math.max(180, 60000 / (140 * (state.rate || 0.95)));
           let fi = 0;
           fallbackTimer = setInterval(function () {
@@ -831,7 +834,7 @@
         u.onend = function () {
           if (fallbackTimer) clearInterval(fallbackTimer);
           globalWordBase += words.length;
-          if (state.abstractOn && sheetText) {
+          if (state.sceneOn && sheetText) {
             // soft clear spoken marks before next block
             sheetText.querySelectorAll('.kw.current').forEach(function (n) { n.classList.remove('current'); });
           }
@@ -845,13 +848,13 @@
               badge.className = 'status status-progress';
             }
             // Fade current sentence before next appears
-            if (state.abstractOn && sheetText) {
+            if (state.sceneOn && sheetText) {
               const cur = sheetText.querySelector('.ab-sentence.active');
               if (cur) { cur.classList.add('leaving'); cur.classList.remove('active'); }
             }
             state._pauseTimer = setTimeout(function () {
               state._pauseTimer = null;
-              if (state.abstractOn) {
+              if (state.sceneOn) {
                 try { showSentence(pi + 1); } catch (e) {}
               }
               if (state.reading) speakPara(pi + 1);
@@ -1089,57 +1092,74 @@
     if (window.speechSynthesis) speechSynthesis.onvoiceschanged = loadVoices;
     
     // —— Abstract panel (replaces book surface) ——
-        function applyAbstract() {
+                function applyScene() {
       const stage = document.getElementById('stage');
-      const surface = document.getElementById('abstractSurface');
-      const btn = document.getElementById('btnAbstract');
-      const themeSel = document.getElementById('abstractTheme');
+      const surface = document.getElementById('sceneStage');
+      const btn = document.getElementById('btnScene');
+      const pick = document.getElementById('scenePick');
       const styleSel = document.getElementById('wordStyle');
-      const on = !!state.abstractOn;
-      const theme = state.abstractTheme || 'aurora';
+      const on = !!state.sceneOn;
+      const name = state.sceneName || 'waves';
       const wstyle = state.wordStyle || 'fill';
-      if (stage) {
-        stage.classList.toggle('abstract-mode', on);
-        // word style classes
-        ['ws-fill','ws-write','ws-glow','ws-underline'].forEach(function (c) { stage.classList.remove(c); });
-        if (on) stage.classList.add('ws-' + wstyle);
+      if (!stage || !surface) {
+        if (btn) btn.classList.toggle('is-on', on);
+        return;
       }
-      if (surface) {
-        surface.className = 'th-' + theme;
-        surface.setAttribute('aria-hidden', on ? 'false' : 'true');
+      stage.classList.toggle('scene-on', on);
+      document.body.classList.toggle('scene-on', on);
+      ['ws-fill','ws-write','ws-glow','ws-underline'].forEach(function (c) { stage.classList.remove(c); });
+      if (on) stage.classList.add('ws-' + wstyle);
+      surface.className = 'sc-' + name;
+      surface.setAttribute('aria-hidden', on ? 'false' : 'true');
+      if (on) {
+        surface.style.setProperty('display', 'block', 'important');
+        surface.style.visibility = 'visible';
+        surface.style.opacity = '1';
+      } else {
+        surface.style.setProperty('display', 'none', 'important');
       }
+      // Show only bits for selected scene
+      ['waves','river','sun','aurora','forest'].forEach(function (n) {
+        const el = surface.querySelector('.sc-' + n + '-bits');
+        if (el) el.style.display = (on && n === name) ? 'block' : 'none';
+      });
       if (btn) btn.classList.toggle('is-on', on);
-      if (themeSel && themeSel.value !== theme) themeSel.value = theme;
+      if (pick && pick.value !== name) pick.value = name;
       if (styleSel && styleSel.value !== wstyle) styleSel.value = wstyle;
       try {
-        localStorage.setItem('kw_abstract_on', on ? '1' : '0');
-        localStorage.setItem('kw_abstract_theme', theme);
+        localStorage.setItem('kw_scene_on', on ? '1' : '0');
+        localStorage.setItem('kw_scene', name);
         localStorage.setItem('kw_book_wordStyle', wstyle);
       } catch (e) {}
       try { renderPage(); } catch (e) {}
-      // If reading, re-highlight current word so style applies mid-speech
       if (on && typeof state._kwIndex === 'number') {
         try { highlightWord(state._kwIndex); } catch (e) {}
       }
     }
-    state.abstractOn = false;
-    state.abstractTheme = 'aurora';
+    state.sceneOn = false;
+    state.sceneName = 'waves';
     try {
-      state.abstractOn = localStorage.getItem('kw_abstract_on') === '1';
-      state.abstractTheme = localStorage.getItem('kw_abstract_theme') || 'aurora';
+      state.sceneOn = localStorage.getItem('kw_scene_on') === '1';
+      state.sceneName = localStorage.getItem('kw_scene') || 'waves';
     } catch (e) {}
-    const btnAbstract = document.getElementById('btnAbstract');
-    const abstractTheme = document.getElementById('abstractTheme');
-    if (btnAbstract) {
-      btnAbstract.addEventListener('click', function () {
-        state.abstractOn = !state.abstractOn;
-        try { applyAbstract(); } catch (e) { console.warn(e); }
+    const btnScene = document.getElementById('btnScene');
+    const scenePick = document.getElementById('scenePick');
+    if (btnScene) {
+      btnScene.addEventListener('click', function () {
+        if (!document.getElementById('stage') || !document.getElementById('sceneStage')) {
+          alert('Select or load a book first, then tap Scene.');
+          return;
+        }
+        state.sceneOn = !state.sceneOn;
+        try { applyScene(); } catch (e) { console.warn(e); }
       });
     }
-    if (abstractTheme) {
-      abstractTheme.addEventListener('change', function () {
-        state.abstractTheme = abstractTheme.value || 'aurora';
-        try { applyAbstract(); } catch (e) { console.warn(e); }
+    if (scenePick) {
+      scenePick.value = state.sceneName || 'waves';
+      scenePick.addEventListener('change', function () {
+        state.sceneName = scenePick.value || 'waves';
+        if (!state.sceneOn) state.sceneOn = true;
+        try { applyScene(); } catch (e) { console.warn(e); }
       });
     }
     const wordStyleEl = document.getElementById('wordStyle');
@@ -1147,13 +1167,13 @@
       wordStyleEl.value = state.wordStyle || 'fill';
       wordStyleEl.addEventListener('change', function () {
         state.wordStyle = wordStyleEl.value || 'fill';
-        try { applyAbstract(); } catch (e) { console.warn(e); }
+        try { applyScene(); } catch (e) { console.warn(e); }
       });
     }
     try {
       state.wordStyle = localStorage.getItem('kw_book_wordStyle') || state.wordStyle || 'fill';
     } catch (e) {}
-    try { applyAbstract(); } catch (e) { console.warn(e); }
+    try { applyScene(); } catch (e) { console.warn(e); }
 
     try {
       loadBgmList().then(() => {
