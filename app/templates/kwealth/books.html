@@ -101,7 +101,7 @@
     .bgm-row button { flex-shrink: 0; }
   
 
-    /* —— Abstract calm surface —— */
+    /* —— Abstract: dramatic yet relaxing —— */
     #stage { position: relative; isolation: isolate; }
     #abstractSurface {
       display: none;
@@ -114,9 +114,9 @@
     }
     #stage.abstract-mode #abstractSurface { display: block; }
     #stage.abstract-mode .page-sheet {
-      background: rgba(6, 10, 22, 0.25) !important;
-      box-shadow: 0 24px 70px rgba(0,0,0,.55) !important;
-      border: 1px solid rgba(255,255,255,.12) !important;
+      background: rgba(4, 8, 20, 0.2) !important;
+      box-shadow: 0 28px 80px rgba(0,0,0,.6), inset 0 0 80px rgba(45,212,191,.06) !important;
+      border: 1px solid rgba(255,255,255,.14) !important;
       color: #f8fafc !important;
       position: relative;
       z-index: 2;
@@ -125,9 +125,10 @@
       flex-direction: column;
     }
     #stage.abstract-mode .page-badge {
-      background: rgba(15,23,42,.7);
+      background: rgba(15,23,42,.75);
       color: #e2e8f0;
       z-index: 4;
+      backdrop-filter: blur(8px);
     }
     #stage.abstract-mode #sheetText {
       position: relative;
@@ -139,95 +140,199 @@
       text-align: center;
       padding: 2.5rem 1.5rem;
       color: #f8fafc;
-      line-height: 1.9;
-      font-size: calc(var(--fs, 18px) * 1.15);
+      line-height: 1.95;
+      font-size: calc(var(--fs, 18px) * 1.18);
       font-family: var(--ff, Georgia, serif);
       min-height: 40vh;
+      text-shadow: 0 2px 24px rgba(0,0,0,.45);
     }
+
+    /* Base slow-moving colour field */
     #abstractSurface .ab-layer {
-      position: absolute; inset: -25%;
+      position: absolute; inset: -40%;
       background:
-        radial-gradient(ellipse at 15% 25%, rgba(56,189,248,.35), transparent 42%),
-        radial-gradient(ellipse at 85% 20%, rgba(167,139,250,.4), transparent 40%),
-        radial-gradient(ellipse at 50% 90%, rgba(52,211,153,.28), transparent 48%),
-        radial-gradient(ellipse at 40% 50%, rgba(251,191,36,.12), transparent 35%),
-        linear-gradient(145deg, #020617 0%, #0f172a 35%, #1e1b4b 70%, #042f2e 100%);
-      animation: abDrift 28s ease-in-out infinite alternate;
+        radial-gradient(ellipse 80% 60% at 20% 30%, rgba(45,212,191,.55), transparent 55%),
+        radial-gradient(ellipse 70% 50% at 80% 20%, rgba(129,140,248,.5), transparent 50%),
+        radial-gradient(ellipse 60% 70% at 50% 90%, rgba(251,191,36,.28), transparent 55%),
+        radial-gradient(ellipse 50% 40% at 60% 50%, rgba(244,114,182,.18), transparent 50%),
+        linear-gradient(145deg, #020617 0%, #0f172a 30%, #1e1b4b 65%, #042f2e 100%);
+      animation: abDrift 22s ease-in-out infinite alternate;
+      filter: saturate(1.25) brightness(1.05);
+    }
+    #abstractSurface .ab-layer2 {
+      position: absolute; inset: -50%;
+      background:
+        radial-gradient(circle at 30% 70%, rgba(56,189,248,.35), transparent 40%),
+        radial-gradient(circle at 70% 30%, rgba(168,85,247,.3), transparent 42%),
+        radial-gradient(circle at 50% 50%, rgba(15,23,42,0), transparent 60%);
+      animation: abDriftRev 30s ease-in-out infinite alternate;
+      mix-blend-mode: screen;
+      opacity: 0.85;
     }
     #abstractSurface.th-ocean .ab-layer {
       background:
-        radial-gradient(ellipse at 25% 30%, rgba(34,211,238,.5), transparent 50%),
-        radial-gradient(ellipse at 75% 70%, rgba(14,165,233,.35), transparent 45%),
-        radial-gradient(ellipse at 50% 50%, rgba(56,189,248,.15), transparent 40%),
+        radial-gradient(ellipse 90% 70% at 25% 35%, rgba(34,211,238,.6), transparent 55%),
+        radial-gradient(ellipse 70% 60% at 75% 65%, rgba(14,165,233,.45), transparent 50%),
+        radial-gradient(ellipse 50% 50% at 50% 20%, rgba(56,189,248,.3), transparent 45%),
         linear-gradient(165deg, #082f49, #0c4a6e 40%, #164e63 100%);
-      animation: abDrift 32s ease-in-out infinite alternate;
+      animation: abDrift 26s ease-in-out infinite alternate;
+    }
+    #abstractSurface.th-ocean .ab-layer2 {
+      background:
+        radial-gradient(circle at 20% 80%, rgba(103,232,249,.4), transparent 45%),
+        radial-gradient(circle at 90% 20%, rgba(14,165,233,.35), transparent 40%);
     }
     #abstractSurface.th-sunset .ab-layer {
       background:
-        radial-gradient(ellipse at 30% 20%, rgba(251,146,60,.55), transparent 48%),
-        radial-gradient(ellipse at 80% 55%, rgba(244,63,94,.4), transparent 42%),
-        radial-gradient(ellipse at 50% 90%, rgba(251,191,36,.25), transparent 45%),
-        linear-gradient(155deg, #1c0a05, #7c2d12 45%, #431407 100%);
+        radial-gradient(ellipse 80% 60% at 30% 25%, rgba(251,146,60,.65), transparent 55%),
+        radial-gradient(ellipse 70% 55% at 80% 55%, rgba(244,63,94,.5), transparent 48%),
+        radial-gradient(ellipse 60% 50% at 50% 90%, rgba(251,191,36,.35), transparent 50%),
+        linear-gradient(155deg, #1c0a05, #7c2d12 40%, #431407 100%);
+    }
+    #abstractSurface.th-sunset .ab-layer2 {
+      background:
+        radial-gradient(circle at 40% 60%, rgba(249,115,22,.4), transparent 45%),
+        radial-gradient(circle at 70% 20%, rgba(236,72,153,.3), transparent 40%);
     }
     #abstractSurface.th-aurora .ab-layer {
       background:
-        radial-gradient(ellipse at 20% 40%, rgba(52,211,153,.5), transparent 48%),
-        radial-gradient(ellipse at 70% 15%, rgba(129,140,248,.45), transparent 42%),
-        radial-gradient(ellipse at 90% 80%, rgba(244,114,182,.35), transparent 40%),
-        linear-gradient(180deg, #020617, #0f172a 55%, #064e3b 100%);
+        radial-gradient(ellipse 80% 60% at 20% 40%, rgba(52,211,153,.6), transparent 55%),
+        radial-gradient(ellipse 70% 50% at 70% 15%, rgba(129,140,248,.55), transparent 50%),
+        radial-gradient(ellipse 60% 60% at 90% 80%, rgba(244,114,182,.4), transparent 48%),
+        linear-gradient(180deg, #020617, #0f172a 50%, #064e3b 100%);
+    }
+    #abstractSurface.th-aurora .ab-layer2 {
+      background:
+        radial-gradient(circle at 50% 30%, rgba(167,243,208,.35), transparent 40%),
+        radial-gradient(circle at 15% 70%, rgba(165,180,252,.3), transparent 42%);
     }
     #abstractSurface.th-nebula .ab-layer {
       background:
-        radial-gradient(ellipse at 20% 20%, rgba(168,85,247,.45), transparent 48%),
-        radial-gradient(ellipse at 80% 60%, rgba(59,130,246,.4), transparent 42%),
-        radial-gradient(ellipse at 50% 80%, rgba(236,72,153,.2), transparent 40%),
+        radial-gradient(ellipse 80% 60% at 20% 25%, rgba(168,85,247,.55), transparent 55%),
+        radial-gradient(ellipse 70% 55% at 80% 60%, rgba(59,130,246,.5), transparent 50%),
+        radial-gradient(ellipse 50% 50% at 50% 80%, rgba(236,72,153,.35), transparent 45%),
         linear-gradient(135deg, #020617, #1e1b4b 50%, #0f172a 100%);
     }
-    #abstractSurface .ab-orb {
-      position: absolute; border-radius: 50%; filter: blur(50px);
-      opacity: 0.55; animation: abFloat 18s ease-in-out infinite;
+    #abstractSurface.th-nebula .ab-layer2 {
+      background:
+        radial-gradient(circle at 60% 40%, rgba(192,132,252,.4), transparent 40%),
+        radial-gradient(circle at 25% 75%, rgba(96,165,250,.3), transparent 42%);
     }
-    #abstractSurface .ab-orb.o1 { width: 48%; height: 48%; background: #2dd4bf; top: 0%; left: 0%; }
-    #abstractSurface .ab-orb.o2 { width: 40%; height: 40%; background: #818cf8; top: 40%; right: 0%; animation-delay: -6s; }
-    #abstractSurface .ab-orb.o3 { width: 36%; height: 36%; background: #fbbf24; bottom: 0%; left: 30%; animation-delay: -12s; }
+
+    /* Soft glowing orbs */
+    #abstractSurface .ab-orb {
+      position: absolute; border-radius: 50%;
+      filter: blur(55px);
+      opacity: 0.65;
+      animation: abFloat 16s ease-in-out infinite;
+      will-change: transform;
+    }
+    #abstractSurface .ab-orb.o1 {
+      width: 55%; height: 55%; background: #2dd4bf; top: -8%; left: -10%;
+      animation-duration: 18s;
+    }
+    #abstractSurface .ab-orb.o2 {
+      width: 48%; height: 48%; background: #818cf8; top: 35%; right: -12%;
+      animation-delay: -5s; animation-duration: 22s;
+    }
+    #abstractSurface .ab-orb.o3 {
+      width: 42%; height: 42%; background: #fbbf24; bottom: -10%; left: 28%;
+      animation-delay: -10s; animation-duration: 20s;
+    }
+    #abstractSurface .ab-orb.o4 {
+      width: 30%; height: 30%; background: #f472b6; top: 15%; left: 40%;
+      animation-delay: -3s; animation-duration: 14s; opacity: 0.45;
+    }
+    #abstractSurface .ab-orb.o5 {
+      width: 28%; height: 28%; background: #38bdf8; bottom: 20%; right: 15%;
+      animation-delay: -8s; animation-duration: 17s; opacity: 0.5;
+    }
+
+    /* Shimmer ribbon */
+    #abstractSurface .ab-shimmer {
+      position: absolute; inset: -20%;
+      background: linear-gradient(
+        115deg,
+        transparent 0%,
+        transparent 40%,
+        rgba(255,255,255,.08) 45%,
+        rgba(255,255,255,.16) 50%,
+        rgba(255,255,255,.08) 55%,
+        transparent 60%,
+        transparent 100%
+      );
+      animation: abShimmer 12s ease-in-out infinite;
+      mix-blend-mode: soft-light;
+    }
+
+    /* Breathing pulse */
+    #abstractSurface .ab-pulse {
+      position: absolute;
+      left: 50%; top: 50%;
+      width: 120%; height: 120%;
+      transform: translate(-50%, -50%);
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,255,255,.12) 0%, transparent 55%);
+      animation: abPulse 8s ease-in-out infinite;
+    }
+
     #abstractSurface .ab-stars {
       position: absolute; inset: 0;
       background-image:
-        radial-gradient(1.5px 1.5px at 10% 20%, rgba(255,255,255,.7), transparent),
-        radial-gradient(1.5px 1.5px at 30% 60%, rgba(255,255,255,.5), transparent),
-        radial-gradient(1px 1px at 50% 15%, rgba(255,255,255,.8), transparent),
-        radial-gradient(1.5px 1.5px at 70% 40%, rgba(255,255,255,.45), transparent),
-        radial-gradient(1px 1px at 85% 75%, rgba(255,255,255,.6), transparent),
-        radial-gradient(1.5px 1.5px at 15% 85%, rgba(255,255,255,.4), transparent),
-        radial-gradient(1px 1px at 55% 50%, rgba(255,255,255,.55), transparent);
-      animation: abTwinkle 8s ease-in-out infinite alternate;
-      opacity: 0.7;
+        radial-gradient(2px 2px at 8% 18%, rgba(255,255,255,.9), transparent),
+        radial-gradient(1.5px 1.5px at 22% 55%, rgba(255,255,255,.7), transparent),
+        radial-gradient(2px 2px at 48% 12%, rgba(255,255,255,.85), transparent),
+        radial-gradient(1px 1px at 65% 38%, rgba(255,255,255,.6), transparent),
+        radial-gradient(2px 2px at 82% 70%, rgba(255,255,255,.75), transparent),
+        radial-gradient(1.5px 1.5px at 12% 82%, rgba(255,255,255,.55), transparent),
+        radial-gradient(1px 1px at 55% 48%, rgba(255,255,255,.65), transparent),
+        radial-gradient(2px 2px at 90% 25%, rgba(255,255,255,.7), transparent),
+        radial-gradient(1px 1px at 35% 70%, rgba(255,255,255,.5), transparent),
+        radial-gradient(1.5px 1.5px at 75% 88%, rgba(255,255,255,.6), transparent);
+      animation: abTwinkle 6s ease-in-out infinite alternate;
+      opacity: 0.8;
     }
     #abstractSurface .ab-veil {
       position: absolute; inset: 0;
-      background: radial-gradient(ellipse at center, rgba(2,6,23,.05) 0%, rgba(2,6,23,.55) 100%);
+      background:
+        radial-gradient(ellipse at center, rgba(2,6,23,.05) 0%, rgba(2,6,23,.5) 70%, rgba(2,6,23,.65) 100%);
     }
+
     @keyframes abDrift {
-      from { transform: scale(1) translate(0,0) rotate(0deg); }
-      to { transform: scale(1.15) translate(-3%, 3%) rotate(2deg); }
+      0%   { transform: scale(1) translate(0%, 0%) rotate(0deg); }
+      50%  { transform: scale(1.12) translate(-4%, 3%) rotate(2deg); }
+      100% { transform: scale(1.18) translate(3%, -4%) rotate(-1.5deg); }
+    }
+    @keyframes abDriftRev {
+      0%   { transform: scale(1.1) translate(3%, -2%) rotate(-1deg); }
+      100% { transform: scale(1) translate(-5%, 4%) rotate(2deg); }
     }
     @keyframes abFloat {
-      0%, 100% { transform: translate(0,0) scale(1); }
-      50% { transform: translate(6%, -7%) scale(1.08); }
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(8%, -10%) scale(1.12); }
+      66% { transform: translate(-6%, 7%) scale(0.92); }
+    }
+    @keyframes abShimmer {
+      0% { transform: translateX(-30%) translateY(10%) rotate(0deg); opacity: 0.3; }
+      50% { transform: translateX(10%) translateY(-5%) rotate(2deg); opacity: 0.7; }
+      100% { transform: translateX(35%) translateY(8%) rotate(-1deg); opacity: 0.35; }
+    }
+    @keyframes abPulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(0.85); opacity: 0.25; }
+      50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.55; }
     }
     @keyframes abTwinkle {
       from { opacity: 0.35; }
-      to { opacity: 0.85; }
+      to { opacity: 0.95; }
     }
     @keyframes abWordIn {
-      from { opacity: 0; transform: translateY(8px); filter: blur(4px); }
-      to { opacity: 1; transform: translateY(0); filter: blur(0); }
+      from { opacity: 0; transform: translateY(12px) scale(0.98); filter: blur(6px); }
+      to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
     }
     @keyframes abWordOut {
-      from { opacity: 1; }
-      to { opacity: 0; filter: blur(3px); }
+      from { opacity: 1; filter: blur(0); }
+      to { opacity: 0; filter: blur(5px); transform: translateY(-6px); }
     }
-    /* Sentence mode: only current sentence visible */
     #stage.abstract-mode #sheetText .ab-sentence {
       display: none;
       max-width: 36rem;
@@ -235,58 +340,46 @@
     }
     #stage.abstract-mode #sheetText .ab-sentence.active {
       display: block;
-      animation: abWordIn 0.55s ease-out;
+      animation: abWordIn 0.7s ease-out;
     }
     #stage.abstract-mode #sheetText .ab-sentence.leaving {
       display: block;
-      animation: abWordOut 0.4s ease-in forwards;
+      animation: abWordOut 0.45s ease-in forwards;
     }
     #sheetText .kw {
-      transition: color .15s ease, background .15s ease, text-shadow .15s ease;
+      transition: color .18s ease, background .18s ease, text-shadow .18s ease;
       border-radius: 3px;
     }
-    #stage.abstract-mode.ws-fill #sheetText .kw {
-      color: rgba(226,232,240,.4);
-    }
-    #stage.abstract-mode.ws-fill #sheetText .kw.spoken {
-      color: rgba(167,243,208,.9);
-    }
+    #stage.abstract-mode.ws-fill #sheetText .kw { color: rgba(226,232,240,.38); }
+    #stage.abstract-mode.ws-fill #sheetText .kw.spoken { color: rgba(167,243,208,.92); }
     #stage.abstract-mode.ws-fill #sheetText .kw.current {
       color: #fff;
-      background: linear-gradient(90deg, rgba(45,212,191,.75), rgba(94,234,212,.5));
-      text-shadow: 0 0 16px rgba(45,212,191,.95);
+      background: linear-gradient(90deg, rgba(45,212,191,.8), rgba(94,234,212,.55));
+      text-shadow: 0 0 18px rgba(45,212,191,1);
       padding: 0 3px;
     }
-    #stage.abstract-mode.ws-write #sheetText .kw {
-      opacity: 0;
-    }
+    #stage.abstract-mode.ws-write #sheetText .kw { opacity: 0; }
     #stage.abstract-mode.ws-write #sheetText .kw.spoken,
     #stage.abstract-mode.ws-write #sheetText .kw.current {
-      opacity: 1;
-      color: #f0fdfa;
+      opacity: 1; color: #f0fdfa;
     }
     #stage.abstract-mode.ws-write #sheetText .kw.current {
-      color: #5eead4;
-      text-shadow: 0 0 18px rgba(45,212,191,1);
+      color: #5eead4; text-shadow: 0 0 20px rgba(45,212,191,1);
     }
     #stage.abstract-mode.ws-glow #sheetText .kw { color: rgba(203,213,225,.35); }
-    #stage.abstract-mode.ws-glow #sheetText .kw.spoken { color: rgba(226,232,240,.8); }
+    #stage.abstract-mode.ws-glow #sheetText .kw.spoken { color: rgba(226,232,240,.85); }
     #stage.abstract-mode.ws-glow #sheetText .kw.current {
       color: #fff;
-      text-shadow: 0 0 10px #fff, 0 0 24px #2dd4bf, 0 0 40px #a78bfa;
+      text-shadow: 0 0 12px #fff, 0 0 28px #2dd4bf, 0 0 48px #a78bfa;
     }
     #stage.abstract-mode.ws-underline #sheetText .kw {
-      color: rgba(226,232,240,.45);
-      border-bottom: 2px solid transparent;
+      color: rgba(226,232,240,.45); border-bottom: 2px solid transparent;
     }
     #stage.abstract-mode.ws-underline #sheetText .kw.spoken {
-      color: #e2e8f0;
-      border-bottom-color: rgba(45,212,191,.5);
+      color: #e2e8f0; border-bottom-color: rgba(45,212,191,.55);
     }
     #stage.abstract-mode.ws-underline #sheetText .kw.current {
-      color: #fff;
-      border-bottom-color: #2dd4bf;
-      background: rgba(45,212,191,.2);
+      color: #fff; border-bottom-color: #2dd4bf; background: rgba(45,212,191,.22);
     }
     #btnAbstract.is-on {
       border-color: #2dd4bf; color: #5eead4; background: rgba(13,148,136,.3);
@@ -296,8 +389,7 @@
   </style>
 </head>
 <body class="theme-parchment" id="bookBody">
-<div class="ab-veil"></div>
-  </div>
+</div>
 
   <div id="app">
     <div class="bar sticky top-0 z-30">
@@ -427,10 +519,15 @@
         <div class="page-sheet" id="sheet">
           <div id="abstractSurface" class="th-aurora" aria-hidden="true">
             <div class="ab-layer"></div>
+            <div class="ab-layer2"></div>
+            <div class="ab-shimmer"></div>
+            <div class="ab-pulse"></div>
             <div class="ab-stars"></div>
             <div class="ab-orb o1"></div>
             <div class="ab-orb o2"></div>
             <div class="ab-orb o3"></div>
+            <div class="ab-orb o4"></div>
+            <div class="ab-orb o5"></div>
             <div class="ab-veil"></div>
           </div>
           <div class="page-badge">
