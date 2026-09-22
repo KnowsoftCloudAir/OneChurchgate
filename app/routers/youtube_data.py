@@ -1,3 +1,4 @@
+from app.youtube_persist import mirror_from_db, remove_from_mirror
 
 """YouTube links for home showcase + Global church data export/import."""
 from pathlib import Path
@@ -116,6 +117,10 @@ async def youtube_submit(
         )
         session.add(link)
         session.commit()
+    try:
+        mirror_from_db(session)
+    except Exception as _e:
+        print('yt mirror', _e)
         return RedirectResponse("/youtube", status_code=303)
     if not _is_global_church_admin(user, session):
         raise HTTPException(403)
@@ -131,6 +136,14 @@ async def youtube_submit(
     )
     session.add(link)
     session.commit()
+    try:
+        mirror_from_db(session)
+    except Exception as _e:
+        print('yt mirror', _e)
+    try:
+        mirror_from_db(session)
+    except Exception as _e:
+        print('yt mirror', _e)
     return RedirectResponse("/youtube", status_code=303)
 
 
@@ -143,11 +156,15 @@ async def youtube_approve(
     L = session.get(YoutubeChannelLink, link_id)
     if not L:
         raise HTTPException(404)
-    L.is_approved = True
+    L.is_approved = True  # permanent until admin deletes
     L.approved_by = user.id
     L.approved_at = datetime.utcnow()
     session.add(L)
     session.commit()
+    try:
+        mirror_from_db(session)
+    except Exception as _e:
+        print('yt mirror', _e)
     return RedirectResponse("/youtube", status_code=303)
 
 
@@ -160,10 +177,18 @@ async def youtube_reject(
     L = session.get(YoutubeChannelLink, link_id)
     if not L:
         raise HTTPException(404)
+    try:
+        remove_from_mirror(L.youtube_video_id, L.youtube_url)
+    except Exception:
+        pass
     L.is_approved = False
     L.is_active = False
     session.add(L)
     session.commit()
+    try:
+        mirror_from_db(session)
+    except Exception as _e:
+        print('yt mirror', _e)
     return RedirectResponse("/youtube", status_code=303)
 
 
@@ -179,8 +204,16 @@ async def youtube_delete(
     rv = role_val(user.role)
     if rv != "general_admin" and L.church_id != user.church_id:
         raise HTTPException(403)
+    try:
+        remove_from_mirror(L.youtube_video_id, L.youtube_url)
+    except Exception:
+        pass
     session.delete(L)
     session.commit()
+    try:
+        mirror_from_db(session)
+    except Exception as _e:
+        print('yt mirror', _e)
     return RedirectResponse("/youtube", status_code=303)
 
 
