@@ -54,5 +54,28 @@
     <p class="text-sm text-slate-400">No reading music yet.</p>
     {% endfor %}
   </div>
+
+  <form method="post" action="/admin/library/bgm" enctype="multipart/form-data" class="bg-white border rounded-2xl p-5 mb-8 space-y-3 shadow-sm">
+    <h2 class="font-semibold">Upload shared reading music</h2>
+    <p class="text-xs text-slate-500">These tracks appear for every member in Books → Music before their own uploads.</p>
+    <input type="file" name="files" accept="audio/*,.mp3,.m4a,.ogg,.wav,.aac" multiple required class="text-sm">
+    <button class="px-5 py-2.5 rounded-xl bg-teal-700 text-white text-sm font-semibold">Upload music</button>
+  </form>
+  <div class="space-y-2 mb-10">
+    {% for tr in tracks|default([]) %}
+    <div class="bg-white border rounded-xl p-3 flex justify-between items-center gap-2">
+      <div>
+        <p class="font-medium text-sm">{{ tr.title }}</p>
+        <audio controls preload="none" src="{{ tr.url }}" class="mt-1 max-w-xs"></audio>
+      </div>
+      <form method="post" action="/admin/library/bgm/delete" onsubmit="return confirm('Remove track?')">
+        <input type="hidden" name="name" value="{{ tr.name }}">
+        <button class="text-xs text-red-600 px-3 py-1.5 border border-red-200 rounded-lg">Delete</button>
+      </form>
+    </div>
+    {% else %}
+    <p class="text-sm text-slate-400">No shared music yet.</p>
+    {% endfor %}
+  </div>
 </div>
 {% endblock %}

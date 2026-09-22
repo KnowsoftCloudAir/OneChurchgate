@@ -427,26 +427,48 @@ def _user_bgm_dir(user_id: int) -> Path:
 
 @router.get("/member/api/kwealth/bgm")
 async def list_bgm(user: User = Depends(require_user)):
-    d = _user_bgm_dir(user.id)
     items = []
-    for f in sorted(d.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
-        if not f.is_file():
-            continue
-        if f.suffix.lower() not in {".mp3", ".m4a", ".ogg", ".wav", ".aac", ".webm"}:
-            continue
-        title = f.stem.replace("_", " ")[:80]
-        tfile = d / (f.name + ".title")
-        if tfile.exists():
-            try:
-                title = tfile.read_text(encoding="utf-8").strip()[:80] or title
-            except Exception:
-                pass
-        items.append({
-            "id": f.name,
-            "title": title,
-            "url": f"/static/uploads/kwealth_bgm/{user.id}/{f.name}",
-        })
-    return JSONResponse({"ok": True, "items": items[:10], "max": 10})
+    # Shared tracks from General Admin first
+    shared = Path(__file__).resolve().parent.parent / "static" / "uploads" / "kwealth_bgm" / "shared"
+    if shared.exists():
+        for f in sorted(shared.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
+            if not f.is_file():
+                continue
+            if f.suffix.lower() not in {".mp3", ".m4a", ".ogg", ".wav", ".aac", ".webm"}:
+                continue
+            title = f.stem.replace("_", " ")[:80]
+            tfile = shared / (f.name + ".title")
+            if tfile.exists():
+                try:
+                    title = tfile.read_text(encoding="utf-8").strip()[:80] or title
+                except Exception:
+                    pass
+            items.append({
+                "id": "shared:" + f.name,
+                "title": "★ " + title,
+                "url": f"/static/uploads/kwealth_bgm/shared/{f.name}",
+                "shared": True,
+            })
+    d = _user_bgm_dir(user.id)
+    if d.exists():
+        for f in sorted(d.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
+            if not f.is_file():
+                continue
+            if f.suffix.lower() not in {".mp3", ".m4a", ".ogg", ".wav", ".aac", ".webm"}:
+                continue
+            title = f.stem.replace("_", " ")[:80]
+            tfile = d / (f.name + ".title")
+            if tfile.exists():
+                try:
+                    title = tfile.read_text(encoding="utf-8").strip()[:80] or title
+                except Exception:
+                    pass
+            items.append({
+                "id": f.name,
+                "title": title,
+                "url": f"/static/uploads/kwealth_bgm/{user.id}/{f.name}",
+            })
+    return JSONResponse({"ok": True, "items": items[:20], "max": 20})
 
 
 @router.post("/member/kwealth/bgm/upload")
