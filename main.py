@@ -41,6 +41,7 @@ async def lifespan(app: FastAPI):
         with engine.begin() as conn:
             for stmt in [
                 "ALTER TABLE membersubscription ADD COLUMN IF NOT EXISTS payment_method VARCHAR DEFAULT 'bank'",
+                "ALTER TABLE kwealthbook ADD COLUMN IF NOT EXISTS uploaded_by INTEGER",
                 "ALTER TABLE membersubscription ADD COLUMN IF NOT EXISTS evidence_image VARCHAR",
                 "ALTER TABLE subscriptionsettings ADD COLUMN IF NOT EXISTS card_enabled BOOLEAN DEFAULT TRUE",
                 "ALTER TABLE subscriptionsettings ADD COLUMN IF NOT EXISTS card_currency VARCHAR DEFAULT 'USD'",
