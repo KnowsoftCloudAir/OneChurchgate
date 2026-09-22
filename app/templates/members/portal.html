@@ -524,9 +524,6 @@
       <button type="button" @click.prevent="showPanel('bible')"
               :class="openPanel==='bible' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
               class="nav-chip px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Bible</button>
-      <button type="button" @click.prevent="showPanel('books'); loadLibraryBooks()"
-              :class="openPanel==='books' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
-              class="px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-white/10 hover:bg-white/15">Books</button>
       <button type="button" @click.prevent="showPanel('evangelism')"
               :class="openPanel==='evangelism' ? 'ring-2 ring-amber-300 bg-white/15' : ''"
               class="nav-chip px-3 py-2 rounded-full ms-card cursor-pointer active:scale-95">Evangelism</button>
@@ -696,12 +693,10 @@
           <div>
             <p class="text-xs ms-accent font-semibold mb-2" x-text="bible.slides[bible.slideIndex].ref"></p>
             <p class="text-base sm:text-lg leading-relaxed" x-html="formatVerseHtml(bible.slides[bible.slideIndex].text)"></p>
-            <div class="mt-10 pt-4 border-t border-white/10">
-              <p class="text-center text-5xl sm:text-6xl font-black tabular-nums tracking-wide text-amber-200"
-                 style="text-shadow:0 2px 16px rgba(0,0,0,.5)"
-                 x-text="(bible.slideIndex+1)"></p>
-              <p class="text-center text-sm ms-muted mt-1" x-text="'Page of '+bible.slides.length + (bible.slides[bible.slideIndex].ref ? ' · '+bible.slides[bible.slideIndex].ref : '')"></p>
-            </div>
+            <p class="text-center text-3xl sm:text-4xl font-black tabular-nums tracking-wide mt-8 mb-2 text-amber-200/95"
+             style="text-shadow:0 2px 12px rgba(0,0,0,.45)"
+             x-text="(bible.slideIndex+1)"></p>
+          <p class="text-center text-sm ms-muted mb-2" x-text="'of '+bible.slides.length + ' · ' + (bible.slides[bible.slideIndex].ref || '')"></p>
           </div>
         </template>
         <template x-if="!bible.slides.length">
@@ -718,57 +713,6 @@
         <button type="button" @click="speakCurrent(false)" class="px-4 py-2 rounded-xl border border-white/20 text-sm font-semibold">Speak this verse</button>
         <button type="button" @click="startContinuous()" class="ms-btn px-4 py-2 text-sm">Continuous chapter</button>
         <button type="button" @click="stopSpeak()" class="text-xs ms-muted underline px-2">Stop voice</button>
-      </div>
-    </section>
-
-
-    <section id="books" class="ms-card p-5 mb-5" x-show="openPanel==='books'" x-cloak x-transition>
-      <h2 class="font-bold text-lg mb-1">Books</h2>
-      <p class="text-xs ms-muted mb-3">General books from General Admin (PDF text extracted). Optional background music while reading. Pause between paragraphs is settable.</p>
-      <div class="flex flex-wrap gap-2 mb-3 items-center">
-        <select x-model="lib.selectedId" @change="openLibraryBook()" class="rounded-xl px-3 py-2 text-sm text-slate-900 min-w-[12rem]">
-          <option value="">— Choose a book —</option>
-          <template x-for="b in lib.list" :key="b.id">
-            <option :value="b.id" x-text="b.title + (b.author ? ' · '+b.author : '')"></option>
-          </template>
-        </select>
-        <label class="flex items-center gap-2 text-xs">Pause
-          <select x-model.number="lib.pauseSec" class="rounded-lg px-2 py-1 text-slate-900 text-xs">
-            <option :value="0">None</option>
-            <option :value="2">2s</option>
-            <option :value="3">3s</option>
-            <option :value="4">4s</option>
-            <option :value="5">5s</option>
-            <option :value="6">6s</option>
-            <option :value="8">8s</option>
-          </select>
-        </label>
-        <select x-model="lib.musicSrc" class="rounded-xl px-2 py-1 text-xs text-slate-900 max-w-[10rem]">
-          <option value="">No music</option>
-          <template x-for="m in lib.music" :key="m.id">
-            <option :value="m.src" x-text="m.title"></option>
-          </template>
-        </select>
-        <button type="button" @click="startLibRead()" class="ms-btn px-3 py-1.5 text-xs">Read aloud</button>
-        <button type="button" @click="stopLibRead()" class="text-xs underline ms-muted">Stop</button>
-      </div>
-      <audio x-ref="libBg" loop class="hidden"></audio>
-      <div class="rounded-2xl bg-black/25 border border-white/10 p-5 min-h-[12rem]">
-        <template x-if="lib.pages.length">
-          <div>
-            <p class="text-base sm:text-lg leading-relaxed whitespace-pre-wrap" x-text="lib.pages[lib.pageIndex].text"></p>
-            <div class="mt-10 pt-4 border-t border-white/10">
-              <p class="text-center text-5xl sm:text-6xl font-black tabular-nums text-amber-200"
-                 x-text="(lib.pageIndex+1)"></p>
-              <p class="text-center text-sm ms-muted" x-text="'Page of '+lib.pages.length"></p>
-            </div>
-          </div>
-        </template>
-        <p class="text-sm ms-muted" x-show="!lib.pages.length" x-text="lib.status || 'Select a general book uploaded by Admin…'"></p>
-      </div>
-      <div class="flex gap-2 mt-3">
-        <button type="button" @click="libPrev()" class="px-4 py-2 rounded-xl border border-white/20 text-sm">← Prev</button>
-        <button type="button" @click="libNext()" class="ms-btn px-4 py-2 text-sm">Next →</button>
       </div>
     </section>
 
@@ -1142,7 +1086,6 @@ function memberHub() {
     alarmStatus: 'Alarms work best with notifications enabled.',
     _timers: [],
     bible: { book:'', chapter:'', situation:'', version:'kjv', slides:[], slideIndex:0, status:'', voiceOn:false, voiceName:'', continuous:false, announcedChapter:false, volume: 0.85, paragraphPauseSec: 5 },
-    lib: { list: [], selectedId: '', pages: [], pageIndex: 0, status: '', pauseSec: 5, music: [], musicSrc: '', reading: false },
     voiceList: [],
     music: { id: '', playing: false },
         manna: { loading: false, ok: false, error: '', category: 'Adult', date: '', topic: '', key_verse: '', text_ref: '', message: '', thought: '', bible_in_one_year: '', audio_url: '', full_text: '' },
@@ -1416,7 +1359,7 @@ function memberHub() {
           if (!('speechSynthesis' in window)) { resolve(); return; }
           const u = new SpeechSynthesisUtterance(chunks[i]);
           u.rate = 0.95;
-          u.onend = () => setTimeout(resolve, Math.max(0, Number(this._angelPauseSec || 5)) * 1000);
+          u.onend = () => setTimeout(resolve, 5000); // 5s pause between chunks
           u.onerror = () => resolve();
           try { speechSynthesis.cancel(); } catch (e) {}
           speechSynthesis.speak(u);
@@ -1438,7 +1381,6 @@ function memberHub() {
         if (!r.ok) throw new Error('bad');
         const j = await r.json();
         const chunks = j.chunks && j.chunks.length ? j.chunks : [j.speech || ''];
-        this._angelPauseSec = j.pause_seconds != null ? j.pause_seconds : 5;
         await this.angelSpeakChunks(chunks.filter(Boolean));
       } catch (e) {
         this.angelSpeak('I could not reach the library just now. Ask again, or open the Bible panel.');

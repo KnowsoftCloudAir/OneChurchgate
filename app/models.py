@@ -620,26 +620,3 @@ class AngelResource(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     created_by: Optional[int] = None
-
-
-class LibraryBook(SQLModel, table=True):
-    """General (non-personal) books uploaded by General Admin for all members."""
-    id: Optional[int] = Field(default=None, primary_key=True)
-    title: str
-    author: Optional[str] = None
-    description: Optional[str] = Field(default=None, sa_column=Column(Text))
-    file_path: Optional[str] = None  # original file (pdf/txt)
-    text_content: Optional[str] = Field(default=None, sa_column=Column(Text))  # extracted text
-    is_active: bool = Field(default=True)
-    uploaded_by: Optional[int] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-
-
-class ReadingMusic(SQLModel, table=True):
-    """Background music files for Bible/book reading (General Admin)."""
-    id: Optional[int] = Field(default=None, primary_key=True)
-    title: str
-    file_path: str
-    is_active: bool = Field(default=True)
-    uploaded_by: Optional[int] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)

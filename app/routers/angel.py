@@ -590,200 +590,102 @@ async def admin_angel_delete(
     return RedirectResponse("/angel/admin/resources", status_code=303)
 
 
-# ---------- Always-on Angel answer API (Bible + Kwealth + Admin library + lead words) ----------
-from app.angel_knowledge import lead_hits as _lead_hits_kw, teachings_for_hits, chunk_paragraphs, LEAD_WORDS
+# ---------- Always-on Angel answer API (portal voice + library + lead words) ----------
+LEAD_WORDS = """
+abaddon abomination abraham adoption adultery advocate affliction afterlife altar amen angels anointing apostles ark ascension atonement authority awakening assurance antichrist armageddon baptism beatitudes belief bible blasphemy blessing blood born-again bread bride brotherhood atonement baptism belief christ christian church circumcision commandments communion confession conscience consecration covenant creation creator cross crucifixion crown conversion conviction comforter daniel david death deacon deliverance demons discipleship discipline doctrine dominion doubt dreams election elijah emmanuel end-times eternal-life evangelism exodus faith faithfulness fall father fasting fear fellowship forgiveness free-will fruit gabriel gentiles glory gospel grace great-commission tribulation god godhead shepherd gifts genealogy gehenna hades hell heaven hebrew holiness hope hosanna humility healing heresy high-priest immanuel incarnation iniquity inspiration intercession israel idolatry indwelling inheritance isaiah jehovah jerusalem jesus jews judgment justification jubilee joy kingdom king knowledge lamb law leviticus life light lord love lucifer last-days messiah moses manna marriage mercy miracles ministry melchisedec millennium mediator name nazarene new-birth new-covenant new-jerusalem noah obedience offering omnipotence original-sin overcoming passover pentecost prayer praise predestination prophecy prophet priest propitiation purity providence psalms paul peter paradise parables persecution patience peace promise rapture redemption regener regeneration repentance resurrection revelation righteousness sabbath sacrifice salvation sanctification sanctuary satan scripture second-coming serpent sin son spirit spiritual-gifts stewardship saints shepherd sermon sinai saviour sovereignty tabernacle temple tithes torah transfiguration trinity tribulation truth thanksgiving temptation teacher tongues tree trumpets unbelief unclean unity virgin victory vine vision vow walk warfare watchfulness word worship wrath wisdom wilderness will yahweh yoke zeal zion
+""".split()
 
-def _fetch_kjv_verse(ref: str) -> str:
-    """Best-effort KJV text from bible-api.com for a short reference."""
-    import urllib.parse, urllib.request, json as _json
-    ref = (ref or "").strip()
-    if not ref or len(ref) > 80:
-        return ""
-    try:
-        url = "https://bible-api.com/" + urllib.parse.quote(ref) + "?translation=kjv"
-        req = urllib.request.Request(url, headers={"User-Agent": "ChurchgateAngel/1.0"})
-        with urllib.request.urlopen(req, timeout=4) as resp:
-            data = _json.loads(resp.read().decode("utf-8", errors="ignore"))
-        text = (data.get("text") or "").strip().replace("\n", " ")
-        ref_out = data.get("reference") or ref
-        if text:
-            return f"{ref_out} (KJV): {text[:500]}"
-    except Exception:
-        return ""
-    return ""
-
-
-# Map lead words to a primary verse reference for Bible tether
-_LEAD_VERSE = {
-    "faith": "Hebrews 11:1", "grace": "Ephesians 2:8", "salvation": "Acts 4:12",
-    "love": "1 John 4:8", "prayer": "James 5:16", "repentance": "Acts 3:19",
-    "jesus": "Matthew 1:21", "jesus christ": "Hebrews 13:8", "holy spirit": "Acts 1:8",
-    "holy ghost": "Acts 1:8", "resurrection": "John 11:25", "gospel": "Romans 1:16",
-    "church": "Matthew 16:18", "sin": "Romans 3:23", "forgiveness": "1 John 1:9",
-    "heaven": "John 14:2", "judgment": "Hebrews 9:27", "atonement": "Leviticus 17:11",
-    "blood of christ": "1 John 1:7", "word of god": "Hebrews 4:12", "baptism": "Matthew 28:19",
-    "kingdom of god": "Matthew 6:33", "second coming": "Acts 1:11", "rapture": "1 Thessalonians 4:16-17",
-}
-
-
-
-
-
-def _match_resources(session: Session, q: str, limit: int = 6, prefer_kwealth: bool = False):
-    """Score AngelResource rows. Category 'kwealth' is treated as Kwealth excerpts."""
+def _match_resources(session: Session, q: str, limit: int = 5):
     qn = (q or "").lower()
     rows = session.exec(select(AngelResource).where(AngelResource.is_active == True)).all()
     scored = []
     for r in rows:
-        cat = (r.category or "general").lower()
         blob = " ".join([
-            r.title or "", cat, r.summary or "",
-            (r.body or "")[:800], r.scripture_refs or "", r.source_note or ""
+            r.title or "", r.category or "", r.summary or "",
+            (r.body or "")[:500], r.scripture_refs or "", r.source_note or ""
         ]).lower()
         score = 0
-        for token in qn.replace(",", " ").replace("-", " ").split():
+        for token in qn.replace(",", " ").split():
             if len(token) < 3:
                 continue
             if token in blob:
                 score += 2
             if token in (r.title or "").lower():
-                score += 4
-            if token in cat:
                 score += 3
-        if prefer_kwealth and "kwealth" in cat:
-            score += 5
-        if "kwealth" in qn and "kwealth" in cat:
-            score += 8
+            if token in (r.category or "").lower():
+                score += 2
         if score:
             scored.append((score, r))
     scored.sort(key=lambda x: -x[0])
     return [r for _, r in scored[:limit]]
 
 
+def _lead_hits(q: str):
+    qn = (q or "").lower()
+    hits = []
+    for w in LEAD_WORDS:
+        w2 = w.replace("-", " ")
+        if w2 in qn or w.replace("-", "") in qn.replace(" ", ""):
+            hits.append(w)
+    return hits[:12]
+
+
 @router.post("/api/answer")
 async def angel_answer_api(request: Request, session: Session = Depends(get_session)):
-    """
-    JSON body: { "text": "user utterance after angel wake" }
-    Angel draws from:
-      1. General Admin Angel resources (including category kwealth)
-      2. Built-in Scripture teachings for matched lead words
-      3. Gospel tether when appropriate
-    Returns paragraph chunks so the client can pause ~5s between thoughts.
-    """
+    """JSON body: { "text": "user utterance after angel wake" }"""
     try:
         data = await request.json()
     except Exception:
         data = {}
     text = (data.get("text") or "").strip()
     if not text:
-        return {
-            "ok": True,
-            "mode": "ready",
-            "speech": "Angel is up and ready, what will you want me to help with?",
-            "chunks": ["Angel is up and ready, what will you want me to help with?"],
-            "lead_hits": [],
-            "resource_count": 0,
-            "sources": [],
-        }
+        return {"ok": True, "mode": "idle", "speech": "", "chunks": []}
 
     low = text.lower().strip()
-    # Quit phrases — client should also stop; API confirms
-    quit_marks = (
-        "thank you angel", "thanks angel", "enough", "angel stop", "angel off",
-        "stop angel", "quiet angel", "angel quiet", "go quiet", "be quiet",
-        "angel sleep", "goodbye angel", "bye angel",
-    )
-    if any(q in low for q in quit_marks) or low in ("stop", "enough", "quit", "off"):
-        return {
-            "ok": True,
-            "mode": "quiet",
-            "speech": "",
-            "chunks": [],
-            "lead_hits": [],
-            "resource_count": 0,
-            "sources": [],
-        }
-
-    # Bare wake handled client-side; if API receives only "angel"
-    if low in ("angel", "angel.", "angel!"):
-        msg = "Angel is up and ready, what will you want me to help with?"
-        return {
-            "ok": True,
-            "mode": "ready",
-            "speech": msg,
-            "chunks": [msg],
-            "lead_hits": [],
-            "resource_count": 0,
-            "sources": [],
-        }
-
-    hits = _lead_hits_kw(low)
-    resources = _match_resources(session, low, prefer_kwealth=True)
+    # quit phrases handled client-side mostly
+    hits = _lead_hits(low)
+    resources = _match_resources(session, low)
 
     parts = []
-    sources = []
-
-    # 1) Admin library + Kwealth excerpts
     if resources:
-        kw = [r for r in resources if "kwealth" in (r.category or "").lower()]
-        other = [r for r in resources if r not in kw]
-        if kw:
-            parts.append("From Kwealth excerpts in your library:")
-            sources.append("kwealth")
-            for r in kw[:2]:
-                piece = (r.summary or r.body or r.title or "").strip()
-                if len(piece) > 700:
-                    piece = piece[:700] + "…"
-                parts.append(f"{r.title}. {piece}")
-                if r.scripture_refs:
-                    parts.append(f"Scripture: {r.scripture_refs}")
-        if other:
-            parts.append("From Angel resources uploaded by General Admin:")
-            sources.append("angel_resources")
-            for r in other[:3]:
-                piece = (r.summary or r.body or r.title or "").strip()
-                if len(piece) > 700:
-                    piece = piece[:700] + "…"
-                parts.append(f"{r.title}. {piece}")
-                if r.scripture_refs:
-                    parts.append(f"Scripture: {r.scripture_refs}")
-
-    # 2) Scripture teachings for lead words
-    taught = teachings_for_hits(hits)
-    if taught:
-        sources.append("bible")
-        for word, teaching in taught:
-            parts.append(f"On {word}, from the Scriptures: {teaching}")
-
-    # 3) Live KJV verse tether for top lead words
-    for h in hits[:2]:
-        ref = _LEAD_VERSE.get(h)
-        if not ref:
-            continue
-        verse = _fetch_kjv_verse(ref)
-        if verse:
-            parts.append("From the Holy Bible (KJV): " + verse)
-            if "bible" not in sources:
-                sources.append("bible")
-            break
-
-    if hits and not taught and not resources:
+        parts.append("From your church library:")
+        for r in resources[:3]:
+            piece = (r.summary or r.body or r.title or "").strip()
+            if len(piece) > 500:
+                piece = piece[:500] + "…"
+            parts.append(f"{r.title}. {piece}")
+            if r.scripture_refs:
+                parts.append(f"Scripture: {r.scripture_refs}")
+    if hits and not resources:
         parts.append(
-            f"You spoke of {', '.join(hits[:5])}. "
+            f"You asked about {', '.join(hits[:5])}. "
             "Search the Scriptures; they testify of Christ (John 5:39). "
-            "Thy word is a lamp unto my feet, and a light unto my path (Psalm 119:105)."
+            "Hold the Word as your light (Psalm 119:105)."
         )
-        sources.append("bible")
+    if hits and resources:
+        parts.append(f"Lead themes heard: {', '.join(hits[:6])}.")
+
+    # gentle gospel tether for salvation-ish words
+    if any(x in low for x in ("saved", "salvation", "jesus", "repent", "born again", "gospel")):
+        parts.append(
+            "The gospel: Christ died for our sins, was buried, and rose again (1 Corinthians 15:3-4). "
+            "If you confess the Lord Jesus and believe God raised Him from the dead, you shall be saved (Romans 10:9)."
+        )
 
     if not parts:
         parts.append(
-            "I heard you, but I need a clear Bible topic after Angel — "
-            "for example faith, prayer, salvation, holiness, resurrection, or grace. "
-            "General Admin can also place more notes under Angel resources, including Kwealth excerpts."
+            "I am listening. Ask using a clear Bible topic after saying Angel — "
+            "for example faith, prayer, holiness, resurrection, or a book like John chapter three. "
+            "You can also open the Bible panel and say explain."
         )
 
-    full = "\n\n".join(parts)
-    chunks = chunk_paragraphs(full, max_chars=380)
+    full = " ".join(parts)
+    # chunk for ~60 second speech segments (approx 12-14 words/sec spoken slower ~140 wpm => ~140 words/min => ~140 words per 60s)
+    words = full.split()
+    chunk_size = 130
+    chunks = []
+    for i in range(0, len(words), chunk_size):
+        chunks.append(" ".join(words[i:i + chunk_size]))
     return {
         "ok": True,
         "mode": "answer",
@@ -791,7 +693,4 @@ async def angel_answer_api(request: Request, session: Session = Depends(get_sess
         "chunks": chunks or [full],
         "lead_hits": hits,
         "resource_count": len(resources),
-        "sources": sources,
-        "pause_seconds": 5,
     }
-
