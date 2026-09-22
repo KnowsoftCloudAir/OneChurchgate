@@ -156,19 +156,17 @@
     }
     #sceneStage .sc-layer { position: absolute; inset: 0; }
 
-    /* === SUNRISE / SUNSET (kept — favourite) === */
+    /* === 1. SUNRISE → SUNSET === */
     #sceneStage.sc-sun {
       background: linear-gradient(180deg, #0c1445 0%, #7c2d12 40%, #fb923c 70%, #fef3c7 100%);
-      animation: skyCycle 24s ease-in-out infinite alternate;
+      animation: skyCycle 22s ease-in-out infinite alternate;
     }
     #sceneStage.sc-sun .sun {
-      position: absolute;
-      left: 50%; width: 18vmin; height: 18vmin;
-      margin-left: -9vmin;
+      position: absolute; left: 50%; width: 18vmin; height: 18vmin; margin-left: -9vmin;
       border-radius: 50%;
       background: radial-gradient(circle at 35% 35%, #fef9c3, #fbbf24 45%, #f97316 75%, transparent 78%);
       box-shadow: 0 0 60px 20px rgba(251,191,36,.55), 0 0 120px 40px rgba(249,115,22,.35);
-      animation: sunPath 24s ease-in-out infinite alternate;
+      animation: sunPath 22s ease-in-out infinite alternate;
     }
     #sceneStage.sc-sun .horizon {
       position: absolute; left: 0; right: 0; bottom: 0; height: 32%;
@@ -177,263 +175,294 @@
     #sceneStage.sc-sun .rays {
       position: absolute; inset: -20%;
       background: conic-gradient(from 0deg at 50% 55%, transparent 0deg, rgba(254,243,199,.12) 20deg, transparent 40deg, rgba(254,243,199,.1) 80deg, transparent 100deg);
-      animation: raySpin 30s linear infinite;
-      opacity: 0.6;
+      animation: raySpin 28s linear infinite; opacity: 0.55;
     }
     @keyframes skyCycle {
       0% { filter: hue-rotate(0deg) brightness(0.85); }
-      50% { filter: hue-rotate(15deg) brightness(1.1); }
-      100% { filter: hue-rotate(-10deg) brightness(0.7); }
+      50% { filter: hue-rotate(12deg) brightness(1.1); }
+      100% { filter: hue-rotate(-8deg) brightness(0.7); }
     }
     @keyframes sunPath {
       0% { top: 55%; transform: scale(0.9); }
-      50% { top: 18%; transform: scale(1.1); }
-      100% { top: 48%; transform: scale(0.95); }
+      50% { top: 16%; transform: scale(1.12); }
+      100% { top: 50%; transform: scale(0.95); }
     }
-    @keyframes raySpin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
-    }
+    @keyframes raySpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
-    /* === MOON SET === */
-    #sceneStage.sc-moon {
-      background: linear-gradient(180deg, #020617 0%, #1e1b4b 35%, #312e81 55%, #1e3a5f 75%, #0f172a 100%);
-      animation: moonSky 20s ease-in-out infinite alternate;
+    /* === 2. EARTH ORBIT AROUND THE SUN === */
+    #sceneStage.sc-orbit {
+      background: radial-gradient(ellipse at center, #1e293b 0%, #020617 75%);
     }
-    #sceneStage.sc-moon .moon {
-      position: absolute;
-      left: 50%; width: 14vmin; height: 14vmin;
-      margin-left: -7vmin;
+    #sceneStage.sc-orbit .stars {
+      position: absolute; inset: 0;
+      background-image:
+        radial-gradient(1.5px 1.5px at 12% 20%, #fff, transparent),
+        radial-gradient(1px 1px at 35% 55%, #fff, transparent),
+        radial-gradient(2px 2px at 70% 15%, #fff, transparent),
+        radial-gradient(1px 1px at 88% 65%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 22% 80%, #fff, transparent),
+        radial-gradient(1px 1px at 55% 40%, #fff, transparent);
+      animation: starTwinkle 4s ease-in-out infinite alternate;
+    }
+    #sceneStage.sc-orbit .orbit-center {
+      position: absolute; left: 50%; top: 48%; width: 0; height: 0;
+    }
+    #sceneStage.sc-orbit .sun-core {
+      position: absolute; left: -8vmin; top: -8vmin; width: 16vmin; height: 16vmin;
       border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #f8fafc, #e2e8f0 40%, #94a3b8 70%, #64748b 100%);
-      box-shadow: 0 0 40px 12px rgba(226,232,240,.35), 0 0 80px 24px rgba(148,163,184,.2);
-      animation: moonPath 22s ease-in-out infinite alternate;
-    }
-    #sceneStage.sc-moon .moon-crater {
-      position: absolute; border-radius: 50%; background: rgba(100,116,139,.35);
-    }
-    #sceneStage.sc-moon .moon .c1 { width: 18%; height: 18%; top: 28%; left: 22%; }
-    #sceneStage.sc-moon .moon .c2 { width: 12%; height: 12%; top: 50%; left: 55%; }
-    #sceneStage.sc-moon .moon .c3 { width: 10%; height: 10%; top: 40%; left: 70%; }
-    #sceneStage.sc-moon .stars {
-      position: absolute; inset: 0;
-      background-image:
-        radial-gradient(2px 2px at 10% 15%, #fff, transparent),
-        radial-gradient(1.5px 1.5px at 25% 40%, #fff, transparent),
-        radial-gradient(2px 2px at 50% 10%, #fff, transparent),
-        radial-gradient(1px 1px at 70% 25%, #fff, transparent),
-        radial-gradient(2px 2px at 85% 50%, #fff, transparent),
-        radial-gradient(1.5px 1.5px at 15% 70%, #fff, transparent),
-        radial-gradient(1px 1px at 60% 80%, #fff, transparent),
-        radial-gradient(2px 2px at 90% 20%, #fff, transparent);
-      animation: softPulse 5s ease-in-out infinite alternate;
-    }
-    #sceneStage.sc-moon .horizon {
-      position: absolute; left: 0; right: 0; bottom: 0; height: 28%;
-      background: linear-gradient(180deg, transparent, rgba(15,23,42,.7) 50%, rgba(2,6,23,.9));
-    }
-    @keyframes moonPath {
-      0% { top: 12%; transform: scale(1.05); opacity: 1; }
-      100% { top: 58%; transform: scale(0.85); opacity: 0.75; }
-    }
-    @keyframes moonSky {
-      0% { filter: brightness(1); }
-      100% { filter: brightness(0.75); }
-    }
-
-    /* === PLANETS === */
-    #sceneStage.sc-planets {
-      background: radial-gradient(ellipse at 50% 50%, #1e1b4b 0%, #020617 70%);
-    }
-    #sceneStage.sc-planets .stars {
-      position: absolute; inset: 0;
-      background-image:
-        radial-gradient(1.5px 1.5px at 8% 20%, #fff, transparent),
-        radial-gradient(1px 1px at 20% 50%, #fff, transparent),
-        radial-gradient(2px 2px at 45% 15%, #fff, transparent),
-        radial-gradient(1px 1px at 65% 60%, #fff, transparent),
-        radial-gradient(1.5px 1.5px at 80% 30%, #fff, transparent),
-        radial-gradient(1px 1px at 90% 75%, #fff, transparent),
-        radial-gradient(2px 2px at 30% 80%, #fff, transparent);
-      animation: softPulse 6s ease-in-out infinite alternate;
-    }
-    #sceneStage.sc-planets .planet {
-      position: absolute; border-radius: 50%;
-      animation: planetDrift 20s ease-in-out infinite alternate;
-    }
-    #sceneStage.sc-planets .p1 {
-      width: 22vmin; height: 22vmin; top: 15%; left: 12%;
-      background: radial-gradient(circle at 35% 30%, #fca5a5, #dc2626 50%, #7f1d1d);
-      box-shadow: 0 0 30px rgba(220,38,38,.4);
-      animation-duration: 18s;
-    }
-    #sceneStage.sc-planets .p2 {
-      width: 14vmin; height: 14vmin; top: 50%; right: 18%;
-      background: radial-gradient(circle at 40% 35%, #93c5fd, #2563eb 55%, #1e3a8a);
-      box-shadow: 0 0 24px rgba(37,99,235,.45);
-      animation-duration: 22s; animation-delay: -5s;
-    }
-    #sceneStage.sc-planets .p3 {
-      width: 10vmin; height: 10vmin; bottom: 20%; left: 40%;
-      background: radial-gradient(circle at 40% 30%, #fde68a, #d97706 50%, #92400e);
-      box-shadow: 0 0 20px rgba(217,119,6,.4);
-      animation-duration: 16s; animation-delay: -8s;
-    }
-    #sceneStage.sc-planets .ring {
-      position: absolute; top: 48%; left: 55%; width: 16vmin; height: 16vmin;
-      border: 2px solid rgba(253,224,71,.5);
-      border-radius: 50%;
-      transform: rotateX(70deg);
-      box-shadow: 0 0 12px rgba(253,224,71,.3);
-      animation: ringSpin 14s linear infinite;
-    }
-    @keyframes planetDrift {
-      0% { transform: translate(0,0) scale(1); }
-      100% { transform: translate(8%, -6%) scale(1.08); }
-    }
-    @keyframes ringSpin {
-      from { transform: rotateX(70deg) rotateZ(0deg); }
-      to { transform: rotateX(70deg) rotateZ(360deg); }
-    }
-
-    /* === EARTH AROUND THE SUN === */
-    #sceneStage.sc-earth {
-      background: radial-gradient(ellipse at center, #1e293b 0%, #020617 70%);
-    }
-    #sceneStage.sc-earth .stars {
-      position: absolute; inset: 0;
-      background-image:
-        radial-gradient(1.5px 1.5px at 15% 25%, #fff, transparent),
-        radial-gradient(1px 1px at 40% 10%, #fff, transparent),
-        radial-gradient(2px 2px at 75% 40%, #fff, transparent),
-        radial-gradient(1px 1px at 90% 70%, #fff, transparent),
-        radial-gradient(1.5px 1.5px at 25% 80%, #fff, transparent);
-      animation: softPulse 5s ease-in-out infinite alternate;
-    }
-    #sceneStage.sc-earth .orbit-center {
-      position: absolute; left: 50%; top: 48%;
-      width: 0; height: 0;
-    }
-    #sceneStage.sc-earth .sun-core {
-      position: absolute; left: -7vmin; top: -7vmin;
-      width: 14vmin; height: 14vmin; border-radius: 50%;
       background: radial-gradient(circle at 35% 35%, #fef9c3, #fbbf24 40%, #f59e0b 70%, #ea580c);
-      box-shadow: 0 0 50px 18px rgba(251,191,36,.6), 0 0 100px 30px rgba(245,158,11,.3);
-      animation: softPulse 4s ease-in-out infinite;
+      box-shadow: 0 0 55px 20px rgba(251,191,36,.65), 0 0 110px 35px rgba(245,158,11,.3);
+      animation: softPulse 3.5s ease-in-out infinite;
     }
-    #sceneStage.sc-earth .orbit-path {
-      position: absolute; left: -28vmin; top: -18vmin;
-      width: 56vmin; height: 36vmin;
-      border: 1px solid rgba(148,163,184,.25);
+    #sceneStage.sc-orbit .orbit-path {
+      position: absolute; left: -30vmin; top: -19vmin; width: 60vmin; height: 38vmin;
+      border: 1px solid rgba(148,163,184,.3); border-radius: 50%;
+    }
+    #sceneStage.sc-orbit .earth-arm {
+      position: absolute; left: 0; top: 0; width: 0; height: 0;
+      animation: earthOrbit 14s linear infinite;
+    }
+    #sceneStage.sc-orbit .earth-ball {
+      position: absolute; left: 28vmin; top: -4vmin; width: 8vmin; height: 8vmin;
       border-radius: 50%;
-    }
-    #sceneStage.sc-earth .earth-arm {
-      position: absolute; left: 0; top: 0;
-      width: 0; height: 0;
-      animation: earthOrbit 16s linear infinite;
-    }
-    #sceneStage.sc-earth .earth-ball {
-      position: absolute;
-      left: 26vmin; top: -3.5vmin;
-      width: 7vmin; height: 7vmin; border-radius: 50%;
       background:
-        radial-gradient(circle at 35% 30%, #7dd3fc, transparent 50%),
-        radial-gradient(circle at 60% 60%, #22c55e, transparent 45%),
+        radial-gradient(circle at 30% 30%, rgba(125,211,252,.9), transparent 45%),
+        radial-gradient(circle at 65% 55%, rgba(34,197,94,.85), transparent 40%),
         radial-gradient(circle at 50% 50%, #1d4ed8, #0f172a);
-      box-shadow: 0 0 16px rgba(56,189,248,.5);
-      animation: earthSpin 6s linear infinite;
+      box-shadow: 0 0 18px rgba(56,189,248,.55);
+      animation: earthSpin 5s linear infinite;
     }
-    @keyframes earthOrbit {
+    @keyframes earthOrbit { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    @keyframes earthSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+    /* === 3. EARTH REVELATION (close rotate → pull back → sun → approach) === */
+    #sceneStage.sc-voyage {
+      background: #020617;
+      overflow: hidden;
+    }
+    #sceneStage.sc-voyage .stars {
+      position: absolute; inset: -30%;
+      background-image:
+        radial-gradient(2px 2px at 8% 18%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 22% 45%, #fff, transparent),
+        radial-gradient(1px 1px at 40% 12%, #fff, transparent),
+        radial-gradient(2px 2px at 58% 70%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 75% 25%, #fff, transparent),
+        radial-gradient(1px 1px at 88% 55%, #fff, transparent),
+        radial-gradient(2px 2px at 15% 80%, #fff, transparent),
+        radial-gradient(1px 1px at 50% 50%, #e0e7ff, transparent),
+        radial-gradient(1.5px 1.5px at 92% 15%, #fff, transparent),
+        radial-gradient(1px 1px at 33% 90%, #fff, transparent);
+      animation: starTwinkle 5s ease-in-out infinite alternate;
+      opacity: 0.3;
+      animation: voyageStars 28s ease-in-out infinite;
+    }
+    #sceneStage.sc-voyage .distant-sun {
+      position: absolute; left: 78%; top: 18%;
+      width: 3vmin; height: 3vmin; border-radius: 50%;
+      background: radial-gradient(circle, #fefce8, #fde047 40%, #f59e0b);
+      box-shadow: 0 0 20px 6px rgba(253,224,71,.5);
+      animation: voyageSun 28s ease-in-out infinite;
+    }
+    #sceneStage.sc-voyage .far-planet {
+      position: absolute; border-radius: 50%;
+      animation: voyageFar 28s ease-in-out infinite;
+    }
+    #sceneStage.sc-voyage .fp1 {
+      width: 4.5vmin; height: 4.5vmin; top: 22%; left: 12%;
+      background: radial-gradient(circle at 35% 30%, #fca5a5, #991b1b);
+      box-shadow: 0 0 14px rgba(185,28,28,.45);
+    }
+    #sceneStage.sc-voyage .fp2 {
+      width: 3vmin; height: 3vmin; top: 68%; right: 14%;
+      background: radial-gradient(circle at 40% 35%, #93c5fd, #1e3a8a);
+      box-shadow: 0 0 12px rgba(37,99,235,.4);
+      animation-delay: 0s;
+    }
+    /* Globe wrapper: zoom in/out path */
+    #sceneStage.sc-voyage .earth-wrap {
+      position: absolute; left: 50%; top: 50%;
+      width: 0; height: 0;
+      animation: voyageZoom 28s ease-in-out infinite;
+    }
+    /* Continents rotate on the sphere */
+    #sceneStage.sc-voyage .earth-close {
+      position: absolute;
+      left: -32vmin; top: -32vmin;
+      width: 64vmin; height: 64vmin;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle at 50% 50%, #0ea5e9 0%, #0369a1 38%, #0c4a6e 55%, #020617 72%);
+      box-shadow:
+        inset -10vmin -5vmin 24vmin rgba(2,6,23,.6),
+        inset 4vmin 3vmin 16vmin rgba(125,211,252,.25),
+        0 0 50px rgba(56,189,248,.4);
+      overflow: hidden;
+    }
+    /* Atmospheric rim */
+    #sceneStage.sc-voyage .earth-close::before {
+      content: '';
+      position: absolute; inset: -2%;
+      border-radius: 50%;
+      box-shadow: inset 0 0 12px 4px rgba(186,230,253,.35);
+      pointer-events: none;
+      z-index: 3;
+    }
+    /* Rotating continent/ocean layer */
+    #sceneStage.sc-voyage .earth-surface {
+      position: absolute; inset: -20%;
+      border-radius: 50%;
+      background:
+        /* oceans base already on parent; continents as blobs */
+        radial-gradient(ellipse 28% 18% at 30% 35%, #22c55e 0%, #16a34a 40%, transparent 70%),
+        radial-gradient(ellipse 22% 30% at 55% 40%, #4ade80 0%, #15803d 45%, transparent 70%),
+        radial-gradient(ellipse 18% 14% at 72% 55%, #22c55e 0%, transparent 65%),
+        radial-gradient(ellipse 25% 16% at 40% 65%, #86efac 0%, #166534 50%, transparent 70%),
+        radial-gradient(ellipse 15% 12% at 20% 55%, #15803d 0%, transparent 60%),
+        radial-gradient(ellipse 12% 20% at 80% 30%, #22c55e 0%, transparent 65%),
+        radial-gradient(ellipse 20% 10% at 60% 75%, #4ade80 0%, transparent 60%),
+        /* polar ice */
+        radial-gradient(ellipse 40% 12% at 50% 8%, rgba(248,250,252,.85) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 12% at 50% 92%, rgba(248,250,252,.75) 0%, transparent 70%),
+        /* cloud wisps */
+        radial-gradient(ellipse 30% 8% at 45% 45%, rgba(255,255,255,.25) 0%, transparent 70%),
+        radial-gradient(ellipse 20% 6% at 65% 60%, rgba(255,255,255,.2) 0%, transparent 70%);
+      animation: earthRevealSpin 14s linear infinite;
+    }
+    /* Night side shadow sweeps with rotation feel */
+    #sceneStage.sc-voyage .earth-shadow {
+      position: absolute; inset: 0; border-radius: 50%;
+      background: linear-gradient(90deg, rgba(2,6,23,.15) 0%, transparent 40%, transparent 55%, rgba(2,6,23,.55) 100%);
+      z-index: 2;
+      animation: shadowShift 14s linear infinite;
+    }
+    @keyframes voyageZoom {
+      /* Close beauty shot */
+      0%, 8%   { transform: scale(1.15) translate(0, 2%); }
+      /* Slow pull back while still large */
+      25%      { transform: scale(0.75) translate(-5%, 0); }
+      /* Far — space + sun visible */
+      45%      { transform: scale(0.28) translate(-25%, 5%); }
+      55%      { transform: scale(0.18) translate(-40%, 8%); }
+      /* Drift and return */
+      75%      { transform: scale(0.45) translate(-15%, 3%); }
+      92%, 100%{ transform: scale(1.15) translate(0, 2%); }
+    }
+    @keyframes earthRevealSpin {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
-    @keyframes earthSpin {
-      from { transform: rotate(0deg); }
-      to { transform: rotate(360deg); }
+    @keyframes shadowShift {
+      0% { opacity: 0.9; }
+      50% { opacity: 0.7; }
+      100% { opacity: 0.9; }
+    }
+    @keyframes voyageStars {
+      0%, 15%  { opacity: 0.15; }
+      40%, 60% { opacity: 0.95; }
+      85%, 100%{ opacity: 0.2; }
+    }
+    @keyframes voyageSun {
+      0%, 20%  { opacity: 0; transform: scale(0.4); }
+      40%      { opacity: 0.6; transform: scale(0.9); }
+      50%, 60% { opacity: 1; transform: scale(1.6); box-shadow: 0 0 45px 16px rgba(253,224,71,.85); }
+      80%, 100%{ opacity: 0.15; transform: scale(0.5); }
+    }
+    @keyframes voyageFar {
+      0%, 20%  { opacity: 0.15; transform: translate(0,0) scale(0.8); }
+      45%, 60% { opacity: 1; transform: translate(6%, -4%) scale(1.2); }
+      85%, 100%{ opacity: 0.2; transform: translate(0,0) scale(0.85); }
     }
 
-    /* === DESERT WIND === */
-    #sceneStage.sc-desert {
-      background: linear-gradient(180deg, #fef3c7 0%, #fbbf24 25%, #d97706 55%, #92400e 85%, #78350f 100%);
+    /* === 4. GOLDEN CLOUDS (moving sky) === */
+    #sceneStage.sc-clouds {
+      background: linear-gradient(180deg, #7c2d12 0%, #ea580c 30%, #fbbf24 55%, #fef3c7 100%);
+      animation: cloudSky 16s ease-in-out infinite alternate;
     }
-    #sceneStage.sc-desert .dune {
-      position: absolute; left: -10%; width: 120%; height: 45%;
-      border-radius: 50% 50% 0 0;
-      background: linear-gradient(180deg, #f59e0b, #b45309);
-      opacity: 0.9;
-      animation: duneShift 12s ease-in-out infinite alternate;
+    #sceneStage.sc-clouds .cloud {
+      position: absolute; border-radius: 50%;
+      background: rgba(255,255,255,.35);
+      filter: blur(12px);
+      animation: cloudDrift 18s ease-in-out infinite;
     }
-    #sceneStage.sc-desert .d1 { bottom: 0; height: 40%; background: linear-gradient(180deg, #fbbf24, #92400e); }
-    #sceneStage.sc-desert .d2 { bottom: 12%; height: 35%; opacity: 0.7; animation-duration: 15s; animation-delay: -3s; background: linear-gradient(180deg, #f59e0b, #78350f); }
-    #sceneStage.sc-desert .d3 { bottom: 22%; height: 28%; opacity: 0.55; animation-duration: 18s; animation-delay: -6s; }
-    #sceneStage.sc-desert .sun-hot {
-      position: absolute; top: 8%; right: 15%;
-      width: 12vmin; height: 12vmin; border-radius: 50%;
-      background: radial-gradient(circle at 40% 35%, #fef9c3, #fbbf24 50%, #f59e0b);
-      box-shadow: 0 0 50px 20px rgba(251,191,36,.5);
+    #sceneStage.sc-clouds .c1 {
+      width: 50%; height: 28%; top: 20%; left: -10%;
+      animation-duration: 16s;
+    }
+    #sceneStage.sc-clouds .c2 {
+      width: 40%; height: 22%; top: 35%; left: 40%;
+      background: rgba(254,243,199,.4);
+      animation-duration: 20s; animation-delay: -5s;
+    }
+    #sceneStage.sc-clouds .c3 {
+      width: 55%; height: 30%; top: 50%; left: 10%;
+      background: rgba(253,186,116,.3);
+      animation-duration: 22s; animation-delay: -8s;
+    }
+    #sceneStage.sc-clouds .sun-soft {
+      position: absolute; top: 12%; left: 55%;
+      width: 20vmin; height: 20vmin; border-radius: 50%;
+      background: radial-gradient(circle, #fef9c3, rgba(251,191,36,.8) 50%, transparent 70%);
+      box-shadow: 0 0 80px 30px rgba(251,191,36,.4);
       animation: softPulse 5s ease-in-out infinite;
     }
-    #sceneStage.sc-desert .sand {
-      position: absolute; inset: 0;
-      background: repeating-linear-gradient(
-        95deg,
-        transparent 0px,
-        rgba(254,243,199,.15) 2px,
-        transparent 6px,
-        rgba(251,191,36,.1) 10px,
-        transparent 18px
-      );
-      animation: sandBlow 3s linear infinite;
-      opacity: 0.7;
+    @keyframes cloudDrift {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(18%); }
     }
-    @keyframes duneShift {
-      0% { transform: translateX(0) scaleX(1); }
-      100% { transform: translateX(4%) scaleX(1.03); }
-    }
-    @keyframes sandBlow {
-      from { transform: translateX(0); }
-      to { transform: translateX(40px); }
+    @keyframes cloudSky {
+      0% { filter: brightness(0.95) saturate(1.1); }
+      100% { filter: brightness(1.1) saturate(1.2); }
     }
 
-    /* === AURORA NIGHT (kept) === */
-    #sceneStage.sc-aurora { background: #020617; }
-    #sceneStage.sc-aurora .curtain {
-      position: absolute; left: -20%; right: -20%; top: -10%; height: 70%;
-      background: linear-gradient(180deg,
-        rgba(52,211,153,.0) 0%,
-        rgba(52,211,153,.45) 30%,
-        rgba(129,140,248,.4) 55%,
-        rgba(244,114,182,.25) 75%,
-        transparent 100%);
-      filter: blur(20px);
-      animation: auroraSway 9s ease-in-out infinite alternate;
-      transform-origin: top center;
+    /* === 5. STARFIELD FLYTHROUGH === */
+    #sceneStage.sc-stars {
+      background: radial-gradient(ellipse at 50% 50%, #0f172a 0%, #020617 100%);
+      overflow: hidden;
     }
-    #sceneStage.sc-aurora .curtain.c2 {
-      animation-delay: -3s;
-      opacity: 0.7;
-      background: linear-gradient(180deg, transparent, rgba(56,189,248,.4) 35%, rgba(167,139,250,.35) 60%, transparent);
-    }
-    #sceneStage.sc-aurora .stars {
-      position: absolute; inset: 0;
+    #sceneStage.sc-stars .starfield {
+      position: absolute; inset: -50%;
       background-image:
-        radial-gradient(2px 2px at 12% 18%, #fff, transparent),
-        radial-gradient(1.5px 1.5px at 40% 30%, #fff, transparent),
-        radial-gradient(2px 2px at 70% 12%, #fff, transparent),
-        radial-gradient(1px 1px at 85% 40%, #fff, transparent),
-        radial-gradient(2px 2px at 25% 55%, #fff, transparent),
-        radial-gradient(1.5px 1.5px at 60% 70%, #fff, transparent);
-      animation: softPulse 5s ease-in-out infinite alternate;
+        radial-gradient(2px 2px at 20% 30%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 40% 70%, #fff, transparent),
+        radial-gradient(2px 2px at 60% 20%, #fff, transparent),
+        radial-gradient(1px 1px at 80% 50%, #fff, transparent),
+        radial-gradient(2px 2px at 10% 80%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 50% 40%, #e0e7ff, transparent),
+        radial-gradient(1px 1px at 70% 90%, #fff, transparent),
+        radial-gradient(2px 2px at 90% 15%, #fff, transparent),
+        radial-gradient(1px 1px at 30% 10%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 15% 50%, #fff, transparent);
+      animation: starFly 12s linear infinite;
     }
-    @keyframes auroraSway {
-      0% { transform: skewX(-8deg) translateX(-4%); }
-      100% { transform: skewX(8deg) translateX(4%); }
+    #sceneStage.sc-stars .starfield.sf2 {
+      animation-duration: 18s; animation-direction: reverse; opacity: 0.6;
+    }
+    #sceneStage.sc-stars .nebula {
+      position: absolute; width: 60%; height: 50%; left: 20%; top: 25%;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(129,140,248,.35), rgba(244,114,182,.15), transparent 70%);
+      filter: blur(30px);
+      animation: nebulaPulse 10s ease-in-out infinite alternate;
+    }
+    @keyframes starFly {
+      from { transform: scale(1) translate(0,0); }
+      to { transform: scale(1.6) translate(-8%, -5%); }
+    }
+    @keyframes nebulaPulse {
+      from { transform: scale(1) translate(0,0); opacity: 0.5; }
+      to { transform: scale(1.2) translate(5%, -3%); opacity: 0.9; }
     }
     @keyframes softPulse {
+      0%, 100% { opacity: 0.85; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.06); }
+    }
+    @keyframes starTwinkle {
       from { opacity: 0.5; }
       to { opacity: 1; }
     }
 
+    
     /* Word highlight on scenes */
     #stage.scene-on #sheetText .ab-sentence {
       display: none; max-width: 36rem; margin: 0 auto;
@@ -473,6 +502,54 @@
     #stage.scene-on.ws-underline #sheetText .kw.current {
       color: #fff; border-bottom-color: #2dd4bf; background: rgba(45,212,191,.2);
     }
+
+    /* Full-screen scene mode */
+    #stage.scene-fs {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 9990 !important;
+      min-height: 100vh !important;
+      height: 100vh !important;
+      width: 100vw !important;
+      max-width: none !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
+      background: #020617;
+    }
+    #stage.scene-fs #sceneStage {
+      border-radius: 0 !important;
+      min-height: 100vh;
+    }
+    #stage.scene-fs .page-sheet {
+      min-height: 100vh !important;
+      max-width: 48rem;
+      margin: 0 auto;
+      background: transparent !important;
+    }
+    #stage.scene-fs #sheetText {
+      min-height: 70vh;
+      font-size: calc(var(--fs, 18px) * 1.25);
+    }
+    #btnSceneFs.is-on {
+      border-color: #a78bfa; color: #c4b5fd; background: rgba(91,33,182,.35);
+    }
+    #sceneFsExit {
+      display: none;
+      position: fixed;
+      top: 12px; right: 12px;
+      z-index: 9999;
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,.25);
+      background: rgba(15,23,42,.85);
+      color: #e2e8f0;
+      font-size: 13px;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+    }
+    body.scene-fs-on #sceneFsExit { display: block; }
+    body.scene-fs-on { overflow: hidden; }
+
     #btnScene.is-on {
       border-color: #2dd4bf; color: #5eead4; background: rgba(13,148,136,.35);
     }
@@ -481,6 +558,7 @@
   </style>
 </head>
 <body class="theme-parchment" id="bookBody">
+<button type="button" id="sceneFsExit" aria-label="Exit full screen">✕ Exit full screen</button>
 </div>
 
   <div id="app">
@@ -495,14 +573,14 @@
         <button type="button" class="chip on" id="btnTools">⚙ Settings</button>
         <button type="button" class="chip" id="btnMusic"><span id="bgmDot" class="off"></span> Music</button>
         <button type="button" class="chip" id="btnScene" title="Reading ambience animation">Scene</button>
-        <select id="scenePick" class="ctl" style="max-width:10rem;font-size:11px;" title="Ambience">
+        <select id="scenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
           <option value="sun">Sunrise → Sunset</option>
-          <option value="moon">Moon set</option>
-          <option value="planets">Planets</option>
-          <option value="earth">Earth around the Sun</option>
-          <option value="desert">Desert wind</option>
-          <option value="aurora">Night aurora</option>
+          <option value="orbit">Earth around the Sun</option>
+          <option value="voyage">Earth revelation</option>
+          <option value="clouds">Golden clouds</option>
+          <option value="stars">Starfield flight</option>
         </select>
+        <button type="button" class="chip" id="btnSceneFs" title="Full screen scene">Full screen</button>
         <select id="wordStyle" class="ctl" style="max-width:8rem;font-size:11px;" title="Word style">
           <option value="fill">Fill colour</option>
           <option value="write">Writing</option>
@@ -616,19 +694,7 @@
             <div class="sun"></div>
             <div class="horizon"></div>
           </div>
-          <div class="sc-layer sc-moon-bits" style="display:none">
-            <div class="stars"></div>
-            <div class="moon"><span class="moon-crater c1"></span><span class="moon-crater c2"></span><span class="moon-crater c3"></span></div>
-            <div class="horizon"></div>
-          </div>
-          <div class="sc-layer sc-planets-bits" style="display:none">
-            <div class="stars"></div>
-            <div class="planet p1"></div>
-            <div class="planet p2"></div>
-            <div class="planet p3"></div>
-            <div class="ring"></div>
-          </div>
-          <div class="sc-layer sc-earth-bits" style="display:none">
+          <div class="sc-layer sc-orbit-bits" style="display:none">
             <div class="stars"></div>
             <div class="orbit-center">
               <div class="sun-core"></div>
@@ -636,17 +702,28 @@
               <div class="earth-arm"><div class="earth-ball"></div></div>
             </div>
           </div>
-          <div class="sc-layer sc-desert-bits" style="display:none">
-            <div class="sun-hot"></div>
-            <div class="dune d3"></div>
-            <div class="dune d2"></div>
-            <div class="dune d1"></div>
-            <div class="sand"></div>
-          </div>
-          <div class="sc-layer sc-aurora-bits" style="display:none">
+          <div class="sc-layer sc-voyage-bits" style="display:none">
             <div class="stars"></div>
-            <div class="curtain"></div>
-            <div class="curtain c2"></div>
+            <div class="far-planet fp1"></div>
+            <div class="far-planet fp2"></div>
+            <div class="distant-sun"></div>
+            <div class="earth-wrap">
+              <div class="earth-close">
+                <div class="earth-surface"></div>
+                <div class="earth-shadow"></div>
+              </div>
+            </div>
+          </div>
+          <div class="sc-layer sc-clouds-bits" style="display:none">
+            <div class="sun-soft"></div>
+            <div class="cloud c1"></div>
+            <div class="cloud c2"></div>
+            <div class="cloud c3"></div>
+          </div>
+          <div class="sc-layer sc-stars-bits" style="display:none">
+            <div class="nebula"></div>
+            <div class="starfield"></div>
+            <div class="starfield sf2"></div>
           </div>
         </div>
         <div class="page-sheet" id="sheet">
@@ -693,6 +770,7 @@
       wordStyle: localStorage.getItem('kw_book_wordStyle') || 'fill',
       sceneOn: false,
       sceneName: localStorage.getItem('kw_scene') || 'sun',
+      sceneFs: localStorage.getItem('kw_scene_fs') === '1',
       bgmId: localStorage.getItem('kw_book_bgm_id') || '',
       bgmVol: Number(localStorage.getItem('kw_book_bgmVol') || 0.18),
       bgmPlaying: false,
@@ -1211,7 +1289,31 @@
     if (window.speechSynthesis) speechSynthesis.onvoiceschanged = loadVoices;
     
     // —— Abstract panel (replaces book surface) ——
-                function applyScene() {
+                
+    function applySceneFs(force) {
+      const stage = document.getElementById('stage');
+      const btn = document.getElementById('btnSceneFs');
+      if (typeof force === 'boolean') state.sceneFs = force;
+      const on = !!state.sceneFs;
+      if (stage) stage.classList.toggle('scene-fs', on);
+      document.body.classList.toggle('scene-fs-on', on);
+      if (btn) btn.classList.toggle('is-on', on);
+      if (on && !state.sceneOn) {
+        state.sceneOn = true;
+        try { applyScene(); } catch (e) {}
+      }
+      try { localStorage.setItem('kw_scene_fs', on ? '1' : '0'); } catch (e) {}
+      // Prefer browser fullscreen API when available
+      try {
+        if (on && stage && !document.fullscreenElement && stage.requestFullscreen) {
+          stage.requestFullscreen().catch(function(){});
+        } else if (!on && document.fullscreenElement) {
+          document.exitFullscreen().catch(function(){});
+        }
+      } catch (e) {}
+    }
+
+    function applyScene() {
       const stage = document.getElementById('stage');
       const surface = document.getElementById('sceneStage');
       const btn = document.getElementById('btnScene');
@@ -1238,7 +1340,7 @@
         surface.style.setProperty('display', 'none', 'important');
       }
       // Show only bits for selected scene
-      ['sun','moon','planets','earth','desert','aurora'].forEach(function (n) {
+      ['sun','orbit','voyage','clouds','stars'].forEach(function (n) {
         const el = surface.querySelector('.sc-' + n + '-bits');
         if (el) el.style.display = (on && n === name) ? 'block' : 'none';
       });
@@ -1293,6 +1395,34 @@
       state.wordStyle = localStorage.getItem('kw_book_wordStyle') || state.wordStyle || 'fill';
     } catch (e) {}
     try { applyScene(); } catch (e) { console.warn(e); }
+
+    const btnSceneFs = document.getElementById('btnSceneFs');
+    const sceneFsExit = document.getElementById('sceneFsExit');
+    if (btnSceneFs) {
+      btnSceneFs.addEventListener('click', function () {
+        if (!document.getElementById('stage')) {
+          alert('Select or load a book first.');
+          return;
+        }
+        state.sceneFs = !state.sceneFs;
+        applySceneFs();
+      });
+    }
+    if (sceneFsExit) {
+      sceneFsExit.addEventListener('click', function () {
+        state.sceneFs = false;
+        applySceneFs(false);
+      });
+    }
+    document.addEventListener('fullscreenchange', function () {
+      if (!document.fullscreenElement && state.sceneFs) {
+        state.sceneFs = false;
+        applySceneFs(false);
+      }
+    });
+    try {
+      if (state.sceneFs) applySceneFs(true);
+    } catch (e) {}
 
     try {
       loadBgmList().then(() => {
