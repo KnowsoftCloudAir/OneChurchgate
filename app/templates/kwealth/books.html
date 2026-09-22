@@ -482,6 +482,11 @@
     };
 
     const $ = (id) => document.getElementById(id);
+    function on(id, ev, fn) {
+      const el = $(id);
+      if (!el) return;
+      el[ev] = fn;
+    }
     const sheet = $('sheet');
     const sheetText = $('sheetText');
     const body = document.getElementById('bookBody');
@@ -494,7 +499,7 @@
       return { text: 'In progress', cls: 'status-progress' };
     }
     function applyTheme() {
-      body.className = 'theme-' + state.theme;
+      if (body) body.className = 'theme-' + state.theme;
       document.querySelectorAll('.theme-btn').forEach(b => b.classList.toggle('on', b.dataset.theme === state.theme));
     }
     function applyFont() {
@@ -564,7 +569,7 @@
       });
       state._sentIndex = si;
     }
-    function saveProgressfunction saveProgress() {
+    function saveProgress() {
       if (!state.bookId) return;
       const fd = new FormData();
       fd.append('book_id', state.bookId);
@@ -640,7 +645,7 @@
         showSentence(activeSi);
       }
     }
-    function splitParagraphsfunction splitParagraphs(text) {
+    function splitParagraphs(text) {
       // Prefer blank-line paragraphs; else split on sentence groups ending with . ! ?
       let parts = (text || '').split(/\n\s*\n+/).map(function (p) { return p.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
       if (parts.length <= 1) {
@@ -828,8 +833,8 @@
       }).catch(() => alert('Could not play this track. Try another file.'));
     }
 
-    $('btnLoad').onclick = () => $('filePick').click();
-    $('filePick').onchange = async (ev) => {
+    on('btnLoad', 'onclick', () => { const f = $('filePick'); if (f) f.click(); });
+    on('filePick', 'onchange', async (ev) => {
       const files = ev.target.files;
       if (!files || !files.length) return;
       $('btnLoad').textContent = 'Scanning…';
@@ -841,69 +846,74 @@
       } catch (e) { alert('Could not load books'); }
       $('btnLoad').textContent = 'Load';
       ev.target.value = '';
-    };
-    if ($('bookSelect')) $('bookSelect').onchange = () => { location.href = '/member/kwealth/books?book_id=' + $('bookSelect').value; };
-    $('btnTools').onclick = () => {
+    });
+    if ($('bookSelect')) on('bookSelect', 'onchange', () => { location.href = '/member/kwealth/books?book_id=' + $('bookSelect').value; });
+    on('btnTools', 'onclick', () => {
       const p = $('panelTools');
+      if (!p) return;
       if (p.dataset.open === '1') { p.style.display = 'none'; p.dataset.open = '0'; }
       else { p.style.display = 'block'; p.dataset.open = '1'; }
-    };
+    });
     $('panelTools').style.display = 'block';
     $('panelTools').dataset.open = '1';
-    $('btnMusic').onclick = () => {
+    on('btnMusic', 'onclick', () => {
       const p = $('panelMusic');
+      if (!p) return;
       const show = p.style.display === 'none';
       p.style.display = show ? 'block' : 'none';
       if (show) loadBgmList();
-    };
+    });
 
     document.querySelectorAll('.theme-btn').forEach(b => {
       b.onclick = () => { state.theme = b.dataset.theme; localStorage.setItem('kw_book_theme', state.theme); applyTheme(); };
     });
-    $('fontSize').oninput = () => { state.fontSize = Number($('fontSize').value); applyFont(); };
-    $('fontFamily').onchange = () => { state.fontFamily = $('fontFamily').value; applyFont(); };
-    $('flipStyle').onchange = () => { state.flipStyle = $('flipStyle').value; localStorage.setItem('kw_book_flip', state.flipStyle); };
-    $('btnJump').onclick = () => {
+    on('fontSize', 'oninput', () => { state.fontSize = Number($('fontSize').value); applyFont(); });
+    on('fontFamily', 'onchange', () => { state.fontFamily = $('fontFamily').value; applyFont(); });
+    on('flipStyle', 'onchange', () => { state.flipStyle = $('flipStyle').value; localStorage.setItem('kw_book_flip', state.flipStyle); });
+    on('btnJump', 'onclick', () => {
       const n = Math.max(1, Math.min(state.pages.length, parseInt($('jumpTo').value, 10) || 1));
       animateFlip(n - 1 > state.pageIndex ? 'next' : 'prev', () => {
         state.pageIndex = n - 1; renderPage(); saveProgress(); if (state.reading) speakPage();
       });
-    };
-    $('voiceName').onchange = () => { state.voiceName = $('voiceName').value; localStorage.setItem('kw_book_voice', state.voiceName); };
-    $('rate').oninput = () => { state.rate = Number($('rate').value); localStorage.setItem('kw_book_rate', state.rate); };
+    });
+    on('voiceName', 'onchange', () => { state.voiceName = $('voiceName').value; localStorage.setItem('kw_book_voice', state.voiceName); });
+    on('rate', 'oninput', () => { state.rate = Number($('rate').value); localStorage.setItem('kw_book_rate', state.rate); });
     if ($('paraPause')) {
       $('paraPause').value = String(state.paraPause || 5);
-      $('paraPause').onchange = () => {
+      on('paraPause', 'onchange', () => {
         state.paraPause = Number($('paraPause').value || 0);
         localStorage.setItem('kw_book_paraPause', state.paraPause);
-      };
+      });
     }
-    $('btnArrange').onclick = () => {
+    on('btnArrange', 'onclick', () => {
       state.pages = state.pages.map(page => {
         let t = page || '';
         t = t.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2').replace(/([^\n])\n(?!\n)/g, '$1 ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n');
         return t.trim();
       });
       state.arranged = true; renderPage();
-    };
-    $('btnRead').onclick = () => {
+    });
+    on('btnRead', 'onclick', () => {
+      if (!state.pages.length) { alert('Load or select a book first'); return; }
       state.reading = !state.reading;
-      $('btnRead').textContent = state.reading ? '⏹ Stop' : '👼 Read';
+      if ($('btnRead')) $('btnRead').textContent = state.reading ? '⏹ Stop' : '👼 Read';
       if (state.reading) {
         speakPage();
+      } else {
+        if (state._pauseTimer) { clearTimeout(state._pauseTimer); state._pauseTimer = null; }
+        try { speechSynthesis.cancel(); } catch (e) {}
       }
-      else try { speechSynthesis.cancel(); } catch (e) {}
-    };
-    if ($('btnPrev')) $('btnPrev').onclick = prev;
-    if ($('btnNext')) $('btnNext').onclick = next;
-    if ($('btnHighlight')) $('btnHighlight').onclick = async () => {
+    });
+    if ($('btnPrev')) on('btnPrev', 'onclick', prev);
+    if ($('btnNext')) on('btnNext', 'onclick', next);
+    if ($('btnHighlight')) on('btnHighlight', 'onclick', async () => {
       const sel = (window.getSelection && window.getSelection().toString() || '').trim();
       if (!sel) { alert('Highlight text on the page first'); return; }
       const fd = new FormData();
       fd.append('book_id', state.bookId); fd.append('text', sel); fd.append('title', 'Highlight');
       await fetch('/member/kwealth/excerpts/from-book', { method: 'POST', body: fd, credentials: 'same-origin' });
       alert('Saved to Excerpts');
-    };
+    });
 
     const stage = $('stage');
     if (stage) {
@@ -924,8 +934,8 @@
       });
     }
 
-    $('btnLoadBgm').onclick = () => $('bgmFile').click();
-    $('bgmFile').onchange = async (ev) => {
+    on('btnLoadBgm', 'onclick', () => $('bgmFile').click());
+    on('bgmFile', 'onchange', async (ev) => {
       const files = ev.target.files;
       if (!files || !files.length) return;
       if (state.bgmItems.length >= 10) { alert('Maximum 10 background tracks. Remove one first.'); return; }
@@ -939,20 +949,20 @@
       } catch (e) { alert('Upload failed'); }
       $('btnLoadBgm').textContent = '+ Upload / sync from device';
       ev.target.value = '';
-    };
-    $('btnBgmStop').onclick = stopBgm;
-    $('bgmVol').oninput = () => {
+    });
+    on('btnBgmStop', 'onclick', stopBgm);
+    on('bgmVol', 'oninput', () => {
       state.bgmVol = Number($('bgmVol').value);
       localStorage.setItem('kw_book_bgmVol', state.bgmVol);
-      $('bgmAudio').volume = state.bgmVol;
-    };
+      if ($('bgmAudio')) $('bgmAudio').volume = state.bgmVol;
+    });
 
     applyTheme(); applyFont();
-    $('fontSize').value = state.fontSize;
-    $('fontFamily').value = state.fontFamily;
-    $('flipStyle').value = state.flipStyle;
-    $('rate').value = state.rate;
-    $('bgmVol').value = state.bgmVol;
+    if ($('fontSize')) $('fontSize').value = state.fontSize;
+    if ($('fontFamily')) $('fontFamily').value = state.fontFamily;
+    if ($('flipStyle')) $('flipStyle').value = state.flipStyle;
+    if ($('rate')) $('rate').value = state.rate;
+    if ($('bgmVol')) $('bgmVol').value = state.bgmVol;
     renderPage();
     loadVoices();
     // Store book on device for offline reading
@@ -1026,13 +1036,13 @@
     if (btnAbstract) {
       btnAbstract.addEventListener('click', function () {
         state.abstractOn = !state.abstractOn;
-        applyAbstract();
+        try { applyAbstract(); } catch (e) { console.warn(e); }
       });
     }
     if (abstractTheme) {
       abstractTheme.addEventListener('change', function () {
         state.abstractTheme = abstractTheme.value || 'aurora';
-        applyAbstract();
+        try { applyAbstract(); } catch (e) { console.warn(e); }
       });
     }
     const wordStyleEl = document.getElementById('wordStyle');
@@ -1040,27 +1050,27 @@
       wordStyleEl.value = state.wordStyle || 'fill';
       wordStyleEl.addEventListener('change', function () {
         state.wordStyle = wordStyleEl.value || 'fill';
-        applyAbstract();
+        try { applyAbstract(); } catch (e) { console.warn(e); }
       });
     }
     try {
       state.wordStyle = localStorage.getItem('kw_book_wordStyle') || state.wordStyle || 'fill';
     } catch (e) {}
-    applyAbstract();
+    try { applyAbstract(); } catch (e) { console.warn(e); }
 
-    loadBgmList().then(() => {
-      // resume last track choice if still in library
-      if (state.bgmId) {
-        const item = state.bgmItems.find(x => x.id === state.bgmId);
-        if (item) { /* user can press Play */ }
-      }
-    });
+    try {
+      loadBgmList().then(() => {
+        if (state.bgmId) {
+          const item = state.bgmItems.find(x => x.id === state.bgmId);
+        }
+      }).catch(function () {});
+    } catch (e) { console.warn(e); }
 
     // Angel "Read ebook" → auto start reading
     if (window.__AUTO_READ__ && state.pages.length) {
       setTimeout(() => {
         state.reading = true;
-        $('btnRead').textContent = '⏹ Stop';
+        if ($('btnRead')) $('btnRead').textContent = '⏹ Stop';
         speakPage();
       }, 600);
     }
