@@ -100,92 +100,172 @@
     .bgm-row.active { border-color: #2dd4bf; background: rgba(13,148,136,.2); }
     .bgm-row button { flex-shrink: 0; }
   
-    /* Abstract full-screen ambience */
-    #abstractStage {
-      position: fixed; inset: 0; z-index: 5;
-      display: none; overflow: hidden; pointer-events: none;
+
+    /* Abstract reading surface (same size as book panel) */
+    #stage {
+      position: relative;
+      isolation: isolate;
     }
-    #abstractStage.is-on { display: block; }
-    #abstractStage .ab-layer {
-      position: absolute; inset: -15%;
+/* —— Abstract reading surface (replaces book page look) —— */
+    #stage {
+      position: relative;
+      isolation: isolate;
+    }
+    #abstractSurface {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      border-radius: inherit;
+      overflow: hidden;
+      pointer-events: none;
+    }
+    #stage.abstract-mode #abstractSurface { display: block; }
+    #stage.abstract-mode .page-sheet {
+      background: rgba(8, 12, 24, 0.35) !important;
+      box-shadow: 0 20px 60px rgba(0,0,0,.5) !important;
+      border: 1px solid rgba(255,255,255,.14) !important;
+      color: #f8fafc !important;
+      position: relative;
+      z-index: 2;
+      min-height: 62vh;
+    }
+    #stage.abstract-mode .page-badge {
+      background: rgba(15,23,42,.65);
+      color: #e2e8f0;
+      border-color: rgba(255,255,255,.15);
+      z-index: 4;
+    }
+    #stage.abstract-mode #sheetText {
+      position: relative;
+      z-index: 2;
+      color: rgba(248,250,252,.55);
+      line-height: 1.85;
+      font-size: var(--fs, 18px);
+      font-family: var(--ff, Georgia, serif);
+    }
+    #abstractSurface .ab-layer {
+      position: absolute; inset: -18%;
       background:
-        radial-gradient(ellipse at 20% 30%, rgba(45,212,191,.4), transparent 50%),
-        radial-gradient(ellipse at 80% 20%, rgba(167,139,250,.35), transparent 45%),
-        radial-gradient(ellipse at 50% 80%, rgba(251,191,36,.22), transparent 50%),
+        radial-gradient(ellipse at 20% 30%, rgba(45,212,191,.5), transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(167,139,250,.42), transparent 45%),
+        radial-gradient(ellipse at 50% 85%, rgba(251,191,36,.28), transparent 50%),
         linear-gradient(135deg, #0f172a 0%, #1e1b4b 45%, #0f766e 100%);
-      animation: abDrift 24s ease-in-out infinite alternate;
+      animation: abDrift 22s ease-in-out infinite alternate;
     }
-    #abstractStage.th-ocean .ab-layer {
+    #abstractSurface.th-ocean .ab-layer {
       background:
-        radial-gradient(ellipse at 30% 40%, rgba(34,211,238,.45), transparent 55%),
-        radial-gradient(ellipse at 70% 70%, rgba(14,165,233,.3), transparent 50%),
+        radial-gradient(ellipse at 30% 40%, rgba(34,211,238,.55), transparent 55%),
+        radial-gradient(ellipse at 70% 70%, rgba(14,165,233,.4), transparent 50%),
         linear-gradient(160deg, #0c4a6e, #082f49 50%, #042f2e);
     }
-    #abstractStage.th-sunset .ab-layer {
+    #abstractSurface.th-sunset .ab-layer {
       background:
-        radial-gradient(ellipse at 40% 30%, rgba(251,146,60,.5), transparent 50%),
-        radial-gradient(ellipse at 80% 60%, rgba(244,63,94,.35), transparent 45%),
+        radial-gradient(ellipse at 40% 30%, rgba(251,146,60,.58), transparent 50%),
+        radial-gradient(ellipse at 80% 60%, rgba(244,63,94,.42), transparent 45%),
         linear-gradient(150deg, #431407, #7c2d12 40%, #1e1b4b);
     }
-    #abstractStage.th-aurora .ab-layer {
+    #abstractSurface.th-aurora .ab-layer {
       background:
-        radial-gradient(ellipse at 20% 50%, rgba(52,211,153,.45), transparent 50%),
-        radial-gradient(ellipse at 60% 20%, rgba(129,140,248,.4), transparent 45%),
-        radial-gradient(ellipse at 90% 80%, rgba(244,114,182,.3), transparent 40%),
+        radial-gradient(ellipse at 20% 50%, rgba(52,211,153,.55), transparent 50%),
+        radial-gradient(ellipse at 60% 20%, rgba(129,140,248,.48), transparent 45%),
+        radial-gradient(ellipse at 90% 80%, rgba(244,114,182,.38), transparent 40%),
         linear-gradient(180deg, #020617, #0f172a 60%, #14532d);
     }
-    #abstractStage.th-nebula .ab-layer {
+    #abstractSurface.th-nebula .ab-layer {
       background:
-        radial-gradient(ellipse at 25% 25%, rgba(168,85,247,.4), transparent 50%),
-        radial-gradient(ellipse at 75% 60%, rgba(59,130,246,.35), transparent 45%),
+        radial-gradient(ellipse at 25% 25%, rgba(168,85,247,.5), transparent 50%),
+        radial-gradient(ellipse at 75% 60%, rgba(59,130,246,.42), transparent 45%),
         linear-gradient(135deg, #020617, #312e81 50%, #0f172a);
     }
-    #abstractStage .ab-orb {
-      position: absolute; border-radius: 50%; filter: blur(48px);
-      opacity: 0.5; animation: abFloat 16s ease-in-out infinite;
+    #abstractSurface .ab-orb {
+      position: absolute; border-radius: 50%; filter: blur(42px);
+      opacity: 0.5; animation: abFloat 15s ease-in-out infinite;
     }
-    #abstractStage .ab-orb.o1 { width: 42vmin; height: 42vmin; background: #2dd4bf; top: 8%; left: 8%; }
-    #abstractStage .ab-orb.o2 { width: 32vmin; height: 32vmin; background: #a78bfa; top: 48%; right: 8%; animation-delay: -5s; }
-    #abstractStage .ab-orb.o3 { width: 28vmin; height: 28vmin; background: #fbbf24; bottom: 12%; left: 38%; animation-delay: -10s; }
-    #abstractStage .ab-veil {
+    #abstractSurface .ab-orb.o1 { width: 42%; height: 42%; background: #2dd4bf; top: 4%; left: 4%; }
+    #abstractSurface .ab-orb.o2 { width: 34%; height: 34%; background: #a78bfa; top: 42%; right: 4%; animation-delay: -5s; }
+    #abstractSurface .ab-orb.o3 { width: 28%; height: 28%; background: #fbbf24; bottom: 6%; left: 36%; animation-delay: -10s; }
+    #abstractSurface .ab-veil {
       position: absolute; inset: 0;
-      background: radial-gradient(ellipse at center, transparent 15%, rgba(2,6,23,.5) 100%);
+      background: radial-gradient(ellipse at center, rgba(15,23,42,.12) 0%, rgba(2,6,23,.55) 100%);
     }
     @keyframes abDrift {
-      from { transform: scale(1) translate(0,0); }
-      to { transform: scale(1.1) translate(-2%, 2%); }
+      from { transform: scale(1) translate(0,0) rotate(0deg); }
+      to { transform: scale(1.12) translate(-2%, 2%) rotate(1.5deg); }
     }
     @keyframes abFloat {
       0%, 100% { transform: translate(0,0); }
-      50% { transform: translate(5%, -5%); }
+      50% { transform: translate(5%, -6%); }
     }
-    body.abstract-on #app .page-card,
-    body.abstract-on #app .book-page,
-    body.abstract-on #app main > div {
-      /* keep text readable over abstract */
+    /* Word styles on abstract */
+    #sheetText .kw {
+      transition: color .15s ease, background .15s ease, opacity .2s ease, text-shadow .15s ease, border-color .15s ease;
+      border-radius: 3px;
     }
-    body.abstract-on #app main {
-      position: relative; z-index: 10;
+    /* Style: fill — full text visible, highlight fills current word */
+    #stage.abstract-mode.ws-fill #sheetText .kw {
+      color: rgba(226,232,240,.42);
     }
-    body.abstract-on #app .bar {
-      position: relative; z-index: 20;
-      background: rgba(15,23,42,.85) !important;
-      backdrop-filter: blur(10px);
+    #stage.abstract-mode.ws-fill #sheetText .kw.spoken {
+      color: rgba(167,243,208,.85);
+      background: rgba(45,212,191,.12);
+    }
+    #stage.abstract-mode.ws-fill #sheetText .kw.current {
+      color: #fff;
+      background: linear-gradient(90deg, rgba(45,212,191,.75), rgba(94,234,212,.55));
+      text-shadow: 0 0 14px rgba(45,212,191,.9);
+      box-shadow: 0 0 18px rgba(45,212,191,.35);
+      padding: 0 3px;
+    }
+    /* Style: write — words appear only as spoken */
+    #stage.abstract-mode.ws-write #sheetText .kw {
+      opacity: 0;
+      color: transparent;
+    }
+    #stage.abstract-mode.ws-write #sheetText .kw.spoken,
+    #stage.abstract-mode.ws-write #sheetText .kw.current {
+      opacity: 1;
+      color: #f0fdfa;
+      text-shadow: 0 1px 8px rgba(0,0,0,.45);
+    }
+    #stage.abstract-mode.ws-write #sheetText .kw.current {
+      color: #5eead4;
+      text-shadow: 0 0 16px rgba(45,212,191,1);
+    }
+    /* Style: glow */
+    #stage.abstract-mode.ws-glow #sheetText .kw {
+      color: rgba(203,213,225,.4);
+    }
+    #stage.abstract-mode.ws-glow #sheetText .kw.spoken {
+      color: rgba(226,232,240,.75);
+    }
+    #stage.abstract-mode.ws-glow #sheetText .kw.current {
+      color: #fff;
+      text-shadow: 0 0 8px #fff, 0 0 20px #2dd4bf, 0 0 36px #a78bfa;
+    }
+    /* Style: underline trail */
+    #stage.abstract-mode.ws-underline #sheetText .kw {
+      color: rgba(226,232,240,.5);
+      border-bottom: 2px solid transparent;
+    }
+    #stage.abstract-mode.ws-underline #sheetText .kw.spoken {
+      color: #e2e8f0;
+      border-bottom-color: rgba(45,212,191,.45);
+    }
+    #stage.abstract-mode.ws-underline #sheetText .kw.current {
+      color: #fff;
+      border-bottom-color: #2dd4bf;
+      background: rgba(45,212,191,.2);
     }
     #btnAbstract.is-on {
       border-color: #2dd4bf; color: #5eead4; background: rgba(13,148,136,.3);
     }
 
+
   </style>
 </head>
 <body class="theme-parchment" id="bookBody">
-
-  <div id="abstractStage" class="th-aurora" aria-hidden="true">
-    <div class="ab-layer"></div>
-    <div class="ab-orb o1"></div>
-    <div class="ab-orb o2"></div>
-    <div class="ab-orb o3"></div>
-    <div class="ab-veil"></div>
+<div class="ab-veil"></div>
   </div>
 
   <div id="app">
@@ -199,12 +279,18 @@
         <button type="button" class="chip" id="btnArrange">Arrange</button>
         <button type="button" class="chip on" id="btnTools">⚙ Settings</button>
         <button type="button" class="chip" id="btnMusic"><span id="bgmDot" class="off"></span> Music</button>
-        <button type="button" class="chip" id="btnAbstract" title="Full-screen abstract background">Abstract</button>
-        <select id="abstractTheme" class="ctl" style="max-width:7rem;font-size:11px;" title="Theme">
+        <button type="button" class="chip" id="btnAbstract" title="Replace book panel with abstract reading surface">Abstract</button>
+        <select id="abstractTheme" class="ctl" style="max-width:7rem;font-size:11px;" title="Abstract theme">
           <option value="aurora">Aurora</option>
           <option value="ocean">Ocean</option>
           <option value="sunset">Sunset</option>
           <option value="nebula">Nebula</option>
+        </select>
+        <select id="wordStyle" class="ctl" style="max-width:8.5rem;font-size:11px;" title="How words appear while reading">
+          <option value="fill">Fill colour</option>
+          <option value="write">Writing</option>
+          <option value="glow">Glow</option>
+          <option value="underline">Underline</option>
         </select>
         <select id="bookSelect" class="ctl" style="max-width:45%;margin-left:auto;width:auto;">
           {% for b in books %}
@@ -263,6 +349,18 @@
             <select id="voiceName" class="ctl"><option value="">Default voice</option></select>
             <span class="lbl" style="margin-top:6px;">Rate</span>
             <input type="range" id="rate" min="0.7" max="1.15" step="0.05" value="0.95">
+            <span class="lbl" style="margin-top:8px;">Pause between paragraphs</span>
+            <select id="paraPause" class="ctl" title="Silence after each paragraph so music and words sink in">
+              <option value="0">0 sec (no pause)</option>
+              <option value="3">3 seconds</option>
+              <option value="5" selected>5 seconds</option>
+              <option value="7">7 seconds</option>
+              <option value="10">10 seconds</option>
+              <option value="15">15 seconds</option>
+              <option value="20">20 seconds</option>
+              <option value="30">30 seconds</option>
+            </select>
+            <p style="color:#64748b;font-size:11px;margin:6px 0 0;">Voice rests between paragraphs while background music can continue.</p>
           </div>
         </div>
       </div>
@@ -296,6 +394,13 @@
       {% if book %}
       <div class="stage" id="stage">
         <div class="page-sheet" id="sheet">
+          <div id="abstractSurface" class="th-aurora" aria-hidden="true">
+            <div class="ab-layer"></div>
+            <div class="ab-orb o1"></div>
+            <div class="ab-orb o2"></div>
+            <div class="ab-orb o3"></div>
+            <div class="ab-veil"></div>
+          </div>
           <div class="page-badge">
             <span class="num" id="pageBadgeNum">Page 1 / 1</span>
             <span class="status status-starting" id="pageBadgeStatus">Starting</span>
@@ -335,6 +440,8 @@
       flipStyle: localStorage.getItem('kw_book_flip') || 'curl',
       voiceName: localStorage.getItem('kw_book_voice') || '',
       rate: Number(localStorage.getItem('kw_book_rate') || 0.95),
+      paraPause: Number(localStorage.getItem('kw_book_paraPause') || 5),
+      wordStyle: localStorage.getItem('kw_book_wordStyle') || 'fill',
       bgmId: localStorage.getItem('kw_book_bgm_id') || '',
       bgmVol: Number(localStorage.getItem('kw_book_bgmVol') || 0.18),
       bgmPlaying: false,
@@ -368,7 +475,24 @@
       localStorage.setItem('kw_book_flip', state.flipStyle);
     }
     function renderPage() {
-      if (sheetText) sheetText.textContent = state.pages[state.pageIndex] || '';
+      const raw = state.pages[state.pageIndex] || '';
+      if (sheetText) {
+        if (state.abstractOn) {
+          // Word spans for karaoke-on-abstract
+          const parts = raw.split(/(\s+)/);
+          let wi = 0;
+          sheetText.innerHTML = parts.map(function (p) {
+            if (/^\s+$/.test(p) || p === '') return p;
+            const span = '<span class="kw" data-wi="' + wi + '">' + p.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>';
+            wi += 1;
+            return span;
+          }).join('');
+          state._wordCount = wi;
+        } else {
+          sheetText.textContent = raw;
+          state._wordCount = 0;
+        }
+      }
       const total = state.pages.length || 1;
       const cur = state.pageIndex + 1;
       if ($('pageBadgeNum')) $('pageBadgeNum').textContent = 'Page ' + cur + ' / ' + total;
@@ -438,24 +562,126 @@
         sel.appendChild(o);
       });
     }
+        function highlightWord(idx) {
+      if (!sheetText || !state.abstractOn) return;
+      const nodes = sheetText.querySelectorAll('.kw');
+      nodes.forEach(function (n) {
+        const i = Number(n.getAttribute('data-wi'));
+        n.classList.remove('current');
+        if (i < idx) n.classList.add('spoken');
+        else n.classList.remove('spoken');
+        if (i === idx) {
+          n.classList.add('current');
+          try { n.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
+        }
+      });
+    }
+    function splitParagraphs(text) {
+      // Prefer blank-line paragraphs; else split on sentence groups ending with . ! ?
+      let parts = (text || '').split(/\n\s*\n+/).map(function (p) { return p.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
+      if (parts.length <= 1) {
+        const one = (text || '').replace(/\s+/g, ' ').trim();
+        if (!one) return [];
+        // Soft-split long pages into ~2–4 sentence chunks for a natural rest
+        const sents = one.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [one];
+        parts = [];
+        let buf = '';
+        sents.forEach(function (s) {
+          s = s.trim();
+          if (!s) return;
+          if ((buf + ' ' + s).trim().split(/\s+/).length > 55 && buf) {
+            parts.push(buf.trim());
+            buf = s;
+          } else {
+            buf = (buf + ' ' + s).trim();
+          }
+        });
+        if (buf) parts.push(buf);
+      }
+      return parts.filter(Boolean);
+    }
     function speakPage() {
       if (!window.speechSynthesis) return;
       speechSynthesis.cancel();
+      if (state._pauseTimer) { clearTimeout(state._pauseTimer); state._pauseTimer = null; }
       let text = state.pages[state.pageIndex] || '';
       if (!state.arranged) text = text.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2').replace(/([^\n])\n(?!\n)/g, '$1 ');
-      text = cleanForSpeech(text);
-      if (!text) { if (state.reading) next(); return; }
-      const u = new SpeechSynthesisUtterance(text);
-      u.rate = state.rate || 0.95;
+      // Keep paragraph breaks for splitParagraphs, then clean each chunk
+      const rawParas = splitParagraphs(text);
+      const paras = rawParas.map(function (p) { return cleanForSpeech(p); }).filter(Boolean);
+      if (!paras.length) { if (state.reading) next(); return; }
+      if (state.abstractOn) {
+        try { renderPage(); } catch (e) {}
+      }
       const voices = speechSynthesis.getVoices() || [];
-      let voice = state.voiceName ? voices.find(v => v.name === state.voiceName) : null;
-      if (!voice) voice = voices.find(v => /en/i.test(v.lang) && /female|samantha|zira|karen|moira|tessa|google/i.test(v.name))
-                || voices.find(v => /en/i.test(v.lang));
-      if (voice) u.voice = voice;
-      u.onend = () => { if (state.reading) next(); };
-      speechSynthesis.speak(u);
-    }
+      let voice = state.voiceName ? voices.find(function (v) { return v.name === state.voiceName; }) : null;
+      if (!voice) voice = voices.find(function (v) { return /en/i.test(v.lang) && /female|samantha|zira|karen|moira|tessa|google/i.test(v.name); })
+                || voices.find(function (v) { return /en/i.test(v.lang); });
+      // Global word index across paragraphs for karaoke (page still shows full text)
+      const fullForKw = cleanForSpeech(text);
+      const allWords = fullForKw.match(/\S+/g) || [];
+      let globalWordBase = 0;
 
+      function speakPara(pi) {
+        if (!state.reading && pi > 0) return;
+        if (pi >= paras.length) {
+          if (state.reading) next();
+          return;
+        }
+        const chunk = paras[pi];
+        const u = new SpeechSynthesisUtterance(chunk);
+        u.rate = state.rate || 0.95;
+        if (voice) u.voice = voice;
+        state._kwIndex = globalWordBase;
+        u.onboundary = function (ev) {
+          if (!state.abstractOn) return;
+          if (ev.name === 'word' || ev.charIndex != null) {
+            const upto = chunk.slice(0, ev.charIndex || 0);
+            const local = (upto.match(/\S+/g) || []).length;
+            const wi = globalWordBase + local;
+            state._kwIndex = wi;
+            highlightWord(wi);
+          }
+        };
+        let fallbackTimer = null;
+        const words = chunk.match(/\S+/g) || [];
+        if (state.abstractOn && words.length) {
+          const msPerWord = Math.max(180, 60000 / (140 * (state.rate || 0.95)));
+          let fi = 0;
+          fallbackTimer = setInterval(function () {
+            if (!speechSynthesis.speaking) { clearInterval(fallbackTimer); return; }
+            highlightWord(globalWordBase + fi);
+            fi += 1;
+            if (fi >= words.length) clearInterval(fallbackTimer);
+          }, msPerWord);
+        }
+        u.onend = function () {
+          if (fallbackTimer) clearInterval(fallbackTimer);
+          globalWordBase += words.length;
+          if (!state.reading) return;
+          const pauseSec = Number(state.paraPause || 0);
+          if (pi < paras.length - 1 && pauseSec > 0) {
+            // Status cue during pause
+            const badge = document.getElementById('pageBadgeStatus');
+            if (badge) {
+              badge.textContent = 'Pause ' + pauseSec + 's…';
+              badge.className = 'status status-progress';
+            }
+            state._pauseTimer = setTimeout(function () {
+              state._pauseTimer = null;
+              if (state.reading) speakPara(pi + 1);
+            }, pauseSec * 1000);
+          } else {
+            speakPara(pi + 1);
+          }
+        };
+        u.onerror = function () {
+          if (fallbackTimer) clearInterval(fallbackTimer);
+        };
+        speechSynthesis.speak(u);
+      }
+      speakPara(0);
+    }
     async function loadBgmList() {
       try {
         const r = await fetch('/member/api/kwealth/bgm', { credentials: 'same-origin' });
@@ -562,6 +788,13 @@
     };
     $('voiceName').onchange = () => { state.voiceName = $('voiceName').value; localStorage.setItem('kw_book_voice', state.voiceName); };
     $('rate').oninput = () => { state.rate = Number($('rate').value); localStorage.setItem('kw_book_rate', state.rate); };
+    if ($('paraPause')) {
+      $('paraPause').value = String(state.paraPause || 5);
+      $('paraPause').onchange = () => {
+        state.paraPause = Number($('paraPause').value || 0);
+        localStorage.setItem('kw_book_paraPause', state.paraPause);
+      };
+    }
     $('btnArrange').onclick = () => {
       state.pages = state.pages.map(page => {
         let t = page || '';
@@ -574,7 +807,6 @@
       state.reading = !state.reading;
       $('btnRead').textContent = state.reading ? '⏹ Stop' : '👼 Read';
       if (state.reading) {
-        if (state.bgmPlaying && !state.abstractOn) { state.abstractOn = true; applyAbstract(); }
         speakPage();
       }
       else try { speechSynthesis.cancel(); } catch (e) {}
@@ -666,23 +898,39 @@
 
     if (window.speechSynthesis) speechSynthesis.onvoiceschanged = loadVoices;
     
-    // —— Abstract full-screen background ——
-    function applyAbstract() {
-      const stage = document.getElementById('abstractStage');
+    // —— Abstract panel (replaces book surface) ——
+        function applyAbstract() {
+      const stage = document.getElementById('stage');
+      const surface = document.getElementById('abstractSurface');
       const btn = document.getElementById('btnAbstract');
       const themeSel = document.getElementById('abstractTheme');
-      if (!stage) return;
+      const styleSel = document.getElementById('wordStyle');
       const on = !!state.abstractOn;
       const theme = state.abstractTheme || 'aurora';
-      stage.className = 'th-' + theme + (on ? ' is-on' : '');
-      stage.style.display = on ? 'block' : 'none';
-      document.body.classList.toggle('abstract-on', on);
+      const wstyle = state.wordStyle || 'fill';
+      if (stage) {
+        stage.classList.toggle('abstract-mode', on);
+        // word style classes
+        ['ws-fill','ws-write','ws-glow','ws-underline'].forEach(function (c) { stage.classList.remove(c); });
+        if (on) stage.classList.add('ws-' + wstyle);
+      }
+      if (surface) {
+        surface.className = 'th-' + theme;
+        surface.setAttribute('aria-hidden', on ? 'false' : 'true');
+      }
       if (btn) btn.classList.toggle('is-on', on);
       if (themeSel && themeSel.value !== theme) themeSel.value = theme;
+      if (styleSel && styleSel.value !== wstyle) styleSel.value = wstyle;
       try {
         localStorage.setItem('kw_abstract_on', on ? '1' : '0');
         localStorage.setItem('kw_abstract_theme', theme);
+        localStorage.setItem('kw_book_wordStyle', wstyle);
       } catch (e) {}
+      try { renderPage(); } catch (e) {}
+      // If reading, re-highlight current word so style applies mid-speech
+      if (on && typeof state._kwIndex === 'number') {
+        try { highlightWord(state._kwIndex); } catch (e) {}
+      }
     }
     state.abstractOn = false;
     state.abstractTheme = 'aurora';
@@ -704,6 +952,17 @@
         applyAbstract();
       });
     }
+    const wordStyleEl = document.getElementById('wordStyle');
+    if (wordStyleEl) {
+      wordStyleEl.value = state.wordStyle || 'fill';
+      wordStyleEl.addEventListener('change', function () {
+        state.wordStyle = wordStyleEl.value || 'fill';
+        applyAbstract();
+      });
+    }
+    try {
+      state.wordStyle = localStorage.getItem('kw_book_wordStyle') || state.wordStyle || 'fill';
+    } catch (e) {}
     applyAbstract();
 
     loadBgmList().then(() => {
