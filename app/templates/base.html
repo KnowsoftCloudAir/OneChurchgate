@@ -51,6 +51,7 @@
         <a href="/admin/backup" class="px-3 py-1.5 rounded-lg hover:bg-slate-100 whitespace-nowrap">Backup</a>
         <a href="/admin/footprints" class="px-3 py-1.5 rounded-lg hover:bg-slate-100 whitespace-nowrap">Footprints</a>
         {% endif %}
+        <a href="/angel/" class="px-3 py-1.5 rounded-lg hover:bg-slate-100 whitespace-nowrap">Angel guide</a>
         <a href="/programs/" class="px-3 py-1.5 rounded-lg hover:bg-slate-100 whitespace-nowrap">Programs</a>
         <a href="/testimonies" class="px-3 py-1.5 rounded-lg hover:bg-slate-100 whitespace-nowrap">Testimonies</a>
         <a href="/heart-to-heart" class="px-3 py-1.5 rounded-lg hover:bg-slate-100 whitespace-nowrap">Heart to Heart</a>
@@ -98,33 +99,6 @@ if ('serviceWorker' in navigator) {
       });
   });
 }
-</script>
-
-
-<script>
-(function(){
-  async function refreshBadge(){
-    try {
-      const r = await fetch('/member/api/badge-count', { credentials: 'same-origin' });
-      if (!r.ok) return;
-      const j = await r.json();
-      const n = Number(j.count || 0);
-      if ('setAppBadge' in navigator) {
-        if (n > 0) navigator.setAppBadge(n);
-        else if ('clearAppBadge' in navigator) navigator.clearAppBadge();
-      }
-      // document title hint
-      if (n > 0 && !document.title.startsWith('(')) {
-        document.title = '(' + n + ') ' + document.title.replace(/^\(\d+\)\s*/, '');
-      } else if (n === 0) {
-        document.title = document.title.replace(/^\(\d+\)\s*/, '');
-      }
-    } catch(e) {}
-  }
-  refreshBadge();
-  setInterval(refreshBadge, 60000);
-  document.addEventListener('visibilitychange', function(){ if (!document.hidden) refreshBadge(); });
-})();
 </script>
 
 </body>

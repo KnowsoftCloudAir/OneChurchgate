@@ -111,11 +111,6 @@ class User(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     last_login: Optional[datetime] = None
     session_version: int = Field(default=0)  # increments on login; only latest session valid
-    # Referral / promo rewards
-    promo_code: Optional[str] = Field(default=None, index=True)
-    referred_by_user_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
-    referral_bonus_applied: bool = Field(default=False)
-    referral_count_anchor_at: Optional[datetime] = Field(default=None)  # after cashout, only count newer referrals
 
 class ChurchMember(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -304,10 +299,7 @@ class FocusGroupMessage(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     group_id: int = Field(foreign_key="focusgroup.id", index=True)
     sender_id: int = Field(foreign_key="user.id")
-    topic: Optional[str] = None  # member-started thread title
-    body: str = Field(default="", sa_column=Column(Text))
-    image_path: Optional[str] = None
-    audio_path: Optional[str] = None  # max ~30s voice note
+    body: str = Field(sa_column=Column(Text))
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class FocusGroupMessageComment(SQLModel, table=True):
@@ -614,92 +606,40 @@ class AppConfig(SQLModel, table=True):
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
-class ReferralCashout(SQLModel, table=True):
-    """Member referral reward cashout (GA pays on/after 30th)."""
-    id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", index=True)
-    active_count: int = Field(default=0)
-    amount_ngn: float = Field(default=0.0)
-    status: str = Field(default="pending")  # pending | approved | paid | rejected
-    account_name: Optional[str] = None
-    account_number: Optional[str] = None
-    bank_name: Optional[str] = None
-    period_month: Optional[str] = None
-    identity_evidence: Optional[str] = None  # uploaded ID image path
-    processed_by: Optional[int] = None
-    processed_at: Optional[datetime] = None
-    note: Optional[str] = Field(default=None, sa_column=Column(Text))
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-
-
-class KwealthBook(SQLModel, table=True):
-    """Synced book for Kwealth reader (plain text chapters)."""
+class AngelResource(SQLModel, table=True):
+    """Scripture / teaching resources uploaded by General Admin for the Angel guide."""
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str = Field(index=True)
-    author: Optional[str] = None
-    source_path: Optional[str] = None  # relative path under static/books
-    page_count: int = Field(default=1)
+    category: str = Field(default="general", index=True)  # revelation, antichrist, paul, hell, angels, prayer, holy_spirit, salvation, overcome, general
+    summary: Optional[str] = None
+    body: str = ""  # main teaching text (may include KJV refs)
+    scripture_refs: Optional[str] = None  # e.g. "John 3:16; Romans 10:9"
+    source_note: Optional[str] = None  # e.g. sermon title, book chapter
     is_active: bool = Field(default=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-
-
-class KwealthProgress(SQLModel, table=True):
-    """Last open page per user per book."""
-    id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", index=True)
-    book_id: int = Field(foreign_key="kwealthbook.id", index=True)
-    page_index: int = Field(default=0)
-    completed: bool = Field(default=False)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-
-
-class KwealthExcerpt(SQLModel, table=True):
-    """Saved excerpts from books/Bible — Angel knowledge source."""
-    id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", index=True)
-    title: Optional[str] = None
-    body: str = Field(sa_column=Column(Text))
-    source: Optional[str] = None  # book title, Bible ref, or Matthew Henry
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-
-
-class KwealthNote(SQLModel, table=True):
-    """Typed or ink notes under Kwealth."""
-    id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", index=True)
-    title: Optional[str] = None
-    body_text: Optional[str] = Field(default=None, sa_column=Column(Text))
-    ink_path: Optional[str] = None  # optional PNG of handwriting
+    sort_order: int = Field(default=0)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_by: Optional[int] = None
 
 
-class AngelReference(SQLModel, table=True):
-    """Reference materials Angel may cite (URLs + notes)."""
-    id: Optional[int] = Field(default=None, primary_key=True)
-    name: str
-    url: Optional[str] = None
-    notes: Optional[str] = Field(default=None, sa_column=Column(Text))
-    is_active: bool = Field(default=True)
-
-
-class AngelResourceFile(SQLModel, table=True):
-    """Extra text resources for Angel (uploaded by General Admin)."""
+class LibraryBook(SQLModel, table=True):
+    """General (non-personal) books uploaded by General Admin for all members."""
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str
-    body: str = Field(sa_column=Column(Text))
+    author: Optional[str] = None
+    description: Optional[str] = Field(default=None, sa_column=Column(Text))
+    file_path: Optional[str] = None  # original file (pdf/txt)
+    text_content: Optional[str] = Field(default=None, sa_column=Column(Text))  # extracted text
     is_active: bool = Field(default=True)
-    created_by: Optional[int] = None
+    uploaded_by: Optional[int] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
-class ChurchHymnal(SQLModel, table=True):
-    """Hymn pack per global church (or platform-wide if church_id null)."""
+class ReadingMusic(SQLModel, table=True):
+    """Background music files for Bible/book reading (General Admin)."""
     id: Optional[int] = Field(default=None, primary_key=True)
-    church_id: Optional[int] = Field(default=None, foreign_key="churchunit.id", index=True)
-    title: str = Field(default="Church Hymns")
-    body: str = Field(sa_column=Column(Text))  # plain text hymn pack
+    title: str
+    file_path: str
     is_active: bool = Field(default=True)
-    updated_by: Optional[int] = None
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    uploaded_by: Optional[int] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
