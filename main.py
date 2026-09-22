@@ -11,6 +11,7 @@ from app.database import create_db_and_tables, get_session, engine
 from app.models import User, UserRole, AngelResourceFile, ChurchHymnal  # noqa: F401 — register tables
 from app.auth import get_password_hash, get_current_user, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from app.routers import feed, manna, auth, admin, church, district, members, programs, projects, community, payments, youtube_data, messages, subscriptions, backup, announcements, device_music, referrals, kwealth
+from app.youtube_persist import restore_into_db
 from app.seed_sample import ensure_all_sample_data
 
 @asynccontextmanager
@@ -21,6 +22,12 @@ async def lifespan(app: FastAPI):
         from app.bundled_restore import restore_bundled_backup, force_general_admin_password
         restore_bundled_backup(force=False)
         force_general_admin_password()
+        try:
+            with Session(engine) as _ys:
+                n = restore_into_db(_ys)
+                print(f"✅ YouTube home links restored/mirrored ({n} new from file)")
+        except Exception as _yte:
+            print("⚠️ YouTube persist:", _yte)
     except Exception as be:
         print(f"⚠️ Bundled restore: {be}")
         try:
@@ -212,6 +219,11 @@ async def lifespan(app: FastAPI):
                     print("⚠️ Sample user angel@churchgate.com still missing after seed")
             except Exception as se:
                 print("sample force password:", se)
+            try:
+                n2 = restore_into_db(session)
+                print(f"✅ YouTube links sync after seed ({n2})")
+            except Exception as _yte2:
+                print("⚠️ YouTube persist after seed:", _yte2)
     except Exception as e:
         print(f"⚠️ Seed: {e}")
         import traceback
