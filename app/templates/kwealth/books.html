@@ -101,16 +101,8 @@
     .bgm-row button { flex-shrink: 0; }
   
 
-    /* Abstract reading surface (same size as book panel) */
-    #stage {
-      position: relative;
-      isolation: isolate;
-    }
-/* —— Abstract reading surface (replaces book page look) —— */
-    #stage {
-      position: relative;
-      isolation: isolate;
-    }
+    /* —— Abstract calm surface —— */
+    #stage { position: relative; isolation: isolate; }
     #abstractSurface {
       display: none;
       position: absolute;
@@ -122,135 +114,174 @@
     }
     #stage.abstract-mode #abstractSurface { display: block; }
     #stage.abstract-mode .page-sheet {
-      background: rgba(8, 12, 24, 0.35) !important;
-      box-shadow: 0 20px 60px rgba(0,0,0,.5) !important;
-      border: 1px solid rgba(255,255,255,.14) !important;
+      background: rgba(6, 10, 22, 0.25) !important;
+      box-shadow: 0 24px 70px rgba(0,0,0,.55) !important;
+      border: 1px solid rgba(255,255,255,.12) !important;
       color: #f8fafc !important;
       position: relative;
       z-index: 2;
       min-height: 62vh;
+      display: flex;
+      flex-direction: column;
     }
     #stage.abstract-mode .page-badge {
-      background: rgba(15,23,42,.65);
+      background: rgba(15,23,42,.7);
       color: #e2e8f0;
-      border-color: rgba(255,255,255,.15);
       z-index: 4;
     }
     #stage.abstract-mode #sheetText {
       position: relative;
       z-index: 2;
-      color: rgba(248,250,252,.55);
-      line-height: 1.85;
-      font-size: var(--fs, 18px);
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 2.5rem 1.5rem;
+      color: #f8fafc;
+      line-height: 1.9;
+      font-size: calc(var(--fs, 18px) * 1.15);
       font-family: var(--ff, Georgia, serif);
+      min-height: 40vh;
     }
     #abstractSurface .ab-layer {
-      position: absolute; inset: -18%;
+      position: absolute; inset: -25%;
       background:
-        radial-gradient(ellipse at 20% 30%, rgba(45,212,191,.5), transparent 50%),
-        radial-gradient(ellipse at 80% 20%, rgba(167,139,250,.42), transparent 45%),
-        radial-gradient(ellipse at 50% 85%, rgba(251,191,36,.28), transparent 50%),
-        linear-gradient(135deg, #0f172a 0%, #1e1b4b 45%, #0f766e 100%);
-      animation: abDrift 22s ease-in-out infinite alternate;
+        radial-gradient(ellipse at 15% 25%, rgba(56,189,248,.35), transparent 42%),
+        radial-gradient(ellipse at 85% 20%, rgba(167,139,250,.4), transparent 40%),
+        radial-gradient(ellipse at 50% 90%, rgba(52,211,153,.28), transparent 48%),
+        radial-gradient(ellipse at 40% 50%, rgba(251,191,36,.12), transparent 35%),
+        linear-gradient(145deg, #020617 0%, #0f172a 35%, #1e1b4b 70%, #042f2e 100%);
+      animation: abDrift 28s ease-in-out infinite alternate;
     }
     #abstractSurface.th-ocean .ab-layer {
       background:
-        radial-gradient(ellipse at 30% 40%, rgba(34,211,238,.55), transparent 55%),
-        radial-gradient(ellipse at 70% 70%, rgba(14,165,233,.4), transparent 50%),
-        linear-gradient(160deg, #0c4a6e, #082f49 50%, #042f2e);
+        radial-gradient(ellipse at 25% 30%, rgba(34,211,238,.5), transparent 50%),
+        radial-gradient(ellipse at 75% 70%, rgba(14,165,233,.35), transparent 45%),
+        radial-gradient(ellipse at 50% 50%, rgba(56,189,248,.15), transparent 40%),
+        linear-gradient(165deg, #082f49, #0c4a6e 40%, #164e63 100%);
+      animation: abDrift 32s ease-in-out infinite alternate;
     }
     #abstractSurface.th-sunset .ab-layer {
       background:
-        radial-gradient(ellipse at 40% 30%, rgba(251,146,60,.58), transparent 50%),
-        radial-gradient(ellipse at 80% 60%, rgba(244,63,94,.42), transparent 45%),
-        linear-gradient(150deg, #431407, #7c2d12 40%, #1e1b4b);
+        radial-gradient(ellipse at 30% 20%, rgba(251,146,60,.55), transparent 48%),
+        radial-gradient(ellipse at 80% 55%, rgba(244,63,94,.4), transparent 42%),
+        radial-gradient(ellipse at 50% 90%, rgba(251,191,36,.25), transparent 45%),
+        linear-gradient(155deg, #1c0a05, #7c2d12 45%, #431407 100%);
     }
     #abstractSurface.th-aurora .ab-layer {
       background:
-        radial-gradient(ellipse at 20% 50%, rgba(52,211,153,.55), transparent 50%),
-        radial-gradient(ellipse at 60% 20%, rgba(129,140,248,.48), transparent 45%),
-        radial-gradient(ellipse at 90% 80%, rgba(244,114,182,.38), transparent 40%),
-        linear-gradient(180deg, #020617, #0f172a 60%, #14532d);
+        radial-gradient(ellipse at 20% 40%, rgba(52,211,153,.5), transparent 48%),
+        radial-gradient(ellipse at 70% 15%, rgba(129,140,248,.45), transparent 42%),
+        radial-gradient(ellipse at 90% 80%, rgba(244,114,182,.35), transparent 40%),
+        linear-gradient(180deg, #020617, #0f172a 55%, #064e3b 100%);
     }
     #abstractSurface.th-nebula .ab-layer {
       background:
-        radial-gradient(ellipse at 25% 25%, rgba(168,85,247,.5), transparent 50%),
-        radial-gradient(ellipse at 75% 60%, rgba(59,130,246,.42), transparent 45%),
-        linear-gradient(135deg, #020617, #312e81 50%, #0f172a);
+        radial-gradient(ellipse at 20% 20%, rgba(168,85,247,.45), transparent 48%),
+        radial-gradient(ellipse at 80% 60%, rgba(59,130,246,.4), transparent 42%),
+        radial-gradient(ellipse at 50% 80%, rgba(236,72,153,.2), transparent 40%),
+        linear-gradient(135deg, #020617, #1e1b4b 50%, #0f172a 100%);
     }
     #abstractSurface .ab-orb {
-      position: absolute; border-radius: 50%; filter: blur(42px);
-      opacity: 0.5; animation: abFloat 15s ease-in-out infinite;
+      position: absolute; border-radius: 50%; filter: blur(50px);
+      opacity: 0.55; animation: abFloat 18s ease-in-out infinite;
     }
-    #abstractSurface .ab-orb.o1 { width: 42%; height: 42%; background: #2dd4bf; top: 4%; left: 4%; }
-    #abstractSurface .ab-orb.o2 { width: 34%; height: 34%; background: #a78bfa; top: 42%; right: 4%; animation-delay: -5s; }
-    #abstractSurface .ab-orb.o3 { width: 28%; height: 28%; background: #fbbf24; bottom: 6%; left: 36%; animation-delay: -10s; }
+    #abstractSurface .ab-orb.o1 { width: 48%; height: 48%; background: #2dd4bf; top: 0%; left: 0%; }
+    #abstractSurface .ab-orb.o2 { width: 40%; height: 40%; background: #818cf8; top: 40%; right: 0%; animation-delay: -6s; }
+    #abstractSurface .ab-orb.o3 { width: 36%; height: 36%; background: #fbbf24; bottom: 0%; left: 30%; animation-delay: -12s; }
+    #abstractSurface .ab-stars {
+      position: absolute; inset: 0;
+      background-image:
+        radial-gradient(1.5px 1.5px at 10% 20%, rgba(255,255,255,.7), transparent),
+        radial-gradient(1.5px 1.5px at 30% 60%, rgba(255,255,255,.5), transparent),
+        radial-gradient(1px 1px at 50% 15%, rgba(255,255,255,.8), transparent),
+        radial-gradient(1.5px 1.5px at 70% 40%, rgba(255,255,255,.45), transparent),
+        radial-gradient(1px 1px at 85% 75%, rgba(255,255,255,.6), transparent),
+        radial-gradient(1.5px 1.5px at 15% 85%, rgba(255,255,255,.4), transparent),
+        radial-gradient(1px 1px at 55% 50%, rgba(255,255,255,.55), transparent);
+      animation: abTwinkle 8s ease-in-out infinite alternate;
+      opacity: 0.7;
+    }
     #abstractSurface .ab-veil {
       position: absolute; inset: 0;
-      background: radial-gradient(ellipse at center, rgba(15,23,42,.12) 0%, rgba(2,6,23,.55) 100%);
+      background: radial-gradient(ellipse at center, rgba(2,6,23,.05) 0%, rgba(2,6,23,.55) 100%);
     }
     @keyframes abDrift {
       from { transform: scale(1) translate(0,0) rotate(0deg); }
-      to { transform: scale(1.12) translate(-2%, 2%) rotate(1.5deg); }
+      to { transform: scale(1.15) translate(-3%, 3%) rotate(2deg); }
     }
     @keyframes abFloat {
-      0%, 100% { transform: translate(0,0); }
-      50% { transform: translate(5%, -6%); }
+      0%, 100% { transform: translate(0,0) scale(1); }
+      50% { transform: translate(6%, -7%) scale(1.08); }
     }
-    /* Word styles on abstract */
+    @keyframes abTwinkle {
+      from { opacity: 0.35; }
+      to { opacity: 0.85; }
+    }
+    @keyframes abWordIn {
+      from { opacity: 0; transform: translateY(8px); filter: blur(4px); }
+      to { opacity: 1; transform: translateY(0); filter: blur(0); }
+    }
+    @keyframes abWordOut {
+      from { opacity: 1; }
+      to { opacity: 0; filter: blur(3px); }
+    }
+    /* Sentence mode: only current sentence visible */
+    #stage.abstract-mode #sheetText .ab-sentence {
+      display: none;
+      max-width: 36rem;
+      margin: 0 auto;
+    }
+    #stage.abstract-mode #sheetText .ab-sentence.active {
+      display: block;
+      animation: abWordIn 0.55s ease-out;
+    }
+    #stage.abstract-mode #sheetText .ab-sentence.leaving {
+      display: block;
+      animation: abWordOut 0.4s ease-in forwards;
+    }
     #sheetText .kw {
-      transition: color .15s ease, background .15s ease, opacity .2s ease, text-shadow .15s ease, border-color .15s ease;
+      transition: color .15s ease, background .15s ease, text-shadow .15s ease;
       border-radius: 3px;
     }
-    /* Style: fill — full text visible, highlight fills current word */
     #stage.abstract-mode.ws-fill #sheetText .kw {
-      color: rgba(226,232,240,.42);
+      color: rgba(226,232,240,.4);
     }
     #stage.abstract-mode.ws-fill #sheetText .kw.spoken {
-      color: rgba(167,243,208,.85);
-      background: rgba(45,212,191,.12);
+      color: rgba(167,243,208,.9);
     }
     #stage.abstract-mode.ws-fill #sheetText .kw.current {
       color: #fff;
-      background: linear-gradient(90deg, rgba(45,212,191,.75), rgba(94,234,212,.55));
-      text-shadow: 0 0 14px rgba(45,212,191,.9);
-      box-shadow: 0 0 18px rgba(45,212,191,.35);
+      background: linear-gradient(90deg, rgba(45,212,191,.75), rgba(94,234,212,.5));
+      text-shadow: 0 0 16px rgba(45,212,191,.95);
       padding: 0 3px;
     }
-    /* Style: write — words appear only as spoken */
     #stage.abstract-mode.ws-write #sheetText .kw {
       opacity: 0;
-      color: transparent;
     }
     #stage.abstract-mode.ws-write #sheetText .kw.spoken,
     #stage.abstract-mode.ws-write #sheetText .kw.current {
       opacity: 1;
       color: #f0fdfa;
-      text-shadow: 0 1px 8px rgba(0,0,0,.45);
     }
     #stage.abstract-mode.ws-write #sheetText .kw.current {
       color: #5eead4;
-      text-shadow: 0 0 16px rgba(45,212,191,1);
+      text-shadow: 0 0 18px rgba(45,212,191,1);
     }
-    /* Style: glow */
-    #stage.abstract-mode.ws-glow #sheetText .kw {
-      color: rgba(203,213,225,.4);
-    }
-    #stage.abstract-mode.ws-glow #sheetText .kw.spoken {
-      color: rgba(226,232,240,.75);
-    }
+    #stage.abstract-mode.ws-glow #sheetText .kw { color: rgba(203,213,225,.35); }
+    #stage.abstract-mode.ws-glow #sheetText .kw.spoken { color: rgba(226,232,240,.8); }
     #stage.abstract-mode.ws-glow #sheetText .kw.current {
       color: #fff;
-      text-shadow: 0 0 8px #fff, 0 0 20px #2dd4bf, 0 0 36px #a78bfa;
+      text-shadow: 0 0 10px #fff, 0 0 24px #2dd4bf, 0 0 40px #a78bfa;
     }
-    /* Style: underline trail */
     #stage.abstract-mode.ws-underline #sheetText .kw {
-      color: rgba(226,232,240,.5);
+      color: rgba(226,232,240,.45);
       border-bottom: 2px solid transparent;
     }
     #stage.abstract-mode.ws-underline #sheetText .kw.spoken {
       color: #e2e8f0;
-      border-bottom-color: rgba(45,212,191,.45);
+      border-bottom-color: rgba(45,212,191,.5);
     }
     #stage.abstract-mode.ws-underline #sheetText .kw.current {
       color: #fff;
@@ -396,6 +427,7 @@
         <div class="page-sheet" id="sheet">
           <div id="abstractSurface" class="th-aurora" aria-hidden="true">
             <div class="ab-layer"></div>
+            <div class="ab-stars"></div>
             <div class="ab-orb o1"></div>
             <div class="ab-orb o2"></div>
             <div class="ab-orb o3"></div>
@@ -474,23 +506,39 @@
       localStorage.setItem('kw_book_fontFamily', state.fontFamily);
       localStorage.setItem('kw_book_flip', state.flipStyle);
     }
+        function splitSentences(text) {
+      const t = (text || '').replace(/\s+/g, ' ').trim();
+      if (!t) return [];
+      const parts = t.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [t];
+      return parts.map(function (s) { return s.trim(); }).filter(Boolean);
+    }
     function renderPage() {
       const raw = state.pages[state.pageIndex] || '';
       if (sheetText) {
         if (state.abstractOn) {
-          // Word spans for karaoke-on-abstract
-          const parts = raw.split(/(\s+)/);
+          // Sentence blocks; only active sentence shown
+          const sents = splitSentences(raw);
+          state._sentences = sents;
           let wi = 0;
-          sheetText.innerHTML = parts.map(function (p) {
-            if (/^\s+$/.test(p) || p === '') return p;
-            const span = '<span class="kw" data-wi="' + wi + '">' + p.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>';
-            wi += 1;
-            return span;
+          sheetText.innerHTML = sents.map(function (sent, si) {
+            const parts = sent.split(/(\s+)/);
+            let html = '';
+            parts.forEach(function (p) {
+              if (/^\s+$/.test(p) || p === '') { html += p; return; }
+              html += '<span class="kw" data-wi="' + wi + '" data-si="' + si + '">' +
+                p.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>';
+              wi += 1;
+            });
+            return '<div class="ab-sentence" data-si="' + si + '">' + html + '</div>';
           }).join('');
           state._wordCount = wi;
+          // show first sentence until speech advances
+          showSentence(typeof state._sentIndex === 'number' ? state._sentIndex : 0);
         } else {
           sheetText.textContent = raw;
           state._wordCount = 0;
+          state._sentences = [];
+          state._sentIndex = 0;
         }
       }
       const total = state.pages.length || 1;
@@ -506,7 +554,17 @@
       if ($('btnPrev')) $('btnPrev').disabled = state.pageIndex <= 0;
       if ($('btnNext')) $('btnNext').disabled = state.pageIndex >= total - 1;
     }
-    function saveProgress() {
+    function showSentence(si) {
+      if (!sheetText || !state.abstractOn) return;
+      const nodes = sheetText.querySelectorAll('.ab-sentence');
+      nodes.forEach(function (n) {
+        const i = Number(n.getAttribute('data-si'));
+        n.classList.remove('active', 'leaving');
+        if (i === si) n.classList.add('active');
+      });
+      state._sentIndex = si;
+    }
+    function saveProgressfunction saveProgress() {
       if (!state.bookId) return;
       const fd = new FormData();
       fd.append('book_id', state.bookId);
@@ -562,21 +620,27 @@
         sel.appendChild(o);
       });
     }
-        function highlightWord(idx) {
+            function highlightWord(idx) {
       if (!sheetText || !state.abstractOn) return;
       const nodes = sheetText.querySelectorAll('.kw');
+      let activeSi = 0;
       nodes.forEach(function (n) {
         const i = Number(n.getAttribute('data-wi'));
+        const si = Number(n.getAttribute('data-si') || 0);
         n.classList.remove('current');
         if (i < idx) n.classList.add('spoken');
         else n.classList.remove('spoken');
         if (i === idx) {
           n.classList.add('current');
+          activeSi = si;
           try { n.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (e) {}
         }
       });
+      if (typeof activeSi === 'number' && state._sentIndex !== activeSi) {
+        showSentence(activeSi);
+      }
     }
-    function splitParagraphs(text) {
+    function splitParagraphsfunction splitParagraphs(text) {
       // Prefer blank-line paragraphs; else split on sentence groups ending with . ! ?
       let parts = (text || '').split(/\n\s*\n+/).map(function (p) { return p.replace(/\s+/g, ' ').trim(); }).filter(Boolean);
       if (parts.length <= 1) {
@@ -606,8 +670,15 @@
       if (state._pauseTimer) { clearTimeout(state._pauseTimer); state._pauseTimer = null; }
       let text = state.pages[state.pageIndex] || '';
       if (!state.arranged) text = text.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2').replace(/([^\n])\n(?!\n)/g, '$1 ');
-      // Keep paragraph breaks for splitParagraphs, then clean each chunk
-      const rawParas = splitParagraphs(text);
+      // Abstract mode: one sentence at a time; otherwise paragraph chunks
+      let rawParas;
+      if (state.abstractOn) {
+        rawParas = splitSentences(text);
+        state._sentIndex = 0;
+        try { showSentence(0); } catch (e) {}
+      } else {
+        rawParas = splitParagraphs(text);
+      }
       const paras = rawParas.map(function (p) { return cleanForSpeech(p); }).filter(Boolean);
       if (!paras.length) { if (state.reading) next(); return; }
       if (state.abstractOn) {
@@ -658,6 +729,10 @@
         u.onend = function () {
           if (fallbackTimer) clearInterval(fallbackTimer);
           globalWordBase += words.length;
+          if (state.abstractOn && sheetText) {
+            // soft clear spoken marks before next block
+            sheetText.querySelectorAll('.kw.current').forEach(function (n) { n.classList.remove('current'); });
+          }
           if (!state.reading) return;
           const pauseSec = Number(state.paraPause || 0);
           if (pi < paras.length - 1 && pauseSec > 0) {
@@ -667,8 +742,16 @@
               badge.textContent = 'Pause ' + pauseSec + 's…';
               badge.className = 'status status-progress';
             }
+            // Fade current sentence before next appears
+            if (state.abstractOn && sheetText) {
+              const cur = sheetText.querySelector('.ab-sentence.active');
+              if (cur) { cur.classList.add('leaving'); cur.classList.remove('active'); }
+            }
             state._pauseTimer = setTimeout(function () {
               state._pauseTimer = null;
+              if (state.abstractOn) {
+                try { showSentence(pi + 1); } catch (e) {}
+              }
               if (state.reading) speakPara(pi + 1);
             }, pauseSec * 1000);
           } else {

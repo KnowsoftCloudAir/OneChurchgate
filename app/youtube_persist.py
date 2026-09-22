@@ -1,8 +1,11 @@
-"""Persist approved home-page YouTube links outside ephemeral code deploys.
+"""Persist approved home-page YouTube links across code deploys.
 
-Approved links live in the database AND are mirrored to data/persistent/youtube_home.json.
-On startup we re-import any missing approved rows so GitHub/code updates do not wipe them.
-Admin delete removes from both DB and the JSON mirror.
+Approved + active links are mirrored to data/persistent/youtube_home.json.
+On startup, missing rows are restored from that file into the database.
+Only admin/global delete or reject removes a link from DB and the file.
+
+Requires a durable DATABASE_URL (Postgres) for full safety; the JSON file
+is an extra safety net when the app disk is writable.
 """
 from __future__ import annotations
 import json
@@ -33,7 +36,6 @@ def _save(rows: List[Dict[str, Any]]) -> None:
 
 
 def mirror_from_db(session: Session) -> int:
-    """Rewrite JSON from all approved+active DB rows (source of truth when DB is healthy)."""
     from app.models import YoutubeChannelLink
     rows = list(session.exec(
         select(YoutubeChannelLink).where(
@@ -59,11 +61,10 @@ def mirror_from_db(session: Session) -> int:
 
 
 def restore_into_db(session: Session) -> int:
-    """Insert any JSON links missing from DB (by video id). Never deletes DB rows."""
+    """Insert JSON links missing from DB. Never deletes existing DB rows."""
     from app.models import YoutubeChannelLink
     stored = _load()
     if not stored:
-        # First boot with existing DB: mirror out so future deploys have a file
         return mirror_from_db(session)
     added = 0
     for item in stored:
@@ -71,7 +72,6 @@ def restore_into_db(session: Session) -> int:
         url = item.get("youtube_url")
         if not vid and not url:
             continue
-        q = select(YoutubeChannelLink)
         existing = None
         if vid:
             existing = session.exec(
@@ -82,7 +82,6 @@ def restore_into_db(session: Session) -> int:
                 select(YoutubeChannelLink).where(YoutubeChannelLink.youtube_url == url)
             ).first()
         if existing:
-            # ensure still approved/active if present in permanent file
             if not existing.is_approved or not existing.is_active:
                 existing.is_approved = True
                 existing.is_active = True
@@ -103,7 +102,6 @@ def restore_into_db(session: Session) -> int:
         added += 1
     if added:
         session.commit()
-    # Keep file in sync with DB after merge
     mirror_from_db(session)
     return added
 
