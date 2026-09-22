@@ -16,7 +16,7 @@ from app.models import (
 from app.activity import log_activity
 from app.auth import (
     get_current_user, require_user, get_password_hash, create_access_token,
-    create_user_token, ACCESS_TOKEN_EXPIRE_MINUTES, verify_password,
+    ACCESS_TOKEN_EXPIRE_MINUTES, verify_password
 )
 
 router = APIRouter(tags=["members"])
@@ -49,45 +49,6 @@ async def list_child_churches(
     ).all()
     return [{"id": c.id, "name": c.name, "code": c.code, "level": c.level.value} for c in children]
 
-
-def _knowsoft_hierarchy(session: Session):
-    """Resolve Knowsoft Church tree for non-church affiliates."""
-    global_c = session.exec(
-        select(ChurchUnit).where(ChurchUnit.code == "KC-GLOBAL")
-    ).first()
-    if not global_c:
-        global_c = session.exec(
-            select(ChurchUnit).where(
-                ChurchUnit.level == ChurchLevel.global_church,
-                ChurchUnit.approval_status == "approved",
-            ).order_by(ChurchUnit.id)
-        ).first()
-    if not global_c:
-        return None
-    district = session.exec(
-        select(ChurchUnit).where(ChurchUnit.code == "KC-NG-LAG-IKE-ALLEN")
-    ).first()
-    if not district:
-        district = session.exec(
-            select(ChurchUnit).where(
-                ChurchUnit.level == ChurchLevel.district,
-                ChurchUnit.approval_status == "approved",
-            ).order_by(ChurchUnit.id)
-        ).first()
-    if not district:
-        return None
-    group = session.get(ChurchUnit, district.parent_id) if district.parent_id else None
-    state = session.get(ChurchUnit, group.parent_id) if group and group.parent_id else None
-    country = session.get(ChurchUnit, state.parent_id) if state and state.parent_id else None
-    return {
-        "global_id": global_c.id,
-        "country_id": (country.id if country else global_c.id),
-        "state_id": (state.id if state else global_c.id),
-        "group_id": (group.id if group else global_c.id),
-        "district_id": district.id,
-    }
-
-
 @router.post("/join")
 async def join_submit(
     request: Request,
@@ -102,49 +63,27 @@ async def join_submit(
     address: str = Form(""),
     whatsapp: str = Form(""),
     phone: str = Form(""),
-    affiliation: str = Form("church"),
-    global_id: str = Form(""),
-    country_id: str = Form(""),
-    state_id: str = Form(""),
-    group_id: str = Form(""),
-    district_id: str = Form(""),
+    global_id: int = Form(...),
+    country_id: int = Form(...),
+    state_id: int = Form(...),
+    group_id: int = Form(...),
+    district_id: int = Form(...),
     profile_pic: UploadFile = File(None),
     promo_code: str = Form(""),
     session: Session = Depends(get_session)
 ):
-    def _join_error(msg: str):
+    if session.exec(select(User).where(User.email == email)).first():
         globals_ = session.exec(select(ChurchUnit).where(
             ChurchUnit.level == ChurchLevel.global_church, ChurchUnit.approval_status == "approved"
         )).all()
         return templates.TemplateResponse("members/join.html", {
-            "request": request, "globals": globals_, "error": msg
+            "request": request, "globals": globals_,
+            "error": "Email already registered. Please sign in."
         }, status_code=400)
 
-    if session.exec(select(User).where(User.email == email)).first():
-        return _join_error("Email already registered. Please sign in.")
-
-    is_affiliate = (affiliation or "").strip().lower() in ("non_affiliate", "non-church", "affiliate")
-    if is_affiliate:
-        tree = _knowsoft_hierarchy(session)
-        if not tree:
-            return _join_error("Knowsoft Church is not available yet. Contact support or join via a district church.")
-        global_id = tree["global_id"]
-        country_id = tree["country_id"]
-        state_id = tree["state_id"]
-        group_id = tree["group_id"]
-        district_id = tree["district_id"]
-    else:
-        try:
-            global_id = int(global_id)
-            country_id = int(country_id)
-            state_id = int(state_id)
-            group_id = int(group_id)
-            district_id = int(district_id)
-        except (TypeError, ValueError):
-            return _join_error("Please select your full church hierarchy.")
-        district = session.get(ChurchUnit, district_id)
-        if not district or district.level != ChurchLevel.district:
-            return _join_error("Please select a valid District church")
+    district = session.get(ChurchUnit, district_id)
+    if not district or district.level != ChurchLevel.district:
+        raise HTTPException(400, "Please select a valid District church")
 
     pic_path = None
     if profile_pic and profile_pic.filename:
@@ -164,11 +103,11 @@ async def join_submit(
             ms = None
 
     member = ChurchMember(
-        church_id=int(district_id),
-        global_church_id=int(global_id),
-        country_church_id=int(country_id),
-        state_church_id=int(state_id),
-        group_church_id=int(group_id),
+        church_id=district_id,
+        global_church_id=global_id,
+        country_church_id=country_id,
+        state_church_id=state_id,
+        group_church_id=group_id,
         full_name=full_name.strip(),
         sex=sex,
         age_category=age_category,
@@ -181,7 +120,7 @@ async def join_submit(
         email=email.strip(),
         profile_pic=pic_path,
         status="member",
-        approval_status=("approved" if is_affiliate else "pending"),
+        approval_status="pending",
         is_active=True,
     )
     session.add(member)
@@ -194,7 +133,7 @@ async def join_submit(
         hashed_password=get_password_hash(password),
         full_name=full_name.strip(),
         role=UserRole.member,
-        church_id=int(district_id),
+        church_id=district_id,
         member_id=member.id,
         is_active=True,  # can login but limited until approved
         promo_code=generate_promo_code(session, full_name),
@@ -204,16 +143,6 @@ async def join_submit(
         user.referred_by_user_id = ref.id
     session.add(user)
     session.commit()
-
-    if is_affiliate:
-        from app.auth import ACCESS_TOKEN_EXPIRE_MINUTES,  create_user_token
-        token = create_user_token(user)
-        resp = RedirectResponse("/member/portal", status_code=303)
-        resp.set_cookie(
-            "access_token", token, httponly=True,
-            max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60, samesite="lax", path="/",
-        )
-        return resp
 
     return templates.TemplateResponse("members/pending.html", {
         "request": request, "full_name": full_name, "email": email
@@ -663,7 +592,7 @@ async def toggle_broadcast(
     session: Session = Depends(get_session),
 ):
     """District/church admin may grant broadcast privilege to an approved member."""
-    from app.auth import ACCESS_TOKEN_EXPIRE_MINUTES,  role_val
+    from app.auth import role_val
     if role_val(user.role) not in ("church_admin", "general_admin"):
         raise HTTPException(403, "Admin only")
     target = session.exec(select(User).where(User.member_id == member_id)).first()
