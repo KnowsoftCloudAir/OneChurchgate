@@ -17,6 +17,49 @@ from app.models import (
 from app.auth import require_user
 
 router = APIRouter(tags=["kwealth"])
+
+def member_has_full_access(user: User, session: Session) -> bool:
+    """Subscribed members and active trials get premium resources; others only free tier."""
+    try:
+        from app.models import MemberSubscription, TrialAccess
+        from datetime import datetime as _dt
+        now = _dt.utcnow()
+        role = str(getattr(user, "role", "") or "")
+        if "admin" in role.lower() or "general" in role.lower():
+            return True
+        # Active Try Churchgate trial
+        if user and getattr(user, "email", "") and str(user.email).endswith("@try.churchgate.local"):
+            tr = session.exec(
+                select(TrialAccess).where(
+                    TrialAccess.user_id == user.id,
+                    TrialAccess.completed == False,
+                )
+            ).first()
+            if tr and tr.expires_at and tr.expires_at > now:
+                return True
+        subs = session.exec(
+            select(MemberSubscription).where(MemberSubscription.user_id == user.id)
+        ).all()
+        for s in subs:
+            st = str(getattr(s, "status", "") or "").lower()
+            end = getattr(s, "ends_at", None)
+            if st == "active" and (end is None or end > now):
+                return True
+    except Exception as e:
+        print("member_has_full_access:", e)
+    return False
+
+
+def apply_free_tier_books(books, full_access: bool, free_count: int = 2):
+    """First free_count books (by id) are free; rest require subscription unless full_access."""
+    if full_access:
+        return books
+    sorted_b = sorted(books, key=lambda b: b.id or 0)
+    free_ids = {b.id for b in sorted_b[:free_count]}
+    return [b for b in books if b.id in free_ids or not getattr(b, "is_premium", False) and b.id in free_ids] or sorted_b[:free_count]
+
+
+
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
 BOOKS_DIR = Path("app/static/books")
 INK_DIR = Path("app/static/uploads/kwealth_ink")
@@ -259,6 +302,11 @@ def _clean_speak(text: str) -> str:
     clean = re.sub(r"\s+", " ", clean).strip()
     # drop lines that only cite "Cross reference"
     clean = re.sub(r"(?i)cross references?:[^.]*\.?", "", clean)
+    # Do not speak parenthesis noise
+    clean = re.sub(r"\([^)]*\)", " ", clean)
+    clean = re.sub(r"\[[^\]]*\]", " ", clean)
+    clean = re.sub(r"[{}]", " ", clean)
+    clean = re.sub(r"\s+", " ", clean).strip()
     words = clean.split()
     if len(words) > 95:
         clean = " ".join(words[:95]) + "."
@@ -427,48 +475,29 @@ def _user_bgm_dir(user_id: int) -> Path:
 
 @router.get("/member/api/kwealth/bgm")
 async def list_bgm(user: User = Depends(require_user)):
-    items = []
-    # Shared tracks from General Admin first
-    shared = Path(__file__).resolve().parent.parent / "static" / "uploads" / "kwealth_bgm" / "shared"
-    if shared.exists():
-        for f in sorted(shared.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
-            if not f.is_file():
-                continue
-            if f.suffix.lower() not in {".mp3", ".m4a", ".ogg", ".wav", ".aac", ".webm"}:
-                continue
-            title = f.stem.replace("_", " ")[:80]
-            tfile = shared / (f.name + ".title")
-            if tfile.exists():
-                try:
-                    title = tfile.read_text(encoding="utf-8").strip()[:80] or title
-                except Exception:
-                    pass
-            items.append({
-                "id": "shared:" + f.name,
-                "title": "★ " + title,
-                "url": f"/static/uploads/kwealth_bgm/shared/{f.name}",
-                "shared": True,
-            })
     d = _user_bgm_dir(user.id)
-    if d.exists():
-        for f in sorted(d.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
-            if not f.is_file():
-                continue
-            if f.suffix.lower() not in {".mp3", ".m4a", ".ogg", ".wav", ".aac", ".webm"}:
-                continue
-            title = f.stem.replace("_", " ")[:80]
-            tfile = d / (f.name + ".title")
-            if tfile.exists():
-                try:
-                    title = tfile.read_text(encoding="utf-8").strip()[:80] or title
-                except Exception:
-                    pass
-            items.append({
-                "id": f.name,
-                "title": title,
-                "url": f"/static/uploads/kwealth_bgm/{user.id}/{f.name}",
-            })
-    return JSONResponse({"ok": True, "items": items[:20], "max": 20})
+    items = []
+    for f in sorted(d.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
+        if not f.is_file():
+            continue
+        if f.suffix.lower() not in {".mp3", ".m4a", ".ogg", ".wav", ".aac", ".webm"}:
+            continue
+        title = f.stem.replace("_", " ")[:80]
+        tfile = d / (f.name + ".title")
+        if tfile.exists():
+            try:
+                title = tfile.read_text(encoding="utf-8").strip()[:80] or title
+            except Exception:
+                pass
+        items.append({
+            "id": f.name,
+            "title": title,
+            "url": f"/static/uploads/kwealth_bgm/{user.id}/{f.name}",
+        })
+    full = member_has_full_access(user, session)
+    if not full:
+        items = items[:2]
+    return JSONResponse({"ok": True, "items": items[:10], "max": 10, "premium_locked": not full})
 
 
 @router.post("/member/kwealth/bgm/upload")
@@ -519,6 +548,12 @@ async def delete_bgm(
 @router.get("/member/kwealth", response_class=HTMLResponse)
 async def kwealth_home(request: Request, user: User = Depends(require_user), session: Session = Depends(get_session)):
     books = session.exec(select(KwealthBook).where(KwealthBook.is_active == True)).all()
+    full = member_has_full_access(user, session)
+    if not full:
+        books_sorted = sorted(books, key=lambda b: b.id or 0)
+        free_ids = {b.id for b in books_sorted[:2]}
+        books = [b for b in books if b.id in free_ids]
+
     progress = session.exec(select(KwealthProgress).where(KwealthProgress.user_id == user.id)).all()
     excerpts_n = len(session.exec(select(KwealthExcerpt).where(KwealthExcerpt.user_id == user.id)).all())
     notes_n = len(session.exec(select(KwealthNote).where(KwealthNote.user_id == user.id)).all())
@@ -540,7 +575,14 @@ async def kwealth_books(
     user: User = Depends(require_user),
     session: Session = Depends(get_session),
 ):
-    books = session.exec(select(KwealthBook).where(KwealthBook.is_active == True).order_by(KwealthBook.title)).all()
+    books_all = session.exec(select(KwealthBook).where(KwealthBook.is_active == True).order_by(KwealthBook.title)).all()
+    full = member_has_full_access(user, session)
+    if full:
+        books = books_all
+    else:
+        free_ids = {b.id for b in sorted(books_all, key=lambda b: b.id or 0)[:2]}
+        books = [b for b in books_all if b.id in free_ids]
+
     book = None
     pages = []
     page_index = 0
@@ -599,7 +641,6 @@ async def kwealth_books_upload(
             source_path=str(dest),
             page_count=len(_split_pages(text)),
             is_active=True,
-            uploaded_by=user.id,
         )
         session.add(book)
         session.commit()
@@ -609,29 +650,6 @@ async def kwealth_books_upload(
         count += 1
     return RedirectResponse(f"/member/kwealth/books?uploaded={count}", status_code=303)
 
-
-
-
-@router.post("/member/kwealth/books/delete")
-async def kwealth_books_delete(
-    book_id: int = Form(...),
-    user: User = Depends(require_user),
-    session: Session = Depends(get_session),
-):
-    book = session.get(KwealthBook, book_id)
-    if not book:
-        return RedirectResponse("/member/kwealth/books?err=missing", status_code=303)
-    # Only owner may delete; admin-shared books have uploaded_by None
-    if book.uploaded_by is not None and book.uploaded_by != user.id:
-        return RedirectResponse("/member/kwealth/books?err=forbidden", status_code=303)
-    if book.uploaded_by is None:
-        return RedirectResponse("/member/kwealth/books?err=shared", status_code=303)
-    # Remove progress rows for this user/book
-    for prog in session.exec(select(KwealthProgress).where(KwealthProgress.book_id == book_id)).all():
-        session.delete(prog)
-    session.delete(book)
-    session.commit()
-    return RedirectResponse("/member/kwealth/books?deleted=1", status_code=303)
 
 @router.post("/member/kwealth/books/progress")
 async def kwealth_books_progress(
@@ -936,7 +954,7 @@ async def angel_ask(
     if not gathered:
         return JSONResponse({
             "ok": True,
-            "answer": "",
+            "answer": "Sorry I can't help with that.",
             "follow_up": "",
             "outside": True,
         })
@@ -1108,7 +1126,14 @@ async def angel_actions(
         return JSONResponse({"ok": True, "speak": f"I did not find {name} on the district members list available to you."})
 
     if action == "books":
-        books = session.exec(select(KwealthBook).where(KwealthBook.is_active == True).order_by(KwealthBook.title)).all()
+        books_all = session.exec(select(KwealthBook).where(KwealthBook.is_active == True).order_by(KwealthBook.title)).all()
+    full = member_has_full_access(user, session)
+    if full:
+        books = books_all
+    else:
+        free_ids = {b.id for b in sorted(books_all, key=lambda b: b.id or 0)[:2]}
+        books = [b for b in books_all if b.id in free_ids]
+
         if not books:
             return JSONResponse({"ok": True, "speak": "No books loaded yet. Open Kwealth Books and tap Load to add a PDF or text from your device.", "books": []})
         titles = [b.title for b in books[:12]]
@@ -1177,6 +1202,69 @@ async def angel_actions(
 
     return JSONResponse({"ok": True, "speak": ""})
 
+
+
+
+@router.get("/admin/kwealth/books", response_class=HTMLResponse)
+async def admin_kwealth_books(request: Request, user: User = Depends(require_user), session: Session = Depends(get_session)):
+    role = str(getattr(user, "role", "") or "")
+    if "admin" not in role.lower() and "general" not in role.lower():
+        return RedirectResponse("/member/portal", status_code=303)
+    books = session.exec(select(KwealthBook).order_by(KwealthBook.created_at.desc())).all()
+    return templates.TemplateResponse("admin/kwealth_books.html", {"request": request, "user": user, "books": books})
+
+
+@router.post("/admin/kwealth/books/upload")
+async def admin_kwealth_books_upload(
+    files: List[UploadFile] = File(...),
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    role = str(getattr(user, "role", "") or "")
+    if "admin" not in role.lower() and "general" not in role.lower():
+        return RedirectResponse("/member/portal", status_code=303)
+    count = 0
+    existing = session.exec(select(KwealthBook)).all()
+    existing_n = len(existing)
+    for f in files or []:
+        raw = await f.read()
+        if not raw or len(raw) > 20_000_000:
+            continue
+        text = _extract_text_from_upload(raw, f.filename or "book.txt")
+        text = (text or "").strip()
+        if len(text) < 20:
+            continue
+        safe = f"admin_{uuid.uuid4().hex[:10]}.txt"
+        here = Path(__file__).resolve().parent.parent
+        dest = here / "static" / "uploads" / "kwealth_books_text" / safe
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        dest.write_text(text, encoding="utf-8")
+        title = (f.filename or "Book").rsplit(".", 1)[0][:180]
+        # First 2 overall free, rest premium
+        is_premium = (existing_n + count) >= 2
+        book = KwealthBook(
+            title=title,
+            source_path=str(dest),
+            page_count=len(_split_pages(text)),
+            is_active=True,
+            is_premium=is_premium,
+        )
+        session.add(book)
+        session.commit()
+        count += 1
+    return RedirectResponse(f"/admin/kwealth/books?uploaded={count}", status_code=303)
+
+
+@router.post("/admin/kwealth/books/{book_id}/delete")
+async def admin_delete_book(book_id: int, user: User = Depends(require_user), session: Session = Depends(get_session)):
+    role = str(getattr(user, "role", "") or "")
+    if "admin" not in role.lower():
+        return RedirectResponse("/member/portal", status_code=303)
+    b = session.get(KwealthBook, book_id)
+    if b:
+        session.delete(b)
+        session.commit()
+    return RedirectResponse("/admin/kwealth/books", status_code=303)
 
 
 @router.get("/member/hymns", response_class=HTMLResponse)
