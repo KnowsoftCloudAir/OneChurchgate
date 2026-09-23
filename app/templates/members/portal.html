@@ -360,47 +360,6 @@
 </style>
 
 <div class="member-space theme-royal" id="memberSpace" x-data="memberHub()" x-init="init()">
-    <div id="cgTrialBanner" style="display:none;position:sticky;top:0;z-index:50;background:#b45309;color:#fff;text-align:center;padding:6px 10px;font-size:12px;font-weight:700;"></div>
-    <div id="cgAmbientBar" class="flex flex-wrap gap-2 items-center px-3 py-2 text-xs" style="position:relative;z-index:5;background:rgba(0,0,0,0.25);">
-      <span class="opacity-80">Ambient:</span>
-      <select id="cgAnimSelect" class="text-slate-900 rounded px-2 py-1 text-xs">
-        <option value="none">None</option>
-        <option value="sunset">Sunset</option>
-        <option value="planets">Planets around sun</option>
-        <option value="starfield">Starfield</option>
-        <option value="aurora">Aurora</option>
-        <option value="ocean_waves">Ocean waves</option>
-        <option value="ocean_fish">Ocean fish</option>
-        <option value="sky_run">Sky run</option>
-        <option value="jupiter">Jupiter flyby</option>
-        <option value="galaxy">Galaxy</option>
-        <option value="floating_orbs">Floating orbs</option>
-        <option value="word_forms">Spoken words</option>
-        <option value="great_men">Portraits from sky</option>
-        <option value="sunrise_ant">Sunrise ant</option>
-      </select>
-      <button type="button" id="cgAnimPause" class="px-2 py-1 rounded bg-white/15 border border-white/20">Pause anim</button>
-      <button type="button" id="cgAnimFS" class="px-2 py-1 rounded bg-white/15 border border-white/20">Fullscreen</button>
-    </div>
-    <script>
-    (function(){
-      var sel = document.getElementById('cgAnimSelect');
-      var pauseBtn = document.getElementById('cgAnimPause');
-      var fsBtn = document.getElementById('cgAnimFS');
-      if (sel && window.CGBgAnim) {
-        var cur = localStorage.getItem('cg_bg_anim') || 'none';
-        sel.value = cur;
-        sel.onchange = function(){ CGBgAnim.setMode(sel.value); };
-        pauseBtn.onclick = function(){
-          var p = !CGBgAnim.isPaused();
-          CGBgAnim.setPaused(p);
-          pauseBtn.textContent = p ? 'Resume anim' : 'Pause anim';
-        };
-        fsBtn.onclick = function(){ CGBgAnim.toggleFullscreen(); };
-      }
-    })();
-    </script>
-
   <div class="pray-watermark" aria-hidden="true"></div>
 
   <div class="max-w-3xl mx-auto px-4 pt-4 relative z-10">
@@ -1449,8 +1408,7 @@ function memberHub() {
       if (speakBye) {
         try {
           const u = new SpeechSynthesisUtterance('Angel is off. God bless you.');
-          if (window.CGBgAnim) try { CGBgAnim.pushSpokenWord(text); } catch(e){}
-        speechSynthesis.speak(u);
+          speechSynthesis.speak(u);
         } catch (e) {}
       }
     },
@@ -1886,37 +1844,6 @@ function memberHub() {
         return;
       }
       if (/\b(list books|my books|kwealth books)\b/.test(t)) { this.angelAction('books'); return; }
-      
-      if (/\b(change animation|background animation|set animation|ocean fish|sky run|jupiter|sunset anim)\b/.test(t)) {
-        if (window.CGBgAnim) {
-          let m = 'sunset';
-          if (/ocean/.test(t)) m = 'ocean_fish';
-          else if (/sky/.test(t)) m = 'sky_run';
-          else if (/jupiter/.test(t)) m = 'jupiter';
-          else if (/portrait|great men/.test(t)) m = 'great_men';
-          else if (/ant/.test(t)) m = 'sunrise_ant';
-          else if (/word/.test(t)) m = 'word_forms';
-          else if (/none|off/.test(t)) m = 'none';
-          CGBgAnim.setMode(m);
-          const sel = document.getElementById('cgAnimSelect');
-          if (sel) sel.value = m;
-          this.angelSpeak('Background animation set.');
-        } else this.angelSpeak('Animation is not available on this page.');
-        return;
-      }
-      if (/\bpause animation\b/.test(t)) {
-        if (window.CGBgAnim) { CGBgAnim.setPaused(true); this.angelSpeak('Animation paused.'); }
-        return;
-      }
-      if (/\bresume animation\b/.test(t)) {
-        if (window.CGBgAnim) { CGBgAnim.setPaused(false); this.angelSpeak('Animation resumed.'); }
-        return;
-      }
-      if (/\bfull ?screen\b/.test(t)) {
-        if (window.CGBgAnim) { CGBgAnim.toggleFullscreen(); this.angelSpeak('Fullscreen toggled.'); }
-        return;
-      }
-
       if (/\bread bible\b/.test(t) || /\bbible reading\b/.test(t)) { this.angelReadBible('peace'); return; }
       if (/\b(receive jesus|accept jesus|how do i (get )?saved|how can i be saved)\b/.test(t)) {
         this.angelLeadSalvation(); return;
@@ -1979,11 +1906,9 @@ function memberHub() {
           this.angelSpeak(j.answer, false, '');
           return;
         }
-        if (j && j.ok && j.outside) {
-          this.angelSpeak("Sorry I can't help with that.");
-          return;
-        }
+        // no match — stay quiet
         this.angel.busy = false;
+        this.angel.status = 'No matching word found. Try another question.';
         this.angelIdleAfterAction();
         return;
       } catch (e) {}
