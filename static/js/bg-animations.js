@@ -1,55 +1,483 @@
-/* Churchgate ambient background animations — full set (portal + books) */
+/* Churchgate full-3D ambient scenes (Three.js) — emotionally rich, runs portal + books */
 (function (global) {
   const MODES = [
-    { id: 'none', name: 'None', free: true },
-    { id: 'sunset', name: 'Sunset glow', free: true },
-    { id: 'planets', name: 'Planets around the sun', free: true },
-    { id: 'starfield', name: 'Classic starfield', free: true },
-    { id: 'aurora', name: 'Northern lights', free: false },
-    { id: 'ocean_waves', name: 'Ocean waves', free: false },
-    { id: 'ocean_fish', name: 'Ocean fish (depth)', free: false },
-    { id: 'sky_run', name: 'Sky run (deep space)', free: false },
-    { id: 'jupiter', name: 'Jupiter flyby', free: false },
-    { id: 'galaxy', name: 'Spiral galaxy', free: false },
-    { id: 'floating_orbs', name: 'Floating orbs', free: false },
-    { id: 'word_forms', name: 'Spoken word shapes', free: false },
-    { id: 'great_men', name: 'Portraits from the sky', free: false },
-    { id: 'sunrise_ant', name: 'Sunrise ant trail', free: false },
+    { id: 'none', name: 'None' },
+    { id: 'sunset', name: 'Golden sunset' },
+    { id: 'planets', name: 'Planets around the sun' },
+    { id: 'starfield', name: 'Deep starfield' },
+    { id: 'aurora', name: 'Northern lights' },
+    { id: 'ocean_waves', name: 'Ocean waves' },
+    { id: 'ocean_fish', name: 'Ocean depths' },
+    { id: 'sky_run', name: 'Journey into the heavens' },
+    { id: 'jupiter', name: 'Jupiter flyby' },
+    { id: 'galaxy', name: 'Spiral galaxy' },
+    { id: 'floating_orbs', name: 'Floating orbs of light' },
+    { id: 'word_forms', name: 'Living words' },
+    { id: 'great_men', name: 'Portraits from the sky' },
+    { id: 'sunrise_ant', name: 'Sunrise meadow' },
   ];
 
-  let canvas, ctx, raf, mode = 'none', paused = false, t0 = 0;
+  let renderer, scene, camera, animId, mode = 'none', paused = false;
+  let clock, root, starPoints, extra = {};
+  let threeReady = null;
   let wordQueue = [];
+  let canvasHost = null;
 
-  function ensureCanvas() {
-    if (canvas) return;
-    canvas = document.createElement('canvas');
-    canvas.id = 'cgBgAnim';
-    canvas.style.cssText = 'position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.88;';
-    document.body.prepend(canvas);
-    ctx = canvas.getContext('2d');
-    resize();
-    window.addEventListener('resize', resize);
+  function loadThree() {
+    if (global.THREE) return Promise.resolve(global.THREE);
+    if (threeReady) return threeReady;
+    threeReady = new Promise((resolve, reject) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js';
+      s.onload = () => resolve(global.THREE);
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
+    return threeReady;
   }
-  function resize() {
-    if (!canvas) return;
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+
+  function ensureRenderer() {
+    if (renderer) return;
+    canvasHost = document.createElement('div');
+    canvasHost.id = 'cgBgAnim3d';
+    canvasHost.style.cssText = 'position:fixed;inset:0;z-index:0;pointer-events:none;opacity:0.92;';
+    document.body.prepend(canvasHost);
+    const THREE = global.THREE;
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setClearColor(0x020617, 1);
+    canvasHost.appendChild(renderer.domElement);
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 2000);
+    camera.position.set(0, 2, 12);
+    clock = new THREE.Clock();
+    window.addEventListener('resize', onResize);
   }
-  function setMode(id) {
+
+  function onResize() {
+    if (!renderer || !camera) return;
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  }
+
+  function clearScene() {
+    if (!scene) return;
+    while (scene.children.length) {
+      const o = scene.children[0];
+      scene.remove(o);
+      if (o.geometry) o.geometry.dispose();
+      if (o.material) {
+        if (Array.isArray(o.material)) o.material.forEach((m) => m.dispose());
+        else o.material.dispose();
+      }
+    }
+    root = null;
+    starPoints = null;
+    extra = {};
+  }
+
+  function addStars(count, spread) {
+    const THREE = global.THREE;
+    const geo = new THREE.BufferGeometry();
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      pos[i * 3] = (Math.random() - 0.5) * spread;
+      pos[i * 3 + 1] = (Math.random() - 0.5) * spread;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * spread;
+    }
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.06, transparent: true, opacity: 0.9 });
+    starPoints = new THREE.Points(geo, mat);
+    scene.add(starPoints);
+  }
+
+  function softLight() {
+    const THREE = global.THREE;
+    scene.add(new THREE.AmbientLight(0x404060, 0.6));
+    const key = new THREE.DirectionalLight(0xffe4c4, 1.1);
+    key.position.set(5, 8, 5);
+    scene.add(key);
+    const rim = new THREE.PointLight(0x88aaff, 0.8, 80);
+    rim.position.set(-8, 4, -6);
+    scene.add(rim);
+  }
+
+  function buildMode(id) {
+    const THREE = global.THREE;
+    clearScene();
+    softLight();
+    camera.position.set(0, 2, 12);
+    camera.lookAt(0, 0, 0);
+
+    if (id === 'sunset') {
+      renderer.setClearColor(0x1a0a2e, 1);
+      const sun = new THREE.Mesh(
+        new THREE.SphereGeometry(1.6, 32, 32),
+        new THREE.MeshBasicMaterial({ color: 0xffb347 })
+      );
+      sun.position.set(0, -0.5, -8);
+      scene.add(sun);
+      const glow = new THREE.PointLight(0xff8c42, 2.5, 60);
+      glow.position.copy(sun.position);
+      scene.add(glow);
+      // horizon plane
+      const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(80, 40),
+        new THREE.MeshStandardMaterial({ color: 0x2a1840, roughness: 0.9 })
+      );
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = -3;
+      scene.add(ground);
+      // floating clouds
+      extra.clouds = [];
+      for (let i = 0; i < 8; i++) {
+        const c = new THREE.Mesh(
+          new THREE.SphereGeometry(1.2 + Math.random(), 12, 12),
+          new THREE.MeshStandardMaterial({ color: 0xffc9a3, transparent: true, opacity: 0.35 })
+        );
+        c.position.set((Math.random() - 0.5) * 20, 1 + Math.random() * 3, -6 - Math.random() * 8);
+        c.scale.set(2.5, 0.6, 1.2);
+        scene.add(c);
+        extra.clouds.push(c);
+      }
+      extra.sun = sun;
+    } else if (id === 'planets') {
+      renderer.setClearColor(0x020617, 1);
+      addStars(1200, 80);
+      const sun = new THREE.Mesh(
+        new THREE.SphereGeometry(1.4, 32, 32),
+        new THREE.MeshBasicMaterial({ color: 0xffd166 })
+      );
+      scene.add(sun);
+      scene.add(new THREE.PointLight(0xffcc66, 2, 50));
+      extra.planets = [];
+      const cols = [0x94a3b8, 0xf59e0b, 0x3b82f6, 0xef4444, 0xa78bfa, 0x34d399];
+      cols.forEach((col, i) => {
+        const p = new THREE.Mesh(
+          new THREE.SphereGeometry(0.25 + i * 0.08, 24, 24),
+          new THREE.MeshStandardMaterial({ color: col, roughness: 0.4, metalness: 0.2 })
+        );
+        const pivot = new THREE.Object3D();
+        pivot.userData = { radius: 2.5 + i * 1.1, speed: 0.35 - i * 0.04, phase: p };
+        p.position.x = pivot.userData.radius;
+        pivot.add(p);
+        scene.add(pivot);
+        extra.planets.push(pivot);
+      });
+    } else if (id === 'starfield' || id === 'sky_run') {
+      renderer.setClearColor(0x000010, 1);
+      addStars(id === 'sky_run' ? 2500 : 1800, 100);
+      camera.position.set(0, 0, 8);
+      extra.drift = id === 'sky_run' ? 0.15 : 0.04;
+      if (id === 'sky_run') {
+        const neb = new THREE.Mesh(
+          new THREE.SphereGeometry(30, 32, 32),
+          new THREE.MeshBasicMaterial({ color: 0x1e1b4b, side: THREE.BackSide, transparent: true, opacity: 0.5 })
+        );
+        scene.add(neb);
+      }
+    } else if (id === 'aurora') {
+      renderer.setClearColor(0x020617, 1);
+      addStars(600, 60);
+      extra.bands = [];
+      for (let i = 0; i < 5; i++) {
+        const geo = new THREE.PlaneGeometry(40, 6, 40, 8);
+        const mat = new THREE.MeshBasicMaterial({
+          color: new THREE.Color().setHSL(0.35 + i * 0.06, 0.7, 0.45),
+          transparent: true,
+          opacity: 0.22,
+          side: THREE.DoubleSide,
+        });
+        const band = new THREE.Mesh(geo, mat);
+        band.position.set(0, 2 + i * 1.2, -10);
+        band.rotation.x = -0.3;
+        scene.add(band);
+        extra.bands.push(band);
+      }
+    } else if (id === 'ocean_waves' || id === 'ocean_fish') {
+      renderer.setClearColor(0x0c4a6e, 1);
+      const water = new THREE.Mesh(
+        new THREE.PlaneGeometry(60, 60, 64, 64),
+        new THREE.MeshStandardMaterial({ color: 0x0ea5e9, roughness: 0.2, metalness: 0.3, flatShading: true })
+      );
+      water.rotation.x = -Math.PI / 2;
+      water.position.y = -1;
+      scene.add(water);
+      extra.water = water;
+      scene.add(new THREE.DirectionalLight(0x87ceeb, 1.2));
+      if (id === 'ocean_fish') {
+        extra.fish = [];
+        for (let i = 0; i < 12; i++) {
+          const body = new THREE.Mesh(
+            new THREE.SphereGeometry(0.25, 12, 12),
+            new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.3 })
+          );
+          body.scale.set(2, 0.7, 1);
+          body.position.set((Math.random() - 0.5) * 16, -0.5 + Math.random() * 3, (Math.random() - 0.5) * 10);
+          scene.add(body);
+          extra.fish.push(body);
+        }
+      }
+      camera.position.set(0, 4, 14);
+    } else if (id === 'jupiter') {
+      renderer.setClearColor(0x020617, 1);
+      addStars(900, 70);
+      const jup = new THREE.Mesh(
+        new THREE.SphereGeometry(2.2, 48, 48),
+        new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.55 })
+      );
+      scene.add(jup);
+      const sun = new THREE.Mesh(
+        new THREE.SphereGeometry(0.5, 16, 16),
+        new THREE.MeshBasicMaterial({ color: 0xffe566 })
+      );
+      sun.position.set(-8, 2, -12);
+      scene.add(sun);
+      scene.add(new THREE.PointLight(0xffcc66, 1.5, 40));
+      extra.jup = jup;
+      extra.phase = 0;
+    } else if (id === 'galaxy') {
+      renderer.setClearColor(0x000008, 1);
+      const geo = new THREE.BufferGeometry();
+      const n = 4000;
+      const pos = new Float32Array(n * 3);
+      const col = new Float32Array(n * 3);
+      for (let i = 0; i < n; i++) {
+        const arm = i % 3;
+        const a = i * 0.05 + arm * 2.1;
+        const r = (i * 0.004) % 12;
+        pos[i * 3] = Math.cos(a) * r;
+        pos[i * 3 + 1] = (Math.random() - 0.5) * 0.8;
+        pos[i * 3 + 2] = Math.sin(a) * r;
+        const c = new THREE.Color().setHSL(0.55 + arm * 0.1, 0.8, 0.6);
+        col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b;
+      }
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('color', new THREE.BufferAttribute(col, 3));
+      const pts = new THREE.Points(geo, new THREE.PointsMaterial({ size: 0.05, vertexColors: true }));
+      scene.add(pts);
+      extra.galaxy = pts;
+      camera.position.set(0, 8, 14);
+      camera.lookAt(0, 0, 0);
+    } else if (id === 'floating_orbs') {
+      renderer.setClearColor(0x0f172a, 1);
+      extra.orbs = [];
+      for (let i = 0; i < 16; i++) {
+        const mesh = new THREE.Mesh(
+          new THREE.SphereGeometry(0.35 + Math.random() * 0.4, 20, 20),
+          new THREE.MeshStandardMaterial({
+            color: new THREE.Color().setHSL(Math.random(), 0.7, 0.55),
+            emissive: new THREE.Color().setHSL(Math.random(), 0.5, 0.2),
+            transparent: true,
+            opacity: 0.85,
+          })
+        );
+        mesh.position.set((Math.random() - 0.5) * 14, (Math.random() - 0.5) * 8, (Math.random() - 0.5) * 10);
+        mesh.userData = { sp: 0.3 + Math.random() * 0.5, ph: Math.random() * 6 };
+        scene.add(mesh);
+        extra.orbs.push(mesh);
+        const pl = new THREE.PointLight(mesh.material.color, 0.4, 8);
+        mesh.add(pl);
+      }
+    } else if (id === 'word_forms') {
+      renderer.setClearColor(0x111827, 1);
+      extra.blocks = [];
+      for (let i = 0; i < 10; i++) {
+        const b = new THREE.Mesh(
+          new THREE.BoxGeometry(1.2, 0.4, 0.2),
+          new THREE.MeshStandardMaterial({ color: 0x818cf8, transparent: true, opacity: 0.7 })
+        );
+        b.position.set((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 4);
+        scene.add(b);
+        extra.blocks.push(b);
+      }
+    } else if (id === 'great_men') {
+      renderer.setClearColor(0x0f172a, 1);
+      addStars(400, 50);
+      extra.figures = [];
+      for (let i = 0; i < 6; i++) {
+        const g = new THREE.Group();
+        const head = new THREE.Mesh(
+          new THREE.SphereGeometry(0.35, 16, 16),
+          new THREE.MeshStandardMaterial({ color: 0xe2e8f0 })
+        );
+        head.position.y = 0.9;
+        const body = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.25, 0.4, 1.2, 12),
+          new THREE.MeshStandardMaterial({ color: 0xcbd5e1 })
+        );
+        body.position.y = 0.1;
+        g.add(head); g.add(body);
+        g.position.set((i - 2.5) * 2.2, 8 + i * 2, -4);
+        g.userData = { speed: 0.4 + Math.random() * 0.3 };
+        scene.add(g);
+        extra.figures.push(g);
+      }
+    } else if (id === 'sunrise_ant') {
+      renderer.setClearColor(0x7c2d12, 1);
+      const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(40, 40),
+        new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.95 })
+      );
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = -1;
+      scene.add(ground);
+      const sun = new THREE.Mesh(
+        new THREE.SphereGeometry(1.2, 24, 24),
+        new THREE.MeshBasicMaterial({ color: 0xfbbf24 })
+      );
+      sun.position.set(0, 3, -12);
+      scene.add(sun);
+      scene.add(new THREE.PointLight(0xfbbf24, 1.5, 40));
+      // trees
+      for (let i = 0; i < 10; i++) {
+        const trunk = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.1, 0.15, 1.5, 8),
+          new THREE.MeshStandardMaterial({ color: 0x5c4033 })
+        );
+        const leaf = new THREE.Mesh(
+          new THREE.SphereGeometry(0.6, 10, 10),
+          new THREE.MeshStandardMaterial({ color: 0x22c55e })
+        );
+        leaf.position.y = 1.1;
+        const tree = new THREE.Group();
+        tree.add(trunk); tree.add(leaf);
+        tree.position.set((Math.random() - 0.5) * 18, -0.25, (Math.random() - 0.5) * 14 - 2);
+        scene.add(tree);
+      }
+      const ant = new THREE.Mesh(
+        new THREE.SphereGeometry(0.15, 10, 10),
+        new THREE.MeshStandardMaterial({ color: 0x1c1917 })
+      );
+      ant.scale.set(1.8, 0.8, 1);
+      ant.position.set(-6, -0.7, 2);
+      scene.add(ant);
+      extra.ant = ant;
+      camera.position.set(0, 5, 12);
+    }
+  }
+
+  function tick() {
+    animId = requestAnimationFrame(tick);
+    if (paused || mode === 'none' || !renderer) return;
+    const t = clock.getElapsedTime();
+    const dt = clock.getDelta();
+
+    if (starPoints && (mode === 'starfield' || mode === 'sky_run')) {
+      starPoints.rotation.y += (extra.drift || 0.02) * 0.15;
+      starPoints.position.z += (extra.drift || 0) * 0.5;
+      if (starPoints.position.z > 20) starPoints.position.z = 0;
+    }
+    if (extra.planets) {
+      extra.planets.forEach((piv) => {
+        piv.rotation.y += piv.userData.speed * 0.01;
+        piv.rotation.x = Math.sin(t * 0.2) * 0.15;
+      });
+    }
+    if (extra.sun && mode === 'sunset') {
+      extra.sun.position.y = -0.5 + Math.sin(t * 0.2) * 0.15;
+      (extra.clouds || []).forEach((c, i) => {
+        c.position.x += 0.008 * (1 + i * 0.05);
+        if (c.position.x > 14) c.position.x = -14;
+      });
+    }
+    if (extra.water) {
+      const pos = extra.water.geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const y = pos.getY(i);
+        pos.setZ(i, Math.sin(x * 0.3 + t) * 0.25 + Math.cos(y * 0.25 + t * 0.8) * 0.2);
+      }
+      pos.needsUpdate = true;
+      extra.water.geometry.computeVertexNormals();
+    }
+    if (extra.fish) {
+      extra.fish.forEach((f, i) => {
+        f.position.x += Math.sin(t + i) * 0.02;
+        f.position.y = -0.2 + Math.sin(t * 0.8 + i) * 1.5;
+        f.rotation.y = Math.sin(t + i) * 0.5;
+      });
+    }
+    if (extra.jup) {
+      extra.phase = (extra.phase || 0) + 0.004;
+      const p = extra.phase % 2;
+      if (p < 1) {
+        extra.jup.position.x = -6 + p * 12;
+        extra.jup.scale.setScalar(0.6 + p * 1.8);
+      } else {
+        extra.jup.position.x = 6 + (p - 1) * 8;
+        extra.jup.scale.setScalar(2.4 - (p - 1) * 1.2);
+      }
+      extra.jup.rotation.y += 0.01;
+    }
+    if (extra.galaxy) extra.galaxy.rotation.y += 0.002;
+    if (extra.orbs) {
+      extra.orbs.forEach((o) => {
+        o.position.y += Math.sin(t * o.userData.sp + o.userData.ph) * 0.01;
+        o.rotation.y += 0.01;
+      });
+    }
+    if (extra.bands) {
+      extra.bands.forEach((b, i) => {
+        b.position.y = 2 + i * 1.2 + Math.sin(t + i) * 0.3;
+        b.material.opacity = 0.15 + 0.1 * Math.sin(t * 0.5 + i);
+      });
+    }
+    if (extra.figures) {
+      extra.figures.forEach((g) => {
+        g.position.y -= g.userData.speed * 0.03;
+        const s = Math.max(0.4, 1.5 - g.position.y * 0.05);
+        g.scale.setScalar(s);
+        if (g.position.y < -6) g.position.y = 10;
+      });
+    }
+    if (extra.ant) {
+      extra.ant.position.x = Math.sin(t * 0.4) * 6;
+      extra.ant.position.z = 2 + Math.cos(t * 0.3) * 3;
+    }
+    if (extra.blocks) {
+      extra.blocks.forEach((b, i) => {
+        b.rotation.y += 0.01;
+        b.position.y += Math.sin(t + i) * 0.005;
+      });
+    }
+
+    // gentle camera breathe
+    if (mode !== 'none') {
+      camera.position.x = Math.sin(t * 0.15) * 0.4;
+      camera.position.y += (2 + Math.sin(t * 0.2) * 0.15 - camera.position.y) * 0.02;
+    }
+    renderer.render(scene, camera);
+  }
+
+  async function setMode(id) {
     mode = id || 'none';
     localStorage.setItem('cg_bg_anim', mode);
     if (mode === 'none') {
       stop();
-      if (canvas) canvas.style.display = 'none';
+      if (canvasHost) canvasHost.style.display = 'none';
       return;
     }
-    ensureCanvas();
-    canvas.style.display = 'block';
-    if (!raf) start();
+    try {
+      await loadThree();
+      ensureRenderer();
+      canvasHost.style.display = 'block';
+      buildMode(mode);
+      if (!animId) tick();
+    } catch (e) {
+      console.warn('3D anim failed, silent', e);
+    }
   }
+
   function setPaused(p) {
     paused = !!p;
     localStorage.setItem('cg_bg_anim_paused', paused ? '1' : '0');
+  }
+  function stop() {
+    if (animId) cancelAnimationFrame(animId);
+    animId = null;
   }
   function toggleFullscreen() {
     const el = document.documentElement;
@@ -61,225 +489,21 @@
   }
   function pushSpokenWord(text) {
     if (!text) return;
-    wordQueue.push({ t: performance.now(), text: String(text).split(/\s+/).slice(0, 8).join(' ') });
-    if (wordQueue.length > 6) wordQueue.shift();
-  }
-  function start() {
-    t0 = performance.now();
-    const loop = (now) => {
-      raf = requestAnimationFrame(loop);
-      if (paused || !ctx || mode === 'none') return;
-      const t = (now - t0) / 1000;
-      const W = canvas.width, H = canvas.height;
-      ctx.clearRect(0, 0, W, H);
-      const drawers = {
-        sunset: drawSunset, planets: drawPlanets, starfield: drawStarfield,
-        aurora: drawAurora, ocean_waves: drawWaves, ocean_fish: drawOcean,
-        sky_run: drawSky, jupiter: drawJupiter, galaxy: drawGalaxy,
-        floating_orbs: drawOrbs, word_forms: drawWords, great_men: drawPortraits,
-        sunrise_ant: drawAnt,
-      };
-      (drawers[mode] || drawSunset)(t, W, H);
-    };
-    raf = requestAnimationFrame(loop);
-  }
-  function stop() {
-    if (raf) cancelAnimationFrame(raf);
-    raf = null;
-  }
-
-  function drawSunset(t, W, H) {
-    const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#0f172a'); g.addColorStop(0.45, '#7c2d12');
-    g.addColorStop(0.7, '#f59e0b'); g.addColorStop(1, '#1e1b4b');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    const y = H * 0.55 + Math.sin(t * 0.3) * 8;
-    ctx.beginPath(); ctx.arc(W * 0.5, y, Math.min(W, H) * 0.12, 0, Math.PI * 2);
-    ctx.fillStyle = '#fbbf24'; ctx.fill();
-  }
-  function drawPlanets(t, W, H) {
-    ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, W, H);
-    const cx = W / 2, cy = H / 2;
-    ctx.beginPath(); ctx.arc(cx, cy, 22, 0, Math.PI * 2);
-    ctx.fillStyle = '#fbbf24'; ctx.shadowColor = '#f59e0b'; ctx.shadowBlur = 30; ctx.fill();
-    ctx.shadowBlur = 0;
-    const planets = [
-      { r: 60, size: 18, col: '#94a3b8', sz: 5 },
-      { r: 95, speed: 12, col: '#f59e0b', sz: 8 },
-      { r: 140, speed: 8, col: '#3b82f6', sz: 9 },
-      { r: 185, speed: 5, col: '#ef4444', sz: 7 },
-      { r: 240, speed: 3.5, col: '#a78bfa', sz: 14 },
-    ];
-    planets.forEach((p, i) => {
-      ctx.beginPath(); ctx.arc(cx, cy, p.r, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(148,163,184,0.25)'; ctx.stroke();
-      const a = t * (p.speed / 40) + i;
-      const x = cx + Math.cos(a) * p.r;
-      const y = cy + Math.sin(a) * p.r * 0.55;
-      ctx.beginPath(); ctx.arc(x, y, p.sz, 0, Math.PI * 2);
-      ctx.fillStyle = p.col; ctx.fill();
-    });
-  }
-  function drawStarfield(t, W, H) {
-    ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, W, H);
-    for (let i = 0; i < 160; i++) {
-      const x = (i * 97 + t * (8 + (i % 5))) % W;
-      const y = (i * 53) % H;
-      const tw = 0.3 + 0.7 * Math.abs(Math.sin(t * 2 + i));
-      ctx.fillStyle = `rgba(255,255,255,${tw})`;
-      ctx.fillRect(x, y, (i % 3) + 1, (i % 3) + 1);
-    }
-  }
-  function drawAurora(t, W, H) {
-    ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, W, H);
-    for (let band = 0; band < 4; band++) {
-      ctx.beginPath();
-      for (let x = 0; x <= W; x += 8) {
-        const y = H * 0.25 + band * 40 + Math.sin(x * 0.01 + t + band) * 30 + Math.sin(x * 0.02 - t * 0.5) * 15;
-        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      }
-      ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
-      ctx.fillStyle = `hsla(${140 + band * 25}, 70%, 45%, 0.12)`;
-      ctx.fill();
-    }
-  }
-  function drawWaves(t, W, H) {
-    const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#0c4a6e'); g.addColorStop(1, '#082f49');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    for (let i = 0; i < 5; i++) {
-      ctx.beginPath();
-      for (let x = 0; x <= W; x += 6) {
-        const y = H * 0.5 + i * 28 + Math.sin(x * 0.015 + t * (1 + i * 0.2)) * (18 - i * 2);
-        if (x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-      }
-      ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
-      ctx.fillStyle = `rgba(56,189,248,${0.08 + i * 0.04})`;
-      ctx.fill();
-    }
-  }
-  function drawOcean(t, W, H) {
-    const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#020617'); g.addColorStop(1, '#0ea5e9');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    for (let i = 0; i < 7; i++) {
-      const phase = t * (0.4 + i * 0.07) + i;
-      const depth = (Math.sin(phase) + 1) / 2;
-      const y = H * (0.85 - depth * 0.7);
-      const x = ((t * 40 * (1 + i * 0.1) + i * 90) % (W + 80)) - 40;
-      const s = 12 + depth * 28;
-      ctx.save(); ctx.translate(x, y); ctx.scale(1 + depth, 0.6 + depth * 0.5);
-      ctx.fillStyle = `rgba(56,189,248,${0.35 + depth * 0.5})`;
-      ctx.beginPath(); ctx.ellipse(0, 0, s, s * 0.4, 0, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.moveTo(s * 0.8, 0); ctx.lineTo(s * 1.4, -s * 0.3); ctx.lineTo(s * 1.4, s * 0.3); ctx.fill();
-      ctx.restore();
-    }
-  }
-  function drawSky(t, W, H) {
-    ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, W, H);
-    const depth = (t * 0.08) % 1;
-    for (let i = 0; i < 120; i++) {
-      const x = (i * 97 + depth * W * 0.3) % W;
-      const y = (i * 53 + depth * H * 0.5) % H;
-      const tw = 0.4 + 0.6 * Math.abs(Math.sin(t * 2 + i));
-      ctx.fillStyle = `rgba(255,255,255,${tw})`; ctx.fillRect(x, y, 2, 2);
-    }
-    ctx.fillStyle = 'rgba(99,102,241,0.15)';
-    ctx.beginPath(); ctx.arc(W / 2, H / 2, H * (0.2 + depth * 0.4), 0, Math.PI * 2); ctx.fill();
-  }
-  function drawJupiter(t, W, H) {
-    ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, W, H);
-    ctx.beginPath(); ctx.arc(W * 0.5, H * 0.5, 18, 0, Math.PI * 2);
-    ctx.fillStyle = '#fbbf24'; ctx.fill();
-    const cycle = (t * 0.15) % 2;
-    let x, r;
-    if (cycle < 1) { x = W * (0.15 + cycle * 0.7); r = 20 + cycle * Math.min(W, H) * 0.45; }
-    else { x = W * (0.85 + (cycle - 1) * 0.4); r = Math.min(W, H) * 0.55 - (cycle - 1) * 80; }
-    const grd = ctx.createRadialGradient(x - r * 0.2, H * 0.45, r * 0.1, x, H * 0.5, r);
-    grd.addColorStop(0, '#fcd34d'); grd.addColorStop(0.4, '#d97706'); grd.addColorStop(1, '#7c2d12');
-    ctx.beginPath(); ctx.arc(x, H * 0.5, Math.max(8, r), 0, Math.PI * 2);
-    ctx.fillStyle = grd; ctx.fill();
-    ctx.beginPath(); ctx.arc(W * 0.92, H * 0.4, 14, 0, Math.PI * 2);
-    ctx.fillStyle = '#93c5fd'; ctx.fill();
-  }
-  function drawGalaxy(t, W, H) {
-    ctx.fillStyle = '#020617'; ctx.fillRect(0, 0, W, H);
-    const cx = W / 2, cy = H / 2;
-    for (let i = 0; i < 400; i++) {
-      const arm = i % 3;
-      const a = t * 0.15 + arm * 2.1 + i * 0.04;
-      const rad = (i * 0.6) % (Math.min(W, H) * 0.45);
-      const x = cx + Math.cos(a) * rad;
-      const y = cy + Math.sin(a) * rad * 0.55;
-      ctx.fillStyle = `hsla(${200 + arm * 40}, 80%, 70%, 0.5)`;
-      ctx.fillRect(x, y, 1.5, 1.5);
-    }
-  }
-  function drawOrbs(t, W, H) {
-    ctx.fillStyle = 'rgba(15,23,42,0.5)'; ctx.fillRect(0, 0, W, H);
-    for (let i = 0; i < 12; i++) {
-      const x = W * (0.1 + (i % 4) * 0.25) + Math.sin(t + i) * 20;
-      const y = H * (0.2 + Math.floor(i / 4) * 0.25) + Math.cos(t * 0.8 + i) * 15;
-      const r = 20 + (i % 5) * 8;
-      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
-      g.addColorStop(0, `hsla(${i * 30}, 80%, 60%, 0.5)`);
-      g.addColorStop(1, 'transparent');
-      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
-    }
-  }
-  function drawWords(t, W, H) {
-    ctx.fillStyle = 'rgba(15,23,42,0.35)'; ctx.fillRect(0, 0, W, H);
-    const now = performance.now();
-    wordQueue.forEach((item, i) => {
-      const age = (now - item.t) / 1000;
-      if (age > 6) return;
-      const alpha = Math.max(0, 1 - age / 6);
-      ctx.save(); ctx.globalAlpha = alpha;
-      ctx.fillStyle = '#e0e7ff';
-      ctx.font = `bold ${18 + i * 4}px system-ui,sans-serif`;
-      ctx.fillText(item.text, W * 0.1, H * 0.3 + i * 40 + Math.sin(t + i) * 10);
-      ctx.fillStyle = `rgba(129,140,248,${0.25 * alpha})`;
-      ctx.fillRect(W * 0.55, H * 0.25 + i * 50, 80, 50);
-      ctx.restore();
-    });
-  }
-  function drawPortraits(t, W, H) {
-    ctx.fillStyle = '#0f172a'; ctx.fillRect(0, 0, W, H);
-    for (let i = 0; i < 5; i++) {
-      const phase = (t * 0.12 + i * 0.2) % 1;
-      const y = -80 + phase * (H + 160);
-      const scale = 0.4 + phase * 1.2;
-      const x = W * (0.15 + (i % 3) * 0.3);
-      const s = 40 * scale;
-      ctx.save(); ctx.translate(x, y);
-      ctx.fillStyle = `rgba(226,232,240,${0.35 + phase * 0.4})`;
-      ctx.beginPath(); ctx.arc(0, -s * 0.35, s * 0.35, 0, Math.PI * 2); ctx.fill();
-      ctx.fillRect(-s * 0.45, -s * 0.05, s * 0.9, s * 0.9);
-      ctx.restore();
-    }
-  }
-  function drawAnt(t, W, H) {
-    const g = ctx.createLinearGradient(0, 0, 0, H);
-    g.addColorStop(0, '#7c2d12'); g.addColorStop(0.5, '#fbbf24'); g.addColorStop(1, '#14532d');
-    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
-    for (let i = 0; i < 30; i++) {
-      const x = (i * 40 + Math.sin(t + i) * 8) % W;
-      const y = H * 0.55 + Math.sin(t * 3 + i) * 6;
-      ctx.fillStyle = 'rgba(22,163,74,0.7)';
-      ctx.beginPath(); ctx.ellipse(x, y, 10, 4, Math.sin(t + i), 0, Math.PI * 2); ctx.fill();
-    }
-    const ax = (t * 50) % (W + 40) - 20;
-    const ay = H * 0.72 + Math.sin(t * 2) * 12;
-    ctx.fillStyle = '#1c1917';
-    ctx.beginPath(); ctx.ellipse(ax, ay, 10, 5, 0, 0, Math.PI * 2); ctx.fill();
-    ctx.beginPath(); ctx.arc(ax + 10, ay - 2, 4, 0, Math.PI * 2); ctx.fill();
+    wordQueue.push({ t: performance.now(), text: String(text).split(/\s+/).slice(0, 6).join(' ') });
+    if (wordQueue.length > 5) wordQueue.shift();
   }
 
   const saved = localStorage.getItem('cg_bg_anim') || 'none';
   const wasPaused = localStorage.getItem('cg_bg_anim_paused') === '1';
+
   global.CGBgAnim = {
-    MODES, setMode, setPaused, toggleFullscreen, pushSpokenWord,
-    getMode: () => mode, isPaused: () => paused,
+    MODES,
+    setMode,
+    setPaused,
+    toggleFullscreen,
+    pushSpokenWord,
+    getMode: () => mode,
+    isPaused: () => paused,
     init() {
       if (saved && saved !== 'none') setMode(saved);
       if (wasPaused) setPaused(true);
