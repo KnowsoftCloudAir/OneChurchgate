@@ -1,11 +1,11 @@
 from pathlib import Path
-from fastapi import APIRouter, Depends, Request, Form, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, Request, Form, HTTPException
 from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
 from app.database import get_session
-from app.models import User, UserRole, ChurchUnit, ChurchMember, WeeklyStat, SpecialProgram, ProgramPhoto, ChurchLevel, KwealthBook
+from app.models import User, UserRole, ChurchUnit, ChurchMember, WeeklyStat, SpecialProgram, ProgramPhoto, ChurchLevel
 from app.auth import require_roles, get_password_hash, role_val
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -609,122 +609,3 @@ async def church_hymnals_save(
         ))
     session.commit()
     return RedirectResponse("/admin/church-hymnals?ok=1", status_code=303)
-
-
-# --- General library: books + reading BGM for all members ---
-@router.get("/library", response_class=HTMLResponse)
-async def admin_library(
-    request: Request,
-    user: User = Depends(require_roles(UserRole.general_admin)),
-    session: Session = Depends(get_session),
-):
-    books = list(session.exec(select(KwealthBook).order_by(KwealthBook.created_at.desc())).all())
-    # Shared BGM files
-    bgm_dir = Path(__file__).resolve().parent.parent / "static" / "uploads" / "kwealth_bgm" / "shared"
-    bgm_dir.mkdir(parents=True, exist_ok=True)
-    tracks = []
-    for f in sorted(bgm_dir.iterdir(), key=lambda p: p.stat().st_mtime, reverse=True):
-        if f.is_file() and f.suffix.lower() in {".mp3", ".m4a", ".ogg", ".wav", ".aac"}:
-            tracks.append({"name": f.name, "title": f.stem.replace("_", " ")[:80], "url": f"/static/uploads/kwealth_bgm/shared/{f.name}"})
-    return templates.TemplateResponse("admin/library.html", {
-        "request": request, "user": user, "books": books, "tracks": tracks,
-    })
-
-
-@router.post("/library/book")
-async def admin_library_book(
-    title: str = Form(...),
-    author: str = Form(""),
-    description: str = Form(""),
-    file: UploadFile = File(...),
-    user: User = Depends(require_roles(UserRole.general_admin)),
-    session: Session = Depends(get_session),
-):
-    from app.routers.kwealth import _extract_text_from_upload, _split_pages
-    import uuid
-    raw = await file.read()
-    if not raw or len(raw) > 20_000_000:
-        return RedirectResponse("/admin/library?err=file", status_code=303)
-    text = (_extract_text_from_upload(raw, file.filename or "book.txt") or "").strip()
-    if len(text) < 20:
-        return RedirectResponse("/admin/library?err=text", status_code=303)
-    here = Path(__file__).resolve().parent.parent
-    safe = f"ga_{uuid.uuid4().hex[:12]}.txt"
-    dest = here / "static" / "uploads" / "kwealth_books_text" / safe
-    dest.parent.mkdir(parents=True, exist_ok=True)
-    dest.write_text(text, encoding="utf-8")
-    book = KwealthBook(
-        title=(title or "Book").strip()[:180],
-        author=(author or "").strip()[:120] or None,
-        source_path=str(dest),
-        page_count=max(1, len(_split_pages(text))),
-        is_active=True,
-    )
-    session.add(book)
-    session.commit()
-    return RedirectResponse("/admin/library?ok=book", status_code=303)
-
-
-@router.post("/library/book/{book_id}/toggle")
-async def admin_library_book_toggle(
-    book_id: int,
-    user: User = Depends(require_roles(UserRole.general_admin)),
-    session: Session = Depends(get_session),
-):
-    b = session.get(KwealthBook, book_id)
-    if b:
-        b.is_active = not b.is_active
-        session.add(b)
-        session.commit()
-    return RedirectResponse("/admin/library", status_code=303)
-
-
-@router.post("/library/book/{book_id}/delete")
-async def admin_library_book_delete(
-    book_id: int,
-    user: User = Depends(require_roles(UserRole.general_admin)),
-    session: Session = Depends(get_session),
-):
-    b = session.get(KwealthBook, book_id)
-    if b:
-        session.delete(b)
-        session.commit()
-    return RedirectResponse("/admin/library", status_code=303)
-
-
-@router.post("/library/bgm")
-async def admin_library_bgm(
-    files: list[UploadFile] = File(...),
-    user: User = Depends(require_roles(UserRole.general_admin)),
-):
-    bgm_dir = Path(__file__).resolve().parent.parent / "static" / "uploads" / "kwealth_bgm" / "shared"
-    bgm_dir.mkdir(parents=True, exist_ok=True)
-    import uuid
-    for f in files or []:
-        raw = await f.read()
-        if not raw or len(raw) > 25_000_000:
-            continue
-        ext = Path(f.filename or "track.mp3").suffix.lower() or ".mp3"
-        if ext not in {".mp3", ".m4a", ".ogg", ".wav", ".aac"}:
-            continue
-        name = f"ga_{uuid.uuid4().hex[:10]}{ext}"
-        (bgm_dir / name).write_bytes(raw)
-        title = (f.filename or "Track").rsplit(".", 1)[0][:80]
-        (bgm_dir / (name + ".title")).write_text(title, encoding="utf-8")
-    return RedirectResponse("/admin/library?ok=bgm", status_code=303)
-
-
-@router.post("/library/bgm/delete")
-async def admin_library_bgm_delete(
-    name: str = Form(...),
-    user: User = Depends(require_roles(UserRole.general_admin)),
-):
-    bgm_dir = Path(__file__).resolve().parent.parent / "static" / "uploads" / "kwealth_bgm" / "shared"
-    safe = Path(name).name
-    fp = bgm_dir / safe
-    if fp.exists() and fp.is_file():
-        fp.unlink()
-        tfile = bgm_dir / (safe + ".title")
-        if tfile.exists():
-            tfile.unlink()
-    return RedirectResponse("/admin/library", status_code=303)

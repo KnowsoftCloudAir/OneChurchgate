@@ -1,14 +1,25 @@
 {
+  "id": "/",
   "name": "Knowsoft Churchgate",
   "short_name": "Churchgate",
   "description": "One flock. Every assembly visible. Church management platform connecting Global, Country, State, Group and District churches.",
   "start_url": "/",
-  "display": "standalone",
-  "background_color": "#000000",
-  "theme_color": "#0B1220",
-  "orientation": "portrait-primary",
   "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "browser"
+  ],
+  "background_color": "#0c1222",
+  "theme_color": "#0B1220",
+  "orientation": "any",
   "lang": "en",
+  "dir": "ltr",
+  "categories": [
+    "lifestyle",
+    "productivity",
+    "social"
+  ],
   "icons": [
     {
       "src": "/static/icons/icon-192.png",
