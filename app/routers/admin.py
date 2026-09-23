@@ -609,3 +609,10 @@ async def church_hymnals_save(
         ))
     session.commit()
     return RedirectResponse("/admin/church-hymnals?ok=1", status_code=303)
+
+
+# Books background music (General Admin) — redirect to kwealth handler page
+@router.get("/admin/books-bgm")
+async def admin_books_bgm_redirect():
+    from fastapi.responses import RedirectResponse
+    return RedirectResponse("/admin/kwealth/bgm", status_code=303)
