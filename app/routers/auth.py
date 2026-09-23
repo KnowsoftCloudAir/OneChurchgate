@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, Depends, Request, Form, Response
-from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from datetime import datetime
@@ -9,7 +9,7 @@ import secrets
 import string
 
 from app.database import get_session
-from app.models import User, UserRole, ChurchUnit, ChurchLevel, ApprovalStatus, ChurchMember, TrialAccess, MemberSubscription
+from app.models import User, UserRole, ChurchUnit, ChurchLevel, ApprovalStatus, ChurchMember
 from app.auth import require_user, role_val, verify_password, get_password_hash, create_access_token, create_user_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES, validate_password_strength, record_login_failure, clear_login_failures, login_lockout_seconds
 from app.activity import log_activity
 
@@ -480,141 +480,6 @@ async def clear_session_page(request: Request):
     resp.delete_cookie("session")
     return resp
 
-
-
-import hashlib
-from datetime import timedelta
-
-def _client_ip(request: Request) -> str:
-    xf = request.headers.get("x-forwarded-for") or request.headers.get("x-real-ip") or ""
-    if xf:
-        return xf.split(",")[0].strip()
-    return (request.client.host if request.client else "0.0.0.0") or "0.0.0.0"
-
-
-def _ip_hash(ip: str) -> str:
-    return hashlib.sha256((ip or "unknown").encode("utf-8")).hexdigest()[:48]
-
-
-@router.post("/try-churchgate")
-async def try_churchgate(request: Request, session: Session = Depends(get_session)):
-    """10-minute free explore account for Knowsoft church; one completed trial per IP."""
-    from app.models import TrialAccess, User, UserRole, ChurchMember, ChurchUnit
-    from app.auth import get_password_hash, create_access_token
-    import secrets
-
-    ip = _client_ip(request)
-    ih = _ip_hash(ip)
-    now = datetime.utcnow()
-
-    # Block if this IP already completed a trial
-    done = session.exec(
-        select(TrialAccess).where(TrialAccess.ip_hash == ih, TrialAccess.completed == True)
-    ).first()
-    if done:
-        return templates.TemplateResponse(
-            "auth/login.html",
-            {"request": request, "error": "Try Churchgate was already used from this network (10 minutes). Please register for full access.", "success": None},
-            status_code=400,
-        )
-
-    # Reuse active trial if still valid
-    active = session.exec(
-        select(TrialAccess).where(
-            TrialAccess.ip_hash == ih,
-            TrialAccess.completed == False,
-            TrialAccess.expires_at > now,
-        )
-    ).first()
-    if active and active.user_id:
-        user = session.get(User, active.user_id)
-        if user:
-            token = create_access_token({"sub": user.email, "sv": 0, "trial": True})
-            resp = RedirectResponse("/member/portal", status_code=303)
-            resp.set_cookie("access_token", token, httponly=True, samesite="lax")
-            return resp
-
-    # Create trial user
-    email = f"trial_{ih[:10]}_{secrets.token_hex(3)}@try.churchgate.local"
-    pwd = secrets.token_urlsafe(12)
-    user = User(
-        email=email,
-        hashed_password=get_password_hash(pwd),
-        full_name="Try Churchgate Guest",
-        role=getattr(UserRole, "member", None) or "member",
-        is_active=True,
-    )
-    # role may be enum
-    try:
-        user.role = UserRole.member
-    except Exception:
-        pass
-    session.add(user)
-    session.commit()
-    session.refresh(user)
-
-    # Attach to Knowsoft church if present
-    try:
-        unit = session.exec(
-            select(ChurchUnit).where(ChurchUnit.name.ilike("%knowsoft%"))
-        ).first()
-        if not unit:
-            unit = session.exec(select(ChurchUnit).limit(1)).first()
-        if unit:
-            user.church_id = unit.id
-            session.add(user)
-            cm = ChurchMember(
-                church_id=unit.id,
-                full_name="Try Churchgate Guest",
-                email=email,
-                approval_status="approved",
-                status="member",
-                is_active=True,
-            )
-            session.add(cm)
-            session.commit()
-            session.refresh(cm)
-            user.member_id = cm.id
-            session.add(user)
-            session.commit()
-    except Exception as e:
-        print("try attach church:", e)
-
-    expires = now + timedelta(minutes=10)
-    trial = TrialAccess(ip_hash=ih, user_id=user.id, started_at=now, expires_at=expires, completed=False)
-    session.add(trial)
-    session.commit()
-
-    token = create_access_token({"sub": user.email, "sv": 0, "trial": True})
-    resp = RedirectResponse("/member/portal?trial=1", status_code=303)
-    resp.set_cookie("access_token", token, httponly=True, samesite="lax", max_age=600)
-    resp.set_cookie("cg_trial_exp", expires.isoformat() + "Z", max_age=600)
-    return resp
-
-
-@router.get("/api/trial-status")
-async def trial_status(request: Request, session: Session = Depends(get_session)):
-    from app.models import TrialAccess
-    ip = _client_ip(request)
-    ih = _ip_hash(ip)
-    now = datetime.utcnow()
-    active = session.exec(
-        select(TrialAccess).where(TrialAccess.ip_hash == ih, TrialAccess.completed == False)
-    ).first()
-    if not active:
-        return JSONResponse({"ok": True, "trial": False})
-    remaining = max(0, int((active.expires_at - now).total_seconds()))
-    if remaining <= 0:
-        active.completed = True
-        session.add(active)
-        session.commit()
-        return JSONResponse({"ok": True, "trial": False, "expired": True})
-    return JSONResponse({
-        "ok": True,
-        "trial": True,
-        "remaining_sec": remaining,
-        "expires_at": active.expires_at.isoformat() + "Z",
-    })
 
 @router.get("/change-password", response_class=HTMLResponse)
 async def change_password_page(
