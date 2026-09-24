@@ -17,7 +17,8 @@ from app.models import (
     ProgramPhoto, MusicLink, YoutubeChannelLink, PastorMessage, FocusGroup, FocusGroupMember,
     FocusGroupMessage, MemberSubscription, SubscriptionSettings, DistrictMessage,
     SystemAnnouncement, AppConfig,
-)
+,
+    KwealthBook, KwealthProgress, KwealthExcerpt, KwealthNote)
 from app.auth import require_roles, require_user, role_val
 from app.activity import log_activity
 from app.routers.church import collect_descendant_ids
@@ -44,6 +45,10 @@ BACKUP_MODELS = [
     ("districtmessage", DistrictMessage),
     ("systemannouncement", SystemAnnouncement),
     ("appconfig", AppConfig),
+    ("kwealthbook", KwealthBook),
+    ("kwealthprogress", KwealthProgress),
+    ("kwealthexcerpt", KwealthExcerpt),
+    ("kwealthnote", KwealthNote),
 ]
 
 
