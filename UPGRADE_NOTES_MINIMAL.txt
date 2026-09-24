@@ -1,1 +1,5 @@
-Only models.py, auth.py, login.html, books.html CSS enhanced. Rest unchanged from DEPLOY_WITHOUT_DATA_LOSS.
+Base: DEPLOY_WITHOUT_DATA_LOSS
++ Try Churchgate 10 min
++ Books: extra ambience scenes (aurora, ocean, oceanfish, galaxy, orbs, words)
++ CSS depth on existing scenes
+Original fullscreen/read logic unchanged.
