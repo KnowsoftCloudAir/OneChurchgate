@@ -114,13 +114,23 @@
     camera.position.set(0, 2, 12);
     camera.lookAt(0, 0, 0);
     if (id === 'sunset') {
-      renderer.setClearColor(0x1a0a2e, 1);
-      var sun = new THREE.Mesh(new THREE.SphereGeometry(1.6, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffb347 }));
-      sun.position.set(0, -0.5, -8); scene.add(sun);
-      scene.add(new THREE.PointLight(0xff8c42, 2.5, 60));
-      var ground = new THREE.Mesh(new THREE.PlaneGeometry(80, 40), new THREE.MeshStandardMaterial({ color: 0x2a1840, roughness: 0.9 }));
-      ground.rotation.x = -Math.PI / 2; ground.position.y = -3; scene.add(ground);
-      extra.sun = sun;
+      renderer.setClearColor(0x0b1026, 1);
+      scene.add(new THREE.Mesh(new THREE.SphereGeometry(40, 32, 32), new THREE.MeshBasicMaterial({ color: 0x1a1035, side: THREE.BackSide })));
+      var sun = new THREE.Mesh(new THREE.SphereGeometry(2.2, 48, 48), new THREE.MeshBasicMaterial({ color: 0xffb347 }));
+      sun.position.set(0, -1.2, -14); scene.add(sun);
+      var sunCore = new THREE.Mesh(new THREE.SphereGeometry(1.1, 32, 32), new THREE.MeshBasicMaterial({ color: 0xfff1c1 }));
+      sunCore.position.copy(sun.position); scene.add(sunCore);
+      var glow = new THREE.PointLight(0xff8c42, 3.2, 90); glow.position.copy(sun.position); scene.add(glow);
+      scene.add(new THREE.HemisphereLight(0xff9966, 0x1e1b4b, 0.7));
+      var ground = new THREE.Mesh(new THREE.PlaneGeometry(90, 50, 32, 16), new THREE.MeshStandardMaterial({ color: 0x1a1140, roughness: 0.35, metalness: 0.45 }));
+      ground.rotation.x = -Math.PI / 2; ground.position.y = -3.2; scene.add(ground);
+      extra.sun = sun; extra.sunCore = sunCore; extra.water = ground; extra.clouds = [];
+      for (var i = 0; i < 10; i++) {
+        var c = new THREE.Mesh(new THREE.SphereGeometry(1.4 + Math.random(), 12, 12), new THREE.MeshStandardMaterial({ color: 0xffc9a3, transparent: true, opacity: 0.28 }));
+        c.position.set((Math.random() - 0.5) * 24, 0.5 + Math.random() * 4, -8 - Math.random() * 10);
+        c.scale.set(2.8, 0.55, 1.3); scene.add(c); extra.clouds.push(c);
+      }
+      camera.position.set(0, 1.5, 10);
     } else if (id === 'planets') {
       renderer.setClearColor(0x020617, 1); addStars(1000, 80);
       scene.add(new THREE.Mesh(new THREE.SphereGeometry(1.4, 32, 32), new THREE.MeshBasicMaterial({ color: 0xffd166 })));
@@ -183,32 +193,30 @@
         scene.add(mesh); extra.orbs.push(mesh);
       }
     } else if (id === 'word_forms') {
-      renderer.setClearColor(0x111827, 1); extra.blocks = [];
-      for (var i = 0; i < 8; i++) {
-        var b = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.4, 0.2), new THREE.MeshStandardMaterial({ color: 0x818cf8, transparent: true, opacity: 0.75 }));
-        b.position.set((Math.random() - 0.5) * 10, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 4);
-        scene.add(b); extra.blocks.push(b);
+      renderer.setClearColor(0x050510, 1); addStars(700, 70); extra.blocks = [];
+      for (var i = 0; i < 12; i++) {
+        var beam = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.35, 10, 12), new THREE.MeshStandardMaterial({ color: new THREE.Color().setHSL(0.55 + (i % 5) * 0.08, 0.85, 0.55), emissive: new THREE.Color().setHSL(0.55 + (i % 5) * 0.08, 0.7, 0.25), transparent: true, opacity: 0.55 }));
+        beam.position.set((i - 5.5) * 1.3, 0, -6 - (i % 3)); beam.userData = { ph: i };
+        scene.add(beam); extra.blocks.push(beam);
       }
+      scene.add(new THREE.PointLight(0xa5b4fc, 1.2, 40)); camera.position.set(0, 2, 12);
     } else if (id === 'great_men') {
-      renderer.setClearColor(0x0f172a, 1); addStars(300, 50); extra.figures = [];
-      for (var i = 0; i < 5; i++) {
-        var g = new THREE.Group();
-        g.add(new THREE.Mesh(new THREE.SphereGeometry(0.35, 12, 12), new THREE.MeshStandardMaterial({ color: 0xe2e8f0 })));
-        g.children[0].position.y = 0.9;
-        var body = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.4, 1.2, 10), new THREE.MeshStandardMaterial({ color: 0xcbd5e1 }));
-        body.position.y = 0.1; g.add(body);
-        g.position.set((i - 2) * 2.2, 8 + i * 2, -4); g.userData = { speed: 0.35 + Math.random() * 0.3 };
-        scene.add(g); extra.figures.push(g);
+      renderer.setClearColor(0x020617, 1); addStars(900, 80); extra.figures = [];
+      for (var i = 0; i < 7; i++) {
+        var pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.4, 8 + i * 0.3, 16), new THREE.MeshStandardMaterial({ color: 0xfef3c7, emissive: 0xfbbf24, emissiveIntensity: 0.4, transparent: true, opacity: 0.75 }));
+        pillar.position.set((i - 3) * 2.4, 1, -8); pillar.userData = { speed: 0.2 + i * 0.03 };
+        scene.add(pillar); extra.figures.push(pillar);
       }
+      scene.add(new THREE.PointLight(0xfbbf24, 1.4, 50)); camera.position.set(0, 3, 14);
     } else if (id === 'sunrise_ant') {
-      renderer.setClearColor(0x7c2d12, 1);
-      var ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 40), new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.95 }));
-      ground.rotation.x = -Math.PI / 2; ground.position.y = -1; scene.add(ground);
-      var sun = new THREE.Mesh(new THREE.SphereGeometry(1.2, 20, 20), new THREE.MeshBasicMaterial({ color: 0xfbbf24 }));
-      sun.position.set(0, 3, -12); scene.add(sun); scene.add(new THREE.PointLight(0xfbbf24, 1.5, 40));
-      extra.ant = new THREE.Mesh(new THREE.SphereGeometry(0.15, 8, 8), new THREE.MeshStandardMaterial({ color: 0x1c1917 }));
-      extra.ant.scale.set(1.8, 0.8, 1); extra.ant.position.set(-6, -0.7, 2); scene.add(extra.ant);
-      camera.position.set(0, 5, 12);
+      renderer.setClearColor(0x0c1a2e, 1);
+      var sun2 = new THREE.Mesh(new THREE.SphereGeometry(1.8, 40, 40), new THREE.MeshBasicMaterial({ color: 0xfcd34d }));
+      sun2.position.set(0, 0.5, -16); scene.add(sun2); extra.sun = sun2;
+      scene.add(new THREE.PointLight(0xfbbf24, 2.5, 80));
+      scene.add(new THREE.HemisphereLight(0xfdba74, 0x0c4a6e, 0.8));
+      var water2 = new THREE.Mesh(new THREE.PlaneGeometry(80, 50, 40, 20), new THREE.MeshStandardMaterial({ color: 0x0e7490, roughness: 0.2, metalness: 0.55 }));
+      water2.rotation.x = -Math.PI / 2; water2.position.y = -2; scene.add(water2); extra.water = water2;
+      camera.position.set(0, 2.5, 11);
     }
   }
 
@@ -218,7 +226,9 @@
     var t = clock.getElapsedTime();
     if (starPoints) { starPoints.rotation.y += (extra.drift || 0.02) * 0.12; }
     if (extra.planets) extra.planets.forEach(function (p) { p.rotation.y += p.userData.speed * 0.01; });
-    if (extra.sun) extra.sun.position.y = -0.5 + Math.sin(t * 0.2) * 0.15;
+    if (extra.sun) extra.sun.position.y = (extra.sunCore ? -1.2 : -0.5) + Math.sin(t * 0.15) * 0.2;
+    if (extra.sunCore) extra.sunCore.position.copy(extra.sun.position);
+    if (extra.clouds) extra.clouds.forEach(function(c,i){ c.position.x += 0.01*(1+i*0.03); if(c.position.x>16)c.position.x=-16; });
     if (extra.water) {
       var pos = extra.water.geometry.attributes.position;
       for (var i = 0; i < pos.count; i++) pos.setZ(i, Math.sin(pos.getX(i) * 0.3 + t) * 0.25 + Math.cos(pos.getY(i) * 0.25 + t * 0.8) * 0.2);
@@ -234,9 +244,9 @@
     if (extra.galaxy) extra.galaxy.rotation.y += 0.002;
     if (extra.orbs) extra.orbs.forEach(function (o) { o.position.y += Math.sin(t * o.userData.sp + o.userData.ph) * 0.01; });
     if (extra.bands) extra.bands.forEach(function (b, i) { b.position.y = 2 + i * 1.2 + Math.sin(t + i) * 0.3; });
-    if (extra.figures) extra.figures.forEach(function (g) { g.position.y -= g.userData.speed * 0.03; if (g.position.y < -6) g.position.y = 10; });
+    if (extra.figures) extra.figures.forEach(function (g) { g.rotation.y += (g.userData.speed || 0.2) * 0.01; g.position.y = 1 + Math.sin(t * (g.userData.speed || 0.3)) * 0.15; });
     if (extra.ant) { extra.ant.position.x = Math.sin(t * 0.4) * 6; }
-    if (extra.blocks) extra.blocks.forEach(function (b) { b.rotation.y += 0.01; });
+    if (extra.blocks) extra.blocks.forEach(function (b,i) { b.position.y = Math.sin(t * 0.6 + ((b.userData && b.userData.ph) || i)) * 0.4; if (b.material) b.material.opacity = 0.4 + 0.25 * Math.sin(t + i); });
     camera.position.x = Math.sin(t * 0.15) * 0.35;
     renderer.render(scene, camera);
   }
