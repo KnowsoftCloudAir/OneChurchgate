@@ -4,7 +4,7 @@
 <div class="max-w-4xl mx-auto px-4 py-8">
   <a href="/admin/" class="text-sm text-blue-700 font-medium">← Admin</a>
   <h1 class="text-2xl font-bold text-navy-900 mt-2 mb-1">General books & reading music</h1>
-  <p class="text-sm text-slate-500 mb-6">Upload non-personal books for all members. PDF / Word / text is extracted for reading aloud. Upload calm background music for continuous reading.</p>
+  <p class="text-sm text-slate-500 mb-6">Upload non-personal books for all members. PDF / Word / text is extracted for reading aloud.</p>
 
   {% if request.query_params.get('ok') == 'books' %}
   <div class="mb-4 px-4 py-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-sm font-medium">
@@ -18,9 +18,9 @@
   {% endif %}
 
   <form method="post" action="/admin/library/books" enctype="multipart/form-data" class="bg-white border rounded-2xl p-5 mb-8 space-y-3 shadow-sm">
-    <h2 class="font-semibold">Upload general books (multiple)</h2>
+    <h2 class="font-semibold">Upload general books (multiple at once)</h2>
     <p class="text-xs text-slate-500">Select one or many PDF, TXT, MD, DOC, or DOCX files. Titles default to file names.</p>
-    <input name="default_author" placeholder="Default author (optional, applied to all)" class="w-full px-3 py-2 rounded-xl border">
+    <input name="default_author" placeholder="Default author (optional)" class="w-full px-3 py-2 rounded-xl border">
     <input type="file" name="files" accept=".pdf,.txt,.md,.doc,.docx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple required class="text-sm w-full">
     <button class="px-5 py-2.5 rounded-xl bg-navy-900 text-white text-sm font-semibold">Upload books</button>
   </form>
@@ -53,7 +53,6 @@
 
   <form method="post" action="/admin/library/bgm" enctype="multipart/form-data" class="bg-white border rounded-2xl p-5 mb-8 space-y-3 shadow-sm">
     <h2 class="font-semibold">Upload shared reading music (multiple)</h2>
-    <p class="text-xs text-slate-500">These tracks appear for every member in Books → Music.</p>
     <input type="file" name="files" accept="audio/*,.mp3,.m4a,.ogg,.wav,.aac" multiple required class="text-sm">
     <button class="px-5 py-2.5 rounded-xl bg-teal-700 text-white text-sm font-semibold">Upload music</button>
   </form>

@@ -1186,6 +1186,64 @@
     }
 
 
+  
+    /* === FORCE: Scene replaces book completely (final overrides) === */
+    #stage.scene-on > .page-sheet,
+    #stage.scene-on .page-sheet {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+      height: 0 !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
+      position: absolute !important;
+    }
+    #stage.scene-on #sceneStage {
+      display: block !important;
+      position: absolute !important;
+      inset: 0 !important;
+      z-index: 1 !important;
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 62vh !important;
+    }
+    #stage.scene-on #sceneTextOverlay {
+      display: flex !important;
+      position: absolute !important;
+      inset: 0 !important;
+      z-index: 10 !important;
+      pointer-events: none !important;
+      align-items: center !important;
+      justify-content: center !important;
+      text-align: center !important;
+      padding: 8vh 6vw !important;
+      color: #f8fafc !important;
+      line-height: 1.9 !important;
+      font-size: calc(var(--fs, 18px) * 1.25) !important;
+      font-family: var(--ff, Georgia, serif) !important;
+      text-shadow: 0 2px 20px rgba(0,0,0,.9), 0 0 3px rgba(0,0,0,.95) !important;
+    }
+    body.scene-fs-on #stage.scene-fs {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 2147482000 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: none !important;
+      border-radius: 0 !important;
+      min-height: 100vh !important;
+      background: #000 !important;
+    }
+    body.scene-fs-on #stage.scene-fs #sceneStage {
+      min-height: 100vh !important;
+      border-radius: 0 !important;
+    }
+    body.scene-fs-on #stage.scene-fs #sceneTextOverlay {
+      font-size: calc(var(--fs, 18px) * 1.4) !important;
+      padding: 12vh 8vw !important;
+    }
+
   </style>
   <script src="/static/js/bg-animations.js"></script>
 </head>
@@ -2060,179 +2118,7 @@
     }
 
 
-    // ========== KWEALTH UPGRADE JS ==========
-    var SCENE_LIST = ['sun','orbit','voyage','moon','planets','probe','deep','jupiter_close','milkyway','wavelength','fishes3d','abstract'];
-    var overlayText = document.getElementById('overlayText');
-    var sceneTextOverlay = document.getElementById('sceneTextOverlay');
 
-    function applyWordStyleClass() {
-      if (!sceneTextOverlay) return;
-      sceneTextOverlay.className = '';
-      var ws = state.wordStyle || 'fill';
-      sceneTextOverlay.classList.add('ws-' + ws);
-    }
-
-    // Override / enhance renderPage for scene overlay
-    var _origRenderPage = renderPage;
-    renderPage = function () {
-      _origRenderPage();
-      try {
-        if (state.sceneOn && overlayText) {
-          var raw = state.pages[state.pageIndex] || '';
-          var sents = splitSentences(raw);
-          state._sentences = sents;
-          var wi = 0;
-          overlayText.innerHTML = sents.map(function (sent, si) {
-            var parts = sent.split(/(\s+)/);
-            var html = '';
-            parts.forEach(function (p) {
-              if (/^\s+$/.test(p)) { html += p; return; }
-              html += '<span class="kw" data-wi="' + wi + '" data-si="' + si + '">' + p.replace(/</g,'&lt;') + '</span>';
-              wi += 1;
-            });
-            return '<div class="ab-sentence" data-si="' + si + '">' + html + '</div>';
-          }).join('');
-          applyWordStyleClass();
-          if (typeof state._sentIndex === 'number') showSentence(state._sentIndex);
-          else showSentence(0);
-        }
-      } catch (e) { console.warn('overlay render', e); }
-    };
-
-    // Enhance showSentence to work on overlay
-    var _origShowSentence = showSentence;
-    showSentence = function (si) {
-      _origShowSentence(si);
-      if (!overlayText || !state.sceneOn) return;
-      var nodes = overlayText.querySelectorAll('.ab-sentence');
-      nodes.forEach(function (n) {
-        var i = Number(n.getAttribute('data-si'));
-        n.classList.remove('active', 'leaving');
-        if (i === si) n.classList.add('active');
-      });
-      state._sentIndex = si;
-    };
-
-    // Enhance highlightWord for overlay
-    var _origHighlightWord = highlightWord;
-    highlightWord = function (idx) {
-      _origHighlightWord(idx);
-      if (!overlayText || !state.sceneOn) return;
-      var nodes = overlayText.querySelectorAll('.kw');
-      var activeSi = 0;
-      nodes.forEach(function (n) {
-        var i = Number(n.getAttribute('data-wi'));
-        var si = Number(n.getAttribute('data-si') || 0);
-        n.classList.remove('current');
-        if (i < idx) n.classList.add('spoken');
-        else n.classList.remove('spoken');
-        if (i === idx) {
-          n.classList.add('current');
-          activeSi = si;
-        }
-      });
-      // ensure active sentence visible
-      try { showSentence(activeSi); } catch (e) {}
-    };
-
-    // Enhance applyScene: force book hidden, overlay shown
-    var _origApplyScene = applyScene;
-    applyScene = function () {
-      _origApplyScene();
-      applyWordStyleClass();
-      var stage = document.getElementById('stage');
-      if (stage) {
-        if (state.sceneOn) {
-          stage.classList.add('scene-on');
-          document.body.classList.add('scene-on');
-        } else {
-          stage.classList.remove('scene-on');
-          document.body.classList.remove('scene-on');
-        }
-      }
-      try { renderPage(); } catch (e) {}
-    };
-
-    // Cycle scenes
-    function cycleScene(dir) {
-      var cur = state.sceneName || 'sun';
-      var idx = SCENE_LIST.indexOf(cur);
-      if (idx < 0) idx = 0;
-      idx = (idx + dir + SCENE_LIST.length) % SCENE_LIST.length;
-      state.sceneName = SCENE_LIST[idx];
-      if (!state.sceneOn) state.sceneOn = true;
-      try { applyScene(); } catch (e) {}
-      var pick = document.getElementById('scenePick');
-      if (pick) pick.value = state.sceneName;
-    }
-
-    // ========== Swipe gestures ==========
-    (function setupSwipe() {
-      var stage = document.getElementById('stage');
-      if (!stage) return;
-      var sx = 0, sy = 0, active = false;
-      var THRESH = 55;
-      stage.addEventListener('touchstart', function (e) {
-        if (!e.touches || !e.touches[0]) return;
-        sx = e.touches[0].clientX;
-        sy = e.touches[0].clientY;
-        active = true;
-      }, { passive: true });
-      stage.addEventListener('touchend', function (e) {
-        if (!active) return;
-        active = false;
-        var t = e.changedTouches && e.changedTouches[0];
-        if (!t) return;
-        var dx = t.clientX - sx;
-        var dy = t.clientY - sy;
-        var adx = Math.abs(dx), ady = Math.abs(dy);
-        if (adx < THRESH && ady < THRESH) return;
-        if (adx > ady) {
-          // horizontal → pages
-          if (dx < 0) { try { if (typeof next === 'function') next(); else if ($('btnNext')) $('btnNext').click(); } catch(err){} }
-          else { try { if (typeof prev === 'function') prev(); else if ($('btnPrev')) $('btnPrev').click(); } catch(err){} }
-        } else if (state.sceneOn || state.sceneFs) {
-          // vertical → scenes
-          if (dy < 0) cycleScene(1);
-          else cycleScene(-1);
-        }
-      }, { passive: true });
-
-      // Mouse drag support (desktop)
-      var mdown = false, msx = 0, msy = 0;
-      stage.addEventListener('mousedown', function (e) {
-        if (e.button !== 0) return;
-        mdown = true; msx = e.clientX; msy = e.clientY;
-      });
-      window.addEventListener('mouseup', function (e) {
-        if (!mdown) return;
-        mdown = false;
-        var dx = e.clientX - msx, dy = e.clientY - msy;
-        var adx = Math.abs(dx), ady = Math.abs(dy);
-        if (adx < 80 && ady < 80) return;
-        if (adx > ady) {
-          if (dx < 0) { try { if ($('btnNext')) $('btnNext').click(); } catch(err){} }
-          else { try { if ($('btnPrev')) $('btnPrev').click(); } catch(err){} }
-        } else if (state.sceneOn || state.sceneFs) {
-          if (dy < 0) cycleScene(1); else cycleScene(-1);
-        }
-      });
-    })();
-
-    // Word style change also updates overlay class
-    var wordStyleEl2 = document.getElementById('wordStyle');
-    if (wordStyleEl2) {
-      wordStyleEl2.addEventListener('change', function () {
-        state.wordStyle = wordStyleEl2.value || 'fill';
-        applyWordStyleClass();
-        try { localStorage.setItem('kw_book_wordStyle', state.wordStyle); } catch(e){}
-        try { renderPage(); } catch(e){}
-      });
-    }
-
-    // Ensure applyScene runs once at end
-    try { applyScene(); } catch (e) {}
-    // ========== END KWEALTH UPGRADE JS ==========
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function(){});
@@ -2393,6 +2279,196 @@
         }
       }).catch(function () {});
     } catch (e) { console.warn(e); }
+
+
+    // ========== KWEALTH FIX v2 (runs AFTER all functions defined) ==========
+    (function kwealthFixV2() {
+      var SCENE_LIST = ['sun','orbit','voyage','moon','planets','probe','deep','jupiter_close','milkyway','wavelength','fishes3d','abstract'];
+
+      function getOverlay() {
+        return document.getElementById('overlayText');
+      }
+      function getOverlayRoot() {
+        return document.getElementById('sceneTextOverlay');
+      }
+
+      function applyWordStyleClass() {
+        var root = getOverlayRoot();
+        if (!root) return;
+        // keep base, set ws-* class
+        var ws = (state && state.wordStyle) || 'fill';
+        root.classList.remove('ws-fill','ws-fade-up','ws-typewriter','ws-scale-in','ws-glow','ws-center-block','ws-write','ws-underline');
+        root.classList.add('ws-' + ws);
+      }
+
+      function renderOverlay() {
+        var overlay = getOverlay();
+        if (!overlay || !state.sceneOn) return;
+        var raw = (state.pages && state.pages[state.pageIndex]) || '';
+        var sents = (typeof splitSentences === 'function') ? splitSentences(raw) : [raw];
+        state._sentences = sents;
+        var wi = 0;
+        overlay.innerHTML = sents.map(function (sent, si) {
+          var parts = sent.split(/(\s+)/);
+          var html = '';
+          parts.forEach(function (p) {
+            if (/^\s+$/.test(p)) { html += p; return; }
+            html += '<span class="kw" data-wi="' + wi + '" data-si="' + si + '">' +
+              String(p).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>';
+            wi += 1;
+          });
+          return '<div class="ab-sentence" data-si="' + si + '">' + html + '</div>';
+        }).join('');
+        applyWordStyleClass();
+        showOverlaySentence(typeof state._sentIndex === 'number' ? state._sentIndex : 0);
+      }
+
+      function showOverlaySentence(si) {
+        var overlay = getOverlay();
+        if (!overlay) return;
+        overlay.querySelectorAll('.ab-sentence').forEach(function (n) {
+          var i = Number(n.getAttribute('data-si'));
+          n.classList.remove('active', 'leaving');
+          if (i === si) n.classList.add('active');
+        });
+        state._sentIndex = si;
+      }
+
+      function highlightOverlayWord(idx) {
+        var overlay = getOverlay();
+        if (!overlay || !state.sceneOn) return;
+        var activeSi = 0;
+        overlay.querySelectorAll('.kw').forEach(function (n) {
+          var i = Number(n.getAttribute('data-wi'));
+          var si = Number(n.getAttribute('data-si') || 0);
+          n.classList.remove('current');
+          if (i < idx) n.classList.add('spoken');
+          else n.classList.remove('spoken');
+          if (i === idx) {
+            n.classList.add('current');
+            activeSi = si;
+          }
+        });
+        showOverlaySentence(activeSi);
+      }
+
+      // Patch applyScene
+      if (typeof applyScene === 'function') {
+        var _applyScene = applyScene;
+        applyScene = function () {
+          _applyScene.apply(this, arguments);
+          var stage = document.getElementById('stage');
+          if (stage) {
+            if (state.sceneOn) {
+              stage.classList.add('scene-on');
+              document.body.classList.add('scene-on');
+            } else {
+              stage.classList.remove('scene-on');
+              document.body.classList.remove('scene-on');
+            }
+          }
+          applyWordStyleClass();
+          if (state.sceneOn) renderOverlay();
+        };
+      }
+
+      // Patch renderPage
+      if (typeof renderPage === 'function') {
+        var _renderPage = renderPage;
+        renderPage = function () {
+          _renderPage.apply(this, arguments);
+          if (state.sceneOn) renderOverlay();
+        };
+      }
+
+      // Patch showSentence
+      if (typeof showSentence === 'function') {
+        var _showSentence = showSentence;
+        showSentence = function (si) {
+          _showSentence.apply(this, arguments);
+          if (state.sceneOn) showOverlaySentence(si);
+        };
+      }
+
+      // Patch highlightWord
+      if (typeof highlightWord === 'function') {
+        var _highlightWord = highlightWord;
+        highlightWord = function (idx) {
+          _highlightWord.apply(this, arguments);
+          if (state.sceneOn) highlightOverlayWord(idx);
+        };
+      }
+
+      // Scene cycle
+      window.kwealthCycleScene = function (dir) {
+        var cur = state.sceneName || 'sun';
+        var idx = SCENE_LIST.indexOf(cur);
+        if (idx < 0) idx = 0;
+        idx = (idx + dir + SCENE_LIST.length) % SCENE_LIST.length;
+        state.sceneName = SCENE_LIST[idx];
+        if (!state.sceneOn) state.sceneOn = true;
+        try { applyScene(); } catch (e) { console.warn(e); }
+        var pick = document.getElementById('scenePick');
+        if (pick) pick.value = state.sceneName;
+      };
+
+      // Swipe handlers (pages + scenes)
+      var stage = document.getElementById('stage');
+      if (stage && !stage._kwealthSwipeBound) {
+        stage._kwealthSwipeBound = true;
+        var sx = 0, sy = 0, tracking = false;
+        stage.addEventListener('touchstart', function (e) {
+          if (!e.touches || !e.touches[0]) return;
+          sx = e.touches[0].clientX;
+          sy = e.touches[0].clientY;
+          tracking = true;
+        }, { passive: true });
+        stage.addEventListener('touchend', function (e) {
+          if (!tracking) return;
+          tracking = false;
+          var t = e.changedTouches && e.changedTouches[0];
+          if (!t) return;
+          var dx = t.clientX - sx, dy = t.clientY - sy;
+          var adx = Math.abs(dx), ady = Math.abs(dy);
+          if (adx < 55 && ady < 55) return;
+          if (adx > ady) {
+            if (dx < 0) {
+              var bn = document.getElementById('btnNext');
+              if (bn && !bn.disabled) bn.click();
+            } else {
+              var bp = document.getElementById('btnPrev');
+              if (bp && !bp.disabled) bp.click();
+            }
+          } else if (state.sceneOn || state.sceneFs) {
+            window.kwealthCycleScene(dy < 0 ? 1 : -1);
+          }
+        }, { passive: true });
+      }
+
+      // Word style listener
+      var wsel = document.getElementById('wordStyle');
+      if (wsel && !wsel._kwealthBound) {
+        wsel._kwealthBound = true;
+        wsel.addEventListener('change', function () {
+          state.wordStyle = wsel.value || 'fill';
+          try { localStorage.setItem('kw_book_wordStyle', state.wordStyle); } catch (e) {}
+          applyWordStyleClass();
+          if (state.sceneOn) renderOverlay();
+        });
+      }
+
+      // Re-apply scene state now that patches are live
+      try {
+        if (state.sceneOn) applyScene();
+        else if (document.getElementById('stage')) {
+          // ensure clean state
+          document.getElementById('stage').classList.toggle('scene-on', !!state.sceneOn);
+        }
+      } catch (e) { console.warn('kwealthFixV2 init', e); }
+
+      console.log('[Kwealth] Fix v2 active: scene-replaces-book, overlay text, swipe');
+    })();
+    // ========== END KWEALTH FIX v2 ==========
 
     // Angel "Read ebook" → auto start reading
     if (window.__AUTO_READ__ && state.pages.length) {
