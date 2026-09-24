@@ -1249,3 +1249,59 @@ async def hymns_api(user: User = Depends(require_user), session: Session = Depen
     except Exception:
         pass
     return JSONResponse({"hymns": hymns, "count": len(hymns)})
+
+
+@router.get("/admin/kwealth/books", response_class=HTMLResponse)
+async def admin_kwealth_books_page(
+    request: Request,
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    role = str(getattr(user, "role", "") or "")
+    if "admin" not in role.lower() and "general" not in role.lower():
+        raise HTTPException(403, "Admin only")
+    books_list = list(session.exec(select(KwealthBook)).all()); books_list.sort(key=lambda b: b.id or 0, reverse=True)
+    return templates.TemplateResponse("admin/kwealth_books.html", {
+        "request": request, "user": user, "books": books_list, "ok": request.query_params.get("ok")
+    })
+
+
+@router.post("/admin/kwealth/books/upload")
+async def admin_kwealth_books_upload(
+    request: Request,
+    files: List[UploadFile] = File(...),
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    role = str(getattr(user, "role", "") or "")
+    if "admin" not in role.lower() and "general" not in role.lower():
+        raise HTTPException(403, "Admin only")
+    here = Path(__file__).resolve().parent.parent
+    dest_dir = here / "static" / "uploads" / "kwealth_books_text"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    count = 0
+    for f in files or []:
+        raw = await f.read()
+        if not raw or len(raw) > 15_000_000:
+            continue
+        text = _extract_text_from_upload(raw, f.filename or "book.txt")
+        text = (text or "").strip()
+        if len(text) < 20:
+            continue
+        safe = re.sub(r"[^a-zA-Z0-9._-]+", "_", (f.filename or "book.txt"))[:80]
+        stamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+        fname = f"admin_{stamp}_{count}_{safe}.txt"
+        (dest_dir / fname).write_text(text, encoding="utf-8", errors="ignore")
+        title = Path(f.filename or "Book").stem[:120]
+        book = KwealthBook(
+            title=title,
+            source_path=fname,
+            uploaded_by=None,
+            page_count=max(1, len(text) // 1800),
+            is_active=True,
+        )
+        session.add(book)
+        count += 1
+    session.commit()
+    return RedirectResponse(f"/admin/kwealth/books?ok={count}", status_code=303)
+

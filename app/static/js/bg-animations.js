@@ -73,54 +73,79 @@
   /* —— 1. Jupiter close flyby (slow, large, realistic) —— */
   function buildJupiter(THREE) {
     renderer.setClearColor(0x02040a, 1);
-    // stars
     var starGeo = new THREE.BufferGeometry();
-    var n = 1800, pos = new Float32Array(n * 3);
+    var n = 2200, pos = new Float32Array(n * 3);
     for (var i = 0; i < n; i++) {
-      pos[i * 3] = (Math.random() - 0.5) * 120;
-      pos[i * 3 + 1] = (Math.random() - 0.5) * 80;
-      pos[i * 3 + 2] = (Math.random() - 0.5) * 120 - 20;
+      pos[i * 3] = (Math.random() - 0.5) * 140;
+      pos[i * 3 + 1] = (Math.random() - 0.5) * 90;
+      pos[i * 3 + 2] = (Math.random() - 0.5) * 140 - 20;
     }
     starGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.05, sizeAttenuation: true, transparent: true, opacity: 0.85 })));
+    scene.add(new THREE.Points(starGeo, new THREE.PointsMaterial({ color: 0xffffff, size: 0.05, sizeAttenuation: true, transparent: true, opacity: 0.9 })));
 
-    // Jupiter body — large, banded look via vertex colors
-    var geo = new THREE.SphereGeometry(3.2, 64, 64);
-    var cols = new Float32Array(geo.attributes.position.count * 3);
-    for (var i = 0; i < geo.attributes.position.count; i++) {
-      var y = geo.attributes.position.getY(i);
-      var band = Math.sin(y * 3.2) * 0.5 + 0.5;
-      cols[i * 3] = 0.72 + band * 0.2;
-      cols[i * 3 + 1] = 0.45 + band * 0.15;
-      cols[i * 3 + 2] = 0.22 + band * 0.08;
+    function makePlanet(radius, colorA, colorB, bands) {
+      var geo = new THREE.SphereGeometry(radius, 48, 48);
+      var cols = new Float32Array(geo.attributes.position.count * 3);
+      var ca = new THREE.Color(colorA), cb = new THREE.Color(colorB);
+      for (var i = 0; i < geo.attributes.position.count; i++) {
+        var y = geo.attributes.position.getY(i);
+        var t = bands ? (Math.sin(y * 3.5) * 0.5 + 0.5) : (y / (radius * 2) + 0.5);
+        cols[i * 3] = ca.r + (cb.r - ca.r) * t;
+        cols[i * 3 + 1] = ca.g + (cb.g - ca.g) * t;
+        cols[i * 3 + 2] = ca.b + (cb.b - ca.b) * t;
+      }
+      geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
+      var mat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 0.5, metalness: 0.08 });
+      return new THREE.Mesh(geo, mat);
     }
-    geo.setAttribute('color', new THREE.BufferAttribute(cols, 3));
-    var mat = new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      roughness: 0.55,
-      metalness: 0.08,
-      flatShading: false
-    });
-    var jup = new THREE.Mesh(geo, mat);
-    jup.position.set(-14, 0.2, -18);
+
+    var jup = makePlanet(3.4, 0xc48a3a, 0x8b5a2b, true);
+    jup.position.set(-16, 0.15, -20);
     scene.add(jup);
-    // soft limb darkening via second shell
     var shell = new THREE.Mesh(
-      new THREE.SphereGeometry(3.28, 32, 32),
-      new THREE.MeshBasicMaterial({ color: 0x1a0f08, transparent: true, opacity: 0.18, side: THREE.BackSide })
+      new THREE.SphereGeometry(3.48, 32, 32),
+      new THREE.MeshBasicMaterial({ color: 0x1a0f08, transparent: true, opacity: 0.16, side: THREE.BackSide })
     );
     jup.add(shell);
+
+    // Companion planets on parallel slow flyby paths
+    var saturn = makePlanet(1.6, 0xd4b896, 0xa89070, true);
+    saturn.position.set(-22, -1.2, -28);
+    var ring = new THREE.Mesh(
+      new THREE.RingGeometry(2.1, 3.0, 48),
+      new THREE.MeshBasicMaterial({ color: 0xc4a882, side: THREE.DoubleSide, transparent: true, opacity: 0.65 })
+    );
+    ring.rotation.x = Math.PI / 2.6;
+    saturn.add(ring);
+    scene.add(saturn);
+
+    var mars = makePlanet(0.7, 0xc45c3a, 0x8b3a2b, false);
+    mars.position.set(-10, 1.5, -14);
+    scene.add(mars);
+
+    var neptune = makePlanet(1.1, 0x3a6fc4, 0x1e3a8a, false);
+    neptune.position.set(-26, 0.8, -32);
+    scene.add(neptune);
+
+    var earth = makePlanet(0.55, 0x3b82f6, 0x22c55e, false);
+    earth.position.set(-8, -0.8, -12);
+    scene.add(earth);
 
     scene.add(new THREE.AmbientLight(0x334455, 0.55));
     var sun = new THREE.DirectionalLight(0xffe6c0, 1.35);
     sun.position.set(8, 4, 10);
     scene.add(sun);
-    var fill = new THREE.DirectionalLight(0x6688aa, 0.35);
-    fill.position.set(-6, -2, 4);
-    scene.add(fill);
+    scene.add(new THREE.DirectionalLight(0x6688aa, 0.35)).position.set(-6, -2, 4);
 
     extra.jup = jup;
-    extra.phase = 0; // 0..1 slow approach & pass
+    extra.planets = [
+      { mesh: jup, x0: -16, z0: -20, y0: 0.15, scale: 1, speed: 1 },
+      { mesh: saturn, x0: -22, z0: -28, y0: -1.2, scale: 0.55, speed: 0.72 },
+      { mesh: mars, x0: -10, z0: -14, y0: 1.5, scale: 0.28, speed: 1.15 },
+      { mesh: neptune, x0: -26, z0: -32, y0: 0.8, scale: 0.4, speed: 0.55 },
+      { mesh: earth, x0: -8, z0: -12, y0: -0.8, scale: 0.22, speed: 1.25 }
+    ];
+    extra.phase = 0;
     camera.position.set(0, 0.6, 10);
     camera.lookAt(0, 0, -8);
   }
@@ -350,17 +375,20 @@
     var THREE = global.THREE;
 
     if (mode === 'jupiter_close' && extra.jup) {
-      // Slow approach from left, grow, pass right — ~45s cycle
-      extra.phase = (extra.phase || 0) + 0.0018;
+      extra.phase = (extra.phase || 0) + 0.0012; // slower
       var p = extra.phase % 1;
-      var x = -16 + p * 36;
-      var z = -22 + Math.sin(p * Math.PI) * 6;
-      var s = 0.55 + Math.sin(p * Math.PI) * 1.65;
-      extra.jup.position.set(x, 0.15 + Math.sin(p * Math.PI) * 0.3, z);
-      extra.jup.scale.setScalar(s);
-      extra.jup.rotation.y += 0.0012;
-      camera.position.x = Math.sin(t * 0.05) * 0.25;
-      camera.lookAt(extra.jup.position.x * 0.3, 0, -6);
+      var list = extra.planets || [{ mesh: extra.jup, x0: -16, z0: -20, y0: 0.15, scale: 1, speed: 1 }];
+      list.forEach(function (pl) {
+        var pp = (p * pl.speed) % 1;
+        var x = pl.x0 + pp * 38;
+        var z = pl.z0 + Math.sin(pp * Math.PI) * 5;
+        var s = (0.5 + Math.sin(pp * Math.PI) * 1.55) * pl.scale;
+        pl.mesh.position.set(x, pl.y0 + Math.sin(pp * Math.PI) * 0.25, z);
+        pl.mesh.scale.setScalar(s);
+        pl.mesh.rotation.y += 0.001 * pl.speed;
+      });
+      camera.position.x = Math.sin(t * 0.04) * 0.3;
+      camera.lookAt(extra.jup.position.x * 0.25, 0, -6);
     }
 
     if (mode === 'milkyway' && extra.stars) {
