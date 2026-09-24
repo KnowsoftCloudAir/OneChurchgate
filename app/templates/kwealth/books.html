@@ -779,6 +779,163 @@
     }
     #stage.scene-fs #sceneStage { perspective: 1600px; }
 
+    
+    /* —— Additional captivating 3D-style scenes —— */
+    #sceneStage.sc-aurora { background: radial-gradient(ellipse at 50% 100%, #0a1628 0%, #020617 70%); }
+    #sceneStage.sc-aurora .stars {
+      position:absolute; inset:0;
+      background-image: radial-gradient(1.5px 1.5px at 20% 30%, #fff, transparent),
+        radial-gradient(1px 1px at 70% 20%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 40% 70%, #fff, transparent),
+        radial-gradient(1px 1px at 85% 55%, #fff, transparent),
+        radial-gradient(1px 1px at 15% 80%, #fff, transparent);
+      background-size: 100% 100%; animation: starTwinkle 5s ease-in-out infinite alternate;
+    }
+    #sceneStage.sc-aurora .band {
+      position:absolute; left:-10%; right:-10%; height:28%;
+      border-radius: 40% 40% 0 0;
+      filter: blur(18px); opacity: 0.55;
+      animation: auroraWave 9s ease-in-out infinite alternate;
+      transform: translateZ(20px);
+    }
+    #sceneStage.sc-aurora .b1 { bottom: 18%; background: linear-gradient(90deg, transparent, #34d399, #22d3ee, transparent); animation-delay: 0s; }
+    #sceneStage.sc-aurora .b2 { bottom: 28%; background: linear-gradient(90deg, transparent, #a78bfa, #2dd4bf, transparent); opacity: 0.4; animation-delay: -2s; height: 22%; }
+    #sceneStage.sc-aurora .b3 { bottom: 38%; background: linear-gradient(90deg, transparent, #60a5fa, #c084fc, transparent); opacity: 0.35; animation-delay: -4s; height: 18%; }
+    #sceneStage.sc-aurora .b4 { bottom: 48%; background: linear-gradient(90deg, transparent, #5eead4, #818cf8, transparent); opacity: 0.3; animation-delay: -1s; height: 14%; }
+    @keyframes auroraWave {
+      0% { transform: translateX(-6%) skewX(-4deg) translateZ(20px); }
+      100% { transform: translateX(6%) skewX(4deg) translateZ(28px); }
+    }
+
+    #sceneStage.sc-ocean { background: linear-gradient(180deg, #0c4a6e 0%, #0369a1 40%, #0e7490 100%); }
+    #sceneStage.sc-ocean .sky {
+      position:absolute; left:0; right:0; top:0; height:42%;
+      background: linear-gradient(180deg, #0f172a, #0c4a6e);
+    }
+    #sceneStage.sc-ocean .wave {
+      position:absolute; left:-5%; right:-5%; height: 28%;
+      border-radius: 40% 40% 0 0;
+      background: rgba(56,189,248,0.35);
+      animation: oceanRoll 6s ease-in-out infinite;
+      transform: translateZ(12px);
+    }
+    #sceneStage.sc-ocean .w1 { bottom: 0; animation-duration: 5s; opacity: 0.5; }
+    #sceneStage.sc-ocean .w2 { bottom: 8%; animation-duration: 7s; animation-delay: -1s; opacity: 0.4; background: rgba(14,165,233,0.4); }
+    #sceneStage.sc-ocean .w3 { bottom: 16%; animation-duration: 9s; animation-delay: -2s; opacity: 0.3; }
+    #sceneStage.sc-ocean .w4 { bottom: 24%; animation-duration: 11s; animation-delay: -3s; opacity: 0.22; background: rgba(125,211,252,0.3); }
+    @keyframes oceanRoll {
+      0% { transform: translateX(-4%) translateZ(12px); }
+      50% { transform: translateX(4%) translateZ(18px); }
+      100% { transform: translateX(-4%) translateZ(12px); }
+    }
+
+    #sceneStage.sc-oceanfish { background: radial-gradient(ellipse at 50% 0%, #0e7490 0%, #0c4a6e 30%, #082f49 70%, #020617 100%); }
+    #sceneStage.sc-oceanfish .deep-bg { position:absolute; inset:0; background: linear-gradient(180deg, transparent, rgba(2,6,23,0.7)); }
+    #sceneStage.sc-oceanfish .ray {
+      position:absolute; top:0; left:30%; width:40%; height:55%;
+      background: linear-gradient(180deg, rgba(125,211,252,0.25), transparent);
+      filter: blur(12px); transform: translateZ(8px);
+    }
+    #sceneStage.sc-oceanfish .fish {
+      position:absolute; width: 28px; height: 12px; border-radius: 50%;
+      background: linear-gradient(90deg, #38bdf8, #0ea5e9);
+      box-shadow: 0 0 12px rgba(56,189,248,0.6);
+      animation: fishSwim 10s ease-in-out infinite;
+      transform: translateZ(24px);
+    }
+    #sceneStage.sc-oceanfish .fish::after {
+      content:''; position:absolute; right:-6px; top:2px;
+      border: 6px solid transparent; border-left-color: #0ea5e9;
+    }
+    #sceneStage.sc-oceanfish .f1 { top: 30%; left: 10%; animation-duration: 9s; }
+    #sceneStage.sc-oceanfish .f2 { top: 45%; left: 40%; animation-duration: 12s; animation-delay: -2s; width: 36px; }
+    #sceneStage.sc-oceanfish .f3 { top: 60%; left: 20%; animation-duration: 11s; animation-delay: -4s; }
+    #sceneStage.sc-oceanfish .f4 { top: 35%; left: 60%; animation-duration: 14s; animation-delay: -1s; width: 22px; }
+    #sceneStage.sc-oceanfish .f5 { top: 70%; left: 50%; animation-duration: 10s; animation-delay: -3s; }
+    @keyframes fishSwim {
+      0% { transform: translateX(0) translateZ(24px) scaleX(1); }
+      45% { transform: translateX(40vw) translateZ(30px) scaleX(1); }
+      50% { transform: translateX(40vw) translateZ(30px) scaleX(-1); }
+      95% { transform: translateX(0) translateZ(24px) scaleX(-1); }
+      100% { transform: translateX(0) translateZ(24px) scaleX(1); }
+    }
+    #sceneStage.sc-oceanfish .bubble {
+      position:absolute; width:8px; height:8px; border-radius:50%;
+      border: 1px solid rgba(186,230,253,0.6); background: rgba(186,230,253,0.15);
+      animation: bubbleUp 6s linear infinite;
+    }
+    #sceneStage.sc-oceanfish .bu1 { left: 25%; bottom: 5%; animation-duration: 5s; }
+    #sceneStage.sc-oceanfish .bu2 { left: 55%; bottom: 0; animation-duration: 7s; animation-delay: -2s; }
+    #sceneStage.sc-oceanfish .bu3 { left: 75%; bottom: 8%; animation-duration: 6s; animation-delay: -1s; }
+    @keyframes bubbleUp {
+      0% { transform: translateY(0) scale(0.6); opacity: 0; }
+      20% { opacity: 0.8; }
+      100% { transform: translateY(-70vh) scale(1.2); opacity: 0; }
+    }
+
+    #sceneStage.sc-galaxy { background: #000008; }
+    #sceneStage.sc-galaxy .stars {
+      position:absolute; inset:0; opacity: 0.7;
+      background-image: radial-gradient(1px 1px at 10% 20%, #fff, transparent),
+        radial-gradient(1px 1px at 80% 40%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 50% 80%, #fff, transparent);
+      animation: starTwinkle 6s ease-in-out infinite alternate;
+    }
+    #sceneStage.sc-galaxy .core {
+      position:absolute; left:50%; top:50%; width: 18vmin; height: 18vmin;
+      margin: -9vmin 0 0 -9vmin; border-radius: 50%;
+      background: radial-gradient(circle, #fef9c3 0%, #fbbf24 25%, #a78bfa 55%, transparent 70%);
+      box-shadow: 0 0 40px 10px rgba(167,139,250,0.45);
+      animation: softPulse 4s ease-in-out infinite;
+      transform: translateZ(30px);
+    }
+    #sceneStage.sc-galaxy .arm {
+      position:absolute; left:50%; top:50%; width: 70vmin; height: 70vmin;
+      margin: -35vmin 0 0 -35vmin; border-radius: 50%;
+      border: 2px solid transparent;
+      background: conic-gradient(from 0deg, transparent 0%, rgba(96,165,250,0.35) 10%, transparent 20%, rgba(167,139,250,0.3) 40%, transparent 50%, rgba(45,212,191,0.25) 70%, transparent 80%);
+      animation: galaxySpin 40s linear infinite;
+      filter: blur(1px);
+    }
+    #sceneStage.sc-galaxy .arm2 { animation-duration: 55s; animation-direction: reverse; opacity: 0.7; transform: scale(0.85); }
+    #sceneStage.sc-galaxy .arm3 { animation-duration: 70s; opacity: 0.5; transform: scale(1.1); }
+    @keyframes galaxySpin { to { transform: rotate(360deg); } }
+
+    #sceneStage.sc-orbs { background: radial-gradient(ellipse at 50% 40%, #1e1b4b 0%, #0f172a 50%, #020617 100%); }
+    #sceneStage.sc-orbs .orb {
+      position:absolute; border-radius: 50%;
+      animation: orbFloat 7s ease-in-out infinite;
+      transform: translateZ(20px);
+    }
+    #sceneStage.sc-orbs .o1 { width: 14vmin; height: 14vmin; left: 15%; top: 25%; background: radial-gradient(circle at 30% 30%, #fde68a, #f59e0b 40%, transparent 70%); box-shadow: 0 0 30px #f59e0b; }
+    #sceneStage.sc-orbs .o2 { width: 10vmin; height: 10vmin; left: 55%; top: 20%; background: radial-gradient(circle at 30% 30%, #a5b4fc, #6366f1 40%, transparent 70%); box-shadow: 0 0 28px #6366f1; animation-delay: -1s; }
+    #sceneStage.sc-orbs .o3 { width: 18vmin; height: 18vmin; left: 35%; top: 50%; background: radial-gradient(circle at 30% 30%, #6ee7b7, #14b8a6 40%, transparent 70%); box-shadow: 0 0 32px #14b8a6; animation-delay: -2s; }
+    #sceneStage.sc-orbs .o4 { width: 8vmin; height: 8vmin; left: 70%; top: 55%; background: radial-gradient(circle at 30% 30%, #f9a8d4, #ec4899 40%, transparent 70%); box-shadow: 0 0 24px #ec4899; animation-delay: -3s; }
+    #sceneStage.sc-orbs .o5 { width: 12vmin; height: 12vmin; left: 20%; top: 65%; background: radial-gradient(circle at 30% 30%, #7dd3fc, #0ea5e9 40%, transparent 70%); box-shadow: 0 0 26px #0ea5e9; animation-delay: -1.5s; }
+    #sceneStage.sc-orbs .o6 { width: 9vmin; height: 9vmin; left: 60%; top: 70%; background: radial-gradient(circle at 30% 30%, #c4b5fd, #8b5cf6 40%, transparent 70%); box-shadow: 0 0 22px #8b5cf6; animation-delay: -2.5s; }
+    @keyframes orbFloat {
+      0%, 100% { transform: translateY(0) translateZ(20px); }
+      50% { transform: translateY(-18px) translateZ(32px); }
+    }
+
+    #sceneStage.sc-words { background: radial-gradient(ellipse at 50% 50%, #1e1b4b 0%, #0f172a 60%, #020617 100%); }
+    #sceneStage.sc-words .block {
+      position:absolute; border-radius: 10px;
+      background: linear-gradient(135deg, rgba(129,140,248,0.85), rgba(45,212,191,0.55));
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 0 20px rgba(129,140,248,0.35);
+      animation: wordBlock 8s ease-in-out infinite;
+      transform: translateZ(16px);
+    }
+    #sceneStage.sc-words .bl1 { width: 22vmin; height: 8vmin; left: 12%; top: 22%; animation-delay: 0s; }
+    #sceneStage.sc-words .bl2 { width: 18vmin; height: 7vmin; left: 55%; top: 28%; animation-delay: -1s; background: linear-gradient(135deg, rgba(251,191,36,0.8), rgba(244,114,182,0.5)); }
+    #sceneStage.sc-words .bl3 { width: 26vmin; height: 9vmin; left: 25%; top: 48%; animation-delay: -2s; }
+    #sceneStage.sc-words .bl4 { width: 14vmin; height: 6vmin; left: 60%; top: 58%; animation-delay: -3s; background: linear-gradient(135deg, rgba(52,211,153,0.8), rgba(56,189,248,0.5)); }
+    #sceneStage.sc-words .bl5 { width: 20vmin; height: 7vmin; left: 18%; top: 72%; animation-delay: -4s; }
+    @keyframes wordBlock {
+      0%, 100% { transform: translateY(0) rotateX(0deg) translateZ(16px); opacity: 0.85; }
+      50% { transform: translateY(-12px) rotateX(8deg) translateZ(28px); opacity: 1; }
+    }
+
     /* Full-screen scene mode */
     #stage.scene-fs {
       position: fixed !important;
@@ -881,8 +1038,14 @@
           <option value="voyage">Earth revelation</option>
           <option value="moon">Night Moon</option>
           <option value="planets">Planets around the Sun</option>
-          <option value="probe">Probe to Jupiter</option>
-          <option value="deep">Deep space drift</option>
+          <option value="probe">Jupiter flyby</option>
+          <option value="deep">Deep starfield / Journey heavens</option>
+          <option value="aurora">Northern lights</option>
+          <option value="ocean">Ocean waves</option>
+          <option value="oceanfish">Ocean depths</option>
+          <option value="galaxy">Spiral galaxy</option>
+          <option value="orbs">Floating orbs of light</option>
+          <option value="words">Living words</option>
         </select>
   <button type="button" class="chip on" id="fsRead">👼 Read</button>
   <button type="button" class="chip" id="fsSceneToggle">Scene on/off</button>
@@ -908,8 +1071,14 @@
           <option value="voyage">Earth revelation</option>
           <option value="moon">Night Moon</option>
           <option value="planets">Planets around the Sun</option>
-          <option value="probe">Probe to Jupiter</option>
-          <option value="deep">Deep space drift</option>
+          <option value="probe">Jupiter flyby</option>
+          <option value="deep">Deep starfield / Journey heavens</option>
+          <option value="aurora">Northern lights</option>
+          <option value="ocean">Ocean waves</option>
+          <option value="oceanfish">Ocean depths</option>
+          <option value="galaxy">Spiral galaxy</option>
+          <option value="orbs">Floating orbs of light</option>
+          <option value="words">Living words</option>
         </select>
         <button type="button" class="chip" id="btnSceneFs" title="Full screen scene">Full screen</button>
         <select id="wordStyle" class="ctl" style="max-width:8rem;font-size:11px;" title="Word style">
@@ -1090,6 +1259,54 @@
             <div class="meteor m4"></div>
             <div class="ship-glow"></div>
             <div class="ship"></div>
+          </div>
+          <div class="sc-layer sc-aurora-bits" style="display:none">
+            <div class="stars"></div>
+            <div class="band b1"></div>
+            <div class="band b2"></div>
+            <div class="band b3"></div>
+            <div class="band b4"></div>
+          </div>
+          <div class="sc-layer sc-ocean-bits" style="display:none">
+            <div class="sky"></div>
+            <div class="wave w1"></div>
+            <div class="wave w2"></div>
+            <div class="wave w3"></div>
+            <div class="wave w4"></div>
+          </div>
+          <div class="sc-layer sc-oceanfish-bits" style="display:none">
+            <div class="deep-bg"></div>
+            <div class="ray"></div>
+            <div class="fish f1"></div>
+            <div class="fish f2"></div>
+            <div class="fish f3"></div>
+            <div class="fish f4"></div>
+            <div class="fish f5"></div>
+            <div class="bubble bu1"></div>
+            <div class="bubble bu2"></div>
+            <div class="bubble bu3"></div>
+          </div>
+          <div class="sc-layer sc-galaxy-bits" style="display:none">
+            <div class="stars"></div>
+            <div class="arm arm1"></div>
+            <div class="arm arm2"></div>
+            <div class="arm arm3"></div>
+            <div class="core"></div>
+          </div>
+          <div class="sc-layer sc-orbs-bits" style="display:none">
+            <div class="orb o1"></div>
+            <div class="orb o2"></div>
+            <div class="orb o3"></div>
+            <div class="orb o4"></div>
+            <div class="orb o5"></div>
+            <div class="orb o6"></div>
+          </div>
+          <div class="sc-layer sc-words-bits" style="display:none">
+            <div class="block bl1"></div>
+            <div class="block bl2"></div>
+            <div class="block bl3"></div>
+            <div class="block bl4"></div>
+            <div class="block bl5"></div>
           </div>
         </div>
         <div class="page-sheet" id="sheet">
@@ -1737,7 +1954,7 @@
         surface.style.setProperty('display', 'none', 'important');
       }
       // Show only bits for selected scene
-      ['sun','orbit','voyage','moon','planets','probe','deep'].forEach(function (n) {
+      ['sun','orbit','voyage','moon','planets','probe','deep','aurora','ocean','oceanfish','galaxy','orbs','words'].forEach(function (n) {
         const el = surface.querySelector('.sc-' + n + '-bits');
         if (el) el.style.display = (on && n === name) ? 'block' : 'none';
       });
