@@ -640,7 +640,7 @@ class KwealthBook(SQLModel, table=True):
     source_path: Optional[str] = None  # relative path under static/books
     page_count: int = Field(default=1)
     is_active: bool = Field(default=True)
-    is_premium: bool = Field(default=False)  # True = requires active subscription
+    uploaded_by: Optional[int] = Field(default=None, index=True)  # user id; None = general admin / system
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -707,11 +707,10 @@ class ChurchHymnal(SQLModel, table=True):
 
 
 class TrialAccess(SQLModel, table=True):
-    """IP-limited Try Churchgate sessions (10 minutes, once per IP)."""
+    """10-minute Try Churchgate access; one completed trial per IP."""
     id: Optional[int] = Field(default=None, primary_key=True)
-    ip_hash: str = Field(index=True)
-    user_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
+    ip_address: str = Field(index=True, max_length=64)
+    user_id: Optional[int] = Field(default=None, foreign_key="user.id")
     started_at: datetime = Field(default_factory=datetime.utcnow)
-    expires_at: datetime
+    expires_at: Optional[datetime] = None
     completed: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
