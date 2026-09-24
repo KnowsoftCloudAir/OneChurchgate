@@ -109,19 +109,77 @@
       border-radius: 12px;
       overflow: hidden;
     }
+
+    /* Book panel and 3D scene share the same box */
+    #stage {
+      position: relative;
+      min-height: 62vh;
+      width: 100%;
+      max-width: 56rem;
+      margin: 0 auto;
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--sheet-bg, #0f172a);
+    }
+    #stage .page-sheet {
+      position: relative;
+      z-index: 3;
+      min-height: 62vh;
+      width: 100%;
+      box-sizing: border-box;
+    }
     #sceneStage {
-      display: none;
-      position: absolute;
-      inset: 0;
-      z-index: 1;
+      display: none !important; /* folded off unless Scene is on */
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 62vh;
+      z-index: 2;
       overflow: hidden;
       border-radius: 12px;
       pointer-events: none;
       background: #0c1222;
     }
     #stage.scene-on #sceneStage {
-      display: block !important;
+      display: block !important; /* only when Scene selected */
     }
+    #stage.scene-on .page-sheet {
+      background: transparent !important;
+      box-shadow: none !important;
+      z-index: 4; /* captions/text above scene */
+    }
+    #cgWebglHost {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      z-index: 2;
+      pointer-events: none;
+    }
+    /* Fullscreen = main book by default (same panel, full viewport) */
+    #stage.scene-fs {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 9990 !important;
+      max-width: none !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      min-height: 100vh !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
+      background: #0f172a;
+    }
+    #stage.scene-fs #sceneStage {
+      min-height: 100vh !important;
+      border-radius: 0 !important;
+    }
+    #stage.scene-fs .page-sheet {
+      min-height: 100vh !important;
+      max-width: 48rem;
+      margin: 0 auto;
+    }
+
     #stage.scene-on .page-sheet {
       background: transparent !important;
       box-shadow: none !important;
@@ -962,6 +1020,67 @@
       text-shadow: 0 0 12px rgba(45,212,191,.85);
     }
 
+    
+    /* Fixed caption bar — always on top in fullscreen while reading */
+    #fsCaption {
+      display: none !important;
+      position: fixed !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      bottom: 88px !important;
+      z-index: 2147483640 !important;
+      width: min(92vw, 40rem);
+      max-width: 40rem;
+      padding: 0.9rem 1.15rem;
+      border-radius: 14px;
+      background: rgba(2, 6, 23, 0.72) !important;
+      border: 1px solid rgba(255,255,255,0.22);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      color: #f8fafc !important;
+      font-family: Georgia, "Palatino Linotype", "Book Antiqua", serif !important;
+      font-size: clamp(1.05rem, 2.8vw, 1.45rem) !important;
+      line-height: 1.55 !important;
+      text-align: center;
+      text-shadow: 0 1px 3px rgba(0,0,0,.9);
+      pointer-events: none;
+      box-shadow: 0 8px 32px rgba(0,0,0,.45);
+    }
+    body.scene-fs-on #fsCaption,
+    #stage.scene-fs ~ #fsCaption,
+    #fsCaption.is-on {
+      display: block !important;
+    }
+    /* fsCaptionShow */
+
+    #fsCaption .cap-sent { display: inline; }
+    #fsCaption .kw {
+      color: rgba(248,250,252,.45);
+      transition: color .12s ease, background .12s ease, text-shadow .12s ease;
+      border-radius: 3px;
+    }
+    #fsCaption .kw.spoken { color: rgba(248,250,252,.92); }
+    #fsCaption .kw.current {
+      color: #fff !important;
+      background: rgba(45, 212, 191, 0.35);
+      padding: 0 3px;
+      text-shadow: 0 0 12px rgba(45,212,191,.9);
+    }
+    body.scene-fs-on.ws-write #fsCaption .kw { opacity: 0; }
+    body.scene-fs-on.ws-write #fsCaption .kw.spoken,
+    body.scene-fs-on.ws-write #fsCaption .kw.current { opacity: 1; }
+    body.scene-fs-on.ws-glow #fsCaption .kw.current {
+      text-shadow: 0 0 16px #5eead4, 0 0 28px #2dd4bf;
+    }
+    body.scene-fs-on.ws-underline #fsCaption .kw.current {
+      border-bottom: 2px solid #2dd4bf;
+    }
+    #fsCaption.cap-in { animation: capIn .4s ease both; }
+    @keyframes capIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
     /* Full-screen scene mode */
     #stage.scene-fs {
       position: fixed !important;
@@ -1058,7 +1177,8 @@
   <script src="/static/js/bg-animations.js"></script>
 </head>
 <body class="theme-parchment" id="bookBody">
-<div id="fsControls">
+<div id="fsCaption" aria-live="polite"></div>
+  <div id="fsControls">
   <select id="fsScenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
           <option value="sun">Sunrise → Sunset</option>
           <option value="orbit">Earth around the Sun</option>
@@ -1105,7 +1225,7 @@
           <option value="fishes3d">3D ocean fishes (3D)</option>
           <option value="abstract">Abstract AI / alien (3D)</option>
         </select>
-        <button type="button" class="chip" id="btnSceneFs" title="Full screen scene">Full screen</button>
+        <button type="button" class="chip" id="btnSceneFs" title="Full screen book (captions while reading)">Full screen</button>
         <select id="wordStyle" class="ctl" style="max-width:8rem;font-size:11px;" title="Word style">
           <option value="fill">Fill colour</option>
           <option value="write">Writing</option>
@@ -1466,15 +1586,77 @@
       if ($('btnPrev')) $('btnPrev').disabled = state.pageIndex <= 0;
       if ($('btnNext')) $('btnNext').disabled = state.pageIndex >= total - 1;
     }
+    
+    function updateCaption(si, wordIdx) {
+      var cap = document.getElementById('fsCaption');
+      if (!cap) return;
+      var fsOn = !!(state.sceneFs || document.body.classList.contains('scene-fs-on') || (document.getElementById('stage') && document.getElementById('stage').classList.contains('scene-fs')));
+      if (!fsOn) {
+        cap.innerHTML = '';
+        cap.classList.remove('is-on');
+        return;
+      }
+      cap.classList.add('is-on');
+      var sents = state._sentences || [];
+      if (!sents.length && state.pages && state.pages.length) {
+        sents = (typeof splitSentences === 'function') ? splitSentences(state.pages[state.pageIndex] || '') : [];
+        state._sentences = sents;
+      }
+      si = (typeof si === 'number') ? si : (state._sentIndex || 0);
+      var text = sents[si] || '';
+      if (!text) {
+        // fallback whole page first line
+        var page = (state.pages && state.pages[state.pageIndex]) || '';
+        text = (page.split(/(?<=[.!?])\s+/)[0] || page).slice(0, 280);
+      }
+      if (!text) { cap.innerHTML = ''; return; }
+      // word spans for style sync
+      var parts = text.split(/(\s+)/);
+      var wi0 = 0;
+      // estimate base word index for this sentence
+      var base = 0;
+      if (state._sentences) {
+        for (var i = 0; i < si; i++) {
+          base += ((state._sentences[i] || '').match(/\S+/g) || []).length;
+        }
+      }
+      var html = '';
+      var local = 0;
+      parts.forEach(function (p) {
+        if (/^\s+$/.test(p) || p === '') { html += p; return; }
+        var globalWi = base + local;
+        var cls = 'kw';
+        if (typeof wordIdx === 'number') {
+          if (globalWi < wordIdx) cls += ' spoken';
+          if (globalWi === wordIdx) cls += ' current';
+        }
+        html += '<span class="' + cls + '" data-wi="' + globalWi + '">' +
+          p.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>';
+        local += 1;
+      });
+      cap.innerHTML = '<span class="cap-sent">' + html + '</span>';
+      cap.classList.remove('cap-in');
+      void cap.offsetWidth;
+      cap.classList.add('cap-in');
+      // sync word style class on body for caption CSS
+      try {
+        ['ws-fill','ws-write','ws-glow','ws-underline'].forEach(function(c){ document.body.classList.remove(c); });
+        var ws = state.wordStyle || 'fill';
+        document.body.classList.add('ws-' + ws);
+      } catch(e) {}
+    }
+
     function showSentence(si) {
-      if (!sheetText || !(state.sceneOn || state.sceneFs)) return;
+      state._sentIndex = (typeof si === 'number') ? si : 0;
+      try { updateCaption(state._sentIndex, state._kwIndex); } catch (e) {}
+      if (!sheetText) return;
+      if (!(state.sceneOn || state.sceneFs)) return;
       const nodes = sheetText.querySelectorAll('.ab-sentence');
       nodes.forEach(function (n) {
         const i = Number(n.getAttribute('data-si'));
         n.classList.remove('active', 'leaving');
         if (i === si) n.classList.add('active');
       });
-      state._sentIndex = si;
     }
     function saveProgress() {
       if (!state.bookId) return;
@@ -1549,7 +1731,7 @@
         }
       });
       if (typeof activeSi === 'number' && state._sentIndex !== activeSi) {
-        showSentence(activeSi);
+        showSentence(activeSi); try { updateCaption(activeSi, idx); } catch(e) {}
       }
     }
     function splitParagraphs(text) {
@@ -1589,6 +1771,10 @@
         state._sentIndex = 0;
         try { renderPage(); } catch (e) {}
         try { showSentence(0); } catch (e) {}
+        try { updateCaption(0, 0); } catch (e) {}
+      } else if (state.sceneFs) {
+        rawParas = splitSentences(text);
+        try { updateCaption(0, 0); } catch (e) {}
       } else {
         rawParas = splitParagraphs(text);
       }
@@ -1618,12 +1804,12 @@
         if (voice) u.voice = voice;
         state._kwIndex = globalWordBase;
         u.onstart = function () {
-          if (state.sceneOn || state.sceneFs) {
-            try {
-              var si = (typeof state._speakSi === 'number') ? state._speakSi : (state._sentIndex || 0);
-              showSentence(si);
-            } catch (e) {}
-          }
+          try {
+            var si = (typeof state._speakSi === 'number') ? state._speakSi : (state._sentIndex || 0);
+            state._sentIndex = si;
+            showSentence(si);
+            updateCaption(si, state._kwIndex);
+          } catch (e) {}
         };
         u.onboundary = function (ev) {
           if (!(state.sceneOn || state.sceneFs)) return;
@@ -1931,6 +2117,68 @@
     
     // —— Abstract panel (replaces book surface) ——
                 
+    
+    // Touch: swipe left/right = page; up/down = change 3D scene
+    (function setupBookSwipes() {
+      var startX = 0, startY = 0, tracking = false;
+      var minDist = 48;
+      function targetOk(t) {
+        if (!t) return true;
+        var tag = (t.tagName || '').toLowerCase();
+        if (tag === 'button' || tag === 'select' || tag === 'input' || tag === 'a') return false;
+        return true;
+      }
+      function onStart(e) {
+        var t = e.changedTouches && e.changedTouches[0];
+        if (!t || !targetOk(e.target)) return;
+        startX = t.clientX; startY = t.clientY; tracking = true;
+      }
+      function onEnd(e) {
+        if (!tracking) return;
+        tracking = false;
+        var t = e.changedTouches && e.changedTouches[0];
+        if (!t) return;
+        var dx = t.clientX - startX, dy = t.clientY - startY;
+        var adx = Math.abs(dx), ady = Math.abs(dy);
+        if (adx < minDist && ady < minDist) return;
+        if (adx > ady) {
+          // horizontal — pages
+          if (dx < 0) { try { if (typeof next === 'function') next(); } catch (err) {} }
+          else { try { if (typeof prev === 'function') prev(); } catch (err) {} }
+        } else {
+          // vertical — cycle 3D / ambience scenes
+          var order = ['sun','orbit','voyage','moon','planets','probe','deep','jupiter_close','milkyway','wavelength','fishes3d','abstract'];
+          var cur = state.sceneName || 'sun';
+          var ix = order.indexOf(cur);
+          if (ix < 0) ix = 0;
+          if (dy < 0) ix = (ix + 1) % order.length;
+          else ix = (ix - 1 + order.length) % order.length;
+          var name = order[ix];
+          state.sceneName = name;
+          state.sceneOn = true;
+          try {
+            var pick = document.getElementById('scenePick');
+            var fsp = document.getElementById('fsScenePick');
+            if (pick) pick.value = name;
+            if (fsp) fsp.value = name;
+            if (typeof applyScene === 'function') applyScene(true);
+            else if (typeof applySceneOn === 'function') applySceneOn(true);
+            // WebGL modes
+            if (window.CGWebGL && typeof syncWebGLScene === 'function') {
+              syncWebGLScene(name, true);
+            } else if (window.CGWebGL) {
+              var WEBGL = { jupiter_close:1, milkyway:1, wavelength:1, fishes3d:1, abstract:1 };
+              var stage = document.getElementById('sceneStage');
+              if (stage && CGWebGL.attachTo) CGWebGL.attachTo(stage);
+              CGWebGL.setMode(WEBGL[name] ? name : 'none');
+            }
+          } catch (err) { console.warn(err); }
+        }
+      }
+      document.addEventListener('touchstart', onStart, { passive: true });
+      document.addEventListener('touchend', onEnd, { passive: true });
+    })();
+
     function applySceneFs(force) {
       const stage = document.getElementById('stage');
       const btn = document.getElementById('btnSceneFs');
@@ -1941,7 +2189,16 @@
       if (stage) stage.classList.toggle('scene-fs', on);
       document.body.classList.toggle('scene-fs-on', on);
       try { if (typeof renderPage === 'function') renderPage(); } catch (e) {}
-      if (on) { try { showSentence(typeof state._sentIndex === 'number' ? state._sentIndex : 0); } catch (e) {} }
+      if (on) {
+        try { renderPage(); } catch (e) {}
+        try { showSentence(typeof state._sentIndex === 'number' ? state._sentIndex : 0); } catch (e) {}
+        try { updateCaption(state._sentIndex || 0, state._kwIndex); } catch (e) {}
+        var cap = document.getElementById('fsCaption');
+        if (cap) cap.classList.add('is-on');
+      } else {
+        var cap = document.getElementById('fsCaption');
+        if (cap) { cap.innerHTML = ''; cap.classList.remove('is-on'); }
+      }
       if (btn) btn.classList.toggle('is-on', on);
       if (fsBar) {
         fsBar.style.setProperty('display', on ? 'flex' : 'none', 'important');
@@ -1996,6 +2253,24 @@
         const el = surface.querySelector('.sc-' + n + '-bits');
         if (el) el.style.display = (on && n === name) ? 'block' : 'none';
       });
+
+      // 3D/scene only when explicitly on — never auto on fullscreen
+      if (!on) {
+        try { if (window.CGWebGL) CGWebGL.setMode('none'); } catch (e) {}
+      } else {
+        // Default to first scene in list if empty
+        if (!name) name = 'sun';
+        try {
+          if (typeof syncWebGLScene === 'function') syncWebGLScene(name, true);
+          else if (window.CGWebGL) {
+            var W = { jupiter_close:1, milkyway:1, wavelength:1, fishes3d:1, abstract:1 };
+            var st = document.getElementById('sceneStage');
+            if (st && CGWebGL.attachTo) CGWebGL.attachTo(st);
+            CGWebGL.setMode(W[name] ? name : 'none');
+          }
+        } catch (e) {}
+      }
+
       if (typeof syncWebGLScene === 'function') syncWebGLScene(name, on);
       if (btn) btn.classList.toggle('is-on', on);
       if (pick && pick.value !== name) pick.value = name;
@@ -2025,7 +2300,18 @@
           return;
         }
         state.sceneOn = !state.sceneOn;
+        if (state.sceneOn) {
+          var pick = document.getElementById('scenePick');
+          var first = (pick && pick.options && pick.options.length) ? pick.options[0].value : 'sun';
+          // skip empty; use first real scene (prefer sun or first 3D)
+          if (!state.sceneName) {
+            state.sceneName = first || 'sun';
+            if (pick) pick.value = state.sceneName;
+          }
+        }
         try { applyScene(); } catch (e) { console.warn(e); }
+        try { if (typeof renderPage === 'function') renderPage(); } catch (e) {}
+        try { updateCaption(state._sentIndex || 0, state._kwIndex); } catch (e) {}
       });
     }
     if (scenePick) {
