@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Books — Kwealth</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Inter:wght@400;600;700&family=Playfair+Display:wght@500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="/static/js/offline-store.js"></script>
   <link rel="manifest" href="/static/manifest.json">
@@ -100,6 +103,161 @@
     .bgm-row.active { border-color: #2dd4bf; background: rgba(13,148,136,.2); }
     .bgm-row button { flex-shrink: 0; }
   
+
+    
+
+    /* ===== KWEALTH UPGRADE: Scene replaces book + text overlay ===== */
+    #sceneTextOverlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8vh 6vw;
+      color: #f8fafc;
+      line-height: 1.9;
+      font-size: calc(var(--fs, 18px) * 1.22);
+      font-family: var(--ff, Georgia, serif);
+      text-shadow: 0 2px 20px rgba(0,0,0,.85), 0 0 2px rgba(0,0,0,.9);
+      overflow: hidden;
+    }
+    #stage.scene-on #sceneTextOverlay {
+      display: flex !important;
+    }
+    /* When scene is on, hide the physical book sheet completely */
+    #stage.scene-on .page-sheet {
+      display: none !important;
+    }
+    #stage.scene-on #sceneStage {
+      display: block !important;
+      z-index: 1;
+      pointer-events: none;
+    }
+    /* Fullscreen scene mode: fill viewport */
+    body.scene-fs-on #stage.scene-fs {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 2147482000 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: none !important;
+      border-radius: 0 !important;
+      min-height: 100vh !important;
+    }
+    body.scene-fs-on #stage.scene-fs #sceneStage {
+      border-radius: 0 !important;
+    }
+    body.scene-fs-on #stage.scene-fs #sceneTextOverlay {
+      padding: 10vh 8vw;
+      font-size: calc(var(--fs, 18px) * 1.35);
+    }
+    /* Word / sentence animations */
+    #sceneTextOverlay .ab-sentence {
+      display: none;
+      opacity: 0;
+      max-width: 42rem;
+      margin: 0 auto;
+    }
+    #sceneTextOverlay .ab-sentence.active {
+      display: block;
+      animation: kwTextIn .55s cubic-bezier(.22,.8,.28,1) forwards;
+    }
+    #sceneTextOverlay .ab-sentence.leaving {
+      display: block;
+      animation: kwTextOut .35s ease forwards;
+    }
+    #sceneTextOverlay .kw {
+      transition: color .15s ease, text-shadow .15s ease, transform .15s ease;
+    }
+    #sceneTextOverlay .kw.spoken {
+      opacity: .55;
+    }
+    #sceneTextOverlay .kw.current {
+      color: #fef08a;
+      text-shadow: 0 0 18px rgba(250,204,21,.7), 0 2px 12px rgba(0,0,0,.9);
+      font-weight: 700;
+    }
+    /* Entrance styles */
+    #sceneTextOverlay.ws-fill .ab-sentence.active { animation-name: kwTextIn; }
+    #sceneTextOverlay.ws-fade-up .ab-sentence.active { animation-name: kwFadeUp; }
+    #sceneTextOverlay.ws-typewriter .ab-sentence.active { animation-name: kwTypeIn; }
+    #sceneTextOverlay.ws-scale-in .ab-sentence.active { animation-name: kwScaleIn; }
+    #sceneTextOverlay.ws-glow .ab-sentence.active { animation-name: kwGlowIn; }
+    #sceneTextOverlay.ws-center-block .ab-sentence.active {
+      animation-name: kwScaleIn;
+      font-size: 1.15em;
+      letter-spacing: .01em;
+    }
+    @keyframes kwTextIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes kwTextOut {
+      from { opacity: 1; transform: translateY(0); }
+      to   { opacity: 0; transform: translateY(-10px); }
+    }
+    @keyframes kwFadeUp {
+      from { opacity: 0; transform: translateY(28px); filter: blur(4px); }
+      to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+    }
+    @keyframes kwTypeIn {
+      from { opacity: 0; clip-path: inset(0 100% 0 0); }
+      to   { opacity: 1; clip-path: inset(0 0 0 0); }
+    }
+    @keyframes kwScaleIn {
+      from { opacity: 0; transform: scale(.88); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes kwGlowIn {
+      from { opacity: 0; text-shadow: 0 0 0 transparent; }
+      to   { opacity: 1; text-shadow: 0 0 24px rgba(255,255,255,.35), 0 2px 18px rgba(0,0,0,.85); }
+    }
+    /* Soft readable backdrop behind text on busy scenes */
+    #sceneTextOverlay .text-backdrop {
+      position: absolute;
+      inset: 18% 10%;
+      background: radial-gradient(ellipse at center, rgba(2,6,23,.45) 0%, transparent 70%);
+      z-index: -1;
+      pointer-events: none;
+    }
+    /* Swipe hint */
+    #swipeHint {
+      display: none;
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 6;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      color: rgba(248,250,252,.7);
+      background: rgba(15,23,42,.55);
+      padding: 6px 12px;
+      border-radius: 999px;
+      pointer-events: none;
+      backdrop-filter: blur(6px);
+    }
+    body.scene-fs-on #swipeHint { display: block; }
+    /* Upload panel polish */
+    .upload-panel {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .upload-panel h4 {
+      margin: 0 0 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
 
     /* —— Reading ambience scenes —— */
     #stage {
@@ -1081,11 +1239,13 @@
         </select>
         <button type="button" class="chip" id="btnSceneFs" title="Full screen scene">Full screen</button>
         <select id="wordStyle" class="ctl" style="max-width:8rem;font-size:11px;" title="Word style">
-          <option value="fill">Fill colour</option>
-          <option value="write">Writing</option>
-          <option value="glow">Glow</option>
-          <option value="underline">Underline</option>
-        </select>
+              <option value="fill">Fill (karaoke)</option>
+              <option value="fade-up">Fade up</option>
+              <option value="typewriter">Typewriter</option>
+              <option value="scale-in">Scale in</option>
+              <option value="glow">Glow</option>
+              <option value="center-block">Center block</option>
+</select>
         <select id="bookSelect" class="ctl" style="max-width:45%;margin-left:auto;width:auto;">
           {% for b in books %}
           <option value="{{ b.id }}" {% if book and b.id==book.id %}selected{% endif %}>{{ b.title }}</option>
@@ -1116,11 +1276,14 @@
               <option value="Georgia, 'Times New Roman', serif">Georgia (classic)</option>
               <option value="'Palatino Linotype', Palatino, serif">Palatino</option>
               <option value="'Book Antiqua', Palatino, serif">Book Antiqua</option>
-              <option value="Garamond, serif">Garamond</option>
+              <option value="Garamond, 'Times New Roman', serif">Garamond</option>
+              <option value="'Playfair Display', Georgia, serif">Playfair Display</option>
+              <option value="'Cinzel', Georgia, serif">Cinzel (elegant)</option>
               <option value="'Segoe UI', system-ui, sans-serif">Segoe UI</option>
               <option value="'Helvetica Neue', Arial, sans-serif">Helvetica</option>
+              <option value="Inter, system-ui, sans-serif">Inter (clean)</option>
               <option value="'Courier New', monospace">Courier</option>
-            </select>
+</select>
           </div>
           <div>
             <span class="lbl">Page flip style</span>
@@ -1296,6 +1459,13 @@
             <div class="block bl5"></div>
           </div>
         </div>
+        
+        <div id="sceneTextOverlay" aria-live="polite">
+          <div class="text-backdrop"></div>
+          <div id="overlayText"></div>
+        </div>
+        <div id="swipeHint">Swipe ← → pages · ↑ ↓ scenes</div>
+
         <div class="page-sheet" id="sheet">
           <div class="page-badge">
             <span class="num" id="pageBadgeNum">Page 1 / 1</span>
@@ -1888,6 +2058,182 @@
         }
       }).catch(function(){});
     }
+
+
+    // ========== KWEALTH UPGRADE JS ==========
+    var SCENE_LIST = ['sun','orbit','voyage','moon','planets','probe','deep','jupiter_close','milkyway','wavelength','fishes3d','abstract'];
+    var overlayText = document.getElementById('overlayText');
+    var sceneTextOverlay = document.getElementById('sceneTextOverlay');
+
+    function applyWordStyleClass() {
+      if (!sceneTextOverlay) return;
+      sceneTextOverlay.className = '';
+      var ws = state.wordStyle || 'fill';
+      sceneTextOverlay.classList.add('ws-' + ws);
+    }
+
+    // Override / enhance renderPage for scene overlay
+    var _origRenderPage = renderPage;
+    renderPage = function () {
+      _origRenderPage();
+      try {
+        if (state.sceneOn && overlayText) {
+          var raw = state.pages[state.pageIndex] || '';
+          var sents = splitSentences(raw);
+          state._sentences = sents;
+          var wi = 0;
+          overlayText.innerHTML = sents.map(function (sent, si) {
+            var parts = sent.split(/(\s+)/);
+            var html = '';
+            parts.forEach(function (p) {
+              if (/^\s+$/.test(p)) { html += p; return; }
+              html += '<span class="kw" data-wi="' + wi + '" data-si="' + si + '">' + p.replace(/</g,'&lt;') + '</span>';
+              wi += 1;
+            });
+            return '<div class="ab-sentence" data-si="' + si + '">' + html + '</div>';
+          }).join('');
+          applyWordStyleClass();
+          if (typeof state._sentIndex === 'number') showSentence(state._sentIndex);
+          else showSentence(0);
+        }
+      } catch (e) { console.warn('overlay render', e); }
+    };
+
+    // Enhance showSentence to work on overlay
+    var _origShowSentence = showSentence;
+    showSentence = function (si) {
+      _origShowSentence(si);
+      if (!overlayText || !state.sceneOn) return;
+      var nodes = overlayText.querySelectorAll('.ab-sentence');
+      nodes.forEach(function (n) {
+        var i = Number(n.getAttribute('data-si'));
+        n.classList.remove('active', 'leaving');
+        if (i === si) n.classList.add('active');
+      });
+      state._sentIndex = si;
+    };
+
+    // Enhance highlightWord for overlay
+    var _origHighlightWord = highlightWord;
+    highlightWord = function (idx) {
+      _origHighlightWord(idx);
+      if (!overlayText || !state.sceneOn) return;
+      var nodes = overlayText.querySelectorAll('.kw');
+      var activeSi = 0;
+      nodes.forEach(function (n) {
+        var i = Number(n.getAttribute('data-wi'));
+        var si = Number(n.getAttribute('data-si') || 0);
+        n.classList.remove('current');
+        if (i < idx) n.classList.add('spoken');
+        else n.classList.remove('spoken');
+        if (i === idx) {
+          n.classList.add('current');
+          activeSi = si;
+        }
+      });
+      // ensure active sentence visible
+      try { showSentence(activeSi); } catch (e) {}
+    };
+
+    // Enhance applyScene: force book hidden, overlay shown
+    var _origApplyScene = applyScene;
+    applyScene = function () {
+      _origApplyScene();
+      applyWordStyleClass();
+      var stage = document.getElementById('stage');
+      if (stage) {
+        if (state.sceneOn) {
+          stage.classList.add('scene-on');
+          document.body.classList.add('scene-on');
+        } else {
+          stage.classList.remove('scene-on');
+          document.body.classList.remove('scene-on');
+        }
+      }
+      try { renderPage(); } catch (e) {}
+    };
+
+    // Cycle scenes
+    function cycleScene(dir) {
+      var cur = state.sceneName || 'sun';
+      var idx = SCENE_LIST.indexOf(cur);
+      if (idx < 0) idx = 0;
+      idx = (idx + dir + SCENE_LIST.length) % SCENE_LIST.length;
+      state.sceneName = SCENE_LIST[idx];
+      if (!state.sceneOn) state.sceneOn = true;
+      try { applyScene(); } catch (e) {}
+      var pick = document.getElementById('scenePick');
+      if (pick) pick.value = state.sceneName;
+    }
+
+    // ========== Swipe gestures ==========
+    (function setupSwipe() {
+      var stage = document.getElementById('stage');
+      if (!stage) return;
+      var sx = 0, sy = 0, active = false;
+      var THRESH = 55;
+      stage.addEventListener('touchstart', function (e) {
+        if (!e.touches || !e.touches[0]) return;
+        sx = e.touches[0].clientX;
+        sy = e.touches[0].clientY;
+        active = true;
+      }, { passive: true });
+      stage.addEventListener('touchend', function (e) {
+        if (!active) return;
+        active = false;
+        var t = e.changedTouches && e.changedTouches[0];
+        if (!t) return;
+        var dx = t.clientX - sx;
+        var dy = t.clientY - sy;
+        var adx = Math.abs(dx), ady = Math.abs(dy);
+        if (adx < THRESH && ady < THRESH) return;
+        if (adx > ady) {
+          // horizontal → pages
+          if (dx < 0) { try { if (typeof next === 'function') next(); else if ($('btnNext')) $('btnNext').click(); } catch(err){} }
+          else { try { if (typeof prev === 'function') prev(); else if ($('btnPrev')) $('btnPrev').click(); } catch(err){} }
+        } else if (state.sceneOn || state.sceneFs) {
+          // vertical → scenes
+          if (dy < 0) cycleScene(1);
+          else cycleScene(-1);
+        }
+      }, { passive: true });
+
+      // Mouse drag support (desktop)
+      var mdown = false, msx = 0, msy = 0;
+      stage.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) return;
+        mdown = true; msx = e.clientX; msy = e.clientY;
+      });
+      window.addEventListener('mouseup', function (e) {
+        if (!mdown) return;
+        mdown = false;
+        var dx = e.clientX - msx, dy = e.clientY - msy;
+        var adx = Math.abs(dx), ady = Math.abs(dy);
+        if (adx < 80 && ady < 80) return;
+        if (adx > ady) {
+          if (dx < 0) { try { if ($('btnNext')) $('btnNext').click(); } catch(err){} }
+          else { try { if ($('btnPrev')) $('btnPrev').click(); } catch(err){} }
+        } else if (state.sceneOn || state.sceneFs) {
+          if (dy < 0) cycleScene(1); else cycleScene(-1);
+        }
+      });
+    })();
+
+    // Word style change also updates overlay class
+    var wordStyleEl2 = document.getElementById('wordStyle');
+    if (wordStyleEl2) {
+      wordStyleEl2.addEventListener('change', function () {
+        state.wordStyle = wordStyleEl2.value || 'fill';
+        applyWordStyleClass();
+        try { localStorage.setItem('kw_book_wordStyle', state.wordStyle); } catch(e){}
+        try { renderPage(); } catch(e){}
+      });
+    }
+
+    // Ensure applyScene runs once at end
+    try { applyScene(); } catch (e) {}
+    // ========== END KWEALTH UPGRADE JS ==========
+
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function(){});
     }
