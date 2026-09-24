@@ -102,6 +102,163 @@
     }
     .bgm-row.active { border-color: #2dd4bf; background: rgba(13,148,136,.2); }
     .bgm-row button { flex-shrink: 0; }
+  
+
+    
+
+    /* ===== KWEALTH UPGRADE: Scene replaces book + text overlay ===== */
+    #sceneTextOverlay {
+      display: none;
+      position: absolute;
+      inset: 0;
+      z-index: 5;
+      pointer-events: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 8vh 6vw;
+      color: #f8fafc;
+      line-height: 1.9;
+      font-size: calc(var(--fs, 18px) * 1.22);
+      font-family: var(--ff, Georgia, serif);
+      text-shadow: 0 2px 20px rgba(0,0,0,.85), 0 0 2px rgba(0,0,0,.9);
+      overflow: hidden;
+    }
+    #stage.scene-on #sceneTextOverlay {
+      display: flex !important;
+    }
+    /* When scene is on, hide the physical book sheet completely */
+    #stage.scene-on .page-sheet {
+      display: none !important;
+    }
+    #stage.scene-on #sceneStage {
+      display: block !important;
+      z-index: 1;
+      pointer-events: none;
+    }
+    /* Fullscreen scene mode: fill viewport */
+    body.scene-fs-on #stage.scene-fs {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 2147482000 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: none !important;
+      border-radius: 0 !important;
+      min-height: 100vh !important;
+    }
+    body.scene-fs-on #stage.scene-fs #sceneStage {
+      border-radius: 0 !important;
+    }
+    body.scene-fs-on #stage.scene-fs #sceneTextOverlay {
+      padding: 10vh 8vw;
+      font-size: calc(var(--fs, 18px) * 1.35);
+    }
+    /* Word / sentence animations */
+    #sceneTextOverlay .ab-sentence {
+      display: none;
+      opacity: 0;
+      max-width: 42rem;
+      margin: 0 auto;
+    }
+    #sceneTextOverlay .ab-sentence.active {
+      display: block;
+      animation: kwTextIn .55s cubic-bezier(.22,.8,.28,1) forwards;
+    }
+    #sceneTextOverlay .ab-sentence.leaving {
+      display: block;
+      animation: kwTextOut .35s ease forwards;
+    }
+    #sceneTextOverlay .kw {
+      transition: color .15s ease, text-shadow .15s ease, transform .15s ease;
+    }
+    #sceneTextOverlay .kw.spoken {
+      opacity: .55;
+    }
+    #sceneTextOverlay .kw.current {
+      color: #fef08a;
+      text-shadow: 0 0 18px rgba(250,204,21,.7), 0 2px 12px rgba(0,0,0,.9);
+      font-weight: 700;
+    }
+    /* Entrance styles */
+    #sceneTextOverlay.ws-fill .ab-sentence.active { animation-name: kwTextIn; }
+    #sceneTextOverlay.ws-fade-up .ab-sentence.active { animation-name: kwFadeUp; }
+    #sceneTextOverlay.ws-typewriter .ab-sentence.active { animation-name: kwTypeIn; }
+    #sceneTextOverlay.ws-scale-in .ab-sentence.active { animation-name: kwScaleIn; }
+    #sceneTextOverlay.ws-glow .ab-sentence.active { animation-name: kwGlowIn; }
+    #sceneTextOverlay.ws-center-block .ab-sentence.active {
+      animation-name: kwScaleIn;
+      font-size: 1.15em;
+      letter-spacing: .01em;
+    }
+    @keyframes kwTextIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes kwTextOut {
+      from { opacity: 1; transform: translateY(0); }
+      to   { opacity: 0; transform: translateY(-10px); }
+    }
+    @keyframes kwFadeUp {
+      from { opacity: 0; transform: translateY(28px); filter: blur(4px); }
+      to   { opacity: 1; transform: translateY(0); filter: blur(0); }
+    }
+    @keyframes kwTypeIn {
+      from { opacity: 0; clip-path: inset(0 100% 0 0); }
+      to   { opacity: 1; clip-path: inset(0 0 0 0); }
+    }
+    @keyframes kwScaleIn {
+      from { opacity: 0; transform: scale(.88); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    @keyframes kwGlowIn {
+      from { opacity: 0; text-shadow: 0 0 0 transparent; }
+      to   { opacity: 1; text-shadow: 0 0 24px rgba(255,255,255,.35), 0 2px 18px rgba(0,0,0,.85); }
+    }
+    /* Soft readable backdrop behind text on busy scenes */
+    #sceneTextOverlay .text-backdrop {
+      position: absolute;
+      inset: 18% 10%;
+      background: radial-gradient(ellipse at center, rgba(2,6,23,.45) 0%, transparent 70%);
+      z-index: -1;
+      pointer-events: none;
+    }
+    /* Swipe hint */
+    #swipeHint {
+      display: none;
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 6;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      color: rgba(248,250,252,.7);
+      background: rgba(15,23,42,.55);
+      padding: 6px 12px;
+      border-radius: 999px;
+      pointer-events: none;
+      backdrop-filter: blur(6px);
+    }
+    body.scene-fs-on #swipeHint { display: block; }
+    /* Upload panel polish */
+    .upload-panel {
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      padding: 12px;
+      margin-top: 10px;
+    }
+    .upload-panel h4 {
+      margin: 0 0 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+
     /* —— Reading ambience scenes —— */
     #stage {
       position: relative;
@@ -1027,67 +1184,30 @@
     #btnScene.is-on {
       border-color: #2dd4bf; color: #5eead4; background: rgba(13,148,136,.35);
     }
+
   
-    /* ========== SCENE REPLACES BOOK (critical) ========== */
+    /* === CORE FIX: words on scene, book panel hidden === */
     #sceneTextOverlay {
       display: none;
       position: absolute;
       inset: 0;
-      z-index: 20;
+      z-index: 30;
       pointer-events: none;
       align-items: center;
       justify-content: center;
       text-align: center;
-      padding: 8vh 6vw;
+      padding: 10vh 6vw;
       color: #f8fafc;
       line-height: 1.95;
-      font-size: calc(var(--fs, 18px) * 1.28);
+      font-size: calc(var(--fs, 18px) * 1.3);
       font-family: var(--ff, Georgia, serif);
-      text-shadow: 0 2px 22px rgba(0,0,0,.92), 0 0 4px rgba(0,0,0,.95);
-      overflow: hidden;
+      text-shadow: 0 2px 22px rgba(0,0,0,.95), 0 0 4px #000;
     }
-    #sceneTextOverlay .text-backdrop {
-      position: absolute; inset: 15% 8%;
-      background: radial-gradient(ellipse at center, rgba(2,6,23,.5) 0%, transparent 72%);
-      z-index: -1; pointer-events: none;
-    }
-    #sceneTextOverlay .ab-sentence {
-      display: none; max-width: 42rem; margin: 0 auto; opacity: 0;
-    }
-    #sceneTextOverlay .ab-sentence.active {
-      display: block;
-      animation: kwIn .5s cubic-bezier(.22,.8,.28,1) forwards;
-    }
-    #sceneTextOverlay .ab-sentence.leaving {
-      display: block; animation: kwOut .3s ease forwards;
-    }
-    #sceneTextOverlay .kw { transition: color .12s, text-shadow .12s; }
-    #sceneTextOverlay .kw.spoken { opacity: .5; }
-    #sceneTextOverlay .kw.current {
-      color: #fef08a !important;
-      text-shadow: 0 0 18px rgba(250,204,21,.75), 0 2px 10px rgba(0,0,0,.9);
-      font-weight: 700;
-    }
-    #sceneTextOverlay.ws-fade-up .ab-sentence.active { animation-name: kwFadeUp; }
-    #sceneTextOverlay.ws-typewriter .ab-sentence.active { animation-name: kwType; }
-    #sceneTextOverlay.ws-scale-in .ab-sentence.active { animation-name: kwScale; }
-    #sceneTextOverlay.ws-glow .ab-sentence.active { animation-name: kwGlow; }
-    #sceneTextOverlay.ws-center-block .ab-sentence.active { animation-name: kwScale; font-size: 1.12em; }
-    @keyframes kwIn { from { opacity:0; transform:translateY(14px);} to { opacity:1; transform:none;} }
-    @keyframes kwOut { from { opacity:1;} to { opacity:0; transform:translateY(-8px);} }
-    @keyframes kwFadeUp { from { opacity:0; transform:translateY(28px); filter:blur(4px);} to { opacity:1; transform:none; filter:none;} }
-    @keyframes kwType { from { opacity:0; clip-path:inset(0 100% 0 0);} to { opacity:1; clip-path:inset(0 0 0 0);} }
-    @keyframes kwScale { from { opacity:0; transform:scale(.9);} to { opacity:1; transform:scale(1);} }
-    @keyframes kwGlow { from { opacity:0; text-shadow:none;} to { opacity:1; text-shadow:0 0 24px rgba(255,255,255,.4),0 2px 16px rgba(0,0,0,.85);} }
-
-    /* When scene is ON: hide book completely, show scene + overlay */
+    #stage.scene-on #sceneTextOverlay { display: flex !important; }
     #stage.scene-on .page-sheet {
       display: none !important;
       visibility: hidden !important;
       opacity: 0 !important;
-      height: 0 !important;
-      min-height: 0 !important;
-      overflow: hidden !important;
       pointer-events: none !important;
     }
     #stage.scene-on #sceneStage {
@@ -1099,27 +1219,27 @@
       height: 100% !important;
       min-height: 62vh !important;
     }
-    #stage.scene-on #sceneTextOverlay {
-      display: flex !important;
+    #sceneTextOverlay .ab-sentence { display: none; max-width: 42rem; margin: 0 auto; }
+    #sceneTextOverlay .ab-sentence.active {
+      display: block;
+      animation: kwFadeIn .45s ease forwards;
     }
-    #swipeHint {
-      display: none;
-      position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
-      z-index: 25; font-size: 11px; font-weight: 600; letter-spacing: .04em;
-      color: rgba(248,250,252,.75); background: rgba(15,23,42,.55);
-      padding: 6px 14px; border-radius: 999px; pointer-events: none;
-      backdrop-filter: blur(6px);
+    #sceneTextOverlay .kw.spoken { opacity: .45; }
+    #sceneTextOverlay .kw.current {
+      color: #fef08a !important;
+      font-weight: 700;
+      text-shadow: 0 0 16px rgba(250,204,21,.8), 0 2px 8px #000;
     }
-    body.scene-fs-on #swipeHint { display: block; }
+    @keyframes kwFadeIn {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: none; }
+    }
     body.scene-fs-on #stage.scene-fs {
       position: fixed !important; inset: 0 !important;
-      z-index: 2147482000 !important; width: 100vw !important; height: 100vh !important;
-      max-width: none !important; border-radius: 0 !important; min-height: 100vh !important;
+      z-index: 2147482000 !important;
+      width: 100vw !important; height: 100vh !important;
+      border-radius: 0 !important; min-height: 100vh !important;
       background: #000 !important;
-    }
-    body.scene-fs-on #stage.scene-fs #sceneStage { min-height: 100vh !important; border-radius: 0 !important; }
-    body.scene-fs-on #stage.scene-fs #sceneTextOverlay {
-      font-size: calc(var(--fs, 18px) * 1.4) !important; padding: 12vh 8vw !important;
     }
 
   </style>
@@ -1181,7 +1301,7 @@
               <option value="scale-in">Scale in</option>
               <option value="glow">Glow</option>
               <option value="center-block">Center block</option>
-            </select>
+</select>
         <select id="bookSelect" class="ctl" style="max-width:45%;margin-left:auto;width:auto;">
           {% for b in books %}
           <option value="{{ b.id }}" {% if book and b.id==book.id %}selected{% endif %}>{{ b.title }}</option>
@@ -1215,11 +1335,11 @@
               <option value="Garamond, 'Times New Roman', serif">Garamond</option>
               <option value="'Playfair Display', Georgia, serif">Playfair Display</option>
               <option value="'Cinzel', Georgia, serif">Cinzel (elegant)</option>
-              <option value="Inter, system-ui, sans-serif">Inter (clean)</option>
               <option value="'Segoe UI', system-ui, sans-serif">Segoe UI</option>
               <option value="'Helvetica Neue', Arial, sans-serif">Helvetica</option>
+              <option value="Inter, system-ui, sans-serif">Inter (clean)</option>
               <option value="'Courier New', monospace">Courier</option>
-            </select>
+</select>
           </div>
           <div>
             <span class="lbl">Page flip style</span>
@@ -1395,11 +1515,13 @@
             <div class="block bl5"></div>
           </div>
         </div>
+        
         <div id="sceneTextOverlay" aria-live="polite">
           <div class="text-backdrop"></div>
           <div id="overlayText"></div>
         </div>
         <div id="swipeHint">Swipe ← → pages · ↑ ↓ scenes</div>
+
         <div class="page-sheet" id="sheet">
           <div class="page-badge">
             <span class="num" id="pageBadgeNum">Page 1 / 1</span>
@@ -1504,32 +1626,34 @@
     }
     function renderPage() {
       const raw = state.pages[state.pageIndex] || '';
-      if (sheetText) {
-        if (state.sceneOn) {
-          // Sentence blocks; only active sentence shown
-          const sents = splitSentences(raw);
-          state._sentences = sents;
-          let wi = 0;
-          sheetText.innerHTML = sents.map(function (sent, si) {
-            const parts = sent.split(/(\s+)/);
-            let html = '';
-            parts.forEach(function (p) {
-              if (/^\s+$/.test(p) || p === '') { html += p; return; }
-              html += '<span class="kw" data-wi="' + wi + '" data-si="' + si + '">' +
-                p.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>';
-              wi += 1;
-            });
-            return '<div class="ab-sentence" data-si="' + si + '">' + html + '</div>';
-          }).join('');
-          state._wordCount = wi;
-          // show first sentence until speech advances
-          showSentence(typeof state._sentIndex === 'number' ? state._sentIndex : 0);
-        } else {
-          sheetText.textContent = raw;
-          state._wordCount = 0;
-          state._sentences = [];
-          state._sentIndex = 0;
-        }
+      const overlayText = document.getElementById('overlayText');
+      if (state.sceneOn) {
+        // Words go ON the 3D scene overlay (NOT inside the book panel)
+        const target = overlayText || sheetText;
+        const sents = splitSentences(raw);
+        state._sentences = sents;
+        let wi = 0;
+        const html = sents.map(function (sent, si) {
+          const parts = sent.split(/(\s+)/);
+          let h = '';
+          parts.forEach(function (p) {
+            if (/^\s+$/.test(p) || p === '') { h += p; return; }
+            h += '<span class="kw" data-wi="' + wi + '" data-si="' + si + '">' +
+              p.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>';
+            wi += 1;
+          });
+          return '<div class="ab-sentence" data-si="' + si + '">' + h + '</div>';
+        }).join('');
+        if (overlayText) overlayText.innerHTML = html;
+        if (sheetText) sheetText.innerHTML = ''; // book panel empty while scene on
+        state._wordCount = wi;
+        showSentence(typeof state._sentIndex === 'number' ? state._sentIndex : 0);
+      } else if (sheetText) {
+        sheetText.textContent = raw;
+        if (overlayText) overlayText.innerHTML = '';
+        state._wordCount = 0;
+        state._sentences = [];
+        state._sentIndex = 0;
       }
       const total = state.pages.length || 1;
       const cur = state.pageIndex + 1;
@@ -1545,8 +1669,10 @@
       if ($('btnNext')) $('btnNext').disabled = state.pageIndex >= total - 1;
     }
     function showSentence(si) {
-      if (!sheetText || !state.sceneOn) return;
-      const nodes = sheetText.querySelectorAll('.ab-sentence');
+      if (!state.sceneOn) return;
+      const root = document.getElementById('overlayText') || sheetText;
+      if (!root) return;
+      const nodes = root.querySelectorAll('.ab-sentence');
       nodes.forEach(function (n) {
         const i = Number(n.getAttribute('data-si'));
         n.classList.remove('active', 'leaving');
@@ -1611,8 +1737,10 @@
       });
     }
             function highlightWord(idx) {
-      if (!sheetText || !state.sceneOn) return;
-      const nodes = sheetText.querySelectorAll('.kw');
+      if (!state.sceneOn) return;
+      const root = document.getElementById('overlayText') || sheetText;
+      if (!root) return;
+      const nodes = root.querySelectorAll('.kw');
       let activeSi = 0;
       nodes.forEach(function (n) {
         const i = Number(n.getAttribute('data-wi'));
@@ -2156,173 +2284,195 @@
       }).catch(function () {});
     } catch (e) { console.warn(e); }
 
-    // ========== KWEALTH CORE v3 (hard-wired) ==========
-    var KW_SCENES = ['sun','orbit','voyage','moon','planets','probe','deep','jupiter_close','milkyway','wavelength','fishes3d','abstract'];
 
-    function kwOverlayEl() { return document.getElementById('overlayText'); }
-    function kwOverlayRoot() { return document.getElementById('sceneTextOverlay'); }
+    // ========== KWEALTH FIX v2 (runs AFTER all functions defined) ==========
+    (function kwealthFixV2() {
+      var SCENE_LIST = ['sun','orbit','voyage','moon','planets','probe','deep','jupiter_close','milkyway','wavelength','fishes3d','abstract'];
 
-    function kwApplyWordStyle() {
-      var root = kwOverlayRoot();
-      if (!root) return;
-      ['ws-fill','ws-fade-up','ws-typewriter','ws-scale-in','ws-glow','ws-center-block','ws-write','ws-underline'].forEach(function(c){ root.classList.remove(c); });
-      root.classList.add('ws-' + (state.wordStyle || 'fill'));
-    }
+      function getOverlay() {
+        return document.getElementById('overlayText');
+      }
+      function getOverlayRoot() {
+        return document.getElementById('sceneTextOverlay');
+      }
 
-    function kwRenderOverlay() {
-      var ov = kwOverlayEl();
-      if (!ov) return;
-      if (!state.sceneOn) { ov.innerHTML = ''; return; }
-      var raw = (state.pages && state.pages[state.pageIndex]) || '';
-      var sents = (typeof splitSentences === 'function') ? splitSentences(raw) : [raw];
-      state._sentences = sents;
-      var wi = 0;
-      ov.innerHTML = sents.map(function(sent, si) {
-        var parts = String(sent).split(/(\s+)/);
-        var html = '';
-        parts.forEach(function(p) {
-          if (/^\s+$/.test(p)) { html += p; return; }
-          html += '<span class="kw" data-wi="'+wi+'" data-si="'+si+'">'+
-            String(p).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')+'</span>';
-          wi++;
+      function applyWordStyleClass() {
+        var root = getOverlayRoot();
+        if (!root) return;
+        // keep base, set ws-* class
+        var ws = (state && state.wordStyle) || 'fill';
+        root.classList.remove('ws-fill','ws-fade-up','ws-typewriter','ws-scale-in','ws-glow','ws-center-block','ws-write','ws-underline');
+        root.classList.add('ws-' + ws);
+      }
+
+      function renderOverlay() {
+        var overlay = getOverlay();
+        if (!overlay || !state.sceneOn) return;
+        var raw = (state.pages && state.pages[state.pageIndex]) || '';
+        var sents = (typeof splitSentences === 'function') ? splitSentences(raw) : [raw];
+        state._sentences = sents;
+        var wi = 0;
+        overlay.innerHTML = sents.map(function (sent, si) {
+          var parts = sent.split(/(\s+)/);
+          var html = '';
+          parts.forEach(function (p) {
+            if (/^\s+$/.test(p)) { html += p; return; }
+            html += '<span class="kw" data-wi="' + wi + '" data-si="' + si + '">' +
+              String(p).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</span>';
+            wi += 1;
+          });
+          return '<div class="ab-sentence" data-si="' + si + '">' + html + '</div>';
+        }).join('');
+        applyWordStyleClass();
+        showOverlaySentence(typeof state._sentIndex === 'number' ? state._sentIndex : 0);
+      }
+
+      function showOverlaySentence(si) {
+        var overlay = getOverlay();
+        if (!overlay) return;
+        overlay.querySelectorAll('.ab-sentence').forEach(function (n) {
+          var i = Number(n.getAttribute('data-si'));
+          n.classList.remove('active', 'leaving');
+          if (i === si) n.classList.add('active');
         });
-        return '<div class="ab-sentence" data-si="'+si+'">'+html+'</div>';
-      }).join('');
-      kwApplyWordStyle();
-      kwShowSentence(typeof state._sentIndex === 'number' ? state._sentIndex : 0);
-    }
-
-    function kwShowSentence(si) {
-      var ov = kwOverlayEl();
-      if (!ov) return;
-      ov.querySelectorAll('.ab-sentence').forEach(function(n) {
-        var i = Number(n.getAttribute('data-si'));
-        n.classList.remove('active','leaving');
-        if (i === si) n.classList.add('active');
-      });
-      state._sentIndex = si;
-    }
-
-    function kwHighlightWord(idx) {
-      var ov = kwOverlayEl();
-      if (!ov || !state.sceneOn) return;
-      var activeSi = 0;
-      ov.querySelectorAll('.kw').forEach(function(n) {
-        var i = Number(n.getAttribute('data-wi'));
-        var si = Number(n.getAttribute('data-si') || 0);
-        n.classList.remove('current');
-        if (i < idx) n.classList.add('spoken'); else n.classList.remove('spoken');
-        if (i === idx) { n.classList.add('current'); activeSi = si; }
-      });
-      kwShowSentence(activeSi);
-    }
-
-    function kwForceSceneDom() {
-      var stage = document.getElementById('stage');
-      if (!stage) return;
-      if (state.sceneOn) {
-        stage.classList.add('scene-on');
-        document.body.classList.add('scene-on');
-      } else {
-        stage.classList.remove('scene-on');
-        document.body.classList.remove('scene-on');
+        state._sentIndex = si;
       }
-    }
 
-    // --- Patch existing functions (safe: they exist by now) ---
-    if (typeof applyScene === 'function') {
-      var __kw_applyScene = applyScene;
-      applyScene = function() {
-        __kw_applyScene.apply(this, arguments);
-        kwForceSceneDom();
-        kwApplyWordStyle();
-        kwRenderOverlay();
-      };
-    }
-    if (typeof renderPage === 'function') {
-      var __kw_renderPage = renderPage;
-      renderPage = function() {
-        __kw_renderPage.apply(this, arguments);
-        if (state.sceneOn) kwRenderOverlay();
-      };
-    }
-    if (typeof showSentence === 'function') {
-      var __kw_showSentence = showSentence;
-      showSentence = function(si) {
-        __kw_showSentence.apply(this, arguments);
-        if (state.sceneOn) kwShowSentence(si);
-      };
-    }
-    if (typeof highlightWord === 'function') {
-      var __kw_highlightWord = highlightWord;
-      highlightWord = function(idx) {
-        __kw_highlightWord.apply(this, arguments);
-        if (state.sceneOn) kwHighlightWord(idx);
-      };
-    }
+      function highlightOverlayWord(idx) {
+        var overlay = getOverlay();
+        if (!overlay || !state.sceneOn) return;
+        var activeSi = 0;
+        overlay.querySelectorAll('.kw').forEach(function (n) {
+          var i = Number(n.getAttribute('data-wi'));
+          var si = Number(n.getAttribute('data-si') || 0);
+          n.classList.remove('current');
+          if (i < idx) n.classList.add('spoken');
+          else n.classList.remove('spoken');
+          if (i === idx) {
+            n.classList.add('current');
+            activeSi = si;
+          }
+        });
+        showOverlaySentence(activeSi);
+      }
 
-    window.kwCycleScene = function(dir) {
-      var cur = state.sceneName || 'sun';
-      var i = KW_SCENES.indexOf(cur);
-      if (i < 0) i = 0;
-      i = (i + dir + KW_SCENES.length) % KW_SCENES.length;
-      state.sceneName = KW_SCENES[i];
-      state.sceneOn = true;
-      try { applyScene(); } catch(e) {}
-      var pick = document.getElementById('scenePick');
-      if (pick) pick.value = state.sceneName;
-    };
+      // Patch applyScene
+      if (typeof applyScene === 'function') {
+        var _applyScene = applyScene;
+        applyScene = function () {
+          _applyScene.apply(this, arguments);
+          var stage = document.getElementById('stage');
+          if (stage) {
+            if (state.sceneOn) {
+              stage.classList.add('scene-on');
+              document.body.classList.add('scene-on');
+            } else {
+              stage.classList.remove('scene-on');
+              document.body.classList.remove('scene-on');
+            }
+          }
+          applyWordStyleClass();
+          if (state.sceneOn) renderOverlay();
+        };
+      }
 
-    // Swipe on stage
-    (function() {
+      // Patch renderPage
+      if (typeof renderPage === 'function') {
+        var _renderPage = renderPage;
+        renderPage = function () {
+          _renderPage.apply(this, arguments);
+          if (state.sceneOn) renderOverlay();
+        };
+      }
+
+      // Patch showSentence
+      if (typeof showSentence === 'function') {
+        var _showSentence = showSentence;
+        showSentence = function (si) {
+          _showSentence.apply(this, arguments);
+          if (state.sceneOn) showOverlaySentence(si);
+        };
+      }
+
+      // Patch highlightWord
+      if (typeof highlightWord === 'function') {
+        var _highlightWord = highlightWord;
+        highlightWord = function (idx) {
+          _highlightWord.apply(this, arguments);
+          if (state.sceneOn) highlightOverlayWord(idx);
+        };
+      }
+
+      // Scene cycle
+      window.kwealthCycleScene = function (dir) {
+        var cur = state.sceneName || 'sun';
+        var idx = SCENE_LIST.indexOf(cur);
+        if (idx < 0) idx = 0;
+        idx = (idx + dir + SCENE_LIST.length) % SCENE_LIST.length;
+        state.sceneName = SCENE_LIST[idx];
+        if (!state.sceneOn) state.sceneOn = true;
+        try { applyScene(); } catch (e) { console.warn(e); }
+        var pick = document.getElementById('scenePick');
+        if (pick) pick.value = state.sceneName;
+      };
+
+      // Swipe handlers (pages + scenes)
       var stage = document.getElementById('stage');
-      if (!stage || stage.__kwSwipe) return;
-      stage.__kwSwipe = true;
-      var sx=0, sy=0, on=false;
-      stage.addEventListener('touchstart', function(e) {
-        if (!e.touches||!e.touches[0]) return;
-        sx=e.touches[0].clientX; sy=e.touches[0].clientY; on=true;
-      }, {passive:true});
-      stage.addEventListener('touchend', function(e) {
-        if (!on) return; on=false;
-        var t=e.changedTouches&&e.changedTouches[0]; if(!t) return;
-        var dx=t.clientX-sx, dy=t.clientY-sy, ax=Math.abs(dx), ay=Math.abs(dy);
-        if (ax<55 && ay<55) return;
-        if (ax > ay) {
-          if (dx < 0) { var n=document.getElementById('btnNext'); if(n&&!n.disabled) n.click(); }
-          else { var p=document.getElementById('btnPrev'); if(p&&!p.disabled) p.click(); }
-        } else if (state.sceneOn || state.sceneFs) {
-          window.kwCycleScene(dy < 0 ? 1 : -1);
+      if (stage && !stage._kwealthSwipeBound) {
+        stage._kwealthSwipeBound = true;
+        var sx = 0, sy = 0, tracking = false;
+        stage.addEventListener('touchstart', function (e) {
+          if (!e.touches || !e.touches[0]) return;
+          sx = e.touches[0].clientX;
+          sy = e.touches[0].clientY;
+          tracking = true;
+        }, { passive: true });
+        stage.addEventListener('touchend', function (e) {
+          if (!tracking) return;
+          tracking = false;
+          var t = e.changedTouches && e.changedTouches[0];
+          if (!t) return;
+          var dx = t.clientX - sx, dy = t.clientY - sy;
+          var adx = Math.abs(dx), ady = Math.abs(dy);
+          if (adx < 55 && ady < 55) return;
+          if (adx > ady) {
+            if (dx < 0) {
+              var bn = document.getElementById('btnNext');
+              if (bn && !bn.disabled) bn.click();
+            } else {
+              var bp = document.getElementById('btnPrev');
+              if (bp && !bp.disabled) bp.click();
+            }
+          } else if (state.sceneOn || state.sceneFs) {
+            window.kwealthCycleScene(dy < 0 ? 1 : -1);
+          }
+        }, { passive: true });
+      }
+
+      // Word style listener
+      var wsel = document.getElementById('wordStyle');
+      if (wsel && !wsel._kwealthBound) {
+        wsel._kwealthBound = true;
+        wsel.addEventListener('change', function () {
+          state.wordStyle = wsel.value || 'fill';
+          try { localStorage.setItem('kw_book_wordStyle', state.wordStyle); } catch (e) {}
+          applyWordStyleClass();
+          if (state.sceneOn) renderOverlay();
+        });
+      }
+
+      // Re-apply scene state now that patches are live
+      try {
+        if (state.sceneOn) applyScene();
+        else if (document.getElementById('stage')) {
+          // ensure clean state
+          document.getElementById('stage').classList.toggle('scene-on', !!state.sceneOn);
         }
-      }, {passive:true});
+      } catch (e) { console.warn('kwealthFixV2 init', e); }
+
+      console.log('[Kwealth] Fix v2 active: scene-replaces-book, overlay text, swipe');
     })();
-
-    // Word style change
-    var __wsel = document.getElementById('wordStyle');
-    if (__wsel && !__wsel.__kw) {
-      __wsel.__kw = true;
-      __wsel.addEventListener('change', function() {
-        state.wordStyle = __wsel.value || 'fill';
-        try { localStorage.setItem('kw_book_wordStyle', state.wordStyle); } catch(e){}
-        kwApplyWordStyle();
-        if (state.sceneOn) kwRenderOverlay();
-      });
-    }
-
-    // Apply current scene state now
-    try {
-      kwForceSceneDom();
-      if (state.sceneOn) {
-        applyScene();
-      }
-    } catch (e) { console.warn('kw v3 init', e); }
-
-    console.log('[Kwealth] v3 ready — scene replaces book, overlay text, swipe');
-    // ========== END KWEALTH CORE v3 ==========
-
-
-
-
+    // ========== END KWEALTH FIX v2 ==========
 
     // Angel "Read ebook" → auto start reading
     if (window.__AUTO_READ__ && state.pages.length) {

@@ -1,10 +1,26 @@
-# Kwealth Books — Full Working Upgrade (v3)
+# Kwealth FINAL fix — words on 3D scene
 
-## Important
-Previous packages failed because upgrade JS ran **before** core functions existed.
-**v3 hard-wires the fix at the end of the script** and forces CSS so the book sheet is fully hidden when Scene is on.
+## Why earlier packages failed
 
-## Install (replace these 3 files in your repo)
+The app was writing the spoken words **inside the book panel** (`#sheetText` inside `.page-sheet`).
+
+When Scene was turned on and the book panel was hidden, **the words were hidden with it**.
+
+## What this package actually changes
+
+In `templates/kwealth/books.html`:
+
+1. **When Scene is ON** → book panel (`.page-sheet`) is fully hidden.
+2. **Spoken words** are written to `#overlayText` inside `#sceneTextOverlay`, which sits **on top of the 3D scene** (sibling of the book panel, not inside it).
+3. As the voice reads, `highlightWord` / `showSentence` update the overlay so words appear on the animation.
+
+Also includes:
+- `templates/admin/library.html` — multi-file book upload form
+- `app/routers/admin.py` — `POST /admin/library/books` multi-upload route
+
+## Install
+
+Replace these files in your OneChurchgate repo:
 
 ```
 templates/kwealth/books.html
@@ -18,28 +34,27 @@ cp templates/kwealth/books.html templates/kwealth/books.html.bak
 cp templates/admin/library.html templates/admin/library.html.bak
 cp app/routers/admin.py app/routers/admin.py.bak
 
-cp /path/to/kwealth_v3/templates/kwealth/books.html templates/kwealth/
-cp /path/to/kwealth_v3/templates/admin/library.html templates/admin/
-cp /path/to/kwealth_v3/app/routers/admin.py app/routers/
+cp /path/to/kwealth_FINAL/templates/kwealth/books.html templates/kwealth/
+cp /path/to/kwealth_FINAL/templates/admin/library.html templates/admin/
+cp /path/to/kwealth_FINAL/app/routers/admin.py app/routers/
 
 git add templates/kwealth/books.html templates/admin/library.html app/routers/admin.py
-git commit -m "Kwealth v3: scene replaces book, text on scene, swipe, admin multi-upload"
+git commit -m "Fix: spoken words on 3D scene overlay; hide book panel when Scene on; admin multi-upload"
 git push
 ```
 
-Redeploy, then **hard-refresh** the browser (Ctrl+Shift+R or Cmd+Shift+R).
+Redeploy, then hard-refresh the browser (Ctrl+Shift+R).
 
-## Verify
-1. Open a book → tap **Scene** → paper book disappears; only animation shows.
-2. Tap **Read** → words appear on the scene.
-3. Console shows: `[Kwealth] v3 ready — scene replaces book, overlay text, swipe`
-4. Swipe left/right = pages; up/down = change scenes.
-5. Admin → Library → multi-select PDFs → Upload books.
+## How to test (must work)
 
-## Features
-- Scene fully replaces book (no dual screens)
-- Words display on 3D/CSS scene while voice reads
-- Better fonts (Playfair, Cinzel, Inter) + entrance styles
-- Finger swipe pages + scenes
-- Admin multi-book upload
-- Member book/BGM upload already supported by existing routes
+1. Open any book in Kwealth → Books.
+2. Tap **Scene** — paper book must disappear; only the animation remains.
+3. Tap **Read** — sentences/words must appear **on the animation**, not on a book page.
+4. Words should highlight as the voice reads.
+5. Admin → Library → choose several PDF/TXT files → **Upload books**.
+
+## If Scene still shows the book
+
+- Confirm deploy used the new `books.html`.
+- Hard refresh / clear cache.
+- In DevTools: `#stage` should have class `scene-on`; `.page-sheet` should be `display: none`; `#sceneTextOverlay` should be visible with text inside `#overlayText`.
