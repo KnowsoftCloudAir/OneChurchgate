@@ -19,9 +19,9 @@
 
   <form method="post" action="/admin/library/books" enctype="multipart/form-data" class="bg-white border rounded-2xl p-5 mb-8 space-y-3 shadow-sm">
     <h2 class="font-semibold">Upload general books (multiple at once)</h2>
-    <p class="text-xs text-slate-500">Select one or many PDF, TXT, MD, DOC, or DOCX files. Titles default to file names.</p>
+    <p class="text-xs text-slate-500">Select one or many PDF, TXT, MD, DOC, or DOCX files.</p>
     <input name="default_author" placeholder="Default author (optional)" class="w-full px-3 py-2 rounded-xl border">
-    <input type="file" name="files" accept=".pdf,.txt,.md,.doc,.docx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple required class="text-sm w-full">
+    <input type="file" name="files" accept=".pdf,.txt,.md,.doc,.docx,application/pdf,text/plain" multiple required class="text-sm w-full">
     <button class="px-5 py-2.5 rounded-xl bg-navy-900 text-white text-sm font-semibold">Upload books</button>
   </form>
 
