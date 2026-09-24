@@ -1,5 +1,4 @@
-Base: DEPLOY_WITHOUT_DATA_LOSS
-+ Try Churchgate 10 min
-+ Books: extra ambience scenes (aurora, ocean, oceanfish, galaxy, orbs, words)
-+ CSS depth on existing scenes
-Original fullscreen/read logic unchanged.
+WebGL Three.js (optimized): Jupiter close, Milky Way, Wavelength, Fishes, Abstract
+Original CSS scenes kept. Weak CSS-only scenes removed.
+Backup: YouTube + music DB rows + Kwealth book tables.
+Physical uploaded files (PDF books, audio): also copy app/static and data folders when migrating.
