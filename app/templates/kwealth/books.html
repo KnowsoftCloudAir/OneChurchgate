@@ -110,54 +110,7 @@
       overflow: hidden;
     }
 
-    /* Book panel and 3D scene share the same box */
-    #stage {
-      position: relative;
-      min-height: 62vh;
-      width: 100%;
-      max-width: 56rem;
-      margin: 0 auto;
-      border-radius: 12px;
-      overflow: hidden;
-      background: var(--sheet-bg, #0f172a);
-    }
-    #stage .page-sheet {
-      position: relative;
-      z-index: 3;
-      min-height: 62vh;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    #sceneStage {
-      display: none !important; /* folded off unless Scene is on */
-      position: absolute !important;
-      inset: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      min-height: 62vh;
-      z-index: 2;
-      overflow: hidden;
-      border-radius: 12px;
-      pointer-events: none;
-      background: #0c1222;
-    }
-    #stage.scene-on #sceneStage {
-      display: block !important; /* only when Scene selected */
-    }
-    #stage.scene-on .page-sheet {
-      background: transparent !important;
-      box-shadow: none !important;
-      z-index: 4; /* captions/text above scene */
-    }
-    #cgWebglHost {
-      position: absolute !important;
-      inset: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-      z-index: 2;
-      pointer-events: none;
-    }
-    /* Fullscreen = main book by default (same panel, full viewport) */
+    
     #stage.scene-fs {
       position: fixed !important;
       inset: 0 !important;
@@ -1022,8 +975,7 @@
 
     
     /* Fixed caption bar — always on top in fullscreen while reading */
-    #fsCaption {
-      display: none !important;
+    #fsCaption { /* base; visibility forced when speaking/FS */ display: none;
       position: fixed !important;
       left: 50% !important;
       transform: translateX(-50%) !important;
@@ -1079,6 +1031,125 @@
     @keyframes capIn {
       from { opacity: 0; transform: translateX(-50%) translateY(12px); }
       to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+
+    
+    /* === Three layers in one box: 3D (back) · book text · caption (front) === */
+    #stage {
+      position: relative !important;
+      isolation: isolate;
+      min-height: 62vh;
+      width: 100%;
+      max-width: 56rem;
+      margin: 0 auto;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    /* Layer 1: 3D / ambience — always same size as book; idle = hidden behind book */
+    #sceneStage,
+    #cgWebglHost {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 100%;
+      z-index: 1 !important;
+      pointer-events: none !important;
+      border-radius: inherit;
+      overflow: hidden;
+    }
+    #sceneStage {
+      display: block !important; /* kept mounted for size match */
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .25s ease;
+      background: #0c1222;
+    }
+    #stage.scene-on #sceneStage {
+      opacity: 1;
+      visibility: visible;
+    }
+    #stage:not(.scene-on) #cgWebglHost {
+      opacity: 0 !important;
+      visibility: hidden !important;
+    }
+    /* Layer 2: main book / text-only */
+    #stage .page-sheet {
+      position: relative !important;
+      z-index: 5 !important;
+      min-height: 62vh;
+      width: 100%;
+      box-sizing: border-box;
+      background: var(--sheet-bg, #fffef8);
+    }
+    #stage.scene-on .page-sheet {
+      background: transparent !important;
+      box-shadow: none !important;
+    }
+    #stage #sheetText {
+      position: relative;
+      z-index: 6;
+    }
+    /* Layer 3: caption — always above everything in any fullscreen */
+    #fsCaption {
+      display: none;
+      position: fixed !important;
+      left: 50% !important;
+      transform: translateX(-50%);
+      bottom: 96px !important;
+      z-index: 2147483646 !important;
+      width: min(92vw, 42rem);
+      padding: 0.95rem 1.2rem;
+      border-radius: 14px;
+      background: rgba(2, 6, 23, 0.82) !important;
+      border: 1px solid rgba(255,255,255,0.28);
+      color: #f8fafc !important;
+      font-family: Georgia, "Palatino Linotype", serif !important;
+      font-size: clamp(1.1rem, 2.8vw, 1.5rem) !important;
+      line-height: 1.55 !important;
+      text-align: center;
+      text-shadow: 0 1px 3px #000;
+      pointer-events: none !important;
+      box-shadow: 0 10px 40px rgba(0,0,0,.5);
+    }
+    #fsCaption.is-on,
+    body.scene-fs-on #fsCaption,
+    body.kw-fs-caption #fsCaption {
+      display: block !important;
+    }
+    #fsCaption .kw { color: rgba(248,250,252,.42); transition: color .1s, background .1s; border-radius: 3px; }
+    #fsCaption .kw.spoken { color: rgba(248,250,252,.92); }
+    #fsCaption .kw.current {
+      color: #fff !important;
+      background: rgba(45, 212, 191, 0.38);
+      padding: 0 3px;
+      text-shadow: 0 0 12px rgba(45,212,191,.95);
+    }
+    body.ws-write #fsCaption .kw { opacity: 0; }
+    body.ws-write #fsCaption .kw.spoken,
+    body.ws-write #fsCaption .kw.current { opacity: 1; }
+    body.ws-glow #fsCaption .kw.current { text-shadow: 0 0 16px #5eead4, 0 0 28px #2dd4bf; }
+    /* Fullscreen variants */
+    #stage.scene-fs {
+      position: fixed !important;
+      inset: 0 !important;
+      z-index: 9990 !important;
+      max-width: none !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      min-height: 100vh !important;
+      border-radius: 0 !important;
+      margin: 0 !important;
+    }
+    #stage.scene-fs #sceneStage,
+    #stage.scene-fs #cgWebglHost {
+      min-height: 100vh !important;
+      border-radius: 0 !important;
+    }
+    #stage.scene-fs .page-sheet {
+      min-height: 100vh !important;
+      max-width: 48rem;
+      margin: 0 auto;
     }
 
     /* Full-screen scene mode */
@@ -1172,6 +1243,44 @@
       border-color: #2dd4bf; color: #5eead4; background: rgba(13,148,136,.35);
     }
 
+
+  
+    /* FORCE auto-captions above ALL fullscreen layers (book, CSS scene, WebGL) */
+    #fsCaption,
+    #fsCaption.is-on,
+    body.scene-fs-on #fsCaption,
+    #stage.scene-fs ~ #fsCaption,
+    body.kw-speaking #fsCaption {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      position: fixed !important;
+      left: 50% !important;
+      right: auto !important;
+      top: auto !important;
+      bottom: 96px !important;
+      transform: translateX(-50%) !important;
+      z-index: 2147483646 !important;
+      width: min(94vw, 42rem) !important;
+      max-width: 42rem !important;
+      min-height: 2.5rem;
+      padding: 0.95rem 1.2rem !important;
+      margin: 0 !important;
+      border-radius: 14px !important;
+      background: rgba(2, 6, 23, 0.82) !important;
+      border: 1px solid rgba(255,255,255,0.28) !important;
+      color: #f8fafc !important;
+      font-family: Georgia, "Palatino Linotype", "Book Antiqua", serif !important;
+      font-size: clamp(1.1rem, 3vw, 1.5rem) !important;
+      line-height: 1.55 !important;
+      text-align: center !important;
+      text-shadow: 0 1px 3px rgba(0,0,0,.95) !important;
+      pointer-events: none !important;
+      box-shadow: 0 10px 40px rgba(0,0,0,.55) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+    }
+    #fsCaption:empty { display: none !important; }
 
   </style>
   <script src="/static/js/bg-animations.js"></script>
@@ -1587,16 +1696,55 @@
       if ($('btnNext')) $('btnNext').disabled = state.pageIndex >= total - 1;
     }
     
+    
+    (function forceCaptionOnTop() {
+      function place() {
+        var cap = document.getElementById('fsCaption');
+        if (!cap) {
+          cap = document.createElement('div');
+          cap.id = 'fsCaption';
+          cap.setAttribute('aria-live', 'polite');
+          document.body.appendChild(cap);
+        } else if (cap.parentElement !== document.body) {
+          document.body.appendChild(cap);
+        }
+        cap.style.zIndex = '2147483646';
+      }
+      place();
+      document.addEventListener('DOMContentLoaded', place);
+    })();
+
     function updateCaption(si, wordIdx) {
       var cap = document.getElementById('fsCaption');
-      if (!cap) return;
-      var fsOn = !!(state.sceneFs || document.body.classList.contains('scene-fs-on') || (document.getElementById('stage') && document.getElementById('stage').classList.contains('scene-fs')));
+      if (!cap) {
+        cap = document.createElement('div');
+        cap.id = 'fsCaption';
+        cap.setAttribute('aria-live', 'polite');
+        document.body.appendChild(cap);
+      }
+      if (cap.parentElement !== document.body) document.body.appendChild(cap);
+      var stageEl = document.getElementById('stage');
+      var fsOn = !!(state.sceneFs
+        || document.body.classList.contains('scene-fs-on')
+        || document.body.classList.contains('kw-fs-caption')
+        || (stageEl && stageEl.classList.contains('scene-fs'))
+        || document.fullscreenElement);
+      var speaking = !!(state.reading || document.body.classList.contains('kw-speaking'));
+      // FORCE auto-caption in front of ALL fullscreen types while voice reads
+      if (fsOn && speaking) {
+        document.body.classList.add('kw-fs-caption');
+        document.body.classList.add('kw-speaking');
+      }
       if (!fsOn) {
+        // not fullscreen — hide caption
         cap.innerHTML = '';
         cap.classList.remove('is-on');
         return;
       }
+      // fullscreen (book-only, text-only, or 3D): always allow caption layer
       cap.classList.add('is-on');
+      document.body.classList.add('kw-fs-caption');
+      if (speaking) document.body.classList.add('kw-speaking');
       var sents = state._sentences || [];
       if (!sents.length && state.pages && state.pages.length) {
         sents = (typeof splitSentences === 'function') ? splitSentences(state.pages[state.pageIndex] || '') : [];
@@ -1715,6 +1863,7 @@
       });
     }
             function highlightWord(idx) {
+      try { if (state.sceneFs || document.body.classList.contains('scene-fs-on')) updateCaption(state._sentIndex, idx); } catch(e) {}
       if (!sheetText || !(state.sceneOn || state.sceneFs)) return;
       const nodes = sheetText.querySelectorAll('.kw');
       let activeSi = 0;
@@ -1759,6 +1908,11 @@
       return parts.filter(Boolean);
     }
     function speakPage() {
+      /* FORCE_CAPTION_SPEAK */
+      if (state.sceneFs || document.body.classList.contains('scene-fs-on')) {
+        document.body.classList.add('kw-fs-caption');
+        try { updateCaption(state._sentIndex || 0, state._kwIndex || 0); } catch (e) {}
+      }
       if (!window.speechSynthesis) return;
       speechSynthesis.cancel();
       if (state._pauseTimer) { clearTimeout(state._pauseTimer); state._pauseTimer = null; }
@@ -1805,20 +1959,31 @@
         state._kwIndex = globalWordBase;
         u.onstart = function () {
           try {
+            document.body.classList.add('kw-speaking');
             var si = (typeof state._speakSi === 'number') ? state._speakSi : (state._sentIndex || 0);
             state._sentIndex = si;
             showSentence(si);
             updateCaption(si, state._kwIndex);
+            var cap = document.getElementById('fsCaption');
+            if (cap) {
+              if (cap.parentElement !== document.body) document.body.appendChild(cap);
+              cap.classList.add('is-on');
+              cap.style.zIndex = '2147483646';
+              cap.style.display = 'block';
+            }
           } catch (e) {}
         };
         u.onboundary = function (ev) {
-          if (!(state.sceneOn || state.sceneFs)) return;
           if (ev.name === 'word' || ev.charIndex != null) {
             const upto = chunk.slice(0, ev.charIndex || 0);
             const local = (upto.match(/\S+/g) || []).length;
             const wi = globalWordBase + local;
             state._kwIndex = wi;
-            highlightWord(wi);
+            if (state.sceneOn || state.sceneFs) {
+              try { highlightWord(wi); } catch (e) {}
+            }
+            // Always drive caption in any fullscreen
+            try { updateCaption(state._speakSi != null ? state._speakSi : state._sentIndex, wi); } catch (e) {}
           }
         };
         let fallbackTimer = null;
@@ -2188,6 +2353,7 @@
       const on = !!state.sceneFs;
       if (stage) stage.classList.toggle('scene-fs', on);
       document.body.classList.toggle('scene-fs-on', on);
+      document.body.classList.toggle('kw-fs-caption', on);
       try { if (typeof renderPage === 'function') renderPage(); } catch (e) {}
       if (on) {
         try { renderPage(); } catch (e) {}
@@ -2241,12 +2407,15 @@
       if (on) stage.classList.add('ws-' + wstyle);
       surface.className = 'sc-' + name;
       surface.setAttribute('aria-hidden', on ? 'false' : 'true');
+      // Keep 3D layer mounted (same size as book); show only when scene on
+      surface.style.setProperty('display', 'block', 'important');
       if (on) {
-        surface.style.setProperty('display', 'block', 'important');
         surface.style.visibility = 'visible';
         surface.style.opacity = '1';
       } else {
-        surface.style.setProperty('display', 'none', 'important');
+        surface.style.visibility = 'hidden';
+        surface.style.opacity = '0';
+        try { if (window.CGWebGL) CGWebGL.setMode('none'); } catch (e) {}
       }
       // Show only bits for selected scene
       ['sun','orbit','voyage','moon','planets','probe','deep','jupiter_close','milkyway','wavelength','fishes3d','abstract'].forEach(function (n) {
