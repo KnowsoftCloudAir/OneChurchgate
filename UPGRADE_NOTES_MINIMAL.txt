@@ -1,4 +1,3 @@
-WebGL Three.js (optimized): Jupiter close, Milky Way, Wavelength, Fishes, Abstract
-Original CSS scenes kept. Weak CSS-only scenes removed.
-Backup: YouTube + music DB rows + Kwealth book tables.
-Physical uploaded files (PDF books, audio): also copy app/static and data folders when migrating.
+Fixed backup.py syntax.
+WebGL: jupiter_close, milkyway, wavelength, fishes3d, abstract
+Try Churchgate + kwealth in backup.
