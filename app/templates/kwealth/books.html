@@ -936,6 +936,32 @@
       50% { transform: translateY(-12px) rotateX(8deg) translateZ(28px); opacity: 1; }
     }
 
+    
+    /* Fullscreen reading text — always visible over CSS or WebGL scenes */
+    #stage.scene-fs #sheetText {
+      position: relative; z-index: 20 !important;
+      color: #f8fafc !important;
+      text-shadow: 0 1px 2px rgba(0,0,0,.95), 0 0 14px rgba(0,0,0,.7);
+      font-family: Georgia, "Palatino Linotype", "Book Antiqua", serif !important;
+      font-size: clamp(1.15rem, 2.6vw, 1.7rem) !important;
+      line-height: 1.7 !important;
+      max-width: 42rem; margin: 0 auto;
+      padding: 1.25rem 1.5rem;
+      background: rgba(2,6,23,0.35);
+      border-radius: 16px;
+    }
+    #stage.scene-fs .page-sheet { position: relative; z-index: 15 !important; background: transparent !important; box-shadow: none !important; }
+    #stage.scene-fs #sceneStage, #stage.scene-fs #cgWebglHost { z-index: 1 !important; }
+    #stage.scene-fs #sheetText .ab-sentence { display: none; opacity: 0; transform: translateY(12px); transition: opacity .4s ease, transform .4s ease; }
+    #stage.scene-fs #sheetText .ab-sentence.active { display: block; opacity: 1; transform: none; animation: sentIn .55s cubic-bezier(.22,1,.36,1) both; }
+    @keyframes sentIn { from { opacity: 0; transform: translateY(12px); filter: blur(2px); } to { opacity: 1; transform: none; filter: none; } }
+    #stage.scene-fs #sheetText .kw { color: rgba(248,250,252,.4); transition: color .1s ease, background .1s ease; }
+    #stage.scene-fs #sheetText .kw.spoken { color: rgba(248,250,252,.9); }
+    #stage.scene-fs #sheetText .kw.current {
+      color: #fff !important; background: rgba(45,212,191,.32); border-radius: 4px; padding: 0 3px;
+      text-shadow: 0 0 12px rgba(45,212,191,.85);
+    }
+
     /* Full-screen scene mode */
     #stage.scene-fs {
       position: fixed !important;
@@ -1401,8 +1427,8 @@
     function renderPage() {
       const raw = state.pages[state.pageIndex] || '';
       if (sheetText) {
-        if (state.sceneOn) {
-          // Sentence blocks; only active sentence shown
+        if (state.sceneOn || state.sceneFs) {
+          // Sentence blocks in FS or ambience
           const sents = splitSentences(raw);
           state._sentences = sents;
           let wi = 0;
@@ -1441,7 +1467,7 @@
       if ($('btnNext')) $('btnNext').disabled = state.pageIndex >= total - 1;
     }
     function showSentence(si) {
-      if (!sheetText || !state.sceneOn) return;
+      if (!sheetText || !(state.sceneOn || state.sceneFs)) return;
       const nodes = sheetText.querySelectorAll('.ab-sentence');
       nodes.forEach(function (n) {
         const i = Number(n.getAttribute('data-si'));
@@ -1507,7 +1533,7 @@
       });
     }
             function highlightWord(idx) {
-      if (!sheetText || !state.sceneOn) return;
+      if (!sheetText || !(state.sceneOn || state.sceneFs)) return;
       const nodes = sheetText.querySelectorAll('.kw');
       let activeSi = 0;
       nodes.forEach(function (n) {
@@ -1558,9 +1584,10 @@
       if (!state.arranged) text = text.replace(/(\w)-\s*\n\s*(\w)/g, '$1$2').replace(/([^\n])\n(?!\n)/g, '$1 ');
       // Abstract mode: one sentence at a time; otherwise paragraph chunks
       let rawParas;
-      if (state.sceneOn) {
+      if (state.sceneOn || state.sceneFs) {
         rawParas = splitSentences(text);
         state._sentIndex = 0;
+        try { renderPage(); } catch (e) {}
         try { showSentence(0); } catch (e) {}
       } else {
         rawParas = splitParagraphs(text);
@@ -1585,13 +1612,21 @@
           if (state.reading) next();
           return;
         }
-        const chunk = paras[pi];
+        state._speakSi = pi; const chunk = paras[pi];
         const u = new SpeechSynthesisUtterance(chunk);
         u.rate = state.rate || 0.95;
         if (voice) u.voice = voice;
         state._kwIndex = globalWordBase;
+        u.onstart = function () {
+          if (state.sceneOn || state.sceneFs) {
+            try {
+              var si = (typeof state._speakSi === 'number') ? state._speakSi : (state._sentIndex || 0);
+              showSentence(si);
+            } catch (e) {}
+          }
+        };
         u.onboundary = function (ev) {
-          if (!state.sceneOn) return;
+          if (!(state.sceneOn || state.sceneFs)) return;
           if (ev.name === 'word' || ev.charIndex != null) {
             const upto = chunk.slice(0, ev.charIndex || 0);
             const local = (upto.match(/\S+/g) || []).length;
@@ -1602,7 +1637,7 @@
         };
         let fallbackTimer = null;
         const words = chunk.match(/\S+/g) || [];
-        if (state.sceneOn && words.length) {
+        if ((state.sceneOn || state.sceneFs) && words.length) {
           const msPerWord = Math.max(180, 60000 / (140 * (state.rate || 0.95)));
           let fi = 0;
           fallbackTimer = setInterval(function () {
@@ -1905,6 +1940,8 @@
       const on = !!state.sceneFs;
       if (stage) stage.classList.toggle('scene-fs', on);
       document.body.classList.toggle('scene-fs-on', on);
+      try { if (typeof renderPage === 'function') renderPage(); } catch (e) {}
+      if (on) { try { showSentence(typeof state._sentIndex === 'number' ? state._sentIndex : 0); } catch (e) {} }
       if (btn) btn.classList.toggle('is-on', on);
       if (fsBar) {
         fsBar.style.setProperty('display', on ? 'flex' : 'none', 'important');
