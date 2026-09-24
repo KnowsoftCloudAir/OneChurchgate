@@ -1029,6 +1029,7 @@
 
 
   </style>
+  <script src="/static/js/bg-animations.js"></script>
 </head>
 <body class="theme-parchment" id="bookBody">
 <div id="fsControls">
@@ -1040,12 +1041,11 @@
           <option value="planets">Planets around the Sun</option>
           <option value="probe">Jupiter flyby</option>
           <option value="deep">Deep starfield / Journey heavens</option>
-          <option value="aurora">Northern lights</option>
-          <option value="ocean">Ocean waves</option>
-          <option value="oceanfish">Ocean depths</option>
-          <option value="galaxy">Spiral galaxy</option>
-          <option value="orbs">Floating orbs of light</option>
-          <option value="words">Living words</option>
+          <option value="jupiter_close">Jupiter flyby close (3D)</option>
+          <option value="milkyway">Milky Way close stars (3D)</option>
+          <option value="wavelength">3D wavelength (3D)</option>
+          <option value="fishes3d">3D ocean fishes (3D)</option>
+          <option value="abstract">Abstract AI / alien (3D)</option>
         </select>
   <button type="button" class="chip on" id="fsRead">👼 Read</button>
   <button type="button" class="chip" id="fsSceneToggle">Scene on/off</button>
@@ -1073,12 +1073,11 @@
           <option value="planets">Planets around the Sun</option>
           <option value="probe">Jupiter flyby</option>
           <option value="deep">Deep starfield / Journey heavens</option>
-          <option value="aurora">Northern lights</option>
-          <option value="ocean">Ocean waves</option>
-          <option value="oceanfish">Ocean depths</option>
-          <option value="galaxy">Spiral galaxy</option>
-          <option value="orbs">Floating orbs of light</option>
-          <option value="words">Living words</option>
+          <option value="jupiter_close">Jupiter flyby close (3D)</option>
+          <option value="milkyway">Milky Way close stars (3D)</option>
+          <option value="wavelength">3D wavelength (3D)</option>
+          <option value="fishes3d">3D ocean fishes (3D)</option>
+          <option value="abstract">Abstract AI / alien (3D)</option>
         </select>
         <button type="button" class="chip" id="btnSceneFs" title="Full screen scene">Full screen</button>
         <select id="wordStyle" class="ctl" style="max-width:8rem;font-size:11px;" title="Word style">
@@ -1260,22 +1259,16 @@
             <div class="ship-glow"></div>
             <div class="ship"></div>
           </div>
-          <div class="sc-layer sc-aurora-bits" style="display:none">
-            <div class="stars"></div>
             <div class="band b1"></div>
             <div class="band b2"></div>
             <div class="band b3"></div>
             <div class="band b4"></div>
           </div>
-          <div class="sc-layer sc-ocean-bits" style="display:none">
-            <div class="sky"></div>
             <div class="wave w1"></div>
             <div class="wave w2"></div>
             <div class="wave w3"></div>
             <div class="wave w4"></div>
           </div>
-          <div class="sc-layer sc-oceanfish-bits" style="display:none">
-            <div class="deep-bg"></div>
             <div class="ray"></div>
             <div class="fish f1"></div>
             <div class="fish f2"></div>
@@ -1286,23 +1279,17 @@
             <div class="bubble bu2"></div>
             <div class="bubble bu3"></div>
           </div>
-          <div class="sc-layer sc-galaxy-bits" style="display:none">
-            <div class="stars"></div>
             <div class="arm arm1"></div>
             <div class="arm arm2"></div>
             <div class="arm arm3"></div>
             <div class="core"></div>
           </div>
-          <div class="sc-layer sc-orbs-bits" style="display:none">
-            <div class="orb o1"></div>
             <div class="orb o2"></div>
             <div class="orb o3"></div>
             <div class="orb o4"></div>
             <div class="orb o5"></div>
             <div class="orb o6"></div>
           </div>
-          <div class="sc-layer sc-words-bits" style="display:none">
-            <div class="block bl1"></div>
             <div class="block bl2"></div>
             <div class="block bl3"></div>
             <div class="block bl4"></div>
@@ -1335,6 +1322,20 @@
 
   <script>
   (function () {
+
+    // Three.js WebGL scenes (jupiter_close, milkyway, wavelength, fishes3d, abstract)
+    var WEBGL_SCENES = { jupiter_close:1, milkyway:1, wavelength:1, fishes3d:1, abstract:1 };
+    function syncWebGLScene(name, on) {
+      if (!window.CGWebGL) return;
+      var stage = document.getElementById('sceneStage');
+      if (stage && CGWebGL.attachTo) CGWebGL.attachTo(stage);
+      if (on && WEBGL_SCENES[name]) {
+        CGWebGL.setMode(name, stage);
+      } else {
+        CGWebGL.setMode('none');
+      }
+    }
+
     const B = window.__BOOK__ || { id: null, pages: [], pageIndex: 0 };
     const state = {
       pages: B.pages || [],
@@ -1954,10 +1955,11 @@
         surface.style.setProperty('display', 'none', 'important');
       }
       // Show only bits for selected scene
-      ['sun','orbit','voyage','moon','planets','probe','deep','aurora','ocean','oceanfish','galaxy','orbs','words'].forEach(function (n) {
+      ['sun','orbit','voyage','moon','planets','probe','deep','jupiter_close','milkyway','wavelength','fishes3d','abstract'].forEach(function (n) {
         const el = surface.querySelector('.sc-' + n + '-bits');
         if (el) el.style.display = (on && n === name) ? 'block' : 'none';
       });
+      if (typeof syncWebGLScene === 'function') syncWebGLScene(name, on);
       if (btn) btn.classList.toggle('is-on', on);
       if (pick && pick.value !== name) pick.value = name;
       if (styleSel && styleSel.value !== wstyle) styleSel.value = wstyle;
