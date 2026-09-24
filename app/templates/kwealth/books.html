@@ -105,9 +105,15 @@
     .bgm-row button { flex-shrink: 0; }
 
     /* Immersive cinema reading */
+    #cinemaHost {
+      display: none; position: fixed; inset: 0; z-index: 90;
+      background: #020617; flex-direction: column; width: 100%; height: 100%;
+    }
+    #cinemaHost.on { display: flex; }
+    #cinemaHost:fullscreen, #cinemaHost:-webkit-full-screen { width: 100vw; height: 100vh; }
     #immersive {
       display: none; position: fixed; inset: 0; z-index: 80;
-      background: #020617; flex-direction: column;
+      background: transparent; flex-direction: column;
     }
     #immersive.on { display: flex; }
     #immersive .im-stage {
@@ -152,7 +158,8 @@
     }
     #imPanel.on { display: block; }
     #imPanel h4 { color: #fbbf24; font-size: 12px; margin: 0 0 8px; }
-    body.immersive-on #app .stage { visibility: hidden; height: 0; overflow: hidden; }
+    body.immersive-on #app .stage { visibility: hidden; height: 0; overflow: hidden; pointer-events: none; }
+    body.immersive-on #app .bar { opacity: 0.35; }
     body.immersive-on #app .bar { z-index: 40; }
 
     /* Sentence entrance styles */
@@ -305,13 +312,13 @@
           <button type="button" class="chip anim-btn" data-anim="jupiter">Jupiter flyby</button>
           <button type="button" class="chip anim-btn" data-anim="galaxy">Galaxy</button>
           <button type="button" class="chip anim-btn" data-anim="floating_orbs">Floating orbs</button>
-          <button type="button" class="chip anim-btn" data-anim="word_forms">Spoken words</button>
-          <button type="button" class="chip anim-btn" data-anim="great_men">Portraits from sky</button>
-          <button type="button" class="chip anim-btn" data-anim="sunrise_ant">Sunrise ant</button>
+          <button type="button" class="chip anim-btn" data-anim="word_forms">Aurora chapel lights</button>
+          <button type="button" class="chip anim-btn" data-anim="great_men">Sacred light pillars</button>
+          <button type="button" class="chip anim-btn" data-anim="sunrise_ant">Dawn over still water</button>
         </div></div>
         <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
-          <button type="button" class="chip" id="btnAnimPause">Pause animation</button>
-          <button type="button" class="chip on" id="btnAnimFS">Fullscreen reading</button>
+          
+          
           <span style="color:#94a3b8;font-size:11px;">Music panel still works in fullscreen — use Music button.</span>
         </div>
       </div>
@@ -482,40 +489,61 @@ try {
       return parts.map(function(s){ return s.trim(); }).filter(function(s){ return s.length > 1; });
     }
 
-    function enterImmersive() {
-      const im = document.getElementById('immersive');
-      if (!im) return;
-      var first = !im.classList.contains('on');
-      im.classList.add('on');
-      document.body.classList.add('immersive-on');
-      im.setAttribute('aria-hidden', 'false');
-      const t = document.getElementById('imTitle');
-      if (t) t.textContent = (state.pages.length ? ('Page ' + (state.pageIndex+1) + ' / ' + state.pages.length) : 'Reading');
-      if (window.CGBgAnim && first) {
+    function getCinema() { return document.getElementById('cinemaHost'); }
+    function applyAnimMode(id) {
+      id = id || 'none';
+      try { localStorage.setItem('cg_bg_anim', id); } catch (e) {}
+      document.querySelectorAll('.anim-btn').forEach(function (x) {
+        x.classList.toggle('on', x.getAttribute('data-anim') === id);
+      });
+      var stage = document.getElementById('imStage');
+      if (window.CGBgAnim) {
         try {
-          if (!CGBgAnim.getMode || CGBgAnim.getMode() === 'none') CGBgAnim.setMode('sunset');
-        } catch (e) {}
-      }
-      if (first) {
-        try {
-          const el = document.documentElement;
-          if (!document.fullscreenElement) {
-            (el.requestFullscreen || el.webkitRequestFullscreen || function(){}).call(el);
-          }
-        } catch(e) {}
+          if (stage && CGBgAnim.attachTo) CGBgAnim.attachTo(stage);
+          CGBgAnim.setMode(id);
+        } catch (e) { console.warn(e); }
       }
     }
+    function requestCinemaFullscreen() {
+      var el = getCinema();
+      if (!el) return;
+      var req = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen || el.mozRequestFullScreen;
+      if (req) {
+        try {
+          var p = req.call(el);
+          if (p && p.catch) p.catch(function () {});
+        } catch (e) { console.warn('fullscreen', e); }
+      }
+    }
+    function exitCinemaFullscreen() {
+      var exit = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen || document.mozCancelFullScreen;
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        try { if (exit) exit.call(document); } catch (e) {}
+      }
+    }
+    function enterImmersive() {
+      var host = getCinema();
+      var im = document.getElementById('immersive');
+      if (!host) return;
+      host.classList.add('on');
+      host.setAttribute('aria-hidden', 'false');
+      if (im) im.classList.add('on');
+      document.body.classList.add('immersive-on');
+      var t = document.getElementById('imTitle');
+      if (t) t.textContent = (state.pages.length ? ('Page ' + (state.pageIndex + 1) + ' / ' + state.pages.length) : 'Reading');
+      var mode = 'none';
+      try { mode = localStorage.getItem('cg_bg_anim') || 'none'; } catch (e) {}
+      // If reading with anim none, keep book-like dark stage; if anim set, 3D replaces book
+      applyAnimMode(mode);
+      requestCinemaFullscreen();
+    }
     function exitImmersive() {
-      const im = document.getElementById('immersive');
-      if (im) { im.classList.remove('on'); im.setAttribute('aria-hidden', 'true'); }
+      var host = getCinema();
+      if (host) { host.classList.remove('on'); host.setAttribute('aria-hidden', 'true'); }
       document.body.classList.remove('immersive-on');
-      const panel = document.getElementById('imPanel');
+      var panel = document.getElementById('imPanel');
       if (panel) panel.classList.remove('on');
-      try {
-        if (document.fullscreenElement) {
-          (document.exitFullscreen || document.webkitExitFullscreen || function(){}).call(document);
-        }
-      } catch(e) {}
+      exitCinemaFullscreen();
       renderPage();
     }
     function getEntrance() {
@@ -856,22 +884,22 @@ try {
 
     // Angel "Read ebook" → auto start reading
     
-    // Background animations on Books (same as portal) + fullscreen
+    
+    // Anim selection + original cinema fullscreen
     (function(){
       if (window.CGBgAnim) {
         try { CGBgAnim.init(); } catch(e){ console.warn(e); }
-        var cur = localStorage.getItem('cg_bg_anim') || 'none';
-        document.querySelectorAll('.anim-btn').forEach(function(b){
-          b.classList.toggle('on', b.getAttribute('data-anim') === cur);
-          b.onclick = function(){
-            var id = b.getAttribute('data-anim');
-            CGBgAnim.setMode(id);
-            document.querySelectorAll('.anim-btn').forEach(function(x){
-              x.classList.toggle('on', x.getAttribute('data-anim') === id);
-            });
-          };
-        });
       }
+      var cur = 'none';
+      try { cur = localStorage.getItem('cg_bg_anim') || 'none'; } catch(e) {}
+      document.querySelectorAll('.anim-btn').forEach(function(b){
+        b.classList.toggle('on', b.getAttribute('data-anim') === cur);
+        b.onclick = function(){
+          var id = b.getAttribute('data-anim') || 'none';
+          if (typeof applyAnimMode === 'function') applyAnimMode(id);
+          else if (window.CGBgAnim) CGBgAnim.setMode(id);
+        };
+      });
       var btnAnim = document.getElementById('btnAnim');
       var panelAnim = document.getElementById('panelAnim');
       if (btnAnim && panelAnim) {
@@ -879,32 +907,16 @@ try {
           panelAnim.style.display = panelAnim.style.display === 'none' ? 'block' : 'none';
         };
       }
-      var pauseBtn = document.getElementById('btnAnimPause');
-      if (pauseBtn && window.CGBgAnim) {
-        pauseBtn.onclick = function(){
-          var p = !CGBgAnim.isPaused();
-          CGBgAnim.setPaused(p);
-          pauseBtn.textContent = p ? 'Resume animation' : 'Pause animation';
-        };
-      }
-      function goFS(){
-        var el = document.documentElement;
-        if (!document.fullscreenElement) {
-          (el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen || function(){}).call(el);
-        } else {
-          (document.exitFullscreen || document.webkitExitFullscreen || function(){}).call(document);
+      if ($('btnFS')) $('btnFS').onclick = function(){
+        enterImmersive();
+        if (!state.reading) {
+          var page = state.pages[state.pageIndex] || '';
+          var first = (page.match(/[^.!?]+[.!?]?/) || [page.slice(0, 180)])[0];
+          if (typeof showSentence === 'function') showSentence(first || 'Tap Read for sentence-by-sentence.');
         }
-      }
-      var btnFS = document.getElementById('btnFS');
-      var btnAnimFS = document.getElementById('btnAnimFS');
-      if (btnFS) btnFS.onclick = goFS;
-      if (btnAnimFS) btnAnimFS.onclick = goFS;
-      // Keep toolbar usable in fullscreen: when FS, open music/anim panels still work
-      document.addEventListener('fullscreenchange', function(){
-        var bar = document.querySelector('.bar');
-        if (bar) bar.style.zIndex = '9999';
-      });
+      };
     })();
+
 
     
     // Offline badge + device library
@@ -1077,7 +1089,7 @@ try {
 </script>
 
   <!-- Immersive cinema: 3D anim + sentence-by-sentence reading -->
-  <div id="immersive" class="pos-center" aria-hidden="true">
+  <div id="cinemaHost" aria-hidden="true"><div id="immersive" class="pos-center on" aria-hidden="true">
     <div id="imTop">
       <span style="color:#e2e8f0;font-size:12px;font-weight:600;" id="imTitle">Reading…</span>
       <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
@@ -1107,6 +1119,7 @@ try {
       <button type="button" class="chip" id="imAnim">🎬 Animation</button>
       <button type="button" class="chip" id="imMusic">🎵 Music</button>
     </div>
+  </div>
   </div>
 
 </body>
