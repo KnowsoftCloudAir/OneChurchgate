@@ -124,8 +124,17 @@
       background: #0f172a;
     }
     #stage.scene-fs #sceneStage {
-      min-height: 100vh !important;
-      border-radius: 0 !important;
+      display: none !important;
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 62vh;
+      z-index: 2;
+      overflow: hidden;
+      border-radius: inherit;
+      pointer-events: none;
+      background: #0c1222;
     }
     #stage.scene-fs .page-sheet {
       min-height: 100vh !important;
@@ -1066,8 +1075,9 @@
       background: #0c1222;
     }
     #stage.scene-on #sceneStage {
-      opacity: 1;
-      visibility: visible;
+      display: block !important;
+      opacity: 1 !important;
+      visibility: visible !important;
     }
     #stage:not(.scene-on) #cgWebglHost {
       opacity: 0 !important;
@@ -1641,6 +1651,41 @@
       100% { transform: translate(0,0); }
     }
 
+  
+    /* 3D_ONLY_FS: completely folded unless Full screen + Scene */
+    #stage:not(.scene-fs) #sceneStage,
+    #stage:not(.scene-on) #sceneStage,
+    #stage:not(.scene-fs.scene-on) #sceneStage {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+      pointer-events: none !important;
+    }
+    #stage.scene-fs.scene-on #sceneStage {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 100vh !important;
+      z-index: 3 !important;
+      overflow: hidden !important;
+      pointer-events: none !important;
+    }
+    #stage.scene-fs.scene-on #sceneStage .sc-layer {
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+    }
+    #stage.scene-fs.scene-on .page-sheet {
+      background: transparent !important;
+      box-shadow: none !important;
+      z-index: 15 !important;
+    }
+
   </style>
   <script src="/static/js/bg-animations.js"></script>
 </head>
@@ -1864,51 +1909,7 @@
           <div class="sc-layer sc-deep-bits" style="display:none">
             <div class="nebula"></div>
             <div class="stars"></div>
-            <div class="meteor m1"></div>
-            <div class="meteor m2"></div>
-            <div class="meteor m3"></div>
-            <div class="meteor m4"></div>
-            <div class="ship-glow"></div>
-            <div class="ship"></div>
           </div>
-            <div class="band b1"></div>
-            <div class="band b2"></div>
-            <div class="band b3"></div>
-            <div class="band b4"></div>
-          </div>
-            <div class="wave w1"></div>
-            <div class="wave w2"></div>
-            <div class="wave w3"></div>
-            <div class="wave w4"></div>
-          </div>
-            <div class="ray"></div>
-            <div class="fish f1"></div>
-            <div class="fish f2"></div>
-            <div class="fish f3"></div>
-            <div class="fish f4"></div>
-            <div class="fish f5"></div>
-            <div class="bubble bu1"></div>
-            <div class="bubble bu2"></div>
-            <div class="bubble bu3"></div>
-          </div>
-            <div class="arm arm1"></div>
-            <div class="arm arm2"></div>
-            <div class="arm arm3"></div>
-            <div class="core"></div>
-          </div>
-            <div class="orb o2"></div>
-            <div class="orb o3"></div>
-            <div class="orb o4"></div>
-            <div class="orb o5"></div>
-            <div class="orb o6"></div>
-          </div>
-            <div class="block bl2"></div>
-            <div class="block bl3"></div>
-            <div class="block bl4"></div>
-            <div class="block bl5"></div>
-          </div>
-        </div>
-
           <div class="sc-layer sc-bike-bits" style="display:none">
             <div class="stars"></div>
             <div class="moon"></div>
@@ -1942,8 +1943,8 @@
             <div class="insect in1"></div>
             <div class="insect in2"></div>
           </div>
-
-                <div class="page-sheet" id="sheet">
+        </div>
+        <div class="page-sheet" id="sheet">
           <div class="page-badge">
             <span class="num" id="pageBadgeNum">Page 1 / 1</span>
             <span class="status status-starting" id="pageBadgeStatus">Starting</span>
@@ -2819,6 +2820,8 @@
       }
       /* Fullscreen stays on the book; Scene is optional — do not force sceneOn */
       try { localStorage.setItem('kw_scene_fs', on ? '1' : '0'); } catch (e) {}
+      // Re-evaluate 3D visibility (only when FS + Scene)
+      try { applyScene(); } catch (e) {}
       // Prefer browser fullscreen API when available
       try {
         if (on && stage && !document.fullscreenElement && stage.requestFullscreen) {
@@ -2842,45 +2845,52 @@
         if (btn) btn.classList.toggle('is-on', on);
         return;
       }
-      stage.classList.toggle('scene-on', on);
-      document.body.classList.toggle('scene-on', on);
+      // 3D only when Full screen AND Scene on
+      var show3d = !!state.sceneFs && !!on;
+      stage.classList.toggle('scene-on', show3d);
+      document.body.classList.toggle('scene-on', show3d);
       ['ws-fill','ws-write','ws-glow','ws-underline'].forEach(function (c) { stage.classList.remove(c); });
-      if (on) stage.classList.add('ws-' + wstyle);
+      if (show3d) stage.classList.add('ws-' + wstyle);
       surface.className = 'sc-' + name;
-      surface.setAttribute('aria-hidden', on ? 'false' : 'true');
-      // Keep 3D layer mounted (same size as book); show only when scene on
-      surface.style.setProperty('display', 'block', 'important');
-      if (on) {
-        surface.style.visibility = 'visible';
-        surface.style.opacity = '1';
+      surface.setAttribute('aria-hidden', show3d ? 'false' : 'true');
+      if (show3d) {
+        surface.style.setProperty('display', 'block', 'important');
+        surface.style.setProperty('visibility', 'visible', 'important');
+        surface.style.setProperty('opacity', '1', 'important');
+        surface.style.setProperty('z-index', '3', 'important');
       } else {
-        surface.style.visibility = 'hidden';
-        surface.style.opacity = '0';
+        surface.style.setProperty('display', 'none', 'important');
+        surface.style.setProperty('visibility', 'hidden', 'important');
+        surface.style.setProperty('opacity', '0', 'important');
         try { if (window.CGWebGL) CGWebGL.setMode('none'); } catch (e) {}
       }
       // Show only bits for selected scene
       ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','abstract','bike','birdsea','hourglass'].forEach(function (n) {
-        const el = surface.querySelector('.sc-' + n + '-bits');
-        if (el) el.style.display = (on && n === name) ? 'block' : 'none';
+        var el = surface.querySelector('.sc-' + n + '-bits');
+        if (el) {
+          if (show3d && n === name) {
+            el.style.setProperty('display', 'block', 'important');
+            el.style.setProperty('visibility', 'visible', 'important');
+            el.style.setProperty('opacity', '1', 'important');
+          } else {
+            el.style.setProperty('display', 'none', 'important');
+          }
+        }
       });
 
-      // 3D/scene only when explicitly on — never auto on fullscreen
-      if (!on) {
+      // WebGL only for supported modes when 3D is actually shown
+      if (!show3d) {
         try { if (window.CGWebGL) CGWebGL.setMode('none'); } catch (e) {}
       } else {
-        // name already defaulted above via state.sceneName || 'sun'
         try {
           if (typeof syncWebGLScene === 'function') syncWebGLScene(name, true);
           else if (window.CGWebGL) {
-            var W = { jupiter_close:1, milkyway:1, wavelength:1, fishes3d:1, abstract:1 };
-            var st = document.getElementById('sceneStage');
-            if (st && CGWebGL.attachTo) CGWebGL.attachTo(st);
+            var W = { milkyway:1, wavelength:1, fishes3d:1, abstract:1 };
+            if (surface && CGWebGL.attachTo) CGWebGL.attachTo(surface);
             CGWebGL.setMode(W[name] ? name : 'none');
           }
         } catch (e) {}
       }
-
-      if (typeof syncWebGLScene === 'function') syncWebGLScene(name, on);
       if (btn) btn.classList.toggle('is-on', on);
       if (pick && pick.value !== name) pick.value = name;
       if (styleSel && styleSel.value !== wstyle) styleSel.value = wstyle;
@@ -2919,7 +2929,18 @@
             if (pick) pick.value = state.sceneName;
           }
         }
-        try { applyScene(); } catch (e) { console.warn(e); }
+        
+    try {
+      if (localStorage.getItem('kw_scene_on') !== '1') {
+        state.sceneOn = false;
+        var ss = document.getElementById('sceneStage');
+        if (ss) { ss.style.display = 'none'; ss.style.visibility = 'hidden'; }
+        var st = document.getElementById('stage');
+        if (st) st.classList.remove('scene-on');
+      }
+    } catch (e) {}
+
+    try { applyScene(); } catch (e) { console.warn(e); }
         try { if (typeof renderPage === 'function') renderPage(); } catch (e) {}
         try { updateCaption(state._sentIndex || 0, state._kwIndex); } catch (e) {}
       });
@@ -2928,7 +2949,11 @@
       scenePick.value = state.sceneName || 'sun';
       scenePick.addEventListener('change', function () {
         state.sceneName = scenePick.value || 'sun';
-        if (!state.sceneOn) state.sceneOn = true;
+        state.sceneOn = true;
+        if (!state.sceneFs) {
+          state.sceneFs = true;
+          try { applySceneFs(true); } catch (e) {}
+        }
         try { applyScene(); } catch (e) { console.warn(e); }
       });
     }
