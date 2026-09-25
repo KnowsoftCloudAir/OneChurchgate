@@ -1327,6 +1327,40 @@
       text-shadow: 0 0 12px rgba(45,212,191,0.9);
     }
 
+  
+    /* SCROLL_FIX: page must scroll to reach toolbar when not fullscreen */
+    html, body {
+      height: auto !important;
+      min-height: 100%;
+      overflow-x: hidden;
+      overflow-y: auto !important;
+      overscroll-behavior-y: auto;
+    }
+    body.scene-fs-on {
+      overflow: hidden !important;
+      height: 100% !important;
+      position: fixed !important;
+      width: 100% !important;
+      inset: 0;
+    }
+    body:not(.scene-fs-on) {
+      overflow-y: auto !important;
+      position: static !important;
+      height: auto !important;
+    }
+    .bar.sticky {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+    }
+    /* Book stage: allow vertical page scroll; horizontal swipe still works for pages */
+    #stage:not(.scene-fs) {
+      touch-action: pan-y !important;
+    }
+    #stage.scene-fs {
+      touch-action: none;
+    }
+
   </style>
   <script src="/static/js/bg-animations.js"></script>
 </head>
@@ -1744,14 +1778,14 @@
     (function forceCaptionOnTop() {
       function place() {
         var cap = document.getElementById('fsCaption');
-        var stageEl = document.getElementById('stage');
+        var stage = document.getElementById('stage');
         if (!cap) {
           cap = document.createElement('div');
           cap.id = 'fsCaption';
           cap.setAttribute('aria-live', 'polite');
         }
         // CRITICAL: caption must be INSIDE #stage for Element.requestFullscreen()
-        var host = stageEl || document.body;
+        var host = stage || document.body;
         if (cap.parentElement !== host) host.appendChild(cap);
         cap.style.zIndex = '999999';
       }
@@ -2294,6 +2328,20 @@
       if ($('bgmAudio')) $('bgmAudio').volume = state.bgmVol;
     });
 
+    
+    (function clearStuckFullscreen() {
+      try {
+        if (!state.sceneFs && !document.fullscreenElement) {
+          document.body.classList.remove('scene-fs-on', 'kw-fs-caption', 'kw-speaking');
+          document.body.style.overflow = '';
+          document.body.style.position = '';
+          document.body.style.height = '';
+          var st = document.getElementById('stage');
+          if (st) st.classList.remove('scene-fs');
+        }
+      } catch (e) {}
+    })();
+
     applyTheme(); applyFont();
     if ($('fontSize')) $('fontSize').value = state.fontSize;
     if ($('fontFamily')) $('fontFamily').value = state.fontFamily;
@@ -2355,11 +2403,11 @@
         var adx = Math.abs(dx), ady = Math.abs(dy);
         if (adx < minDist && ady < minDist) return;
         if (adx > ady) {
-          // horizontal — pages
+          // horizontal — pages (works in normal + FS)
           if (dx < 0) { try { if (typeof next === 'function') next(); } catch (err) {} }
           else { try { if (typeof prev === 'function') prev(); } catch (err) {} }
-        } else {
-          // vertical — cycle 3D / ambience scenes
+        } else if (state.sceneFs || state.sceneOn) {
+          // vertical — cycle scenes only when Scene/FS active (don't steal page scroll)
           var order = ['sun','orbit','voyage','moon','planets','probe','deep','jupiter_close','milkyway','wavelength','fishes3d','abstract'];
           var cur = state.sceneName || 'sun';
           var ix = order.indexOf(cur);
@@ -2388,8 +2436,11 @@
           } catch (err) { console.warn(err); }
         }
       }
-      document.addEventListener('touchstart', onStart, { passive: true });
-      document.addEventListener('touchend', onEnd, { passive: true });
+      // Only capture swipes on #stage so the rest of the page can scroll
+      var stageEl = document.getElementById('stage');
+      var target = stageEl || document;
+      target.addEventListener('touchstart', onStart, { passive: true });
+      target.addEventListener('touchend', onEnd, { passive: true });
     })();
 
     function applySceneFs(force) {
@@ -2402,6 +2453,15 @@
       if (stage) stage.classList.toggle('scene-fs', on);
       document.body.classList.toggle('scene-fs-on', on);
       document.body.classList.toggle('kw-fs-caption', on);
+      if (!on) {
+        try {
+          document.body.style.overflow = '';
+          document.body.style.position = '';
+          document.body.style.height = '';
+          document.body.style.width = '';
+        } catch (e) {}
+      }
+
 
       // CAPTION must be child of #stage for requestFullscreen
       try {
@@ -2440,10 +2500,7 @@
       if (fsExit) {
         fsExit.style.setProperty('display', on ? 'block' : 'none', 'important');
       }
-      if (on && !state.sceneOn) {
-        state.sceneOn = true;
-        try { applyScene(); } catch (e) {}
-      }
+      /* Fullscreen stays on the book; Scene is optional — do not force sceneOn */
       try { localStorage.setItem('kw_scene_fs', on ? '1' : '0'); } catch (e) {}
       // Prefer browser fullscreen API when available
       try {
@@ -2494,8 +2551,7 @@
       if (!on) {
         try { if (window.CGWebGL) CGWebGL.setMode('none'); } catch (e) {}
       } else {
-        // Default to first scene in list if empty
-        if (!name) name = 'sun';
+        // name already defaulted above via state.sceneName || 'sun'
         try {
           if (typeof syncWebGLScene === 'function') syncWebGLScene(name, true);
           else if (window.CGWebGL) {
