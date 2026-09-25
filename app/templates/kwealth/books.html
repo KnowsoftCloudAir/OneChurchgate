@@ -2413,6 +2413,218 @@
       70%, 100% { opacity: 0; }
     }
 
+  
+    /* ===== CAPTION ALWAYS ON TOP OF 3D (final override) ===== */
+    #stage #fsCaption,
+    #stage.scene-fs #fsCaption,
+    #stage.scene-fs.scene-on #fsCaption,
+    #fsCaption.is-on,
+    #fsCaption.kw-cap-force,
+    body.scene-fs-on #fsCaption,
+    body.kw-speaking #fsCaption,
+    body.kw-fs-caption #fsCaption {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      position: absolute !important;
+      left: 50% !important;
+      right: auto !important;
+      top: auto !important;
+      bottom: 24px !important;
+      transform: translateX(-50%) !important;
+      z-index: 2147483647 !important;
+      width: min(92%, 40rem) !important;
+      max-width: 40rem !important;
+      min-height: 2.75rem !important;
+      padding: 1rem 1.4rem !important;
+      margin: 0 !important;
+      border-radius: 18px !important;
+      background: linear-gradient(160deg, rgba(15,23,42,.94), rgba(30,41,59,.9)) !important;
+      border: 1px solid rgba(255,255,255,.28) !important;
+      box-shadow: 0 12px 40px rgba(0,0,0,.65), 0 0 0 1px rgba(45,212,191,.2), inset 0 1px 0 rgba(255,255,255,.1) !important;
+      backdrop-filter: blur(18px) !important;
+      -webkit-backdrop-filter: blur(18px) !important;
+      color: #f8fafc !important;
+      font-family: "Playfair Display", "Cormorant Garamond", Georgia, serif !important;
+      font-size: clamp(1.15rem, 3.4vw, 1.6rem) !important;
+      font-weight: 500 !important;
+      line-height: 1.55 !important;
+      text-align: center !important;
+      text-shadow: 0 2px 10px rgba(0,0,0,.85) !important;
+      pointer-events: none !important;
+    }
+    #fsCaption .kw { color: rgba(248,250,252,.4) !important; }
+    #fsCaption .kw.spoken { color: rgba(255,255,255,.95) !important; }
+    #fsCaption .kw.current {
+      color: #fef08a !important;
+      background: linear-gradient(90deg, rgba(45,212,191,.4), rgba(250,204,21,.3)) !important;
+      padding: 0 4px !important;
+      border-radius: 4px !important;
+      text-shadow: 0 0 16px rgba(250,204,21,.75) !important;
+      font-weight: 700 !important;
+    }
+    /* Scene layers stay UNDER caption */
+    #stage.scene-fs #sceneStage,
+    #stage.scene-on #sceneStage,
+    #stage.scene-fs #cgWebglHost {
+      z-index: 1 !important;
+    }
+    #stage.scene-fs .page-sheet { z-index: 2 !important; }
+
+  
+    /* ===== JUPITER close pass-by ===== */
+    #sceneStage.sc-jupiter {
+      background: radial-gradient(ellipse at 50% 45%, #0b1224 0%, #020617 60%, #000 100%);
+      overflow: hidden;
+      perspective: 1200px;
+    }
+    #sceneStage.sc-jupiter .stars {
+      position: absolute; inset: -15%;
+      background-image:
+        radial-gradient(1.5px 1.5px at 10% 15%, #fff, transparent),
+        radial-gradient(1px 1px at 25% 45%, #fff, transparent),
+        radial-gradient(2px 2px at 55% 20%, #e0e7ff, transparent),
+        radial-gradient(1px 1px at 75% 60%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 90% 25%, #fff, transparent),
+        radial-gradient(1px 1px at 18% 80%, #fff, transparent),
+        radial-gradient(2px 2px at 48% 75%, #fff, transparent),
+        radial-gradient(1px 1px at 85% 80%, #cbd5e1, transparent);
+      animation: starTwinkle 5s ease-in-out infinite alternate;
+    }
+    #sceneStage.sc-jupiter .distant-sun {
+      position: absolute; left: 12%; top: 18%;
+      width: 4.5vmin; height: 4.5vmin; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fefce8, #fde047 40%, #f59e0b 70%, transparent 75%);
+      box-shadow: 0 0 25px 8px rgba(253,224,71,.55), 0 0 60px 20px rgba(245,158,11,.25);
+      animation: softPulse 4s ease-in-out infinite;
+      z-index: 1;
+    }
+    #sceneStage.sc-jupiter .jupiter {
+      position: absolute; left: 50%; top: 50%;
+      width: 36vmin; height: 36vmin; margin: -18vmin 0 0 -18vmin;
+      border-radius: 50%;
+      background:
+        /* Great Red Spot */
+        radial-gradient(ellipse 22% 14% at 62% 58%, #ef4444 0%, #b91c1c 40%, transparent 70%),
+        /* band layers */
+        repeating-linear-gradient(180deg,
+          #f5d0a9 0%, #e8b86d 8%,
+          #d4a574 12%, #c4895a 18%,
+          #f0c9a0 24%, #e8b070 32%,
+          #c17a4a 38%, #a85d3a 44%,
+          #e8b86d 52%, #f5d0a9 58%,
+          #d4a574 64%, #c4895a 72%,
+          #f0c9a0 80%, #e8b070 88%,
+          #c17a4a 94%, #a85d3a 100%);
+      box-shadow:
+        inset -10vmin -6vmin 20vmin rgba(0,0,0,.55),
+        inset 5vmin 4vmin 14vmin rgba(255,255,255,.15),
+        0 0 50px rgba(232,184,109,.35),
+        0 0 100px rgba(180,120,60,.2);
+      transform-style: preserve-3d;
+      animation: jupiterPass 18s ease-in-out infinite;
+      z-index: 4;
+    }
+    #sceneStage.sc-jupiter .jupiter::before {
+      content: '';
+      position: absolute; inset: -3%;
+      border-radius: 50%;
+      box-shadow: inset 0 0 18px 6px rgba(255,240,200,.12);
+      pointer-events: none;
+    }
+    #sceneStage.sc-jupiter .bands {
+      position: absolute; inset: 0; border-radius: 50%;
+      background:
+        linear-gradient(180deg, transparent 20%, rgba(120,53,15,.25) 28%, transparent 35%),
+        linear-gradient(180deg, transparent 50%, rgba(154,52,18,.2) 55%, transparent 62%),
+        linear-gradient(180deg, transparent 70%, rgba(120,53,15,.22) 78%, transparent 85%);
+      animation: jupiterSpin 12s linear infinite;
+      opacity: 0.85;
+    }
+    @keyframes jupiterPass {
+      0%   { transform: translate3d(-55vw, 8vh, -900px) scale(0.12) rotateY(-25deg); opacity: 0.7; }
+      25%  { transform: translate3d(-20vw, 2vh, -300px) scale(0.55) rotateY(-10deg); opacity: 1; }
+      48%  { transform: translate3d(0, 0, 60px) scale(2.6) rotateY(5deg); opacity: 1; }
+      55%  { transform: translate3d(8vw, -2vh, 120px) scale(3.2) rotateY(12deg); opacity: 1; }
+      78%  { transform: translate3d(45vw, -10vh, -400px) scale(0.4) rotateY(30deg); opacity: 0.9; }
+      100% { transform: translate3d(70vw, -18vh, -1000px) scale(0.08) rotateY(45deg); opacity: 0.3; }
+    }
+    @keyframes jupiterSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* ===== NEPTUNE close pass-by ===== */
+    #sceneStage.sc-neptune {
+      background: radial-gradient(ellipse at 50% 45%, #0a1628 0%, #020617 55%, #000 100%);
+      overflow: hidden;
+      perspective: 1200px;
+    }
+    #sceneStage.sc-neptune .stars {
+      position: absolute; inset: -15%;
+      background-image:
+        radial-gradient(1.5px 1.5px at 12% 18%, #fff, transparent),
+        radial-gradient(1px 1px at 30% 50%, #fff, transparent),
+        radial-gradient(2px 2px at 60% 15%, #e0e7ff, transparent),
+        radial-gradient(1px 1px at 80% 55%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 88% 30%, #fff, transparent),
+        radial-gradient(1px 1px at 20% 75%, #fff, transparent),
+        radial-gradient(2px 2px at 50% 85%, #fff, transparent);
+      animation: starTwinkle 5s ease-in-out infinite alternate;
+    }
+    #sceneStage.sc-neptune .distant-sun {
+      position: absolute; right: 14%; top: 14%;
+      width: 3.5vmin; height: 3.5vmin; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fefce8, #fde047 45%, #f59e0b 70%, transparent 75%);
+      box-shadow: 0 0 20px 6px rgba(253,224,71,.5), 0 0 50px 16px rgba(245,158,11,.2);
+      animation: softPulse 4.5s ease-in-out infinite;
+      z-index: 1;
+    }
+    #sceneStage.sc-neptune .neptune {
+      position: absolute; left: 50%; top: 50%;
+      width: 34vmin; height: 34vmin; margin: -17vmin 0 0 -17vmin;
+      border-radius: 50%;
+      background:
+        radial-gradient(ellipse 30% 20% at 40% 35%, rgba(147,197,253,.5), transparent 60%),
+        radial-gradient(ellipse 25% 18% at 65% 60%, rgba(59,130,246,.35), transparent 55%),
+        radial-gradient(circle at 35% 30%, #7dd3fc 0%, #38bdf8 25%, #0ea5e9 45%, #0369a1 70%, #0c4a6e 100%);
+      box-shadow:
+        inset -9vmin -5vmin 18vmin rgba(2,6,23,.6),
+        inset 4vmin 3vmin 12vmin rgba(186,230,253,.2),
+        0 0 45px rgba(56,189,248,.4),
+        0 0 90px rgba(14,165,233,.2);
+      transform-style: preserve-3d;
+      animation: neptunePass 20s ease-in-out infinite;
+      z-index: 4;
+    }
+    #sceneStage.sc-neptune .neptune::before {
+      content: '';
+      position: absolute; inset: -2%;
+      border-radius: 50%;
+      box-shadow: inset 0 0 14px 4px rgba(186,230,253,.25);
+      pointer-events: none;
+    }
+    #sceneStage.sc-neptune .storm {
+      position: absolute;
+      width: 18%; height: 14%;
+      top: 42%; left: 55%;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(30,64,175,.55), transparent 70%);
+      animation: neptuneStorm 8s ease-in-out infinite alternate;
+    }
+    @keyframes neptunePass {
+      0%   { transform: translate3d(60vw, -12vh, -950px) scale(0.1) rotateY(20deg); opacity: 0.65; }
+      28%  { transform: translate3d(22vw, -4vh, -320px) scale(0.5) rotateY(8deg); opacity: 1; }
+      50%  { transform: translate3d(0, 0, 50px) scale(2.5) rotateY(-5deg); opacity: 1; }
+      58%  { transform: translate3d(-10vw, 3vh, 110px) scale(3.1) rotateY(-15deg); opacity: 1; }
+      80%  { transform: translate3d(-48vw, 12vh, -450px) scale(0.35) rotateY(-35deg); opacity: 0.85; }
+      100% { transform: translate3d(-75vw, 20vh, -1050px) scale(0.06) rotateY(-50deg); opacity: 0.25; }
+    }
+    @keyframes neptuneStorm {
+      from { transform: translateX(-2%) scale(1); }
+      to { transform: translateX(4%) scale(1.08); }
+    }
+
   </style>
   <script src="/static/js/bg-animations.js"></script>
 </head>
@@ -2427,8 +2639,8 @@
           <option value="milkyway">Milky Way close stars (3D)</option>
           <option value="wavelength">3D wavelength (3D)</option>
           <option value="fishes3d">3D ocean fishes (3D)</option>
-          <option value="asteroid">Asteroid impact (approach &amp; hit)</option>
-          <option value="asteroid2">Asteroid impact 2 (bounce to deep space)</option>
+          <option value="jupiter">Jupiter close pass-by</option>
+          <option value="neptune">Neptune close pass-by</option>
           <option value="birdsea">Bird over the night sea</option>
           <option value="hourglass">Hourglass, butterflies & sun rays</option>
         </select>
@@ -2458,8 +2670,8 @@
           <option value="milkyway">Milky Way close stars (3D)</option>
           <option value="wavelength">3D wavelength (3D)</option>
           <option value="fishes3d">3D ocean fishes (3D)</option>
-          <option value="asteroid">Asteroid impact (approach &amp; hit)</option>
-          <option value="asteroid2">Asteroid impact 2 (bounce to deep space)</option>
+          <option value="jupiter">Jupiter close pass-by</option>
+          <option value="neptune">Neptune close pass-by</option>
           <option value="birdsea">Bird over the night sea</option>
           <option value="hourglass">Hourglass, butterflies & sun rays</option>
         </select>
@@ -2638,30 +2850,15 @@
             <div class="stars"></div>
           </div>
           
-          <div class="sc-layer sc-asteroid-bits" style="display:none">
+          <div class="sc-layer sc-jupiter-bits" style="display:none">
             <div class="stars"></div>
-            <div class="nebula"></div>
-            <div class="trail"></div>
-            <div class="asteroid">
-              <div class="crater c1"></div>
-              <div class="crater c2"></div>
-              <div class="crater c3"></div>
-              <div class="crater c4"></div>
-            </div>
-            <div class="flash"></div>
-            <div class="crack"></div>
+            <div class="distant-sun" title="Sun"></div>
+            <div class="jupiter"><div class="bands"></div></div>
           </div>
-          <div class="sc-layer sc-asteroid2-bits" style="display:none">
+          <div class="sc-layer sc-neptune-bits" style="display:none">
             <div class="stars"></div>
-            <div class="nebula"></div>
-            <div class="trail"></div>
-            <div class="asteroid">
-              <div class="crater c1"></div>
-              <div class="crater c2"></div>
-              <div class="crater c3"></div>
-            </div>
-            <div class="flash"></div>
-            <div class="crack"></div>
+            <div class="distant-sun" title="Sun"></div>
+            <div class="neptune"><div class="storm"></div></div>
           </div>
           <div class="sc-layer sc-birdsea-bits" style="display:none">
             <div class="stars"></div>
@@ -2844,14 +3041,39 @@
           cap.id = 'fsCaption';
           cap.setAttribute('aria-live', 'polite');
         }
-        // CRITICAL: caption must be INSIDE #stage for Element.requestFullscreen()
+        // MUST be last child of #stage so it paints above 3D in fullscreen
         var host = stage || document.body;
-        if (cap.parentElement !== host) host.appendChild(cap);
-        cap.style.zIndex = '999999';
+        if (cap.parentElement !== host || (host.lastElementChild !== cap)) {
+          host.appendChild(cap);
+        }
+        // Inline styles beat stylesheet conflicts
+        cap.style.cssText = [
+          'display:none',
+          'position:absolute',
+          'left:50%',
+          'bottom:24px',
+          'transform:translateX(-50%)',
+          'z-index:2147483647',
+          'width:min(92%,40rem)',
+          'max-width:40rem',
+          'padding:1rem 1.4rem',
+          'border-radius:18px',
+          'background:linear-gradient(160deg,rgba(15,23,42,.95),rgba(30,41,59,.92))',
+          'border:1px solid rgba(255,255,255,.28)',
+          'box-shadow:0 12px 40px rgba(0,0,0,.65)',
+          'color:#f8fafc',
+          'font-family:"Playfair Display",Georgia,serif',
+          'font-size:clamp(1.15rem,3.4vw,1.6rem)',
+          'line-height:1.55',
+          'text-align:center',
+          'text-shadow:0 2px 10px rgba(0,0,0,.85)',
+          'pointer-events:none',
+          'margin:0'
+        ].join(';');
       }
       place();
       document.addEventListener('DOMContentLoaded', place);
-      setInterval(place, 2000);
+      setInterval(place, 1500);
     })();
 
     function updateCaption(si, wordIdx) {
@@ -2880,6 +3102,7 @@
         // not fullscreen and not speaking — hide caption
         cap.innerHTML = '';
         cap.classList.remove('is-on', 'kw-cap-force');
+        cap.style.display = 'none';
         return;
       }
       // Show caption in fullscreen OR while speaking (so user always sees words)
@@ -2929,6 +3152,21 @@
       });
       cap.innerHTML = '<span class="cap-sent">' + html + '</span>';
       cap.classList.add('is-on', 'kw-cap-force');
+      // Force visible above 3D — inline styles cannot be overridden by older CSS
+      cap.style.display = 'block';
+      cap.style.visibility = 'visible';
+      cap.style.opacity = '1';
+      cap.style.zIndex = '2147483647';
+      cap.style.position = 'absolute';
+      cap.style.bottom = '24px';
+      cap.style.left = '50%';
+      cap.style.transform = 'translateX(-50%)';
+      cap.style.pointerEvents = 'none';
+      // keep as last child of stage
+      try {
+        var st = document.getElementById('stage');
+        if (st && cap.parentElement === st) st.appendChild(cap);
+      } catch(e) {}
       cap.classList.remove('cap-in');
       void cap.offsetWidth;
       cap.classList.add('cap-in');
@@ -3054,6 +3292,9 @@
       return parts.filter(Boolean);
     }
     function speakPage() {
+      try { document.body.classList.add('kw-speaking'); } catch(e) {}
+      try { updateCaption(state._sentIndex||0, state._kwIndex); } catch(e) {}
+
       /* FORCE_CAPTION_SPEAK */
       if (state.sceneFs || document.body.classList.contains('scene-fs-on')) {
         document.body.classList.add('kw-fs-caption');
@@ -3476,7 +3717,7 @@
           else { try { if (typeof prev === 'function') prev(); } catch (err) {} }
         } else if (state.sceneFs || state.sceneOn) {
           // vertical — cycle scenes only when Scene/FS active (don't steal page scroll)
-          var order = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','asteroid','asteroid2','birdsea','hourglass'];
+          var order = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','birdsea','hourglass'];
           var cur = state.sceneName || 'sun';
           var ix = order.indexOf(cur);
           if (ix < 0) ix = 0;
@@ -3615,7 +3856,7 @@
         try { if (window.CGWebGL) CGWebGL.setMode('none'); } catch (e) {}
       }
       // Show only bits for selected scene
-      ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','asteroid','asteroid2','birdsea','hourglass'].forEach(function (n) {
+      ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','birdsea','hourglass'].forEach(function (n) {
         var el = surface.querySelector('.sc-' + n + '-bits');
         if (el) {
           if (show3d && n === name) {
@@ -3659,7 +3900,7 @@
     try {
       state.sceneOn = localStorage.getItem('kw_scene_on') === '1';
       state.sceneName = localStorage.getItem('kw_scene') || 'sun';
-      if (['moon','probe','deep','jupiter_close'].indexOf(state.sceneName) >= 0) state.sceneName = 'asteroid2';
+      if (['moon','probe','deep','jupiter_close'].indexOf(state.sceneName) >= 0) state.sceneName = 'neptune';
     } catch (e) {}
     const btnScene = document.getElementById('btnScene');
     const scenePick = document.getElementById('scenePick');
