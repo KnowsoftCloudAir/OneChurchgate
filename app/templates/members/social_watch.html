@@ -11,13 +11,13 @@
     .slide { height: 100vh; width: 100%; scroll-snap-align: start; position: relative; display: flex; flex-direction: column; background: #000; }
     .frame-box { flex: 1; position: relative; min-height: 0; }
     .frame-box iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
-    .meta { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 14px 18px; background: linear-gradient(transparent, rgba(0,0,0,.82)); pointer-events: none; z-index: 5; }
+    .meta { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 14px 18px; background: linear-gradient(transparent, rgba(0,0,0,.85)); pointer-events: none; z-index: 5; }
     .meta strong { display: block; font-size: 15px; }
     .meta span { font-size: 11px; opacity: .85; text-transform: uppercase; letter-spacing: .06em; }
-    .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: linear-gradient(rgba(0,0,0,.75), transparent); }
-    .btn { pointer-events: auto; border: 1px solid rgba(255,255,255,.25); background: rgba(15,23,42,.75); color: #fff; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 8px 12px; }
+    .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: linear-gradient(rgba(0,0,0,.8), transparent); }
+    .btn { pointer-events: auto; border: 1px solid rgba(255,255,255,.25); background: rgba(15,23,42,.8); color: #fff; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 8px 12px; }
     .btn.on { background: #0d9488; border-color: #2dd4bf; }
-    .hint { position: fixed; bottom: 88px; left: 0; right: 0; text-align: center; font-size: 11px; color: rgba(255,255,255,.55); z-index: 30; pointer-events: none; }
+    .hint { position: fixed; bottom: 72px; left: 0; right: 0; text-align: center; font-size: 11px; color: rgba(255,255,255,.5); z-index: 30; pointer-events: none; }
     .empty { height: 100vh; display:flex; align-items:center; justify-content:center; padding: 24px; text-align:center; color:#94a3b8; }
     .noembed { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:24px; text-align:center; color:#cbd5e1; font-size:14px; }
   </style>
@@ -27,22 +27,22 @@
     <a href="/member" class="btn">← Back</a>
     <div style="display:flex;gap:8px">
       <button type="button" class="btn" id="btnSound" onclick="toggleSound()">Sound off</button>
-      <button type="button" class="btn" id="btnOpen" onclick="openCurrent()">Open original</button>
+      <button type="button" class="btn" onclick="openCurrent()">Open original</button>
     </div>
   </div>
 
   {% if not links %}
-  <div class="empty"><div><p class="font-bold text-white mb-1">No videos yet</p><p class="text-sm">Admin will add public links soon.</p></div></div>
+  <div class="empty"><div><p class="font-bold text-white mb-1">No videos yet</p><p class="text-sm">Admin will sync the church Facebook Page or add links.</p></div></div>
   {% else %}
-  <div class="hint">Swipe up / down · Autoplay muted · Tap Sound to hear</div>
+  <div class="hint">Swipe up / down — plays automatically (muted). Tap Sound to hear.</div>
   <div class="feed" id="feed">
     {% for L in links %}
     <section class="slide" data-embed="{{ L.embed_url or '' }}" data-src="{{ L.source_url }}" data-platform="{{ L.platform }}" data-idx="{{ loop.index0 }}">
       <div class="frame-box">
         {% if L.embed_url %}
-        <iframe title="{{ L.title }}" data-src="{{ L.embed_url }}" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share; fullscreen" allowfullscreen loading="lazy"></iframe>
+        <iframe title="{{ L.title }}" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share; fullscreen" allowfullscreen playsinline></iframe>
         {% else %}
-        <div class="noembed">This link cannot auto-play in-app.<br>Tap <strong>Open original</strong> for Live / platform player.</div>
+        <div class="noembed">Cannot auto-play this link in-app.<br>Tap <strong>Open original</strong>.</div>
         {% endif %}
       </div>
       <div class="meta">
@@ -60,18 +60,22 @@
     var currentIdx = 0;
     var slides = [];
 
-    function withMuteParam(url, mute) {
+    function withAutoplayMute(url, mute) {
       if (!url) return '';
       try {
         var u = new URL(url, window.location.origin);
-        if (u.hostname.indexOf('youtube') >= 0) {
+        var host = u.hostname || '';
+        if (host.indexOf('youtube') >= 0) {
           u.searchParams.set('autoplay', '1');
           u.searchParams.set('mute', mute ? '1' : '0');
           u.searchParams.set('playsinline', '1');
+          u.searchParams.set('rel', '0');
         }
-        if (u.hostname.indexOf('facebook.com') >= 0) {
+        if (host.indexOf('facebook.com') >= 0) {
           u.searchParams.set('autoplay', 'true');
+          u.searchParams.set('mute', mute ? '1' : '0');
         }
+        // TikTok / Instagram: reload iframe is enough to start; sound controlled in their UI often
         return u.toString();
       } catch (e) { return url; }
     }
@@ -86,18 +90,36 @@
         var base = sec.getAttribute('data-embed') || '';
         if (i === idx) {
           if (!base) return;
-          var nextSrc = withMuteParam(base, !soundOn);
-          if (force || iframe.getAttribute('src') !== nextSrc) iframe.setAttribute('src', nextSrc);
+          // Always force a fresh src when becoming active so autoplay restarts
+          var nextSrc = withAutoplayMute(base, !soundOn);
+          var bust = nextSrc + (nextSrc.indexOf('?') >= 0 ? '&' : '?') + '_t=' + Date.now();
+          if (force || Math.abs(i - idx) === 0) {
+            iframe.setAttribute('src', force ? bust : nextSrc);
+          }
         } else {
+          // Unload neighbors so next scroll always triggers a new autoplay load
           if (iframe.getAttribute('src')) iframe.setAttribute('src', '');
         }
       });
+      // ensure active loads even if was empty
+      var active = slides[idx];
+      if (active) {
+        var fr = active.querySelector('iframe');
+        var base = active.getAttribute('data-embed') || '';
+        if (fr && base) {
+          var src = withAutoplayMute(base, !soundOn);
+          if (!fr.getAttribute('src') || force) fr.setAttribute('src', src);
+        }
+      }
     }
 
     function toggleSound() {
       soundOn = !soundOn;
       var btn = document.getElementById('btnSound');
-      if (btn) { btn.textContent = soundOn ? 'Sound on' : 'Sound off'; btn.classList.toggle('on', soundOn); }
+      if (btn) {
+        btn.textContent = soundOn ? 'Sound on' : 'Sound off';
+        btn.classList.toggle('on', soundOn);
+      }
       loadSlide(currentIdx, true);
     }
 
@@ -112,15 +134,25 @@
       slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
       if (!slides.length) return;
       var feed = document.getElementById('feed');
+
+      // Autoplay whenever a slide is mostly visible (no Play button)
       if ('IntersectionObserver' in window) {
         var io = new IntersectionObserver(function (entries) {
           entries.forEach(function (en) {
-            if (en.isIntersecting && en.intersectionRatio > 0.6) {
-              loadSlide(parseInt(en.target.getAttribute('data-idx') || '0', 10), false);
+            if (en.isIntersecting && en.intersectionRatio >= 0.55) {
+              var idx = parseInt(en.target.getAttribute('data-idx') || '0', 10);
+              loadSlide(idx, true);
             }
           });
-        }, { root: feed, threshold: [0.6] });
+        }, { root: feed, threshold: [0.55, 0.75, 0.9] });
         slides.forEach(function (s) { io.observe(s); });
+      } else {
+        feed.addEventListener('scroll', function () {
+          var h = feed.clientHeight;
+          var mid = feed.scrollTop + h / 2;
+          var idx = Math.round(mid / h);
+          loadSlide(idx, true);
+        }, { passive: true });
       }
       loadSlide(0, true);
     }
