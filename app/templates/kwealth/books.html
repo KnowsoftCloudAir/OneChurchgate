@@ -2600,15 +2600,16 @@
     }
     /* Enter from left, slow, fill screen, rotate out the RIGHT edge */
     @keyframes jupiterOrbital {
-      0%   { transform: translate(-55vw, 12vh) scale(0.14) rotate(0deg); }
-      20%  { transform: translate(-28vw, 6vh) scale(0.4) rotate(25deg); }
-      38%  { transform: translate(-8vw, 1vh) scale(0.95) rotate(55deg); }
-      48%  { transform: translate(0, 0) scale(2.4) rotate(90deg); }
-      52%  { transform: translate(2vw, 0) scale(3.0) rotate(110deg); }
-      58%  { transform: translate(6vw, -1vh) scale(3.1) rotate(140deg); }
-      70%  { transform: translate(38vw, -4vh) scale(1.4) rotate(200deg); }
-      85%  { transform: translate(62vw, -8vh) scale(0.45) rotate(280deg); }
-      100% { transform: translate(85vw, -10vh) scale(0.12) rotate(360deg); }
+      /* curved approach from bottom-left, arc across, exit top-right */
+      0%   { transform: translate(-60vw, 35vh) scale(0.1) rotate(-15deg); }
+      18%  { transform: translate(-35vw, 18vh) scale(0.35) rotate(20deg); }
+      32%  { transform: translate(-12vw, 4vh) scale(0.85) rotate(55deg); }
+      45%  { transform: translate(0, -2vh) scale(2.2) rotate(95deg); }
+      50%  { transform: translate(4vw, -4vh) scale(2.95) rotate(120deg); }
+      56%  { transform: translate(10vw, -6vh) scale(3.05) rotate(150deg); }
+      70%  { transform: translate(35vw, -18vh) scale(1.3) rotate(210deg); }
+      85%  { transform: translate(58vw, -32vh) scale(0.45) rotate(280deg); }
+      100% { transform: translate(80vw, -42vh) scale(0.1) rotate(350deg); }
     }
 
 
@@ -2986,25 +2987,211 @@
     }
 
   
-    /* ===== HIDE 3D when Scene is off ===== */
-    #sceneStage {
+    /* ===== FORCE: 3D only in Full screen + Scene ===== */
+    #sceneStage,
+    #cgWebglHost,
+    #stage #sceneStage,
+    #stage.scene-fs #sceneStage,
+    #stage.scene-on #sceneStage,
+    #stage:not(.scene-fs) #sceneStage,
+    #stage:not(.scene-on) #sceneStage {
       display: none !important;
       visibility: hidden !important;
       opacity: 0 !important;
       pointer-events: none !important;
+      height: 0 !important;
+      min-height: 0 !important;
+      overflow: hidden !important;
     }
-    #stage.scene-on #sceneStage,
+    /* ONLY this combination shows 3D */
     #stage.scene-fs.scene-on #sceneStage {
       display: block !important;
       visibility: visible !important;
       opacity: 1 !important;
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+      min-height: 100vh !important;
+      z-index: 1 !important;
+      overflow: hidden !important;
       pointer-events: none !important;
     }
-    #stage:not(.scene-on) #sceneStage,
-    #stage.scene-fs:not(.scene-on) #sceneStage {
-      display: none !important;
-      visibility: hidden !important;
-      opacity: 0 !important;
+    #stage.scene-fs.scene-on #cgWebglHost {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+
+  
+    /* ===== TROUBLED WATERS at the centre of space ===== */
+    #sceneStage.sc-waters {
+      background: radial-gradient(ellipse at 50% 45%, #0a1628 0%, #020617 50%, #000 100%);
+      overflow: hidden;
+    }
+    #sceneStage.sc-waters .stars {
+      position: absolute; inset: -15%;
+      background-image:
+        radial-gradient(1.5px 1.5px at 10% 15%, #fff, transparent),
+        radial-gradient(1px 1px at 30% 40%, #fff, transparent),
+        radial-gradient(2px 2px at 55% 20%, #e0e7ff, transparent),
+        radial-gradient(1px 1px at 75% 60%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 90% 25%, #fff, transparent),
+        radial-gradient(1px 1px at 20% 80%, #fff, transparent),
+        radial-gradient(2px 2px at 50% 85%, #fff, transparent);
+      animation: starTwinkle 5s ease-in-out infinite alternate;
+      opacity: 0.85;
+    }
+    #sceneStage.sc-waters .water-pool {
+      position: absolute; left: 50%; top: 50%;
+      width: 70vmin; height: 45vmin;
+      margin: -22vmin 0 0 -35vmin;
+      border-radius: 50%;
+      overflow: hidden;
+      background: radial-gradient(ellipse at 50% 40%, #0c4a6e 0%, #082f49 40%, #020617 100%);
+      box-shadow:
+        0 0 60px rgba(14,165,233,.25),
+        inset 0 0 40px rgba(2,6,23,.6);
+      z-index: 3;
+    }
+    #sceneStage.sc-waters .wave {
+      position: absolute; left: -20%; right: -20%;
+      height: 40%;
+      border-radius: 40%;
+      opacity: 0.55;
+      filter: blur(1px);
+    }
+    #sceneStage.sc-waters .wave.w1 {
+      top: 20%;
+      background: linear-gradient(180deg, transparent, rgba(56,189,248,.45), transparent);
+      animation: waterTrouble 8s ease-in-out infinite;
+    }
+    #sceneStage.sc-waters .wave.w2 {
+      top: 35%;
+      background: linear-gradient(180deg, transparent, rgba(14,165,233,.4), transparent);
+      animation: waterTrouble 6s ease-in-out infinite reverse;
+      animation-delay: -1s;
+    }
+    #sceneStage.sc-waters .wave.w3 {
+      top: 50%;
+      background: linear-gradient(180deg, transparent, rgba(125,211,252,.35), transparent);
+      animation: waterTrouble 10s ease-in-out infinite;
+      animation-delay: -2s;
+    }
+    #sceneStage.sc-waters .wave.w4 {
+      top: 28%;
+      height: 25%;
+      background: linear-gradient(180deg, transparent, rgba(6,182,212,.5), transparent);
+      animation: waterAggressive 4.5s ease-in-out infinite;
+    }
+    #sceneStage.sc-waters .wave.w5 {
+      top: 42%;
+      height: 22%;
+      background: linear-gradient(180deg, transparent, rgba(34,211,238,.35), transparent);
+      animation: waterAggressive 5.5s ease-in-out infinite reverse;
+      animation-delay: -0.8s;
+    }
+    #sceneStage.sc-waters .foam {
+      position: absolute; left: 15%; right: 15%; top: 25%;
+      height: 8%;
+      border-radius: 50%;
+      background: radial-gradient(ellipse, rgba(255,255,255,.2), transparent 70%);
+      animation: foamPulse 7s ease-in-out infinite;
+      z-index: 4;
+    }
+    #sceneStage.sc-waters .foam.f2 {
+      top: 48%; left: 25%; right: 20%;
+      animation-delay: -2.5s;
+    }
+    #sceneStage.sc-waters .ripple {
+      position: absolute; left: 50%; top: 50%;
+      width: 20vmin; height: 12vmin;
+      margin: -6vmin 0 0 -10vmin;
+      border: 2px solid rgba(125,211,252,.25);
+      border-radius: 50%;
+      animation: rippleOut 5s ease-out infinite;
+      z-index: 2;
+    }
+    #sceneStage.sc-waters .ripple.r2 { animation-delay: -1.6s; }
+    #sceneStage.sc-waters .ripple.r3 { animation-delay: -3.2s; }
+    /* slow calm → aggressive → slow */
+    @keyframes waterTrouble {
+      0%, 15% { transform: translateX(-8%) scaleY(0.7) rotate(-2deg); opacity: 0.35; }
+      40% { transform: translateX(12%) scaleY(1.4) rotate(3deg); opacity: 0.7; }
+      55% { transform: translateX(-15%) scaleY(1.8) rotate(-4deg); opacity: 0.85; }
+      70% { transform: translateX(10%) scaleY(1.5) rotate(2deg); opacity: 0.65; }
+      100% { transform: translateX(-5%) scaleY(0.8) rotate(-1deg); opacity: 0.4; }
+    }
+    @keyframes waterAggressive {
+      0%, 20% { transform: translateX(0) scaleY(0.6); opacity: 0.3; }
+      35% { transform: translateX(-18%) scaleY(2.2) rotate(-6deg); opacity: 0.9; }
+      50% { transform: translateX(20%) scaleY(2.4) rotate(7deg); opacity: 0.95; }
+      65% { transform: translateX(-12%) scaleY(1.9) rotate(-4deg); opacity: 0.8; }
+      100% { transform: translateX(0) scaleY(0.7); opacity: 0.35; }
+    }
+    @keyframes foamPulse {
+      0%, 100% { opacity: 0.15; transform: scaleX(1); }
+      50% { opacity: 0.45; transform: scaleX(1.3); }
+    }
+    @keyframes rippleOut {
+      0% { transform: scale(0.3); opacity: 0.6; }
+      100% { transform: scale(3.5); opacity: 0; }
+    }
+
+  
+    /* ===== FS book title + page on top ===== */
+    #fsBookMeta {
+      display: none;
+      position: absolute !important;
+      top: 14px !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      z-index: 2147483645 !important;
+      text-align: center;
+      pointer-events: none;
+      padding: 0.55rem 1.2rem;
+      border-radius: 14px;
+      background: linear-gradient(160deg, rgba(15,23,42,.88), rgba(30,41,59,.82));
+      border: 1px solid rgba(255,255,255,.2);
+      box-shadow: 0 8px 28px rgba(0,0,0,.45);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      max-width: min(90%, 36rem);
+    }
+    #stage.scene-fs #fsBookMeta,
+    body.scene-fs-on #fsBookMeta {
+      display: block !important;
+    }
+    #fsBookMeta .fs-title {
+      display: block;
+      font-family: "Playfair Display", Georgia, serif;
+      font-size: clamp(0.95rem, 2.8vw, 1.25rem);
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: 0.02em;
+      text-shadow: 0 2px 8px rgba(0,0,0,.7);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 34rem;
+    }
+    #fsBookMeta .fs-page {
+      display: block;
+      margin-top: 0.2rem;
+      font-family: Inter, system-ui, sans-serif;
+      font-size: clamp(0.7rem, 2vw, 0.85rem);
+      font-weight: 600;
+      color: rgba(148,163,184,.95);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+    /* Keep page-badge visible in FS too */
+    #stage.scene-fs .page-badge {
+      opacity: 1 !important;
+      visibility: visible !important;
+      z-index: 25 !important;
+      top: 14px !important;
+      right: 14px !important;
     }
 
   </style>
@@ -3025,6 +3212,7 @@
           <option value="neptune">Neptune close pass-by</option>
           <option value="earth">Earth close pass-by</option>
           <option value="desert">Trees growing from the desert</option>
+          <option value="waters">Troubled waters in space</option>
           <option value="hourglass">Hourglass, butterflies & sun rays</option>
         </select>
   <button type="button" class="chip on" id="fsRead">👼 Read</button>
@@ -3057,6 +3245,7 @@
           <option value="neptune">Neptune close pass-by</option>
           <option value="earth">Earth close pass-by</option>
           <option value="desert">Trees growing from the desert</option>
+          <option value="waters">Troubled waters in space</option>
           <option value="hourglass">Hourglass, butterflies & sun rays</option>
         </select>
         <button type="button" class="chip" id="btnSceneFs" title="Full screen book (captions while reading)">Full screen</button>
@@ -3274,6 +3463,22 @@
             <div class="sea"><div class="wave"></div><div class="wave w2"></div></div>
             <div class="bird"></div>
           </div>
+          
+          <div class="sc-layer sc-waters-bits" style="display:none">
+            <div class="stars"></div>
+            <div class="water-pool">
+              <div class="wave w1"></div>
+              <div class="wave w2"></div>
+              <div class="wave w3"></div>
+              <div class="wave w4"></div>
+              <div class="wave w5"></div>
+              <div class="foam"></div>
+              <div class="foam f2"></div>
+              <div class="ripple"></div>
+              <div class="ripple r2"></div>
+              <div class="ripple r3"></div>
+            </div>
+          </div>
           <div class="sc-layer sc-hourglass-bits" style="display:none">
             <div class="window-rays"></div>
             <div class="glass-wrap">
@@ -3293,6 +3498,10 @@
             <div class="insect in1"></div>
             <div class="insect in2"></div>
           </div>
+        </div>
+        <div id="fsBookMeta" aria-hidden="true">
+          <span class="fs-title" id="fsBookTitle">Book</span>
+          <span class="fs-page" id="fsBookPage">Page 1 / 1</span>
         </div>
         <div class="page-sheet" id="sheet">
           <div class="page-badge">
@@ -3428,6 +3637,18 @@
       const total = state.pages.length || 1;
       const cur = state.pageIndex + 1;
       if ($('pageBadgeNum')) $('pageBadgeNum').textContent = 'Page ' + cur + ' / ' + total;
+      // Fullscreen title + page (top centre)
+      try {
+        var ft = document.getElementById('fsBookTitle');
+        var fp = document.getElementById('fsBookPage');
+        var sel = document.getElementById('bookSelect');
+        var title = 'Book';
+        if (sel && sel.selectedOptions && sel.selectedOptions[0]) {
+          title = sel.selectedOptions[0].textContent || sel.selectedOptions[0].text || 'Book';
+        }
+        if (ft) ft.textContent = title.trim();
+        if (fp) fp.textContent = 'Page ' + cur + ' / ' + total;
+      } catch (e) {}
       const st = progressLabel();
       const badge = $('pageBadgeStatus');
       if (badge) {
@@ -4125,7 +4346,7 @@
           else { try { if (typeof prev === 'function') prev(); } catch (err) {} }
         } else if (state.sceneFs || state.sceneOn) {
           // vertical — cycle scenes only when Scene/FS active (don't steal page scroll)
-          var order = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','hourglass'];
+          var order = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','waters','hourglass'];
           var cur = state.sceneName || 'sun';
           var ix = order.indexOf(cur);
           if (ix < 0) ix = 0;
@@ -4244,10 +4465,16 @@
         if (btn) btn.classList.toggle('is-on', on);
         return;
       }
-      // 3D only when Full screen AND Scene on
-      var show3d = !!state.sceneFs && !!on;
-      stage.classList.toggle('scene-on', show3d);
-      document.body.classList.toggle('scene-on', show3d);
+      // 3D only when Full screen AND Scene on — otherwise completely hidden
+      var show3d = !!(state.sceneFs && on);
+      // scene-on class only when both are true (used by CSS)
+      if (show3d) {
+        stage.classList.add('scene-on');
+        document.body.classList.add('scene-on');
+      } else {
+        stage.classList.remove('scene-on');
+        document.body.classList.remove('scene-on');
+      }
       ['ws-fill','ws-write','ws-glow','ws-underline'].forEach(function (c) { stage.classList.remove(c); });
       if (show3d) stage.classList.add('ws-' + wstyle);
       surface.className = 'sc-' + name;
@@ -4265,7 +4492,7 @@
         try { if (window.CGWebGL) CGWebGL.setMode('none'); } catch (e) {}
       }
       // Show only bits for selected scene
-      ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','hourglass'].forEach(function (n) {
+      ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','waters','hourglass'].forEach(function (n) {
         var el = surface.querySelector('.sc-' + n + '-bits');
         if (el) {
           if (show3d && n === name) {
@@ -4405,6 +4632,55 @@
         }
       }).catch(function () {});
     } catch (e) { console.warn(e); }
+
+    
+    // Force-hide 3D panel unless FS+Scene
+    (function hide3dUnlessFsScene() {
+      function sync() {
+        var stage = document.getElementById('stage');
+        var surface = document.getElementById('sceneStage');
+        var show = !!(state.sceneFs && state.sceneOn);
+        if (stage) {
+          if (show) stage.classList.add('scene-on');
+          else stage.classList.remove('scene-on');
+        }
+        if (surface) {
+          if (show) {
+            surface.style.setProperty('display', 'block', 'important');
+            surface.style.setProperty('visibility', 'visible', 'important');
+            surface.style.setProperty('opacity', '1', 'important');
+          } else {
+            surface.style.setProperty('display', 'none', 'important');
+            surface.style.setProperty('visibility', 'hidden', 'important');
+            surface.style.setProperty('opacity', '0', 'important');
+            surface.style.setProperty('height', '0', 'important');
+          }
+        }
+        var gl = document.getElementById('cgWebglHost');
+        if (gl && !show) {
+          gl.style.setProperty('display', 'none', 'important');
+          gl.style.setProperty('opacity', '0', 'important');
+        }
+      }
+      sync();
+      setInterval(sync, 800);
+    })();
+
+    
+    // Keep FS book meta on top inside stage
+    (function placeFsMeta() {
+      function go() {
+        var meta = document.getElementById('fsBookMeta');
+        var stage = document.getElementById('stage');
+        if (!meta || !stage) return;
+        if (meta.parentElement !== stage) stage.appendChild(meta);
+        // near top of stacking: append after caption? keep before caption is fine
+        var show = !!(state.sceneFs || document.body.classList.contains('scene-fs-on'));
+        meta.style.display = show ? 'block' : 'none';
+      }
+      go();
+      setInterval(go, 1000);
+    })();
 
     // Angel "Read ebook" → auto start reading
     if (window.__AUTO_READ__ && state.pages.length) {
