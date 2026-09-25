@@ -1098,7 +1098,7 @@
       overflow: hidden;
     }
     #sceneStage {
-      display: block !important; /* kept mounted for size match */
+      display: none !important;
       opacity: 0;
       visibility: hidden;
       transition: opacity .25s ease;
@@ -4263,7 +4263,6 @@
         surface.style.setProperty('opacity', '0', 'important');
         surface.style.setProperty('z-index', '0', 'important');
         try { if (window.CGWebGL) CGWebGL.setMode('none'); } catch (e) {}
-      } catch (e) {}
       }
       // Show only bits for selected scene
       ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','hourglass'].forEach(function (n) {
