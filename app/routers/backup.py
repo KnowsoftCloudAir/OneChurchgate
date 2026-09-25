@@ -17,7 +17,7 @@ from app.models import (
     ProgramPhoto, MusicLink, YoutubeChannelLink, PastorMessage, FocusGroup, FocusGroupMember,
     FocusGroupMessage, MemberSubscription, SubscriptionSettings, DistrictMessage,
     SystemAnnouncement, AppConfig,
-    KwealthBook, KwealthProgress, KwealthExcerpt, KwealthNote,
+    KwealthBook, KwealthProgress, KwealthExcerpt, KwealthNote, SocialStreamLink,
 )
 from app.auth import require_roles, require_user, role_val
 from app.activity import log_activity
@@ -49,6 +49,7 @@ BACKUP_MODELS = [
     ("kwealthprogress", KwealthProgress),
     ("kwealthexcerpt", KwealthExcerpt),
     ("kwealthnote", KwealthNote),
+    ("socialstreamlink", SocialStreamLink),
 ]
 
 

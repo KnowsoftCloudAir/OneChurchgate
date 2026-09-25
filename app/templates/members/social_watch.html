@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Social watch</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html, body { height: 100%; margin: 0; background: #020617; color: #f8fafc; overscroll-behavior: none; }
+    .feed { height: 100vh; overflow-y: scroll; scroll-snap-type: y mandatory; -webkit-overflow-scrolling: touch; }
+    .slide { height: 100vh; width: 100%; scroll-snap-align: start; position: relative; display: flex; flex-direction: column; background: #000; }
+    .frame-box { flex: 1; position: relative; min-height: 0; }
+    .frame-box iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; background: #000; }
+    .meta { position: absolute; left: 0; right: 0; bottom: 0; padding: 12px 14px 18px; background: linear-gradient(transparent, rgba(0,0,0,.82)); pointer-events: none; z-index: 5; }
+    .meta strong { display: block; font-size: 15px; }
+    .meta span { font-size: 11px; opacity: .85; text-transform: uppercase; letter-spacing: .06em; }
+    .topbar { position: fixed; top: 0; left: 0; right: 0; z-index: 40; display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: linear-gradient(rgba(0,0,0,.75), transparent); }
+    .btn { pointer-events: auto; border: 1px solid rgba(255,255,255,.25); background: rgba(15,23,42,.75); color: #fff; font-size: 12px; font-weight: 700; border-radius: 999px; padding: 8px 12px; }
+    .btn.on { background: #0d9488; border-color: #2dd4bf; }
+    .hint { position: fixed; bottom: 88px; left: 0; right: 0; text-align: center; font-size: 11px; color: rgba(255,255,255,.55); z-index: 30; pointer-events: none; }
+    .empty { height: 100vh; display:flex; align-items:center; justify-content:center; padding: 24px; text-align:center; color:#94a3b8; }
+    .noembed { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; padding:24px; text-align:center; color:#cbd5e1; font-size:14px; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <a href="/member" class="btn">← Back</a>
+    <div style="display:flex;gap:8px">
+      <button type="button" class="btn" id="btnSound" onclick="toggleSound()">Sound off</button>
+      <button type="button" class="btn" id="btnOpen" onclick="openCurrent()">Open original</button>
+    </div>
+  </div>
+
+  {% if not links %}
+  <div class="empty"><div><p class="font-bold text-white mb-1">No videos yet</p><p class="text-sm">Admin will add public links soon.</p></div></div>
+  {% else %}
+  <div class="hint">Swipe up / down · Autoplay muted · Tap Sound to hear</div>
+  <div class="feed" id="feed">
+    {% for L in links %}
+    <section class="slide" data-embed="{{ L.embed_url or '' }}" data-src="{{ L.source_url }}" data-platform="{{ L.platform }}" data-idx="{{ loop.index0 }}">
+      <div class="frame-box">
+        {% if L.embed_url %}
+        <iframe title="{{ L.title }}" data-src="{{ L.embed_url }}" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share; fullscreen" allowfullscreen loading="lazy"></iframe>
+        {% else %}
+        <div class="noembed">This link cannot auto-play in-app.<br>Tap <strong>Open original</strong> for Live / platform player.</div>
+        {% endif %}
+      </div>
+      <div class="meta">
+        <span>{{ L.platform }}{% if L.description and ('live' in (L.description or '')|lower) %} · LIVE{% endif %}</span>
+        <strong>{{ L.title }}</strong>
+        {% if L.description %}<p style="font-size:12px;opacity:.9;margin:4px 0 0">{{ L.description }}</p>{% endif %}
+      </div>
+    </section>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <script>
+    var soundOn = false;
+    var currentIdx = 0;
+    var slides = [];
+
+    function withMuteParam(url, mute) {
+      if (!url) return '';
+      try {
+        var u = new URL(url, window.location.origin);
+        if (u.hostname.indexOf('youtube') >= 0) {
+          u.searchParams.set('autoplay', '1');
+          u.searchParams.set('mute', mute ? '1' : '0');
+          u.searchParams.set('playsinline', '1');
+        }
+        if (u.hostname.indexOf('facebook.com') >= 0) {
+          u.searchParams.set('autoplay', 'true');
+        }
+        return u.toString();
+      } catch (e) { return url; }
+    }
+
+    function loadSlide(idx, force) {
+      if (!slides.length) return;
+      idx = Math.max(0, Math.min(slides.length - 1, idx));
+      currentIdx = idx;
+      slides.forEach(function (sec, i) {
+        var iframe = sec.querySelector('iframe');
+        if (!iframe) return;
+        var base = sec.getAttribute('data-embed') || '';
+        if (i === idx) {
+          if (!base) return;
+          var nextSrc = withMuteParam(base, !soundOn);
+          if (force || iframe.getAttribute('src') !== nextSrc) iframe.setAttribute('src', nextSrc);
+        } else {
+          if (iframe.getAttribute('src')) iframe.setAttribute('src', '');
+        }
+      });
+    }
+
+    function toggleSound() {
+      soundOn = !soundOn;
+      var btn = document.getElementById('btnSound');
+      if (btn) { btn.textContent = soundOn ? 'Sound on' : 'Sound off'; btn.classList.toggle('on', soundOn); }
+      loadSlide(currentIdx, true);
+    }
+
+    function openCurrent() {
+      var sec = slides[currentIdx];
+      if (!sec) return;
+      var src = sec.getAttribute('data-src');
+      if (src) window.open(src, '_blank', 'noopener');
+    }
+
+    function init() {
+      slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+      if (!slides.length) return;
+      var feed = document.getElementById('feed');
+      if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+          entries.forEach(function (en) {
+            if (en.isIntersecting && en.intersectionRatio > 0.6) {
+              loadSlide(parseInt(en.target.getAttribute('data-idx') || '0', 10), false);
+            }
+          });
+        }, { root: feed, threshold: [0.6] });
+        slides.forEach(function (s) { io.observe(s); });
+      }
+      loadSlide(0, true);
+    }
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

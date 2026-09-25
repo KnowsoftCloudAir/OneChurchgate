@@ -714,3 +714,17 @@ class TrialAccess(SQLModel, table=True):
     started_at: datetime = Field(default_factory=datetime.utcnow)
     expires_at: Optional[datetime] = None
     completed: bool = Field(default=False)
+
+
+class SocialStreamLink(SQLModel, table=True):
+    """Admin-curated public social videos for member streaming (Facebook, TikTok, Instagram)."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    platform: str = Field(index=True, max_length=20)  # facebook | tiktok | instagram
+    title: str = Field(default="Social video", max_length=200)
+    source_url: str = Field(max_length=800)
+    embed_url: Optional[str] = Field(default=None, max_length=900)
+    description: Optional[str] = Field(default=None, max_length=500)
+    is_active: bool = Field(default=True)
+    sort_order: int = Field(default=0)
+    created_by: Optional[int] = Field(default=None, foreign_key="user.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
