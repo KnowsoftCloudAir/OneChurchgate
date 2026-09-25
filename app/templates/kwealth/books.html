@@ -2472,156 +2472,470 @@
     #stage.scene-fs .page-sheet { z-index: 2 !important; }
 
   
-    /* ===== JUPITER close pass-by ===== */
+    
+    /* ===== JUPITER close pass-by (polished orbital arc) ===== */
     #sceneStage.sc-jupiter {
-      background: radial-gradient(ellipse at 50% 45%, #0b1224 0%, #020617 60%, #000 100%);
+      background: radial-gradient(ellipse at 50% 42%, #0c1428 0%, #060b18 45%, #01040c 100%);
       overflow: hidden;
-      perspective: 1200px;
+      perspective: 1400px;
     }
     #sceneStage.sc-jupiter .stars {
-      position: absolute; inset: -15%;
+      position: absolute; inset: -20%;
       background-image:
-        radial-gradient(1.5px 1.5px at 10% 15%, #fff, transparent),
-        radial-gradient(1px 1px at 25% 45%, #fff, transparent),
-        radial-gradient(2px 2px at 55% 20%, #e0e7ff, transparent),
-        radial-gradient(1px 1px at 75% 60%, #fff, transparent),
-        radial-gradient(1.5px 1.5px at 90% 25%, #fff, transparent),
-        radial-gradient(1px 1px at 18% 80%, #fff, transparent),
-        radial-gradient(2px 2px at 48% 75%, #fff, transparent),
-        radial-gradient(1px 1px at 85% 80%, #cbd5e1, transparent);
-      animation: starTwinkle 5s ease-in-out infinite alternate;
+        radial-gradient(1.5px 1.5px at 8% 12%, #fff, transparent),
+        radial-gradient(1px 1px at 22% 38%, #fff, transparent),
+        radial-gradient(2px 2px at 48% 16%, #e0e7ff, transparent),
+        radial-gradient(1px 1px at 72% 52%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 88% 24%, #fff, transparent),
+        radial-gradient(1px 1px at 15% 78%, #fff, transparent),
+        radial-gradient(2px 2px at 55% 82%, #fff, transparent),
+        radial-gradient(1px 1px at 92% 68%, #cbd5e1, transparent),
+        radial-gradient(1.5px 1.5px at 35% 55%, #fff, transparent);
+      animation: starTwinkle 6s ease-in-out infinite alternate;
+      opacity: 0.9;
     }
+    /* Distant sun at orbital centre */
     #sceneStage.sc-jupiter .distant-sun {
-      position: absolute; left: 12%; top: 18%;
-      width: 4.5vmin; height: 4.5vmin; border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #fefce8, #fde047 40%, #f59e0b 70%, transparent 75%);
-      box-shadow: 0 0 25px 8px rgba(253,224,71,.55), 0 0 60px 20px rgba(245,158,11,.25);
-      animation: softPulse 4s ease-in-out infinite;
+      position: absolute; left: 50%; top: 42%;
+      width: 5vmin; height: 5vmin; margin: -2.5vmin 0 0 -2.5vmin;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 32%, #fffbeb 0%, #fde047 35%, #f59e0b 65%, #ea580c 85%, transparent 90%);
+      box-shadow:
+        0 0 20px 6px rgba(253,224,71,.7),
+        0 0 50px 18px rgba(245,158,11,.35),
+        0 0 100px 40px rgba(234,88,12,.12);
+      animation: softPulse 5s ease-in-out infinite;
+      z-index: 1;
+    }
+    #sceneStage.sc-jupiter .orbit-glow {
+      position: absolute; left: 50%; top: 42%;
+      width: 90vmin; height: 50vmin; margin: -25vmin 0 0 -45vmin;
+      border: 1px solid rgba(253,224,71,.08);
+      border-radius: 50%;
+      pointer-events: none;
       z-index: 1;
     }
     #sceneStage.sc-jupiter .jupiter {
       position: absolute; left: 50%; top: 50%;
-      width: 36vmin; height: 36vmin; margin: -18vmin 0 0 -18vmin;
+      width: 42vmin; height: 42vmin; margin: -21vmin 0 0 -21vmin;
       border-radius: 50%;
       background:
-        /* Great Red Spot */
-        radial-gradient(ellipse 22% 14% at 62% 58%, #ef4444 0%, #b91c1c 40%, transparent 70%),
-        /* band layers */
-        repeating-linear-gradient(180deg,
-          #f5d0a9 0%, #e8b86d 8%,
-          #d4a574 12%, #c4895a 18%,
-          #f0c9a0 24%, #e8b070 32%,
-          #c17a4a 38%, #a85d3a 44%,
-          #e8b86d 52%, #f5d0a9 58%,
-          #d4a574 64%, #c4895a 72%,
-          #f0c9a0 80%, #e8b070 88%,
-          #c17a4a 94%, #a85d3a 100%);
+        radial-gradient(ellipse 20% 12% at 58% 55%, #ef4444 0%, #b91c1c 35%, transparent 65%),
+        radial-gradient(ellipse 14% 10% at 40% 40%, rgba(255,255,255,.15), transparent 50%),
+        repeating-linear-gradient(178deg,
+          #f7d9b0 0%, #ebc07a 7%,
+          #d4a060 11%, #c48a4e 16%,
+          #f0c898 22%, #e8b070 28%,
+          #c17a48 34%, #a65d38 40%,
+          #e8b86d 48%, #f5d0a9 54%,
+          #d4a574 60%, #c4895a 68%,
+          #f0c9a0 76%, #e8b070 84%,
+          #c17a4a 92%, #a85d3a 100%);
       box-shadow:
-        inset -10vmin -6vmin 20vmin rgba(0,0,0,.55),
-        inset 5vmin 4vmin 14vmin rgba(255,255,255,.15),
-        0 0 50px rgba(232,184,109,.35),
-        0 0 100px rgba(180,120,60,.2);
+        inset -12vmin -7vmin 24vmin rgba(0,0,0,.55),
+        inset 6vmin 4vmin 16vmin rgba(255,255,255,.14),
+        0 0 40px rgba(232,184,109,.4),
+        0 0 90px rgba(180,120,50,.22);
       transform-style: preserve-3d;
-      animation: jupiterPass 18s ease-in-out infinite;
+      animation: jupiterOrbital 24s linear infinite;
       z-index: 4;
+      will-change: transform;
     }
     #sceneStage.sc-jupiter .jupiter::before {
       content: '';
-      position: absolute; inset: -3%;
+      position: absolute; inset: -2.5%;
       border-radius: 50%;
-      box-shadow: inset 0 0 18px 6px rgba(255,240,200,.12);
+      box-shadow: inset 0 0 20px 5px rgba(255,240,200,.14);
+      pointer-events: none;
+    }
+    #sceneStage.sc-jupiter .jupiter::after {
+      content: '';
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.08) 48%, transparent 56%);
       pointer-events: none;
     }
     #sceneStage.sc-jupiter .bands {
-      position: absolute; inset: 0; border-radius: 50%;
+      position: absolute; inset: -5%;
+      border-radius: 50%;
       background:
-        linear-gradient(180deg, transparent 20%, rgba(120,53,15,.25) 28%, transparent 35%),
-        linear-gradient(180deg, transparent 50%, rgba(154,52,18,.2) 55%, transparent 62%),
-        linear-gradient(180deg, transparent 70%, rgba(120,53,15,.22) 78%, transparent 85%);
-      animation: jupiterSpin 12s linear infinite;
-      opacity: 0.85;
+        linear-gradient(180deg, transparent 18%, rgba(120,53,15,.28) 26%, transparent 33%),
+        linear-gradient(180deg, transparent 48%, rgba(154,52,18,.22) 54%, transparent 61%),
+        linear-gradient(180deg, transparent 68%, rgba(120,53,15,.25) 76%, transparent 84%);
+      animation: planetSpin 14s linear infinite;
+      opacity: 0.9;
     }
-    @keyframes jupiterPass {
-      0%   { transform: translate3d(-55vw, 8vh, -900px) scale(0.12) rotateY(-25deg); opacity: 0.7; }
-      25%  { transform: translate3d(-20vw, 2vh, -300px) scale(0.55) rotateY(-10deg); opacity: 1; }
-      48%  { transform: translate3d(0, 0, 60px) scale(2.6) rotateY(5deg); opacity: 1; }
-      55%  { transform: translate3d(8vw, -2vh, 120px) scale(3.2) rotateY(12deg); opacity: 1; }
-      78%  { transform: translate3d(45vw, -10vh, -400px) scale(0.4) rotateY(30deg); opacity: 0.9; }
-      100% { transform: translate3d(70vw, -18vh, -1000px) scale(0.08) rotateY(45deg); opacity: 0.3; }
+    /* Slow orbital arc: far → approach → fill screen ~3s dwell → pass away */
+    @keyframes jupiterOrbital {
+      0%   { transform: translate3d(-48vw, 18vh, -1100px) scale(0.1) rotateY(-35deg) rotateZ(-8deg); opacity: 0.6; }
+      18%  { transform: translate3d(-28vw, 10vh, -600px) scale(0.35) rotateY(-22deg) rotateZ(-4deg); opacity: 0.95; }
+      35%  { transform: translate3d(-12vw, 4vh, -200px) scale(0.85) rotateY(-10deg) rotateZ(0deg); opacity: 1; }
+      48%  { transform: translate3d(0, 0, 40px) scale(2.4) rotateY(5deg) rotateZ(2deg); opacity: 1; }
+      /* fill screen / dwell ~3s of 24s ≈ 12.5% */
+      52%  { transform: translate3d(4vw, -1vh, 90px) scale(3.15) rotateY(12deg) rotateZ(3deg); opacity: 1; }
+      60%  { transform: translate3d(10vw, -3vh, 100px) scale(3.25) rotateY(18deg) rotateZ(4deg); opacity: 1; }
+      72%  { transform: translate3d(32vw, -12vh, -180px) scale(1.1) rotateY(32deg) rotateZ(6deg); opacity: 1; }
+      88%  { transform: translate3d(52vw, -22vh, -550px) scale(0.4) rotateY(48deg) rotateZ(8deg); opacity: 0.85; }
+      100% { transform: translate3d(68vw, -28vh, -1100px) scale(0.08) rotateY(60deg) rotateZ(10deg); opacity: 0.25; }
     }
-    @keyframes jupiterSpin {
+    @keyframes planetSpin {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
 
-    /* ===== NEPTUNE close pass-by ===== */
+    /* ===== NEPTUNE close pass-by (polished orbital arc) ===== */
     #sceneStage.sc-neptune {
-      background: radial-gradient(ellipse at 50% 45%, #0a1628 0%, #020617 55%, #000 100%);
+      background: radial-gradient(ellipse at 50% 42%, #0a1528 0%, #050c18 50%, #01040a 100%);
       overflow: hidden;
-      perspective: 1200px;
+      perspective: 1400px;
     }
     #sceneStage.sc-neptune .stars {
-      position: absolute; inset: -15%;
+      position: absolute; inset: -20%;
       background-image:
-        radial-gradient(1.5px 1.5px at 12% 18%, #fff, transparent),
-        radial-gradient(1px 1px at 30% 50%, #fff, transparent),
-        radial-gradient(2px 2px at 60% 15%, #e0e7ff, transparent),
-        radial-gradient(1px 1px at 80% 55%, #fff, transparent),
-        radial-gradient(1.5px 1.5px at 88% 30%, #fff, transparent),
-        radial-gradient(1px 1px at 20% 75%, #fff, transparent),
-        radial-gradient(2px 2px at 50% 85%, #fff, transparent);
-      animation: starTwinkle 5s ease-in-out infinite alternate;
+        radial-gradient(1.5px 1.5px at 10% 14%, #fff, transparent),
+        radial-gradient(1px 1px at 28% 42%, #fff, transparent),
+        radial-gradient(2px 2px at 55% 18%, #e0e7ff, transparent),
+        radial-gradient(1px 1px at 78% 58%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 90% 28%, #fff, transparent),
+        radial-gradient(1px 1px at 18% 76%, #fff, transparent),
+        radial-gradient(2px 2px at 48% 86%, #fff, transparent);
+      animation: starTwinkle 6s ease-in-out infinite alternate;
     }
     #sceneStage.sc-neptune .distant-sun {
-      position: absolute; right: 14%; top: 14%;
-      width: 3.5vmin; height: 3.5vmin; border-radius: 50%;
-      background: radial-gradient(circle at 35% 35%, #fefce8, #fde047 45%, #f59e0b 70%, transparent 75%);
-      box-shadow: 0 0 20px 6px rgba(253,224,71,.5), 0 0 50px 16px rgba(245,158,11,.2);
-      animation: softPulse 4.5s ease-in-out infinite;
+      position: absolute; left: 50%; top: 42%;
+      width: 4vmin; height: 4vmin; margin: -2vmin 0 0 -2vmin;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 32%, #fffbeb 0%, #fde047 40%, #f59e0b 70%, transparent 88%);
+      box-shadow: 0 0 18px 5px rgba(253,224,71,.55), 0 0 45px 14px rgba(245,158,11,.25);
+      animation: softPulse 5s ease-in-out infinite;
+      z-index: 1;
+    }
+    #sceneStage.sc-neptune .orbit-glow {
+      position: absolute; left: 50%; top: 42%;
+      width: 85vmin; height: 48vmin; margin: -24vmin 0 0 -42.5vmin;
+      border: 1px solid rgba(125,211,252,.06);
+      border-radius: 50%;
       z-index: 1;
     }
     #sceneStage.sc-neptune .neptune {
       position: absolute; left: 50%; top: 50%;
-      width: 34vmin; height: 34vmin; margin: -17vmin 0 0 -17vmin;
+      width: 40vmin; height: 40vmin; margin: -20vmin 0 0 -20vmin;
       border-radius: 50%;
       background:
-        radial-gradient(ellipse 30% 20% at 40% 35%, rgba(147,197,253,.5), transparent 60%),
-        radial-gradient(ellipse 25% 18% at 65% 60%, rgba(59,130,246,.35), transparent 55%),
-        radial-gradient(circle at 35% 30%, #7dd3fc 0%, #38bdf8 25%, #0ea5e9 45%, #0369a1 70%, #0c4a6e 100%);
+        radial-gradient(ellipse 28% 18% at 38% 32%, rgba(186,230,253,.45), transparent 55%),
+        radial-gradient(ellipse 22% 16% at 62% 58%, rgba(59,130,246,.35), transparent 50%),
+        radial-gradient(circle at 36% 28%, #a5f3fc 0%, #38bdf8 22%, #0ea5e9 42%, #0284c7 62%, #0c4a6e 88%, #082f49 100%);
       box-shadow:
-        inset -9vmin -5vmin 18vmin rgba(2,6,23,.6),
-        inset 4vmin 3vmin 12vmin rgba(186,230,253,.2),
-        0 0 45px rgba(56,189,248,.4),
-        0 0 90px rgba(14,165,233,.2);
+        inset -11vmin -6vmin 22vmin rgba(2,6,23,.58),
+        inset 5vmin 3vmin 14vmin rgba(186,230,253,.18),
+        0 0 45px rgba(56,189,248,.42),
+        0 0 95px rgba(14,165,233,.2);
       transform-style: preserve-3d;
-      animation: neptunePass 20s ease-in-out infinite;
+      animation: neptuneOrbital 26s linear infinite;
       z-index: 4;
+      will-change: transform;
     }
     #sceneStage.sc-neptune .neptune::before {
       content: '';
       position: absolute; inset: -2%;
       border-radius: 50%;
-      box-shadow: inset 0 0 14px 4px rgba(186,230,253,.25);
+      box-shadow: inset 0 0 16px 4px rgba(186,230,253,.22);
+      pointer-events: none;
+    }
+    #sceneStage.sc-neptune .neptune::after {
+      content: '';
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      background: linear-gradient(100deg, transparent 42%, rgba(255,255,255,.1) 50%, transparent 58%);
       pointer-events: none;
     }
     #sceneStage.sc-neptune .storm {
       position: absolute;
-      width: 18%; height: 14%;
-      top: 42%; left: 55%;
+      width: 20%; height: 15%;
+      top: 40%; left: 52%;
       border-radius: 50%;
       background: radial-gradient(ellipse, rgba(30,64,175,.55), transparent 70%);
-      animation: neptuneStorm 8s ease-in-out infinite alternate;
+      animation: neptuneStorm 10s ease-in-out infinite alternate;
     }
-    @keyframes neptunePass {
-      0%   { transform: translate3d(60vw, -12vh, -950px) scale(0.1) rotateY(20deg); opacity: 0.65; }
-      28%  { transform: translate3d(22vw, -4vh, -320px) scale(0.5) rotateY(8deg); opacity: 1; }
-      50%  { transform: translate3d(0, 0, 50px) scale(2.5) rotateY(-5deg); opacity: 1; }
-      58%  { transform: translate3d(-10vw, 3vh, 110px) scale(3.1) rotateY(-15deg); opacity: 1; }
-      80%  { transform: translate3d(-48vw, 12vh, -450px) scale(0.35) rotateY(-35deg); opacity: 0.85; }
-      100% { transform: translate3d(-75vw, 20vh, -1050px) scale(0.06) rotateY(-50deg); opacity: 0.25; }
+    @keyframes neptuneOrbital {
+      0%   { transform: translate3d(52vw, -16vh, -1150px) scale(0.09) rotateY(30deg) rotateZ(6deg); opacity: 0.55; }
+      20%  { transform: translate3d(30vw, -8vh, -580px) scale(0.32) rotateY(18deg) rotateZ(3deg); opacity: 0.95; }
+      38%  { transform: translate3d(12vw, -2vh, -180px) scale(0.8) rotateY(6deg) rotateZ(0deg); opacity: 1; }
+      50%  { transform: translate3d(0, 0, 50px) scale(2.35) rotateY(-6deg) rotateZ(-2deg); opacity: 1; }
+      54%  { transform: translate3d(-5vw, 2vh, 95px) scale(3.1) rotateY(-12deg) rotateZ(-3deg); opacity: 1; }
+      62%  { transform: translate3d(-12vw, 4vh, 105px) scale(3.2) rotateY(-18deg) rotateZ(-4deg); opacity: 1; }
+      75%  { transform: translate3d(-35vw, 12vh, -200px) scale(1.05) rotateY(-32deg) rotateZ(-6deg); opacity: 1; }
+      90%  { transform: translate3d(-55vw, 20vh, -580px) scale(0.35) rotateY(-48deg) rotateZ(-8deg); opacity: 0.8; }
+      100% { transform: translate3d(-72vw, 26vh, -1150px) scale(0.07) rotateY(-60deg) rotateZ(-10deg); opacity: 0.22; }
     }
     @keyframes neptuneStorm {
-      from { transform: translateX(-2%) scale(1); }
+      from { transform: translateX(-3%) scale(1); }
+      to { transform: translateX(5%) scale(1.1); }
+    }
+
+    /* ===== EARTH close pass-by ===== */
+    #sceneStage.sc-earth {
+      background: radial-gradient(ellipse at 50% 42%, #0b1424 0%, #050a14 50%, #010308 100%);
+      overflow: hidden;
+      perspective: 1400px;
+    }
+    #sceneStage.sc-earth .stars {
+      position: absolute; inset: -20%;
+      background-image:
+        radial-gradient(1.5px 1.5px at 9% 15%, #fff, transparent),
+        radial-gradient(1px 1px at 26% 40%, #fff, transparent),
+        radial-gradient(2px 2px at 52% 14%, #e0e7ff, transparent),
+        radial-gradient(1px 1px at 74% 55%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 91% 26%, #fff, transparent),
+        radial-gradient(1px 1px at 16% 80%, #fff, transparent),
+        radial-gradient(2px 2px at 50% 88%, #fff, transparent);
+      animation: starTwinkle 6s ease-in-out infinite alternate;
+    }
+    #sceneStage.sc-earth .distant-sun {
+      position: absolute; left: 50%; top: 42%;
+      width: 5.5vmin; height: 5.5vmin; margin: -2.75vmin 0 0 -2.75vmin;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 32%, #fffbeb 0%, #fde047 35%, #f59e0b 65%, transparent 88%);
+      box-shadow: 0 0 22px 7px rgba(253,224,71,.65), 0 0 55px 20px rgba(245,158,11,.28);
+      animation: softPulse 5s ease-in-out infinite;
+      z-index: 1;
+    }
+    #sceneStage.sc-earth .orbit-glow {
+      position: absolute; left: 50%; top: 42%;
+      width: 88vmin; height: 48vmin; margin: -24vmin 0 0 -44vmin;
+      border: 1px solid rgba(56,189,248,.07);
+      border-radius: 50%;
+      z-index: 1;
+    }
+    #sceneStage.sc-earth .earth {
+      position: absolute; left: 50%; top: 50%;
+      width: 40vmin; height: 40vmin; margin: -20vmin 0 0 -20vmin;
+      border-radius: 50%;
+      background:
+        radial-gradient(ellipse 32% 22% at 30% 35%, #4ade80 0%, #16a34a 40%, transparent 70%),
+        radial-gradient(ellipse 28% 35% at 55% 42%, #22c55e 0%, #15803d 45%, transparent 70%),
+        radial-gradient(ellipse 20% 16% at 72% 55%, #4ade80 0%, transparent 65%),
+        radial-gradient(ellipse 26% 14% at 40% 68%, #86efac 0%, #166534 50%, transparent 70%),
+        radial-gradient(ellipse 40% 12% at 50% 6%, rgba(248,250,252,.9) 0%, transparent 70%),
+        radial-gradient(ellipse 40% 12% at 50% 94%, rgba(248,250,252,.8) 0%, transparent 70%),
+        radial-gradient(circle at 50% 50%, #0ea5e9 0%, #0369a1 40%, #0c4a6e 60%, #082f49 100%);
+      box-shadow:
+        inset -10vmin -5vmin 20vmin rgba(2,6,23,.55),
+        inset 4vmin 3vmin 14vmin rgba(125,211,252,.22),
+        0 0 50px rgba(56,189,248,.4),
+        0 0 100px rgba(14,165,233,.18);
+      transform-style: preserve-3d;
+      animation: earthOrbital 22s linear infinite;
+      z-index: 4;
+      will-change: transform;
+      overflow: hidden;
+    }
+    #sceneStage.sc-earth .earth::before {
+      content: '';
+      position: absolute; inset: -3%;
+      border-radius: 50%;
+      box-shadow: inset 0 0 14px 5px rgba(186,230,253,.28);
+      pointer-events: none;
+      z-index: 3;
+    }
+    #sceneStage.sc-earth .clouds {
+      position: absolute; inset: -15%;
+      border-radius: 50%;
+      background:
+        radial-gradient(ellipse 28% 8% at 40% 40%, rgba(255,255,255,.3) 0%, transparent 70%),
+        radial-gradient(ellipse 22% 6% at 65% 55%, rgba(255,255,255,.25) 0%, transparent 70%),
+        radial-gradient(ellipse 18% 7% at 25% 60%, rgba(255,255,255,.2) 0%, transparent 70%);
+      animation: planetSpin 18s linear infinite;
+      z-index: 2;
+    }
+    #sceneStage.sc-earth .night {
+      position: absolute; inset: 0;
+      border-radius: 50%;
+      background: linear-gradient(95deg, rgba(2,6,23,.1) 0%, transparent 38%, transparent 52%, rgba(2,6,23,.5) 100%);
+      z-index: 2;
+    }
+    @keyframes earthOrbital {
+      0%   { transform: translate3d(-50vw, 14vh, -1050px) scale(0.1) rotateY(-28deg) rotateZ(-5deg); opacity: 0.6; }
+      18%  { transform: translate3d(-26vw, 6vh, -520px) scale(0.38) rotateY(-16deg) rotateZ(-2deg); opacity: 1; }
+      36%  { transform: translate3d(-8vw, 1vh, -150px) scale(0.9) rotateY(-4deg) rotateZ(0deg); opacity: 1; }
+      48%  { transform: translate3d(0, 0, 45px) scale(2.45) rotateY(6deg) rotateZ(2deg); opacity: 1; }
+      52%  { transform: translate3d(5vw, -1vh, 95px) scale(3.2) rotateY(12deg) rotateZ(3deg); opacity: 1; }
+      60%  { transform: translate3d(12vw, -3vh, 100px) scale(3.3) rotateY(18deg) rotateZ(4deg); opacity: 1; }
+      74%  { transform: translate3d(36vw, -14vh, -160px) scale(1.05) rotateY(34deg) rotateZ(6deg); opacity: 1; }
+      90%  { transform: translate3d(55vw, -24vh, -520px) scale(0.38) rotateY(50deg) rotateZ(8deg); opacity: 0.8; }
+      100% { transform: translate3d(70vw, -30vh, -1050px) scale(0.08) rotateY(62deg) rotateZ(10deg); opacity: 0.25; }
+    }
+
+    /* ===== DESERT TREES GROWING (replaces birdsea) ===== */
+    #sceneStage.sc-desert {
+      background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 25%, #d97706 45%, #b45309 65%, #78350f 100%);
+      overflow: hidden;
+      perspective: 900px;
+    }
+    #sceneStage.sc-desert .sky {
+      position: absolute; left: 0; right: 0; top: 0; height: 48%;
+      background: linear-gradient(180deg, #7dd3fc 0%, #fde68a 55%, #fbbf24 100%);
+      transition: filter 0.8s ease;
+      animation: desertSkyDarken 22s ease-in-out infinite;
+    }
+    #sceneStage.sc-desert .sun-disk {
+      position: absolute; left: 70%; top: 12%;
+      width: 14vmin; height: 14vmin; margin-left: -7vmin;
+      border-radius: 50%;
+      background: radial-gradient(circle at 40% 40%, #fef9c3, #fbbf24 50%, #f59e0b);
+      box-shadow: 0 0 40px 15px rgba(251,191,36,.55);
+      animation: desertSunDim 22s ease-in-out infinite;
+      z-index: 1;
+    }
+    #sceneStage.sc-desert .ground {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 55%;
+      background:
+        radial-gradient(ellipse 80% 40% at 50% 0%, #d97706 0%, transparent 60%),
+        linear-gradient(180deg, #b45309 0%, #92400e 40%, #78350f 100%);
+      z-index: 2;
+    }
+    #sceneStage.sc-desert .dune {
+      position: absolute; bottom: 42%; left: -5%; right: -5%; height: 18%;
+      background: radial-gradient(ellipse 50% 100% at 30% 100%, #a16207 0%, transparent 70%),
+                  radial-gradient(ellipse 45% 100% at 70% 100%, #92400e 0%, transparent 70%);
+      z-index: 2;
+    }
+    #sceneStage.sc-desert .tree {
+      position: absolute;
+      bottom: 38%;
+      width: 0; height: 0;
+      transform-origin: bottom center;
+      z-index: 5;
+    }
+    #sceneStage.sc-desert .tree .trunk {
+      position: absolute; left: 50%; bottom: 0;
+      width: 1.2vmin; margin-left: -0.6vmin;
+      height: 0;
+      background: linear-gradient(180deg, #78350f, #451a03);
+      border-radius: 2px 2px 0 0;
+      transform-origin: bottom center;
+      animation: trunkGrow 22s ease-out infinite;
+    }
+    #sceneStage.sc-desert .tree .canopy {
+      position: absolute; left: 50%;
+      width: 0; height: 0;
+      margin-left: 0;
+      border-radius: 50% 50% 40% 40%;
+      background: radial-gradient(circle at 40% 35%, #4ade80, #166534 60%, #14532d);
+      box-shadow: 0 0 12px rgba(22,101,52,.35);
+      transform-origin: center bottom;
+      opacity: 0;
+      animation: canopyGrow 22s ease-out infinite;
+    }
+    /* small trees in background */
+    #sceneStage.sc-desert .tree.t1 { left: 18%; }
+    #sceneStage.sc-desert .tree.t1 .trunk { animation-delay: 0s; }
+    #sceneStage.sc-desert .tree.t1 .canopy { animation-delay: 0s; bottom: 0; }
+    #sceneStage.sc-desert .tree.t2 { left: 35%; }
+    #sceneStage.sc-desert .tree.t2 .trunk { animation-delay: 1.2s; width: 1.4vmin; }
+    #sceneStage.sc-desert .tree.t2 .canopy { animation-delay: 1.2s; }
+    #sceneStage.sc-desert .tree.t3 { left: 55%; }
+    #sceneStage.sc-desert .tree.t3 .trunk { animation-delay: 0.6s; width: 1vmin; }
+    #sceneStage.sc-desert .tree.t3 .canopy { animation-delay: 0.6s; }
+    #sceneStage.sc-desert .tree.t4 { left: 72%; }
+    #sceneStage.sc-desert .tree.t4 .trunk { animation-delay: 1.8s; }
+    #sceneStage.sc-desert .tree.t4 .canopy { animation-delay: 1.8s; }
+    /* Hero tree — grows past camera */
+    #sceneStage.sc-desert .tree.hero {
+      left: 48%;
+      bottom: 30%;
+      z-index: 8;
+    }
+    #sceneStage.sc-desert .tree.hero .trunk {
+      width: 4vmin; margin-left: -2vmin;
+      animation: heroTrunk 22s ease-in-out infinite;
+      background: linear-gradient(180deg, #92400e, #451a03 80%, #1c0a00);
+    }
+    #sceneStage.sc-desert .tree.hero .canopy {
+      animation: heroCanopy 22s ease-in-out infinite;
+      background: radial-gradient(circle at 42% 30%, #86efac, #16a34a 45%, #14532d 80%);
+      box-shadow: 0 0 30px rgba(22,101,52,.4);
+    }
+    #sceneStage.sc-desert .tree.hero .branch {
+      position: absolute; left: 50%;
+      width: 0; height: 1.2vmin;
+      background: #78350f;
+      transform-origin: left center;
+      opacity: 0;
+      animation: branchGrow 22s ease-in-out infinite;
+    }
+    #sceneStage.sc-desert .tree.hero .branch.b1 { bottom: 40%; margin-left: 1vmin; animation-delay: 0.5s; }
+    #sceneStage.sc-desert .tree.hero .branch.b2 { bottom: 55%; margin-left: -1vmin; transform-origin: right center; animation-delay: 0.8s; }
+    /* Shadow that darkens the land */
+    #sceneStage.sc-desert .tree-shadow {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 55%;
+      background: radial-gradient(ellipse 60% 80% at 50% 0%, rgba(0,0,0,.75) 0%, transparent 70%);
+      opacity: 0;
+      z-index: 6;
+      animation: shadowFall 22s ease-in-out infinite;
+      pointer-events: none;
+    }
+    #sceneStage.sc-desert .vignette {
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,.15) 100%);
+      z-index: 10;
+      pointer-events: none;
+      animation: vignetteDark 22s ease-in-out infinite;
+    }
+    @keyframes trunkGrow {
+      0%, 5% { height: 0; }
+      25% { height: 8vmin; }
+      100% { height: 10vmin; }
+    }
+    @keyframes canopyGrow {
+      0%, 8% { width: 0; height: 0; margin-left: 0; bottom: 0; opacity: 0; }
+      12% { opacity: 1; }
+      30% { width: 8vmin; height: 7vmin; margin-left: -4vmin; bottom: 7vmin; opacity: 1; }
+      100% { width: 9vmin; height: 8vmin; margin-left: -4.5vmin; bottom: 8vmin; opacity: 1; }
+    }
+    @keyframes heroTrunk {
+      0%, 8% { height: 0; transform: scale(1); }
+      30% { height: 35vmin; transform: scale(1); }
+      45% { height: 70vmin; transform: scale(1.05); }
+      55% { height: 120vmin; transform: scale(1.4); }
+      70% { height: 160vmin; transform: scale(2.2); }
+      100% { height: 180vmin; transform: scale(2.8); }
+    }
+    @keyframes heroCanopy {
+      0%, 10% { width: 0; height: 0; margin-left: 0; bottom: 0; opacity: 0; }
+      15% { opacity: 1; width: 6vmin; height: 5vmin; margin-left: -3vmin; bottom: 12vmin; }
+      35% { width: 28vmin; height: 24vmin; margin-left: -14vmin; bottom: 32vmin; opacity: 1; }
+      50% { width: 55vmin; height: 48vmin; margin-left: -27.5vmin; bottom: 65vmin; opacity: 1; }
+      65% { width: 90vmin; height: 80vmin; margin-left: -45vmin; bottom: 110vmin; opacity: 1; }
+      100% { width: 140vmin; height: 120vmin; margin-left: -70vmin; bottom: 150vmin; opacity: 0.95; }
+    }
+    @keyframes branchGrow {
+      0%, 25% { width: 0; opacity: 0; }
+      40% { width: 12vmin; opacity: 1; }
+      60% { width: 28vmin; opacity: 1; }
+      100% { width: 40vmin; opacity: 0.9; }
+    }
+    @keyframes shadowFall {
+      0%, 40% { opacity: 0; }
+      55% { opacity: 0.35; }
+      70% { opacity: 0.7; }
+      100% { opacity: 0.85; }
+    }
+    @keyframes desertSkyDarken {
+      0%, 45% { filter: brightness(1); }
+      65% { filter: brightness(0.55); }
+      100% { filter: brightness(0.35); }
+    }
+    @keyframes desertSunDim {
+      0%, 45% { opacity: 1; filter: brightness(1); }
+      65% { opacity: 0.5; filter: brightness(0.6); }
+      100% { opacity: 0.25; filter: brightness(0.35); }
+    }
+    @keyframes vignetteDark {
+      0%, 45% { opacity: 0.3; }
+      100% { opacity: 0.85; }
+    }
+
       to { transform: translateX(4%) scale(1.08); }
     }
 
@@ -2641,7 +2955,8 @@
           <option value="fishes3d">3D ocean fishes (3D)</option>
           <option value="jupiter">Jupiter close pass-by</option>
           <option value="neptune">Neptune close pass-by</option>
-          <option value="birdsea">Bird over the night sea</option>
+          <option value="earth">Earth close pass-by</option>
+          <option value="desert">Trees growing from the desert</option>
           <option value="hourglass">Hourglass, butterflies & sun rays</option>
         </select>
   <button type="button" class="chip on" id="fsRead">👼 Read</button>
@@ -2672,7 +2987,8 @@
           <option value="fishes3d">3D ocean fishes (3D)</option>
           <option value="jupiter">Jupiter close pass-by</option>
           <option value="neptune">Neptune close pass-by</option>
-          <option value="birdsea">Bird over the night sea</option>
+          <option value="earth">Earth close pass-by</option>
+          <option value="desert">Trees growing from the desert</option>
           <option value="hourglass">Hourglass, butterflies & sun rays</option>
         </select>
         <button type="button" class="chip" id="btnSceneFs" title="Full screen book (captions while reading)">Full screen</button>
@@ -2853,16 +3169,40 @@
           <div class="sc-layer sc-jupiter-bits" style="display:none">
             <div class="stars"></div>
             <div class="distant-sun" title="Sun"></div>
+            <div class="orbit-glow"></div>
             <div class="jupiter"><div class="bands"></div></div>
           </div>
           <div class="sc-layer sc-neptune-bits" style="display:none">
             <div class="stars"></div>
             <div class="distant-sun" title="Sun"></div>
+            <div class="orbit-glow"></div>
             <div class="neptune"><div class="storm"></div></div>
           </div>
-          <div class="sc-layer sc-birdsea-bits" style="display:none">
+          <div class="sc-layer sc-earth-bits" style="display:none">
             <div class="stars"></div>
-            <div class="moon"></div>
+            <div class="distant-sun" title="Sun"></div>
+            <div class="orbit-glow"></div>
+            <div class="earth"><div class="clouds"></div><div class="night"></div></div>
+          </div>
+          <div class="sc-layer sc-desert-bits" style="display:none">
+            <div class="sky"></div>
+            <div class="sun-disk"></div>
+            <div class="ground"></div>
+            <div class="dune"></div>
+            <div class="tree t1"><div class="trunk"></div><div class="canopy"></div></div>
+            <div class="tree t2"><div class="trunk"></div><div class="canopy"></div></div>
+            <div class="tree t3"><div class="trunk"></div><div class="canopy"></div></div>
+            <div class="tree t4"><div class="trunk"></div><div class="canopy"></div></div>
+            <div class="tree hero">
+              <div class="trunk"></div>
+              <div class="branch b1"></div>
+              <div class="branch b2"></div>
+              <div class="canopy"></div>
+            </div>
+            <div class="tree-shadow"></div>
+            <div class="vignette"></div>
+          </div>
+          <div class="moon"></div>
             <div class="sea"><div class="wave"></div><div class="wave w2"></div></div>
             <div class="bird"></div>
           </div>
@@ -3717,7 +4057,7 @@
           else { try { if (typeof prev === 'function') prev(); } catch (err) {} }
         } else if (state.sceneFs || state.sceneOn) {
           // vertical — cycle scenes only when Scene/FS active (don't steal page scroll)
-          var order = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','birdsea','hourglass'];
+          var order = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','hourglass'];
           var cur = state.sceneName || 'sun';
           var ix = order.indexOf(cur);
           if (ix < 0) ix = 0;
@@ -3856,7 +4196,7 @@
         try { if (window.CGWebGL) CGWebGL.setMode('none'); } catch (e) {}
       }
       // Show only bits for selected scene
-      ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','birdsea','hourglass'].forEach(function (n) {
+      ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','hourglass'].forEach(function (n) {
         var el = surface.querySelector('.sc-' + n + '-bits');
         if (el) {
           if (show3d && n === name) {
