@@ -1361,24 +1361,304 @@
       touch-action: none;
     }
 
+  
+    /* MENU_DURING_READ: toolbar always reachable while voice is on (non-FS) */
+    body:not(.scene-fs-on) .bar {
+      position: sticky !important;
+      top: 0 !important;
+      z-index: 10050 !important;
+      pointer-events: auto !important;
+    }
+    body:not(.scene-fs-on) .bar .chip,
+    body:not(.scene-fs-on) .bar select,
+    body:not(.scene-fs-on) .bar button,
+    body:not(.scene-fs-on) .bar a {
+      pointer-events: auto !important;
+    }
+    body:not(.scene-fs-on) #toolsPanel,
+    body:not(.scene-fs-on) #toolsPanel * {
+      pointer-events: auto !important;
+    }
+    body.kw-speaking:not(.scene-fs-on) {
+      overflow-y: auto !important;
+      position: static !important;
+      height: auto !important;
+    }
+    /* Keep a floating escape control while reading */
+    #readMenuFab {
+      display: none;
+      position: fixed;
+      top: 12px;
+      right: 12px;
+      z-index: 10060;
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 800;
+      background: rgba(15,23,42,.92);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,.25);
+      box-shadow: 0 6px 20px rgba(0,0,0,.35);
+      cursor: pointer;
+    }
+    body.kw-speaking:not(.scene-fs-on) #readMenuFab,
+    body.reading-active:not(.scene-fs-on) #readMenuFab {
+      display: inline-flex;
+    }
+
+  
+    /* === Garden bicycle under moon === */
+    #sceneStage.sc-bike {
+      background: linear-gradient(180deg, #0b1226 0%, #1e293b 40%, #334155 70%, #1a2e1a 100%);
+      overflow: hidden;
+    }
+    #sceneStage.sc-bike .stars {
+      position: absolute; inset: 0;
+      background-image:
+        radial-gradient(1.5px 1.5px at 10% 20%, #fff, transparent),
+        radial-gradient(1px 1px at 30% 50%, #fff, transparent),
+        radial-gradient(2px 2px at 70% 15%, #fff, transparent),
+        radial-gradient(1px 1px at 85% 40%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 50% 30%, #fff, transparent);
+      opacity: .7; animation: starTwinkle 5s ease-in-out infinite alternate;
+    }
+    #sceneStage.sc-bike .moon {
+      position: absolute; right: 12%; top: 10%;
+      width: 14vmin; height: 14vmin; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fef9c3, #e2e8f0 55%, #94a3b8);
+      box-shadow: 0 0 40px 12px rgba(254,243,199,.35);
+    }
+    #sceneStage.sc-bike .path {
+      position: absolute; left: -10%; right: -10%; bottom: 18%;
+      height: 12%;
+      background: linear-gradient(180deg, #4a5568, #2d3748);
+      border-radius: 50%;
+      transform: perspective(200px) rotateX(40deg);
+    }
+    #sceneStage.sc-bike .garden {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 28%;
+      background: linear-gradient(180deg, #166534, #052e16);
+    }
+    #sceneStage.sc-bike .tree {
+      position: absolute; bottom: 22%; width: 0; height: 0;
+      border-left: 3vmin solid transparent; border-right: 3vmin solid transparent;
+      border-bottom: 10vmin solid #14532d;
+    }
+    #sceneStage.sc-bike .tree.t1 { left: 8%; }
+    #sceneStage.sc-bike .tree.t2 { left: 22%; border-bottom-color: #166534; }
+    #sceneStage.sc-bike .tree.t3 { right: 15%; left: auto; }
+    #sceneStage.sc-bike .bike-wrap {
+      position: absolute; bottom: 26%; left: -20%;
+      animation: bikeRide 12s linear infinite;
+    }
+    #sceneStage.sc-bike .bike {
+      width: 10vmin; height: 6vmin; position: relative;
+    }
+    #sceneStage.sc-bike .wheel {
+      position: absolute; bottom: 0; width: 3.2vmin; height: 3.2vmin;
+      border: 3px solid #e2e8f0; border-radius: 50%;
+      animation: wheelSpin 0.6s linear infinite;
+    }
+    #sceneStage.sc-bike .wheel.w1 { left: 0; }
+    #sceneStage.sc-bike .wheel.w2 { right: 0; }
+    #sceneStage.sc-bike .frame {
+      position: absolute; left: 1.2vmin; bottom: 1.4vmin;
+      width: 6vmin; height: 2.4vmin;
+      border: 2px solid #cbd5e1; border-bottom: none;
+      border-radius: 2px 2px 0 0;
+    }
+    #sceneStage.sc-bike .rider {
+      position: absolute; left: 3.2vmin; bottom: 3.2vmin;
+      width: 1.4vmin; height: 2.8vmin; background: #f8fafc; border-radius: 2px;
+    }
+    #sceneStage.sc-bike .rider:before {
+      content: ''; position: absolute; top: -1.3vmin; left: 0.1vmin;
+      width: 1.3vmin; height: 1.3vmin; border-radius: 50%; background: #fde68a;
+    }
+    @keyframes bikeRide {
+      0% { left: -18%; }
+      100% { left: 110%; }
+    }
+    @keyframes wheelSpin { to { transform: rotate(360deg); } }
+
+    /* === Bird over night sea === */
+    #sceneStage.sc-birdsea {
+      background: linear-gradient(180deg, #020617 0%, #0c1a3a 45%, #0e4d6b 70%, #0a3d4d 100%);
+      overflow: hidden;
+    }
+    #sceneStage.sc-birdsea .stars {
+      position: absolute; inset: 0;
+      background-image:
+        radial-gradient(1px 1px at 15% 25%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 45% 12%, #fff, transparent),
+        radial-gradient(1px 1px at 75% 30%, #fff, transparent),
+        radial-gradient(2px 2px at 90% 18%, #e0e7ff, transparent);
+      animation: starTwinkle 4s ease-in-out infinite alternate;
+    }
+    #sceneStage.sc-birdsea .moon {
+      position: absolute; left: 18%; top: 12%;
+      width: 11vmin; height: 11vmin; border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #f8fafc, #cbd5e1);
+      box-shadow: 0 0 30px rgba(248,250,252,.4);
+    }
+    #sceneStage.sc-birdsea .sea {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 38%;
+      background: linear-gradient(180deg, #0e7490, #083344);
+      overflow: hidden;
+    }
+    #sceneStage.sc-birdsea .wave {
+      position: absolute; left: -20%; width: 140%; height: 40%;
+      border-radius: 40%;
+      background: rgba(125,211,252,.15);
+      animation: seaWave 6s ease-in-out infinite;
+    }
+    #sceneStage.sc-birdsea .wave.w2 { top: 30%; animation-duration: 8s; opacity: .5; }
+    #sceneStage.sc-birdsea .bird {
+      position: absolute; top: 35%; left: -10%;
+      width: 5vmin; height: 2vmin;
+      animation: birdFly 9s linear infinite;
+    }
+    #sceneStage.sc-birdsea .bird:before,
+    #sceneStage.sc-birdsea .bird:after {
+      content: ''; position: absolute; top: 0;
+      width: 2.4vmin; height: 1.2vmin;
+      background: #f1f5f9; border-radius: 50% 50% 0 50%;
+      transform-origin: right center;
+      animation: wingFlap 0.35s ease-in-out infinite alternate;
+    }
+    #sceneStage.sc-birdsea .bird:after {
+      left: 2.2vmin; border-radius: 50% 50% 50% 0;
+      transform-origin: left center;
+    }
+    @keyframes seaWave {
+      0%, 100% { transform: translateY(0) translateX(0); }
+      50% { transform: translateY(-8%) translateX(4%); }
+    }
+    @keyframes birdFly {
+      0% { left: -12%; top: 40%; }
+      50% { left: 50%; top: 28%; }
+      100% { left: 112%; top: 38%; }
+    }
+    @keyframes wingFlap {
+      from { transform: rotate(-25deg); }
+      to { transform: rotate(25deg); }
+    }
+
+    /* === Hourglass, butterflies, sun rays === */
+    #sceneStage.sc-hourglass {
+      background: linear-gradient(180deg, #fef3c7 0%, #fdba74 40%, #9a3412 100%);
+      overflow: hidden;
+    }
+    #sceneStage.sc-hourglass .window-rays {
+      position: absolute; inset: 0;
+      background: conic-gradient(from 220deg at 15% 10%,
+        rgba(255,255,255,.45) 0deg, transparent 25deg,
+        rgba(255,255,255,.25) 50deg, transparent 80deg);
+      animation: raySoft 10s ease-in-out infinite alternate;
+      opacity: .7;
+    }
+    #sceneStage.sc-hourglass .sill {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 18%;
+      background: linear-gradient(180deg, #78716c, #44403c);
+    }
+    #sceneStage.sc-hourglass .glass {
+      position: absolute; left: 50%; top: 22%;
+      width: 16vmin; height: 28vmin; margin-left: -8vmin;
+      border: 3px solid rgba(120,53,15,.7);
+      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(255,255,255,.25), rgba(255,255,255,.05));
+      box-shadow: inset 0 0 20px rgba(255,255,255,.2);
+      overflow: hidden;
+    }
+    #sceneStage.sc-hourglass .glass:before,
+    #sceneStage.sc-hourglass .glass:after {
+      content: ''; position: absolute; left: 50%;
+      width: 0; height: 0; margin-left: -5vmin;
+      border-left: 5vmin solid transparent;
+      border-right: 5vmin solid transparent;
+    }
+    #sceneStage.sc-hourglass .glass:before {
+      top: 8%; border-top: 10vmin solid rgba(251,191,36,.75);
+      animation: sandTop 8s linear infinite;
+    }
+    #sceneStage.sc-hourglass .glass:after {
+      bottom: 8%; border-bottom: 10vmin solid rgba(245,158,11,.8);
+      animation: sandBot 8s linear infinite;
+    }
+    #sceneStage.sc-hourglass .stream {
+      position: absolute; left: 50%; top: 42%; width: 2px; height: 16%;
+      margin-left: -1px; background: rgba(251,191,36,.9);
+      animation: sandStream 8s linear infinite;
+    }
+    #sceneStage.sc-hourglass .butterfly {
+      position: absolute; width: 2.2vmin; height: 1.6vmin;
+      animation: flutter 7s ease-in-out infinite;
+    }
+    #sceneStage.sc-hourglass .butterfly:before,
+    #sceneStage.sc-hourglass .butterfly:after {
+      content: ''; position: absolute; width: 1.1vmin; height: 1.4vmin;
+      background: #c084fc; border-radius: 50% 50% 50% 0;
+    }
+    #sceneStage.sc-hourglass .butterfly:after {
+      left: 1.1vmin; border-radius: 50% 50% 0 50%; background: #e879f9;
+    }
+    #sceneStage.sc-hourglass .bf1 { top: 30%; left: 20%; animation-delay: 0s; }
+    #sceneStage.sc-hourglass .bf2 { top: 45%; right: 18%; left: auto; animation-delay: 1.5s; }
+    #sceneStage.sc-hourglass .bf3 { top: 55%; left: 30%; animation-delay: 3s; }
+    #sceneStage.sc-hourglass .insect {
+      position: absolute; width: 0.6vmin; height: 0.6vmin; border-radius: 50%;
+      background: #fde047; box-shadow: 0 0 6px #facc15;
+      animation: bugDrift 5s linear infinite;
+    }
+    #sceneStage.sc-hourglass .in1 { top: 25%; left: 60%; }
+    #sceneStage.sc-hourglass .in2 { top: 60%; left: 70%; animation-duration: 7s; }
+    @keyframes raySoft {
+      from { opacity: .45; }
+      to { opacity: .85; }
+    }
+    @keyframes sandTop {
+      0%, 100% { border-top-width: 10vmin; opacity: 1; }
+      50% { border-top-width: 2vmin; opacity: .8; }
+    }
+    @keyframes sandBot {
+      0%, 100% { border-bottom-width: 2vmin; }
+      50% { border-bottom-width: 10vmin; }
+    }
+    @keyframes sandStream {
+      0%, 100% { opacity: 1; height: 16%; }
+      50% { opacity: .6; height: 20%; }
+    }
+    @keyframes flutter {
+      0% { transform: translate(0,0) rotate(0deg); }
+      25% { transform: translate(8vmin,-4vmin) rotate(12deg); }
+      50% { transform: translate(4vmin,-8vmin) rotate(-8deg); }
+      75% { transform: translate(-4vmin,-3vmin) rotate(10deg); }
+      100% { transform: translate(0,0) rotate(0deg); }
+    }
+    @keyframes bugDrift {
+      0% { transform: translate(0,0); }
+      50% { transform: translate(-6vmin, 4vmin); }
+      100% { transform: translate(0,0); }
+    }
+
   </style>
   <script src="/static/js/bg-animations.js"></script>
 </head>
 <body class="theme-parchment" id="bookBody">
+<button type="button" id="readMenuFab" onclick="document.querySelector('.bar')&&document.querySelector('.bar').scrollIntoView({behavior:'smooth',block:'start'});var t=document.getElementById('toolsPanel');if(t){t.style.display='block';}window.scrollTo({top:0,behavior:'smooth'});">☰ Menu</button>
   <div id="fsControls">
   <select id="fsScenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
           <option value="sun">Sunrise → Sunset</option>
           <option value="orbit">Earth around the Sun</option>
           <option value="voyage">Earth revelation</option>
-          <option value="moon">Night Moon</option>
           <option value="planets">Planets around the Sun</option>
-          <option value="probe">Jupiter flyby</option>
-          <option value="deep">Deep starfield / Journey heavens</option>
-          <option value="jupiter_close">Jupiter flyby close (3D)</option>
           <option value="milkyway">Milky Way close stars (3D)</option>
           <option value="wavelength">3D wavelength (3D)</option>
           <option value="fishes3d">3D ocean fishes (3D)</option>
           <option value="abstract">Abstract AI / alien (3D)</option>
+          <option value="bike">Garden bicycle under the moon</option>
+          <option value="birdsea">Bird over the night sea</option>
+          <option value="hourglass">Hourglass, butterflies & sun rays</option>
         </select>
   <button type="button" class="chip on" id="fsRead">👼 Read</button>
   <button type="button" class="chip" id="fsSceneToggle">Scene on/off</button>
@@ -1402,15 +1682,14 @@
           <option value="sun">Sunrise → Sunset</option>
           <option value="orbit">Earth around the Sun</option>
           <option value="voyage">Earth revelation</option>
-          <option value="moon">Night Moon</option>
           <option value="planets">Planets around the Sun</option>
-          <option value="probe">Jupiter flyby</option>
-          <option value="deep">Deep starfield / Journey heavens</option>
-          <option value="jupiter_close">Jupiter flyby close (3D)</option>
           <option value="milkyway">Milky Way close stars (3D)</option>
           <option value="wavelength">3D wavelength (3D)</option>
           <option value="fishes3d">3D ocean fishes (3D)</option>
           <option value="abstract">Abstract AI / alien (3D)</option>
+          <option value="bike">Garden bicycle under the moon</option>
+          <option value="birdsea">Bird over the night sea</option>
+          <option value="hourglass">Hourglass, butterflies & sun rays</option>
         </select>
         <button type="button" class="chip" id="btnSceneFs" title="Full screen book (captions while reading)">Full screen</button>
         <select id="wordStyle" class="ctl" style="max-width:8rem;font-size:11px;" title="Word style">
@@ -1629,7 +1908,42 @@
             <div class="block bl5"></div>
           </div>
         </div>
-        <div class="page-sheet" id="sheet">
+
+          <div class="sc-layer sc-bike-bits" style="display:none">
+            <div class="stars"></div>
+            <div class="moon"></div>
+            <div class="path"></div>
+            <div class="garden"></div>
+            <div class="tree t1"></div>
+            <div class="tree t2"></div>
+            <div class="tree t3"></div>
+            <div class="bike-wrap">
+              <div class="bike">
+                <div class="wheel w1"></div>
+                <div class="wheel w2"></div>
+                <div class="frame"></div>
+                <div class="rider"></div>
+              </div>
+            </div>
+          </div>
+          <div class="sc-layer sc-birdsea-bits" style="display:none">
+            <div class="stars"></div>
+            <div class="moon"></div>
+            <div class="sea"><div class="wave"></div><div class="wave w2"></div></div>
+            <div class="bird"></div>
+          </div>
+          <div class="sc-layer sc-hourglass-bits" style="display:none">
+            <div class="window-rays"></div>
+            <div class="glass"><div class="stream"></div></div>
+            <div class="sill"></div>
+            <div class="butterfly bf1"></div>
+            <div class="butterfly bf2"></div>
+            <div class="butterfly bf3"></div>
+            <div class="insect in1"></div>
+            <div class="insect in2"></div>
+          </div>
+
+                <div class="page-sheet" id="sheet">
           <div class="page-badge">
             <span class="num" id="pageBadgeNum">Page 1 / 1</span>
             <span class="status status-starting" id="pageBadgeStatus">Starting</span>
@@ -2269,8 +2583,11 @@
         document.getElementById('fsRead').classList.toggle('is-on', state.reading);
       }
       if (state.reading) {
+        try { document.body.classList.add('reading-active', 'kw-speaking'); } catch(e) {}
         speakPage();
       } else {
+        try { document.body.classList.remove('reading-active'); if (!state.sceneFs) document.body.classList.remove('kw-speaking'); } catch(e) {}
+
         if (state._pauseTimer) { clearTimeout(state._pauseTimer); state._pauseTimer = null; }
         try { speechSynthesis.cancel(); } catch (e) {}
       }
@@ -2408,7 +2725,7 @@
           else { try { if (typeof prev === 'function') prev(); } catch (err) {} }
         } else if (state.sceneFs || state.sceneOn) {
           // vertical — cycle scenes only when Scene/FS active (don't steal page scroll)
-          var order = ['sun','orbit','voyage','moon','planets','probe','deep','jupiter_close','milkyway','wavelength','fishes3d','abstract'];
+          var order = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','abstract','bike','birdsea','hourglass'];
           var cur = state.sceneName || 'sun';
           var ix = order.indexOf(cur);
           if (ix < 0) ix = 0;
@@ -2542,7 +2859,7 @@
         try { if (window.CGWebGL) CGWebGL.setMode('none'); } catch (e) {}
       }
       // Show only bits for selected scene
-      ['sun','orbit','voyage','moon','planets','probe','deep','jupiter_close','milkyway','wavelength','fishes3d','abstract'].forEach(function (n) {
+      ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','abstract','bike','birdsea','hourglass'].forEach(function (n) {
         const el = surface.querySelector('.sc-' + n + '-bits');
         if (el) el.style.display = (on && n === name) ? 'block' : 'none';
       });
@@ -2582,6 +2899,7 @@
     try {
       state.sceneOn = localStorage.getItem('kw_scene_on') === '1';
       state.sceneName = localStorage.getItem('kw_scene') || 'sun';
+      if (['moon','probe','deep','jupiter_close'].indexOf(state.sceneName) >= 0) state.sceneName = 'bike';
     } catch (e) {}
     const btnScene = document.getElementById('btnScene');
     const scenePick = document.getElementById('scenePick');
