@@ -1420,149 +1420,170 @@
     }
 
   
-    /* === Garden bicycle under moon (bigger 3D) === */
+    
+    /* === Garden bicycle under moon — large 3D rider === */
     #sceneStage.sc-bike {
-      background: linear-gradient(180deg, #070b18 0%, #152238 38%, #1e3a2f 72%, #0f2418 100%);
+      background: linear-gradient(180deg, #060a14 0%, #142033 40%, #1a3328 75%, #0c1f14 100%);
       overflow: hidden;
-      perspective: 900px;
+      perspective: 1000px;
     }
     #sceneStage.sc-bike .stars {
       position: absolute; inset: 0;
       background-image:
-        radial-gradient(2px 2px at 10% 18%, #fff, transparent),
-        radial-gradient(1.5px 1.5px at 28% 42%, #fff, transparent),
-        radial-gradient(2.5px 2.5px at 62% 12%, #fff, transparent),
-        radial-gradient(1px 1px at 80% 35%, #fff, transparent),
-        radial-gradient(2px 2px at 48% 28%, #e2e8f0, transparent),
-        radial-gradient(1.5px 1.5px at 90% 22%, #fff, transparent);
-      opacity: .85; animation: starTwinkle 5s ease-in-out infinite alternate;
+        radial-gradient(2px 2px at 12% 16%, #fff, transparent),
+        radial-gradient(1.5px 1.5px at 30% 40%, #fff, transparent),
+        radial-gradient(2.5px 2.5px at 65% 14%, #fff, transparent),
+        radial-gradient(1px 1px at 82% 32%, #fff, transparent),
+        radial-gradient(2px 2px at 50% 26%, #e2e8f0, transparent);
+      opacity: .9; animation: starTwinkle 5s ease-in-out infinite alternate;
     }
     #sceneStage.sc-bike .moon {
-      position: absolute; right: 10%; top: 6%;
-      width: 22vmin; height: 22vmin; border-radius: 50%;
+      position: absolute; right: 8%; top: 5%;
+      width: 26vmin; height: 26vmin; border-radius: 50%;
       background:
-        radial-gradient(circle at 32% 30%, #fffef5, #e8e4d4 42%, #b8b4a8 78%),
-        radial-gradient(circle at 70% 65%, rgba(0,0,0,.12), transparent 40%);
-      box-shadow:
-        0 0 50px 18px rgba(254,243,199,.4),
-        0 0 100px 40px rgba(253,224,71,.15),
-        inset -6px -8px 20px rgba(0,0,0,.15);
-      transform: translateZ(40px);
+        radial-gradient(circle at 30% 28%, #fffef8, #e7e2d0 45%, #a8a49a 80%);
+      box-shadow: 0 0 60px 22px rgba(254,243,199,.45), 0 0 120px 50px rgba(253,224,71,.12);
     }
     #sceneStage.sc-bike .path {
-      position: absolute; left: -15%; right: -15%; bottom: 14%;
-      height: 18%;
-      background: linear-gradient(180deg, #6b7280 0%, #3f4550 40%, #272b33 100%);
+      position: absolute; left: -20%; right: -20%; bottom: 12%;
+      height: 20%;
+      background: linear-gradient(180deg, #78716c, #44403c 50%, #292524);
       border-radius: 50%;
-      transform: perspective(280px) rotateX(52deg);
-      box-shadow: 0 -8px 24px rgba(0,0,0,.35);
+      transform: perspective(320px) rotateX(55deg);
+      box-shadow: 0 -10px 30px rgba(0,0,0,.4);
     }
     #sceneStage.sc-bike .garden {
-      position: absolute; left: 0; right: 0; bottom: 0; height: 26%;
-      background: linear-gradient(180deg, #15803d 0%, #14532d 45%, #052e16 100%);
+      position: absolute; left: 0; right: 0; bottom: 0; height: 24%;
+      background: linear-gradient(180deg, #16a34a, #14532d 50%, #052e16);
     }
     #sceneStage.sc-bike .tree {
-      position: absolute; bottom: 20%;
+      position: absolute; bottom: 18%;
       width: 0; height: 0;
-      border-left: 5vmin solid transparent;
-      border-right: 5vmin solid transparent;
-      border-bottom: 16vmin solid #166534;
-      filter: drop-shadow(2px 4px 6px rgba(0,0,0,.4));
+      border-left: 6vmin solid transparent;
+      border-right: 6vmin solid transparent;
+      border-bottom: 18vmin solid #166534;
+      filter: drop-shadow(3px 5px 8px rgba(0,0,0,.45));
     }
-    #sceneStage.sc-bike .tree.t1 { left: 6%; border-bottom-color: #14532d; transform: scale(1.15); }
-    #sceneStage.sc-bike .tree.t2 { left: 20%; border-bottom-width: 12vmin; }
-    #sceneStage.sc-bike .tree.t3 { right: 12%; left: auto; transform: scale(1.25); border-bottom-color: #166534; }
+    #sceneStage.sc-bike .tree.t1 { left: 5%; transform: scale(1.2); }
+    #sceneStage.sc-bike .tree.t2 { left: 18%; border-bottom-width: 14vmin; }
+    #sceneStage.sc-bike .tree.t3 { right: 10%; left: auto; transform: scale(1.35); }
     #sceneStage.sc-bike .bike-wrap {
-      position: absolute; bottom: 22%; left: -28%;
+      position: absolute; bottom: 18%; left: -35%;
       transform-style: preserve-3d;
-      animation: bikeRide 22s linear infinite;
-      filter: drop-shadow(0 8px 10px rgba(0,0,0,.45));
+      animation: bikeRide 24s linear infinite;
+      filter: drop-shadow(0 12px 14px rgba(0,0,0,.5));
     }
     #sceneStage.sc-bike .bike {
-      width: 18vmin; height: 12vmin; position: relative;
-      transform: rotateY(-8deg) rotateX(6deg);
+      width: 32vmin; height: 22vmin; position: relative;
+      transform: rotateY(-10deg) rotateX(8deg);
       transform-style: preserve-3d;
     }
     #sceneStage.sc-bike .wheel {
-      position: absolute; bottom: 0; width: 5.5vmin; height: 5.5vmin;
-      border: 4px solid #e2e8f0;
-      border-radius: 50%;
-      box-shadow:
-        inset 0 0 0 2px #94a3b8,
-        inset 0 0 12px rgba(255,255,255,.25),
-        0 2px 6px rgba(0,0,0,.4);
-      animation: wheelSpin 0.9s linear infinite;
+      position: absolute; bottom: 0; width: 9vmin; height: 9vmin;
+      border: 5px solid #e2e8f0; border-radius: 50%;
+      box-shadow: inset 0 0 0 3px #94a3b8, inset 0 0 16px rgba(255,255,255,.3), 0 3px 8px rgba(0,0,0,.45);
+      animation: wheelSpin 1s linear infinite;
       background:
-        radial-gradient(circle at 50% 50%, transparent 38%, rgba(226,232,240,.35) 40%, transparent 42%),
-        repeating-conic-gradient(from 0deg, #cbd5e1 0deg 8deg, transparent 8deg 20deg);
+        radial-gradient(circle at 50% 50%, #1e293b 0 18%, transparent 19%),
+        repeating-conic-gradient(from 0deg, #cbd5e1 0 6deg, transparent 6deg 18deg);
     }
     #sceneStage.sc-bike .wheel.w1 { left: 0; }
     #sceneStage.sc-bike .wheel.w2 { right: 0; }
     #sceneStage.sc-bike .frame {
-      position: absolute; left: 2.4vmin; bottom: 2.4vmin;
-      width: 11vmin; height: 4.2vmin;
-      border: 3px solid #f1f5f9;
+      position: absolute; left: 4.5vmin; bottom: 3.8vmin;
+      width: 20vmin; height: 7.5vmin;
+      border: 4px solid #f8fafc;
       border-bottom: none;
-      border-radius: 4px 4px 0 0;
-      box-shadow: 1px 2px 0 rgba(0,0,0,.25);
+      border-radius: 6px 6px 0 0;
+      box-shadow: 2px 3px 0 rgba(0,0,0,.3);
     }
+    /* Human rider — larger proportions */
     #sceneStage.sc-bike .rider {
-      position: absolute; left: 6.2vmin; bottom: 5.2vmin;
-      width: 2.4vmin; height: 5vmin;
+      position: absolute; left: 10vmin; bottom: 8.5vmin;
+      width: 8vmin; height: 14vmin;
       transform-origin: bottom center;
-      animation: riderBob 0.9s ease-in-out infinite;
-    }
-    #sceneStage.sc-bike .rider .torso {
-      position: absolute; left: 0.35vmin; bottom: 1.6vmin;
-      width: 1.7vmin; height: 2.8vmin;
-      background: linear-gradient(180deg, #f8fafc, #cbd5e1);
-      border-radius: 3px;
-      transform: rotate(-8deg);
-      box-shadow: 1px 2px 3px rgba(0,0,0,.3);
-    }
-    #sceneStage.sc-bike .rider .head {
-      position: absolute; left: 0.45vmin; bottom: 4.3vmin;
-      width: 1.8vmin; height: 1.8vmin; border-radius: 50%;
-      background: radial-gradient(circle at 35% 30%, #fde68a, #eab308 70%, #a16207);
-      box-shadow: 0 1px 3px rgba(0,0,0,.35);
-      /* look up slightly, then straight */
-      animation: headLook 4s ease-in-out infinite;
-      transform-origin: center bottom;
+      animation: riderBob 1s ease-in-out infinite;
     }
     #sceneStage.sc-bike .rider .leg {
-      position: absolute; width: 0.7vmin; height: 2.4vmin;
-      background: #1e293b; border-radius: 2px;
+      position: absolute; width: 1.4vmin; height: 5.2vmin;
+      background: linear-gradient(180deg, #1e3a5f, #0f172a);
+      border-radius: 3px;
       transform-origin: top center;
       bottom: 0;
+      box-shadow: 1px 2px 3px rgba(0,0,0,.35);
     }
-    #sceneStage.sc-bike .rider .leg.l1 { left: 0.4vmin; animation: pedalL 0.9s linear infinite; }
-    #sceneStage.sc-bike .rider .leg.l2 { left: 1.3vmin; animation: pedalR 0.9s linear infinite; }
+    #sceneStage.sc-bike .rider .leg.l1 { left: 1.6vmin; animation: pedalL 1s linear infinite; }
+    #sceneStage.sc-bike .rider .leg.l2 { left: 4.2vmin; animation: pedalR 1s linear infinite; }
+    #sceneStage.sc-bike .rider .leg:after {
+      content: ''; position: absolute; bottom: -0.6vmin; left: -0.3vmin;
+      width: 2vmin; height: 0.9vmin; border-radius: 2px;
+      background: #334155; /* shoe */
+    }
+    #sceneStage.sc-bike .rider .torso {
+      position: absolute; left: 2.2vmin; bottom: 4.5vmin;
+      width: 3.6vmin; height: 5.5vmin;
+      background: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 55%, #1e3a8a 100%);
+      border-radius: 4px 4px 3px 3px;
+      transform: rotate(-12deg);
+      box-shadow: 2px 3px 6px rgba(0,0,0,.4);
+    }
+    #sceneStage.sc-bike .rider .arm {
+      position: absolute; width: 1.1vmin; height: 4vmin;
+      background: linear-gradient(180deg, #fde68a, #d97706);
+      border-radius: 3px;
+      transform-origin: top center;
+      top: 0.3vmin;
+      box-shadow: 1px 1px 2px rgba(0,0,0,.25);
+    }
+    #sceneStage.sc-bike .rider .arm.a1 { left: 0.2vmin; transform: rotate(55deg); }
+    #sceneStage.sc-bike .rider .arm.a2 { right: 0.2vmin; left: auto; transform: rotate(-40deg); }
+    #sceneStage.sc-bike .rider .head {
+      position: absolute; left: 2.4vmin; bottom: 9.6vmin;
+      width: 3.2vmin; height: 3.2vmin; border-radius: 50%;
+      background:
+        radial-gradient(circle at 35% 30%, #fde68a, #eab308 55%, #a16207 100%);
+      box-shadow: 0 2px 5px rgba(0,0,0,.4);
+      animation: headLook 5s ease-in-out infinite;
+      transform-origin: center bottom;
+      z-index: 2;
+    }
+    /* simple face */
+    #sceneStage.sc-bike .rider .head:before {
+      content: ''; position: absolute; left: 0.7vmin; top: 1.1vmin;
+      width: 0.45vmin; height: 0.45vmin; border-radius: 50%; background: #1e293b;
+      box-shadow: 1.4vmin 0 0 #1e293b;
+    }
+    #sceneStage.sc-bike .rider .head:after {
+      content: ''; position: absolute; left: 1.1vmin; top: 2vmin;
+      width: 1.1vmin; height: 0.35vmin; border-radius: 0 0 50% 50%;
+      border-bottom: 2px solid #78350f;
+    }
     @keyframes bikeRide {
-      0% { left: -26%; }
-      100% { left: 112%; }
+      0% { left: -32%; }
+      100% { left: 110%; }
     }
     @keyframes wheelSpin { to { transform: rotate(360deg); } }
     @keyframes riderBob {
       0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-0.35vmin); }
+      50% { transform: translateY(-0.5vmin); }
     }
     @keyframes headLook {
-      0%, 20% { transform: rotate(-6deg) translateY(0); }
-      35%, 55% { transform: rotate(-18deg) translateY(-0.15vmin); } /* look up */
-      70%, 100% { transform: rotate(-4deg) translateY(0); } /* look straight */
+      0%, 25% { transform: rotate(-4deg); }
+      40%, 55% { transform: rotate(-20deg) translateY(-0.2vmin); }
+      70%, 100% { transform: rotate(-2deg); }
     }
     @keyframes pedalL {
-      0% { transform: rotate(40deg); }
-      50% { transform: rotate(-40deg); }
-      100% { transform: rotate(40deg); }
+      0% { transform: rotate(45deg); }
+      50% { transform: rotate(-45deg); }
+      100% { transform: rotate(45deg); }
     }
     @keyframes pedalR {
-      0% { transform: rotate(-40deg); }
-      50% { transform: rotate(40deg); }
-      100% { transform: rotate(-40deg); }
+      0% { transform: rotate(-45deg); }
+      50% { transform: rotate(45deg); }
+      100% { transform: rotate(-45deg); }
     }
 
-    /* === Bird over night sea === */
+/* === Bird over night sea === */
     #sceneStage.sc-birdsea {
       background: linear-gradient(180deg, #020617 0%, #0c1a3a 45%, #0e4d6b 70%, #0a3d4d 100%);
       overflow: hidden;
@@ -1625,9 +1646,159 @@
       to { transform: rotate(25deg); }
     }
 
-    /* === Hourglass, butterflies, sun rays === */
     
-    /* === Hourglass 3D, slow pour, auto-flip === */
+    /* === Hourglass 3D realistic pour (no hard crop) === */
+    #sceneStage.sc-hourglass {
+      background: linear-gradient(180deg, #fff7ed 0%, #fdba74 42%, #9a3412 100%);
+      overflow: hidden;
+      perspective: 1200px;
+    }
+    #sceneStage.sc-hourglass .window-rays {
+      position: absolute; inset: 0;
+      background: conic-gradient(from 210deg at 12% 8%,
+        rgba(255,255,255,.55) 0deg, transparent 28deg,
+        rgba(255,255,255,.3) 55deg, transparent 90deg);
+      animation: raySoftHg 12s ease-in-out infinite alternate;
+      opacity: .8;
+    }
+    #sceneStage.sc-hourglass .sill {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 14%;
+      background: linear-gradient(180deg, #a8a29e, #44403c);
+    }
+    #sceneStage.sc-hourglass .glass-wrap {
+      position: absolute; left: 50%; top: 48%;
+      width: 36vmin; height: 52vmin;
+      margin-left: -18vmin; margin-top: -26vmin;
+      transform-style: preserve-3d;
+      animation: hourFlip 18s ease-in-out infinite;
+    }
+    #sceneStage.sc-hourglass .glass {
+      position: absolute; inset: 0;
+      border: 5px solid rgba(120,53,15,.9);
+      border-radius: 14px;
+      background: linear-gradient(145deg, rgba(255,255,255,.4), rgba(255,255,255,.08) 50%, rgba(255,255,255,.22));
+      box-shadow:
+        inset 0 0 40px rgba(255,255,255,.3),
+        10px 16px 36px rgba(0,0,0,.4);
+      overflow: visible;
+      transform: rotateY(-14deg) rotateX(5deg);
+    }
+    /* Upper chamber — triangle of sand that shrinks */
+    #sceneStage.sc-hourglass .sand-top {
+      position: absolute; left: 50%; top: 8%;
+      width: 22vmin; margin-left: -11vmin;
+      height: 18vmin;
+      background: linear-gradient(180deg, #fcd34d 0%, #f59e0b 40%, #b45309 100%);
+      clip-path: polygon(5% 0%, 95% 0%, 55% 100%, 45% 100%);
+      animation: sandDrainTop 18s linear infinite;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,.25));
+    }
+    /* Lower pile grows as mound */
+    #sceneStage.sc-hourglass .sand-bot {
+      position: absolute; left: 50%; bottom: 8%;
+      width: 22vmin; margin-left: -11vmin;
+      height: 4vmin;
+      background: linear-gradient(0deg, #b45309 0%, #f59e0b 55%, #fcd34d 100%);
+      clip-path: polygon(45% 0%, 55% 0%, 95% 100%, 5% 100%);
+      animation: sandFillBot 18s linear infinite;
+      filter: drop-shadow(0 -2px 4px rgba(0,0,0,.2));
+    }
+    /* Continuous grain stream — not clipped by glass */
+    #sceneStage.sc-hourglass .stream {
+      position: absolute; left: 50%; top: 40%;
+      width: 4px; height: 20%;
+      margin-left: -2px;
+      background: linear-gradient(180deg, #fde68a, #f59e0b 60%, #d97706);
+      border-radius: 3px;
+      box-shadow: 0 0 8px rgba(251,191,36,.9), 0 0 2px #fff;
+      animation: sandStreamHg 18s linear infinite;
+      z-index: 5;
+    }
+    /* falling particles */
+    #sceneStage.sc-hourglass .grain {
+      position: absolute; left: 50%; width: 3px; height: 3px; border-radius: 50%;
+      background: #fbbf24; margin-left: -1.5px;
+      animation: grainFall 1.2s linear infinite;
+      opacity: .9;
+    }
+    #sceneStage.sc-hourglass .grain.g1 { top: 42%; animation-delay: 0s; }
+    #sceneStage.sc-hourglass .grain.g2 { top: 44%; animation-delay: .3s; margin-left: 1px; }
+    #sceneStage.sc-hourglass .grain.g3 { top: 46%; animation-delay: .6s; margin-left: -3px; }
+    #sceneStage.sc-hourglass .butterfly {
+      position: absolute; width: 3.4vmin; height: 2.4vmin;
+      animation: flutterHg 8s ease-in-out infinite;
+      filter: drop-shadow(0 2px 3px rgba(0,0,0,.25));
+    }
+    #sceneStage.sc-hourglass .butterfly:before,
+    #sceneStage.sc-hourglass .butterfly:after {
+      content: ''; position: absolute; width: 1.7vmin; height: 2.1vmin;
+      background: linear-gradient(135deg, #c084fc, #a855f7);
+      border-radius: 50% 50% 50% 0;
+      animation: wingBeatHg 0.35s ease-in-out infinite alternate;
+    }
+    #sceneStage.sc-hourglass .butterfly:after {
+      left: 1.6vmin; border-radius: 50% 50% 0 50%;
+      background: linear-gradient(225deg, #e879f9, #d946ef);
+    }
+    #sceneStage.sc-hourglass .bf1 { top: 26%; left: 12%; }
+    #sceneStage.sc-hourglass .bf2 { top: 40%; right: 10%; left: auto; animation-delay: 1.2s; }
+    #sceneStage.sc-hourglass .bf3 { top: 50%; left: 24%; animation-delay: 2.4s; }
+    #sceneStage.sc-hourglass .insect {
+      position: absolute; width: 0.9vmin; height: 0.9vmin; border-radius: 50%;
+      background: #fde047; box-shadow: 0 0 8px #facc15;
+      animation: bugDriftHg 6s linear infinite;
+    }
+    #sceneStage.sc-hourglass .in1 { top: 20%; left: 58%; }
+    #sceneStage.sc-hourglass .in2 { top: 56%; left: 70%; animation-duration: 8s; }
+    @keyframes raySoftHg { from { opacity: .4; } to { opacity: .85; } }
+    @keyframes sandDrainTop {
+      0%, 4% { height: 18vmin; }
+      46% { height: 2.5vmin; }
+      50%, 54% { height: 2vmin; }
+      58% { height: 3vmin; }
+      100% { height: 18vmin; }
+    }
+    @keyframes sandFillBot {
+      0%, 4% { height: 3.5vmin; }
+      46% { height: 18vmin; }
+      50%, 54% { height: 18vmin; }
+      58% { height: 17vmin; }
+      100% { height: 3.5vmin; }
+    }
+    @keyframes sandStreamHg {
+      0%, 4% { opacity: 1; height: 20%; }
+      46% { opacity: 1; height: 22%; }
+      50%, 54% { opacity: 0; height: 0; }
+      58%, 100% { opacity: 1; height: 20%; }
+    }
+    @keyframes grainFall {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(8vmin); opacity: 0.2; }
+    }
+    @keyframes hourFlip {
+      0%, 48% { transform: rotate(0deg); }
+      52% { transform: rotate(180deg); }
+      53%, 98% { transform: rotate(180deg); }
+      100% { transform: rotate(360deg); }
+    }
+    @keyframes flutterHg {
+      0% { transform: translate(0,0) rotate(0deg); }
+      25% { transform: translate(10vmin,-5vmin) rotate(14deg); }
+      50% { transform: translate(5vmin,-10vmin) rotate(-10deg); }
+      75% { transform: translate(-5vmin,-4vmin) rotate(12deg); }
+      100% { transform: translate(0,0) rotate(0deg); }
+    }
+    @keyframes wingBeatHg {
+      from { transform: scaleY(1); }
+      to { transform: scaleY(0.7) rotate(10deg); }
+    }
+    @keyframes bugDriftHg {
+      0% { transform: translate(0,0); }
+      50% { transform: translate(-8vmin, 5vmin); }
+      100% { transform: translate(0,0); }
+    }
+
+/* === Hourglass 3D, slow pour, auto-flip === */
     #sceneStage.sc-hourglass {
       background: linear-gradient(180deg, #fff7ed 0%, #fdba74 42%, #9a3412 100%);
       overflow: hidden;
@@ -1823,6 +1994,166 @@
       box-shadow: none !important;
     }
 
+  
+    
+    /* === Men pushing stone up the mountain (3D) === */
+    #sceneStage.sc-sisyphus {
+      background: linear-gradient(180deg, #7dd3fc 0%, #38bdf8 35%, #a3e635 70%, #4d7c0f 100%);
+      overflow: hidden;
+      perspective: 900px;
+    }
+    #sceneStage.sc-sisyphus .sky-sun {
+      position: absolute; right: 14%; top: 10%;
+      width: 14vmin; height: 14vmin; border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #fef9c3, #facc15 50%, #ea580c);
+      box-shadow: 0 0 40px 15px rgba(250,204,21,.45);
+    }
+    #sceneStage.sc-sisyphus .mountain {
+      position: absolute; left: -5%; right: -5%; bottom: 0;
+      height: 72%;
+      background: linear-gradient(175deg, #78716c 0%, #57534e 40%, #44403c 70%, #292524 100%);
+      clip-path: polygon(0% 100%, 0% 55%, 18% 40%, 32% 48%, 48% 18%, 52% 18%, 70% 45%, 85% 38%, 100% 55%, 100% 100%);
+      box-shadow: inset 0 20px 40px rgba(255,255,255,.08);
+    }
+    #sceneStage.sc-sisyphus .ridge {
+      position: absolute; left: 0; right: 0; bottom: 0; height: 72%;
+      background: linear-gradient(90deg, transparent 46%, rgba(0,0,0,.25) 50%, transparent 54%);
+      clip-path: polygon(0% 100%, 0% 55%, 18% 40%, 32% 48%, 48% 18%, 52% 18%, 70% 45%, 85% 38%, 100% 55%, 100% 100%);
+      pointer-events: none;
+    }
+    /* path over the peak */
+    #sceneStage.sc-sisyphus .crew {
+      position: absolute;
+      width: 28vmin; height: 18vmin;
+      transform-style: preserve-3d;
+      animation: pushOverMountain 14s ease-in-out infinite;
+      filter: drop-shadow(0 8px 10px rgba(0,0,0,.45));
+      z-index: 5;
+    }
+    #sceneStage.sc-sisyphus .boulder {
+      position: absolute; left: 10vmin; top: 0;
+      width: 12vmin; height: 11vmin; border-radius: 45% 50% 48% 52%;
+      background:
+        radial-gradient(circle at 35% 30%, #d6d3d1, #78716c 45%, #44403c 80%);
+      box-shadow:
+        inset -4px -6px 12px rgba(0,0,0,.35),
+        inset 4px 4px 10px rgba(255,255,255,.2),
+        4px 6px 12px rgba(0,0,0,.4);
+      animation: boulderRoll 14s ease-in-out infinite;
+    }
+    #sceneStage.sc-sisyphus .man {
+      position: absolute; bottom: 0; width: 5vmin; height: 11vmin;
+    }
+    #sceneStage.sc-sisyphus .man .body {
+      position: absolute; left: 1.2vmin; bottom: 2.8vmin;
+      width: 2.6vmin; height: 4.5vmin;
+      background: linear-gradient(180deg, #dc2626, #991b1b);
+      border-radius: 3px;
+      transform-origin: bottom center;
+      animation: strainBody 0.7s ease-in-out infinite;
+    }
+    #sceneStage.sc-sisyphus .man .head {
+      position: absolute; left: 1.3vmin; bottom: 7vmin;
+      width: 2.4vmin; height: 2.4vmin; border-radius: 50%;
+      background: radial-gradient(circle at 35% 30%, #fde68a, #ca8a04);
+      box-shadow: 0 2px 4px rgba(0,0,0,.35);
+    }
+    #sceneStage.sc-sisyphus .man .leg {
+      position: absolute; bottom: 0; width: 1.1vmin; height: 3.2vmin;
+      background: #1e293b; border-radius: 2px;
+      transform-origin: top center;
+    }
+    #sceneStage.sc-sisyphus .man .leg.l1 { left: 1.1vmin; animation: strainLeg1 0.7s linear infinite; }
+    #sceneStage.sc-sisyphus .man .leg.l2 { left: 2.8vmin; animation: strainLeg2 0.7s linear infinite; }
+    #sceneStage.sc-sisyphus .man .arm {
+      position: absolute; width: 1vmin; height: 3.5vmin;
+      background: #fbbf24; border-radius: 2px;
+      transform-origin: top center;
+      top: 0.2vmin;
+    }
+    #sceneStage.sc-sisyphus .man .arm.up {
+      left: 3.2vmin; transform: rotate(-70deg);
+      animation: pushArm 0.7s ease-in-out infinite;
+    }
+    #sceneStage.sc-sisyphus .man.m1 { left: 0; }
+    #sceneStage.sc-sisyphus .man.m2 { left: 5.5vmin; transform: scaleX(-1); }
+    #sceneStage.sc-sisyphus .man.m2 .body { background: linear-gradient(180deg, #2563eb, #1e3a8a); }
+    @keyframes pushOverMountain {
+      /* climb left slope to peak */
+      0%   { left: 8%;  bottom: 18%; transform: rotate(-28deg) scale(1.05); }
+      40%  { left: 42%; bottom: 52%; transform: rotate(-8deg) scale(1.15); }
+      48%  { left: 48%; bottom: 58%; transform: rotate(0deg) scale(1.2); }
+      /* over the top */
+      55%  { left: 54%; bottom: 56%; transform: rotate(12deg) scale(1.15); }
+      /* down the other side */
+      100% { left: 88%; bottom: 20%; transform: rotate(30deg) scale(1.05); }
+    }
+    @keyframes boulderRoll {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(25deg); }
+    }
+    @keyframes strainBody {
+      0%, 100% { transform: rotate(18deg) translateY(0); }
+      50% { transform: rotate(28deg) translateY(0.3vmin); }
+    }
+    @keyframes strainLeg1 {
+      0% { transform: rotate(25deg); }
+      50% { transform: rotate(-15deg); }
+      100% { transform: rotate(25deg); }
+    }
+    @keyframes strainLeg2 {
+      0% { transform: rotate(-20deg); }
+      50% { transform: rotate(20deg); }
+      100% { transform: rotate(-20deg); }
+    }
+    @keyframes pushArm {
+      0%, 100% { transform: rotate(-70deg); }
+      50% { transform: rotate(-85deg) translateY(0.2vmin); }
+    }
+
+    /* HIDE_CENTER_TEXT: only hide mid-screen book text; keep badge + bottom caption */
+    #stage.scene-fs.scene-on #sheetText {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+    /* Page badge stays visible */
+    #stage.scene-fs.scene-on .page-badge {
+      opacity: 1 !important;
+      visibility: visible !important;
+      z-index: 20 !important;
+    }
+    /* Caption ONLY at bottom of screen — never center */
+    #stage.scene-fs.scene-on #fsCaption,
+    body.scene-fs-on #fsCaption,
+    #fsCaption.is-on,
+    #fsCaption.kw-cap-force {
+      display: block !important;
+      position: fixed !important;
+      left: 50% !important;
+      right: auto !important;
+      top: auto !important;
+      bottom: 24px !important;
+      transform: translateX(-50%) !important;
+      z-index: 2147483640 !important;
+      max-width: min(92vw, 40rem) !important;
+      width: auto !important;
+      text-align: center !important;
+      background: transparent !important;
+      border: none !important;
+      box-shadow: none !important;
+      margin: 0 !important;
+    }
+
+    #stage.scene-fs.scene-on #sheetText {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
+    #stage.scene-fs.scene-on #fsCaption {
+      display: none !important; /* no center/caption text over 3D */
+    }
+
   </style>
   <script src="/static/js/bg-animations.js"></script>
 </head>
@@ -1837,7 +2168,7 @@
           <option value="milkyway">Milky Way close stars (3D)</option>
           <option value="wavelength">3D wavelength (3D)</option>
           <option value="fishes3d">3D ocean fishes (3D)</option>
-          <option value="abstract">Abstract AI / alien (3D)</option>
+          <option value="sisyphus">Men pushing stone up the mountain</option>
           <option value="bike">Garden bicycle under the moon</option>
           <option value="birdsea">Bird over the night sea</option>
           <option value="hourglass">Hourglass, butterflies & sun rays</option>
@@ -1868,7 +2199,7 @@
           <option value="milkyway">Milky Way close stars (3D)</option>
           <option value="wavelength">3D wavelength (3D)</option>
           <option value="fishes3d">3D ocean fishes (3D)</option>
-          <option value="abstract">Abstract AI / alien (3D)</option>
+          <option value="sisyphus">Men pushing stone up the mountain</option>
           <option value="bike">Garden bicycle under the moon</option>
           <option value="birdsea">Bird over the night sea</option>
           <option value="hourglass">Hourglass, butterflies & sun rays</option>
@@ -2047,6 +2378,32 @@
             <div class="nebula"></div>
             <div class="stars"></div>
           </div>
+          
+          <div class="sc-layer sc-sisyphus-bits" style="display:none">
+            <div class="sky-sun"></div>
+            <div class="mountain"></div>
+            <div class="ridge"></div>
+            <div class="crew">
+              <div class="man m1">
+                <div class="leg l1"></div>
+                <div class="leg l2"></div>
+                <div class="body">
+                  <div class="arm up"></div>
+                </div>
+                <div class="head"></div>
+              </div>
+              <div class="man m2">
+                <div class="leg l1"></div>
+                <div class="leg l2"></div>
+                <div class="body">
+                  <div class="arm up"></div>
+                </div>
+                <div class="head"></div>
+              </div>
+              <div class="boulder"></div>
+            </div>
+          </div>
+
           <div class="sc-layer sc-bike-bits" style="display:none">
             <div class="stars"></div>
             <div class="moon"></div>
@@ -2063,7 +2420,10 @@
                 <div class="rider">
                   <div class="leg l1"></div>
                   <div class="leg l2"></div>
-                  <div class="torso"></div>
+                  <div class="torso">
+                    <div class="arm a1"></div>
+                    <div class="arm a2"></div>
+                  </div>
                   <div class="head"></div>
                 </div>
               </div>
@@ -2081,6 +2441,9 @@
               <div class="glass">
                 <div class="sand-top"></div>
                 <div class="stream"></div>
+                <div class="grain g1"></div>
+                <div class="grain g2"></div>
+                <div class="grain g3"></div>
                 <div class="sand-bot"></div>
               </div>
             </div>
@@ -2874,7 +3237,7 @@
           else { try { if (typeof prev === 'function') prev(); } catch (err) {} }
         } else if (state.sceneFs || state.sceneOn) {
           // vertical — cycle scenes only when Scene/FS active (don't steal page scroll)
-          var order = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','abstract','bike','birdsea','hourglass'];
+          var order = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','sisyphus','bike','birdsea','hourglass'];
           var cur = state.sceneName || 'sun';
           var ix = order.indexOf(cur);
           if (ix < 0) ix = 0;
@@ -3013,7 +3376,7 @@
         try { if (window.CGWebGL) CGWebGL.setMode('none'); } catch (e) {}
       }
       // Show only bits for selected scene
-      ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','abstract','bike','birdsea','hourglass'].forEach(function (n) {
+      ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','sisyphus','bike','birdsea','hourglass'].forEach(function (n) {
         var el = surface.querySelector('.sc-' + n + '-bits');
         if (el) {
           if (show3d && n === name) {
@@ -3033,7 +3396,7 @@
         try {
           if (typeof syncWebGLScene === 'function') syncWebGLScene(name, true);
           else if (window.CGWebGL) {
-            var W = { milkyway:1, wavelength:1, fishes3d:1, abstract:1 };
+            var W = { milkyway:1, wavelength:1, fishes3d:1 };
             if (surface && CGWebGL.attachTo) CGWebGL.attachTo(surface);
             CGWebGL.setMode(W[name] ? name : 'none');
           }
