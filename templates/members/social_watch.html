@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>Social Stream — Churchgate</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html, body { margin: 0; background: #020617; color: #f8fafc; }
+    .tabs { display:flex; gap:8px; overflow-x:auto; padding:8px 12px; position:sticky; top:0; z-index:30; background:#020617; }
+    .tab { flex:0 0 auto; border:1px solid rgba(255,255,255,.2); border-radius:999px; padding:8px 14px; font-size:12px; font-weight:700; color:#e2e8f0; }
+    .tab.on { background:#0d9488; border-color:#2dd4bf; }
+    .player { height: 58vh; min-height: 280px; background:#000; position:relative; }
+    .player iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
+    .feed { max-height: 32vh; overflow-y:auto; }
+    .slide { padding:8px 12px; border-bottom:1px solid rgba(255,255,255,.08); cursor:pointer; }
+    .slide.on { background:rgba(13,148,136,.2); }
+    .btn { border:1px solid rgba(255,255,255,.25); background:rgba(15,23,42,.8); color:#fff; font-size:12px; font-weight:700; border-radius:999px; padding:8px 12px; text-decoration:none; }
+    .panel { border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:12px; margin:12px; background:rgba(15,23,42,.7); }
+  </style>
+</head>
+<body>
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px">
+    <a href="/member" class="btn">Dashboard</a>
+    <strong>Social Stream</strong>
+    <button class="btn" id="btnSound" onclick="toggleSound()">Sound off</button>
+  </div>
+  <div class="tabs">
+    {% set cur = cat or 'tv' %}
+    <a class="tab {% if cur=='tv' %}on{% endif %}" href="/member/social-watch?cat=tv">TV</a>
+    <a class="tab {% if cur=='movies' %}on{% endif %}" href="/member/social-watch?cat=movies">Movies</a>
+    <a class="tab {% if cur=='news' %}on{% endif %}" href="/member/social-watch?cat=news">News</a>
+    <a class="tab {% if cur=='games' %}on{% endif %}" href="/member/social-watch?cat=games">Games</a>
+    <a class="tab {% if cur=='ministration' %}on{% endif %}" href="/member/social-watch?cat=ministration">Ministration</a>
+    <a class="tab {% if cur=='others' %}on{% endif %}" href="/member/social-watch?cat=others">Others</a>
+  </div>
+  <div class="player">
+    {% if links %}
+    <iframe id="stageFrame" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
+    {% else %}
+    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;padding:24px;text-align:center">No playable streams in this section yet.</div>
+    {% endif %}
+  </div>
+  <div class="feed">
+    {% for L in links %}
+    <div class="slide {% if loop.first %}on{% endif %}" data-embed="{{ L.embed_url or '' }}" onclick="playThis(this)">
+      <div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#5eead4">{{ L.platform }}</div>
+      <div style="font-weight:700">{{ L.title }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="panel">
+    <div style="font-weight:800">Member interaction</div>
+    <p style="font-size:13px;color:#94a3b8">Posts, pictures and comments.</p>
+    <a class="btn" href="/member/feed">Open interaction</a>
+  </div>
+  <div class="panel">
+    <div style="font-weight:800">Memories</div>
+    <p style="font-size:13px;color:#94a3b8">Photo slideshow with music.</p>
+    <a class="btn" href="/member/memories">Open memories</a>
+  </div>
+<script>
+var soundOn=false;
+function withMute(url){if(!url)return '';try{var u=new URL(url,location.origin);u.searchParams.set('autoplay','1');u.searchParams.set('mute',soundOn?'0':'1');return u.toString();}catch(e){return url;}}
+function playThis(el){document.querySelectorAll('.slide').forEach(function(s){s.classList.remove('on')});el.classList.add('on');var fr=document.getElementById('stageFrame');var emb=el.getAttribute('data-embed')||'';if(fr&&emb){fr.src=withMute(emb);try{localStorage.setItem('cg_last_embed',emb);localStorage.setItem('cg_last_stream',location.pathname+location.search);localStorage.setItem('cg_stream_closed','0');}catch(e){}}}
+function toggleSound(){soundOn=!soundOn;var b=document.getElementById('btnSound');if(b)b.textContent=soundOn?'Sound on':'Sound off';var on=document.querySelector('.slide.on')||document.querySelector('.slide');if(on)playThis(on);}
+var lastEmb=null;try{lastEmb=localStorage.getItem('cg_last_embed');}catch(e){}
+var first=document.querySelector('.slide[data-embed="'+lastEmb+'"]')||document.querySelector('.slide');
+if(first)playThis(first);
+try{localStorage.setItem('cg_stream_closed','0');}catch(e){}
+</script>
+</body></html>
