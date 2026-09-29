@@ -3664,52 +3664,183 @@
     }
     @keyframes glassPulse { 0%,100% { filter: brightness(.85) saturate(1.1); } 50% { filter: brightness(1.2) saturate(1.4); } }
 
-    #sceneStage.sc-solar { background:#020617; overflow:hidden; }
-    #sceneStage.sc-solar .sol-sun { position:absolute; left:50%; top:50%; width:10vmin; height:10vmin; margin:-5vmin 0 0 -5vmin; border-radius:50%;
-      background:radial-gradient(circle at 35% 35%,#fff7ed,#fbbf24 40%,#ea580c); box-shadow:0 0 40px 16px rgba(251,191,36,.55); }
-    #sceneStage.sc-solar .sol-orbit { position:absolute; left:50%; top:50%; border:1px solid rgba(148,163,184,.28); border-radius:50%; transform:translate(-50%,-50%); }
-    #sceneStage.sc-solar .sol-p { position:absolute; border-radius:50%; animation:solSpin linear infinite; }
-    @keyframes solSpin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
 
-    #sceneStage.sc-star_bypass { background:#000; overflow:hidden; perspective:1200px; }
-    #sceneStage.sc-star_bypass .heat {
-      position:absolute; inset:0;
-      background:radial-gradient(circle at 50% 50%, rgba(255,80,0,0) 20%, rgba(255,120,0,.0) 40%);
-      animation:heatPulse 16s ease-in-out infinite;
-      pointer-events:none;
+    
+    #sceneStage.sc-star_bypass {
+      background:
+        radial-gradient(circle at 16% 46%, #000 0 5.5vmin, #1e1b4b 5.7vmin, transparent 7.2vmin),
+        radial-gradient(circle at 16% 46%, rgba(88,28,135,.5) 0 10vmin, transparent 18vmin),
+        #000;
+      overflow:hidden; perspective:1800px;
     }
-    @keyframes heatPulse {
-      0%,18%,100% { background:radial-gradient(circle at 50% 55%, rgba(255,80,0,0) 30%, transparent 60%); }
-      28% { background:radial-gradient(circle at 50% 50%, rgba(255,220,140,.55) 8%, rgba(255,80,0,.35) 34%, transparent 62%); filter:blur(2px); }
-      40% { background:radial-gradient(circle at 50% 50%, rgba(255,80,0,.15) 10%, transparent 50%); }
+    #sceneStage.sc-star_bypass::before {
+      content:""; position:absolute; left:8%; top:36%; width:22vmin; height:22vmin; margin-left:-11vmin;
+      border-radius:50%;
+      background:radial-gradient(circle at 42% 40%, #000 0 42%, #4c1d95 58%, transparent 62%);
+      box-shadow:0 0 60px 16px rgba(76,29,149,.4), inset 0 0 30px #000;
+      animation:bhSpin 22s linear infinite;
+    }
+    #sceneStage.sc-star_bypass::after {
+      content:""; position:absolute; inset:0; pointer-events:none;
+      background:radial-gradient(circle at 16% 46%, transparent 12vmin, rgba(0,0,0,.55) 34vmin);
+    }
+    @keyframes bhSpin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+    #sceneStage.sc-star_bypass .heat {
+      position:absolute; inset:0; pointer-events:none; z-index:6;
+      animation:heatWash 40s linear infinite;
+    }
+    @keyframes heatWash {
+      0%,6%,14%,22%,30%,38%,100% { opacity:0; background:transparent; }
+      8%,16%,24%,32% { opacity:.85; background:radial-gradient(circle at 50% 50%, rgba(255,230,160,.55), rgba(255,90,20,.28) 38%, transparent 62%); }
     }
     #sceneStage.sc-star_bypass .star-fly {
-      position:absolute; left:50%; top:50%; border-radius:50%;
+      position:absolute; top:50%; left:50%;
+      border-radius:50%;
       transform-style:preserve-3d;
-      animation:starPass 16s ease-in-out infinite;
+      animation:starOrbitPass 40s linear infinite;
+      box-shadow:0 0 40px 12px rgba(255,200,80,.25);
     }
     #sceneStage.sc-star_bypass .star-fly .nm {
-      position:absolute; left:50%; top:-1.6em; transform:translateX(-50%);
-      color:#fff; font-weight:800; font-size:12px; letter-spacing:.08em; text-transform:uppercase;
-      text-shadow:0 0 12px #000, 0 0 4px #f59e0b; white-space:nowrap;
+      position:absolute; left:50%; top:-1.8em; transform:translateX(-50%);
+      color:#fff; font-weight:800; font-size:13px; letter-spacing:.1em; text-transform:uppercase;
+      text-shadow:0 0 10px #000, 0 0 16px rgba(251,191,36,.8); white-space:nowrap;
     }
-    #sceneStage.sc-star_bypass .s1 { width:8vmin; height:8vmin; margin:-4vmin 0 0 -4vmin; background:radial-gradient(circle at 35% 30%,#fff7ed,#facc15 40%,#ea580c);
-      box-shadow:0 0 30px 12px rgba(250,204,21,.5); animation-delay:0s; }
-    #sceneStage.sc-star_bypass .s2 { width:14vmin; height:14vmin; margin:-7vmin 0 0 -7vmin; background:radial-gradient(circle at 35% 30%,#e0f2fe,#38bdf8 40%,#1d4ed8);
-      box-shadow:0 0 40px 16px rgba(56,189,248,.45); animation-delay:3.2s; }
-    #sceneStage.sc-star_bypass .s3 { width:22vmin; height:22vmin; margin:-11vmin 0 0 -11vmin; background:radial-gradient(circle at 35% 30%,#fed7aa,#f97316 45%,#7f1d1d);
-      box-shadow:0 0 50px 22px rgba(249,115,22,.5); animation-delay:6.4s; }
-    #sceneStage.sc-star_bypass .s4 { width:32vmin; height:32vmin; margin:-16vmin 0 0 -16vmin; background:radial-gradient(circle at 35% 30%,#fecaca,#ef4444 40%,#450a0a);
-      box-shadow:0 0 60px 28px rgba(239,68,68,.45); animation-delay:9.6s; }
-    #sceneStage.sc-star_bypass .s5 { width:48vmin; height:48vmin; margin:-24vmin 0 0 -24vmin; background:radial-gradient(circle at 35% 30%,#ffe4e6,#fb7185 35%,#4c0519);
-      box-shadow:0 0 80px 36px rgba(251,113,133,.4); animation-delay:12.8s; }
-    @keyframes starPass {
-      0% { transform: translateZ(-900px) scale(.08); opacity:0; }
-      8% { opacity:1; }
-      42% { transform: translateZ(180px) scale(1.35); opacity:1; filter:brightness(1.25); }
-      62% { transform: translateZ(520px) scale(2.1); opacity:.85; }
-      78% { transform: translateX(40vw) translateZ(700px) scale(2.4); opacity:.2; }
-      100% { transform: translateX(80vw) translateZ(900px) scale(2.6); opacity:0; }
+    #sceneStage.sc-star_bypass .s1 {
+      width:18vmin; height:18vmin; margin:-9vmin 0 0 -9vmin;
+      background:radial-gradient(circle at 32% 30%, #fff7ed, #facc15 38%, #ea580c 78%);
+      animation-delay:0s;
+    }
+    #sceneStage.sc-star_bypass .s2 {
+      width:28vmin; height:28vmin; margin:-14vmin 0 0 -14vmin;
+      background:radial-gradient(circle at 32% 30%, #f8fafc, #7dd3fc 40%, #1d4ed8 80%);
+      animation-delay:8s;
+    }
+    #sceneStage.sc-star_bypass .s3 {
+      width:40vmin; height:40vmin; margin:-20vmin 0 0 -20vmin;
+      background:radial-gradient(circle at 32% 30%, #fed7aa, #f97316 42%, #7f1d1d 82%);
+      animation-delay:16s;
+    }
+    #sceneStage.sc-star_bypass .s4 {
+      width:56vmin; height:56vmin; margin:-28vmin 0 0 -28vmin;
+      background:radial-gradient(circle at 32% 30%, #fecaca, #ef4444 40%, #450a0a 82%);
+      animation-delay:24s;
+    }
+    #sceneStage.sc-star_bypass .s5 {
+      width:78vmin; height:78vmin; margin:-39vmin 0 0 -39vmin;
+      background:radial-gradient(circle at 32% 30%, #ffe4e6, #fb7185 36%, #4c0519 84%);
+      animation-delay:32s;
+    }
+    @keyframes starOrbitPass {
+      0%   { transform: translate(72vw, 10vh) translateZ(-800px) scale(.08); opacity:0; }
+      6%   { opacity:1; }
+      28%  { transform: translate(18vw, 2vh) translateZ(-120px) scale(.55); opacity:1; }
+      44%  { transform: translate(0, 0) translateZ(220px) scale(1.55); opacity:1; filter:brightness(1.35); }
+      52%  { transform: translate(8vw, -2vh) translateZ(280px) scale(1.85); }
+      70%  { transform: translate(48vw, 8vh) translateZ(-200px) scale(.4); opacity:.85; }
+      88%  { transform: translate(88vw, 14vh) translateZ(-700px) scale(.08); opacity:0; }
+      100% { transform: translate(88vw, 14vh) translateZ(-700px) scale(.08); opacity:0; }
+    }
+#sceneStage.sc-earth_probe { background:#020617; overflow:hidden; perspective:1400px; }
+    #sceneStage.sc-earth_probe .stars {
+      position:absolute; inset:-10%;
+      background-image:radial-gradient(1.5px 1.5px at 10% 20%,#fff,transparent),radial-gradient(1px 1px at 40% 60%,#fff,transparent),radial-gradient(2px 2px at 70% 15%,#fff,transparent),radial-gradient(1px 1px at 88% 70%,#fff,transparent),radial-gradient(1.5px 1.5px at 22% 80%,#fff,transparent);
+      animation:starTwinkle 5s ease-in-out infinite alternate;
+    }
+    #sceneStage.sc-earth_probe .probe-cam {
+      position:absolute; inset:0;
+      animation:earthCam 28s ease-in-out infinite;
+      transform-style:preserve-3d;
+    }
+    #sceneStage.sc-earth_probe .earth-ball {
+      position:absolute; left:50%; top:46%; width:42vmin; height:42vmin; margin:-21vmin 0 0 -21vmin;
+      border-radius:50%;
+      background:
+        radial-gradient(circle at 32% 30%, rgba(125,211,252,.55), transparent 42%),
+        radial-gradient(ellipse 40% 22% at 30% 40%, #22c55e 0%, transparent 70%),
+        radial-gradient(ellipse 28% 18% at 62% 48%, #4ade80 0%, transparent 70%),
+        radial-gradient(circle at 50% 50%, #0369a1, #0c4a6e 60%, #020617);
+      box-shadow: inset -10vmin -6vmin 18vmin rgba(2,6,23,.55), 0 0 40px rgba(56,189,248,.35);
+      animation:earthAxis 18s linear infinite;
+    }
+    #sceneStage.sc-earth_probe .earth-ball::after {
+      content:""; position:absolute; inset:-3%; border-radius:50%;
+      box-shadow:inset 0 0 12px 3px rgba(186,230,253,.28);
+    }
+    #sceneStage.sc-earth_probe .under-sun {
+      position:absolute; left:46%; bottom:6%; width:10vmin; height:10vmin; margin-left:-5vmin;
+      border-radius:50%;
+      background:radial-gradient(circle at 35% 35%,#fff7ed,#facc15 40%,#ea580c);
+      box-shadow:0 0 50px 18px rgba(250,204,21,.45);
+      animation:underSun 28s ease-in-out infinite;
+    }
+    @keyframes earthAxis { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+    @keyframes earthCam {
+      0% { transform: translateY(-8%) scale(.92) rotateX(8deg); }
+      35% { transform: translateY(4%) scale(1.05) rotateX(18deg); }
+      60% { transform: translateY(18%) scale(1.12) rotateX(38deg) rotateY(-12deg); }
+      85% { transform: translateY(28%) scale(1.18) rotateX(52deg) rotateY(-8deg); }
+      100% { transform: translateY(-8%) scale(.92) rotateX(8deg); }
+    }
+    @keyframes underSun {
+      0%,20% { opacity:.15; transform:scale(.6); }
+      55% { opacity:1; transform:scale(1.15) translateY(6%); }
+      100% { opacity:.2; transform:scale(.7); }
+    }
+
+    /* Camera close to surface → void → ISS + sun + earth */
+    #sceneStage.sc-station_probe { background:#000; overflow:hidden; perspective:1600px; }
+    #sceneStage.sc-station_probe .surf {
+      position:absolute; left:-20%; right:-20%; top:20%; height:90%;
+      background:
+        radial-gradient(ellipse at 50% 0%, #075985 0%, #0c4a6e 30%, #020617 70%);
+      animation:surfPull 26s ease-in-out infinite;
+    }
+    #sceneStage.sc-station_probe .void {
+      position:absolute; inset:0;
+      background:radial-gradient(circle at 50% 40%, transparent 0%, #000 70%);
+      animation:voidOpen 26s ease-in-out infinite;
+    }
+    #sceneStage.sc-station_probe .iss {
+      position:absolute; left:18%; top:28%; width:22vmin; height:8vmin;
+      background:linear-gradient(90deg,#cbd5e1,#94a3b8 40%,#e2e8f0 50%,#94a3b8);
+      box-shadow:0 0 16px rgba(226,232,240,.4);
+      clip-path:polygon(0 40%, 18% 40%, 22% 10%, 28% 10%, 32% 40%, 68% 40%, 72% 10%, 78% 10%, 82% 40%, 100% 40%, 100% 60%, 0 60%);
+      animation:issDrift 26s ease-in-out infinite;
+    }
+    #sceneStage.sc-station_probe .st-sun {
+      position:absolute; right:12%; top:14%; width:7vmin; height:7vmin; border-radius:50%;
+      background:radial-gradient(circle at 35% 35%,#fff,#fde047 40%,#f97316);
+      box-shadow:0 0 40px 14px rgba(253,224,71,.45);
+      animation:stSun 26s ease-in-out infinite;
+    }
+    #sceneStage.sc-station_probe .st-earth {
+      position:absolute; left:58%; bottom:10%; width:18vmin; height:18vmin; border-radius:50%;
+      background:radial-gradient(circle at 35% 30%,#38bdf8,#0369a1 45%,#022c22);
+      box-shadow:0 0 24px rgba(56,189,248,.4);
+      animation:stEarth 26s ease-in-out infinite;
+    }
+    @keyframes surfPull {
+      0% { transform:scale(2.2) translateY(10%); }
+      40% { transform:scale(1.1) translateY(30%); }
+      70%,100% { transform:scale(.4) translateY(80%); opacity:.35; }
+    }
+    @keyframes voidOpen {
+      0% { opacity:.2; }
+      45% { opacity:.7; }
+      100% { opacity:.35; }
+    }
+    @keyframes issDrift {
+      0%,30% { opacity:0; transform:translateX(-20%) scale(.4); }
+      55% { opacity:1; transform:translateX(10%) scale(1); }
+      100% { opacity:.8; transform:translateX(40%) scale(.85); }
+    }
+    @keyframes stSun {
+      0%,35% { opacity:0; transform:scale(.3); }
+      60%,100% { opacity:1; transform:scale(1); }
+    }
+    @keyframes stEarth {
+      0%,40% { opacity:0; transform:scale(.2) translateY(20%); }
+      70%,100% { opacity:1; transform:scale(1); }
     }
 </style>
   <script src="/static/js/bg-animations.js"></script>
@@ -3734,8 +3865,9 @@
           <option value="desert">Trees growing from the desert</option>
           <option value="matrix">Matrix AI (matter chains)</option>
           <option value="glasses">3D magnifying glass</option>
-          <option value="solar">Solar system</option>
-          <option value="star_bypass">Giant star flyby</option>
+                    <option value="star_bypass">Giant star flyby</option>
+          <option value="earth_probe">Earth probe — underside sun</option>
+          <option value="station_probe">Close surface to ISS</option>
           
           
           
@@ -3752,6 +3884,7 @@
     <div class="bar sticky top-0 z-30">
       <div style="max-width:56rem;margin:0 auto;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
         <a href="/member/kwealth" style="color:#5eead4;font-size:12px;text-decoration:none;">← Kwealth</a>
+        {% if book %}<a href="/member/kwealth/books" class="chip" style="text-decoration:none;">Close book</a>{% endif %}
         <strong style="color:#f1f5f9;font-size:14px;">Books</strong>
         <input type="file" id="filePick" hidden accept=".pdf,.txt,.text,.md,.doc,.docx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple>
         <button type="button" class="chip" id="btnLoad">Load</button>
@@ -3775,8 +3908,9 @@
           <option value="desert">Trees growing from the desert</option>
           <option value="matrix">Matrix AI (matter chains)</option>
           <option value="glasses">3D magnifying glass</option>
-          <option value="solar">Solar system</option>
-          <option value="star_bypass">Giant star flyby</option>
+                    <option value="star_bypass">Giant star flyby</option>
+          <option value="earth_probe">Earth probe — underside sun</option>
+          <option value="station_probe">Close surface to ISS</option>
           
           
           
@@ -3906,8 +4040,52 @@
       <p style="text-align:center;color:#6ee7b7;font-size:13px;">Background music library updated.</p>
       {% endif %}
 
+
+      <div id="bookLibrary" style="max-width:56rem;margin:0 auto 12px;padding:0 12px;">
+        <p style="color:#94a3b8;font-size:12px;font-weight:700;margin:8px 0 6px;">Your uploads</p>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          {% for b in my_books %}
+          <a href="/member/kwealth/books?book_id={{ b.id }}&open=1" class="chip" style="display:block;text-align:left;text-decoration:none;">{{ b.title }}</a>
+          {% else %}
+          <p style="color:#64748b;font-size:12px;">No uploads yet. Tap Load.</p>
+          {% endfor %}
+        </div>
+        <p style="color:#94a3b8;font-size:12px;font-weight:700;margin:14px 0 6px;">Admin library</p>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          {% for b in admin_books %}
+          <a href="/member/kwealth/books?book_id={{ b.id }}&open=1" class="chip" style="display:block;text-align:left;text-decoration:none;">{{ b.title }}</a>
+          {% else %}
+          <p style="color:#64748b;font-size:12px;">No admin books yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+
       {% if book %}
-      <div class="stage" id="stage">
+      <div id="readerWrap" style="display:none;">
+      <div style="max-width:56rem;margin:0 auto;padding:0 12px 8px;display:flex;justify-content:flex-end;">
+        <button type="button" class="chip" id="btnCloseReader">Close book</button>
+      </div>
+      
+      <div id="bookShelf" style="max-width:56rem;margin:0 auto;padding:12px;">
+        <p style="color:#fbbf24;font-size:13px;font-weight:800;margin:0 0 8px;">Your uploads — tap to open</p>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          {% for b in my_books %}
+          <a href="/member/kwealth/books?book_id={{ b.id }}" style="display:block;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.08);color:#f8fafc;text-decoration:none;font-weight:700;">{{ b.title }}</a>
+          {% else %}
+          <p style="color:#94a3b8;font-size:13px;">No uploads yet. Tap Load.</p>
+          {% endfor %}
+        </div>
+        <p style="color:#fbbf24;font-size:13px;font-weight:800;margin:16px 0 8px;">Admin library</p>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          {% for b in admin_books %}
+          <a href="/member/kwealth/books?book_id={{ b.id }}" style="display:block;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.06);color:#e2e8f0;text-decoration:none;font-weight:700;">{{ b.title }}</a>
+          {% else %}
+          <p style="color:#94a3b8;font-size:13px;">No admin books yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="stage" id="stage" {% if not book %}style="display:none"{% endif %}>
         <div id="sceneStage" class="sc-sun" aria-hidden="true">
           <div class="sc-layer sc-sun-bits">
             <div class="rays"></div>
@@ -4080,17 +4258,22 @@
           <div class="sc-layer sc-stained-bits" style="display:none">
             <div class="pane"></div>
           </div>
-
-          <div class="sc-layer sc-solar-bits" style="display:none">
-            <div class="sol-sun"></div>
-            <div class="sol-orbit" style="width:22vmin;height:22vmin"></div>
-            <div class="sol-orbit" style="width:34vmin;height:34vmin"></div>
-            <div class="sol-orbit" style="width:48vmin;height:48vmin"></div>
-            <div class="sol-orbit" style="width:62vmin;height:62vmin"></div>
-            <div class="sol-p" style="left:50%;top:50%;width:0;height:0;animation-duration:8s"><i style="position:absolute;left:11vmin;top:-1vmin;width:2vmin;height:2vmin;border-radius:50%;background:#60a5fa;display:block"></i></div>
-            <div class="sol-p" style="left:50%;top:50%;width:0;height:0;animation-duration:14s"><i style="position:absolute;left:17vmin;top:-1.2vmin;width:2.4vmin;height:2.4vmin;border-radius:50%;background:#34d399;display:block"></i></div>
-            <div class="sol-p" style="left:50%;top:50%;width:0;height:0;animation-duration:22s"><i style="position:absolute;left:24vmin;top:-1.4vmin;width:2.8vmin;height:2.8vmin;border-radius:50%;background:#f87171;display:block"></i></div>
+          
+          <div class="sc-layer sc-earth_probe-bits" style="display:none">
+            <div class="stars"></div>
+            <div class="probe-cam">
+              <div class="earth-ball"></div>
+              <div class="under-sun"></div>
+            </div>
           </div>
+          <div class="sc-layer sc-station_probe-bits" style="display:none">
+            <div class="surf"></div>
+            <div class="void"></div>
+            <div class="iss"></div>
+            <div class="st-sun"></div>
+            <div class="st-earth"></div>
+          </div>
+
           <div class="sc-layer sc-star_bypass-bits" style="display:none">
             <div class="heat"></div>
             <div class="star-fly s1"><span class="nm">Sun</span></div>
@@ -4124,6 +4307,7 @@
       {% else %}
       <p style="text-align:center;color:#94a3b8;padding:4rem 1rem;">Tap <strong>Load</strong> for PDF, Word (.docx), or text books — or <strong>Music</strong> for background tracks.</p>
       <script>window.__BOOK__ = { id: null, pages: [], pageIndex: 0 }; window.__AUTO_READ__ = false;</script>
+      </div>
       {% endif %}
     </main>
   </div>
@@ -4959,7 +5143,7 @@
           else { try { if (typeof prev === 'function') prev(); } catch (err) {} }
         } else if (state.sceneFs || state.sceneOn) {
           // vertical — cycle scenes only when Scene/FS active (don't steal page scroll)
-          var order = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','solar','star_bypass'];
+          var order = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','star_bypass','earth_probe','station_probe'];
           var cur = state.sceneName || 'sun';
           var ix = order.indexOf(cur);
           if (ix < 0) ix = 0;
@@ -5105,7 +5289,7 @@
         try { if (window.CGWebGL) CGWebGL.setMode('none'); } catch (e) {}
       }
       // Show only bits for selected scene
-      ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','solar','star_bypass'].forEach(function (n) {
+      ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','star_bypass','earth_probe','station_probe'].forEach(function (n) {
         var el = surface.querySelector('.sc-' + n + '-bits');
         if (el) {
           if (show3d && n === name) {
@@ -5328,13 +5512,13 @@
     
     // ===== Auto scene advance in Full screen + Scene =====
     (function autoSceneRotate() {
-      var SCENE_ORDER = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','solar','star_bypass'];
+      var SCENE_ORDER = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','star_bypass','earth_probe','station_probe'];
       // Seconds to let each scene play before advancing (match long animations)
       var SCENE_SECS = {
         sun: 22, orbit: 16, voyage: 28, planets: 20,
         milkyway: 20, wavelength: 16, fishes3d: 16,
         jupiter: 48, neptune: 50, earth: 46,
-        desert: 60, matrix: 18, glasses: 18, solar: 20, star_bypass: 16,
+        desert: 60, matrix: 18, glasses: 18, star_bypass: 16, earth_probe: 28, station_probe: 26,
         aurora: 12, lighthouse: 12, candle: 10, comet: 9, rain: 10, stained: 12
       };
       var timer = null;
@@ -5431,5 +5615,31 @@
     }
   })();
   </script>
+
+<script>
+(function(){
+  var wrap = document.getElementById('readerWrap');
+  var lib = document.getElementById('bookLibrary');
+  function openReader(){
+    if (wrap) wrap.style.display = 'block';
+    if (lib) lib.style.display = 'none';
+    try { sessionStorage.setItem('kw_reader_open','1'); } catch(e) {}
+  }
+  function closeReader(){
+    if (wrap) wrap.style.display = 'none';
+    if (lib) lib.style.display = 'block';
+    try { sessionStorage.setItem('kw_reader_open','0'); } catch(e) {}
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
+  var btn = document.getElementById('btnCloseReader');
+  if (btn) btn.addEventListener('click', closeReader);
+  var want = /[?&]open=1/.test(location.search);
+  var keep = false;
+  try { keep = sessionStorage.getItem('kw_reader_open') === '1'; } catch(e) {}
+  if (want || keep) openReader();
+  else closeReader();
+})();
+</script>
+
 </body>
 </html>
