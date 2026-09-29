@@ -1,0 +1,13 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>New password — Churchgate</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head><body class="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
+<form method="post" class="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl p-6 space-y-4">
+  <h1 class="text-xl font-bold">Set a new password</h1>
+  {% if error %}<p class="text-rose-300 text-sm">{{ error }}</p>{% endif %}
+  <input name="email" type="email" value="{{ email or '' }}" required class="w-full rounded-lg px-3 py-2 text-slate-900">
+  <input name="code" placeholder="Email code" required class="w-full rounded-lg px-3 py-2 text-slate-900">
+  <input name="password" type="password" placeholder="New password" required class="w-full rounded-lg px-3 py-2 text-slate-900">
+  <button class="w-full py-2.5 rounded-xl bg-teal-600 font-semibold">Update password</button>
+</form></body></html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-  <title>Social watch</title>
+  <title>Live channels, movies and news — Churchgate</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     html, body { height: 100%; margin: 0; background: #020617; color: #f8fafc; overscroll-behavior: none; }
@@ -27,23 +27,18 @@
     <a href="/member" class="btn">← Back</a>
     <div style="display:flex;gap:8px">
       <button type="button" class="btn" id="btnSound" onclick="toggleSound()">Sound off</button>
-      <button type="button" class="btn" onclick="openCurrent()">Open original</button>
-    </div>
+      </div>
   </div>
 
   {% if not links %}
-  <div class="empty"><div><p class="font-bold text-white mb-1">No videos yet</p><p class="text-sm">Admin will sync the church Facebook Page or add links.</p></div></div>
+  <div class="empty"><div><p class="font-bold text-white mb-1">Stream live channels, movies and news</p><p class="text-sm">No playable streams right now. Broken links are hidden.</p></div></div>
   {% else %}
   <div class="hint">Swipe up / down — plays automatically (muted). Tap Sound to hear.</div>
   <div class="feed" id="feed">
-    {% for L in links %}
-    <section class="slide" data-embed="{{ L.embed_url or '' }}" data-src="{{ L.source_url }}" data-platform="{{ L.platform }}" data-idx="{{ loop.index0 }}">
+    {% for L in links if L.embed_url %}
+    <section class="slide" data-embed="{{ L.embed_url }}" data-src="{{ L.source_url }}" data-platform="{{ L.platform }}" data-idx="{{ loop.index0 }}">
       <div class="frame-box">
-        {% if L.embed_url %}
         <iframe title="{{ L.title }}" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share; fullscreen" allowfullscreen playsinline></iframe>
-        {% else %}
-        <div class="noembed">Cannot auto-play this link in-app.<br>Tap <strong>Open original</strong>.</div>
-        {% endif %}
       </div>
       <div class="meta">
         <span>{{ L.platform }}{% if L.description and ('live' in (L.description or '')|lower) %} · LIVE{% endif %}</span>
@@ -66,10 +61,20 @@
         var u = new URL(url, window.location.origin);
         var host = u.hostname || '';
         if (host.indexOf('youtube') >= 0) {
+          // Live: prefer www.youtube.com (nocookie often blank for live)
+          var srcHint = '';
+          try { srcHint = (document.querySelector('.slide.active') || {}).getAttribute && (document.querySelector('.slide.active').getAttribute('data-src') || ''); } catch (e) {}
+          if ((srcHint && srcHint.indexOf('/live/') >= 0) || host.indexOf('nocookie') >= 0 && (url.indexOf('live') >= 0)) {
+            if (host.indexOf('nocookie') >= 0) {
+              u.hostname = 'www.youtube.com';
+              u.pathname = u.pathname.replace(/^\/embed\//, '/embed/');
+            }
+          }
           u.searchParams.set('autoplay', '1');
           u.searchParams.set('mute', mute ? '1' : '0');
           u.searchParams.set('playsinline', '1');
           u.searchParams.set('rel', '0');
+          u.searchParams.set('modestbranding', '1');
         }
         if (host.indexOf('facebook.com') >= 0) {
           u.searchParams.set('autoplay', 'true');
@@ -123,15 +128,12 @@
       loadSlide(currentIdx, true);
     }
 
-    function openCurrent() {
-      var sec = slides[currentIdx];
-      if (!sec) return;
-      var src = sec.getAttribute('data-src');
-      if (src) window.open(src, '_blank', 'noopener');
-    }
-
     function init() {
-      slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+      slides = Array.prototype.slice.call(document.querySelectorAll('.slide')).filter(function(s){
+        var e = s.getAttribute('data-embed') || '';
+        if (!e) { s.remove(); return false; }
+        return true;
+      });
       if (!slides.length) return;
       var feed = document.getElementById('feed');
 
@@ -158,5 +160,30 @@
     }
     document.addEventListener('DOMContentLoaded', init);
   </script>
+
+<script>
+(function(){
+  function hideSlide(el){
+    var slide = el && el.closest ? el.closest(".slide") : null;
+    if (slide) { slide.remove(); }
+  }
+  document.querySelectorAll(".frame-box iframe").forEach(function(ifr){
+    ifr.addEventListener("error", function(){ hideSlide(ifr); });
+    // if src empty or invalid, skip
+    var src = ifr.getAttribute("src") || "";
+    if (!src || src === "about:blank" || src.indexOf("undefined") >= 0) hideSlide(ifr);
+    // timeout: if iframe stays blank-ish we cannot always detect; data-broken from server
+    if (ifr.getAttribute("data-broken") === "1") hideSlide(ifr);
+  });
+  // remove slides marked broken
+  document.querySelectorAll(".slide[data-broken='1']").forEach(function(s){ s.remove(); });
+  if (!document.querySelector(".slide") && !document.querySelector(".empty")) {
+    var d=document.createElement("div");
+    d.className="empty";
+    d.innerHTML="<div><p class=\"font-bold text-white mb-2\">No playable streams</p><p>Broken links were skipped.</p></div>";
+    document.body.appendChild(d);
+  }
+})();
+</script>
 </body>
 </html>

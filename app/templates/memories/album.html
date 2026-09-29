@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Memories – Churchgate{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-6">
+  <div class="flex items-center gap-3 mb-4">
+    <img src="/static/icons/icon-192.png" alt="Churchgate" class="h-10 w-10 rounded-lg">
+    <div>
+      <h1 class="text-xl font-bold">Memories</h1>
+      <p class="text-sm text-slate-500">Upload photos. Tap play for a slideshow with music and dramatic entrance.</p>
+    </div>
+  </div>
+  <form class="mb-6 p-4 rounded-2xl border bg-white shadow-sm" action="/member/memories/upload" method="post" enctype="multipart/form-data">
+    <label class="block text-sm font-medium mb-2">Add pictures (jpg, png, webp)</label>
+    <input type="file" name="files" accept="image/*" multiple class="block w-full text-sm mb-3">
+    <button class="px-4 py-2 rounded-xl bg-teal-700 text-white text-sm font-semibold">Upload</button>
+    <a href="/member/portal" class="ml-3 text-sm text-teal-800">Back to dashboard</a>
+  </form>
+  <div class="flex flex-wrap items-center gap-3 mb-4">
+    <label class="text-sm">Slideshow music
+      <select id="memMusic" class="border rounded-lg px-2 py-1 text-sm">
+        <option value="">None</option>
+        {% for m in music_files|default([]) %}
+        <option value="{{ m.url }}">{{ m.title }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button type="button" id="btnPlayShow" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold">Play slideshow</button>
+  </div>
+  <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3" id="memGrid">
+    {% for p in photos|default([]) %}
+    <button type="button" class="mem-thumb rounded-xl overflow-hidden shadow aspect-square bg-slate-200" data-src="{{ p.url }}">
+      <img src="{{ p.url }}" alt="" class="w-full h-full object-cover">
+    </button>
+    {% else %}
+    <p class="col-span-full text-slate-500 text-sm">No memories yet. Upload pictures above.</p>
+    {% endfor %}
+  </div>
+</div>
+<div id="showStage" class="fixed inset-0 z-50 hidden bg-black">
+  <img id="showImg" alt="" class="absolute inset-0 m-auto max-w-full max-h-full object-contain">
+  <audio id="showAudio" loop></audio>
+  <button type="button" id="btnCloseShow" class="absolute top-4 right-4 text-white bg-white/20 px-3 py-2 rounded-lg">Close</button>
+</div>
+<style>
+@keyframes memZoom { from { transform: scale(.4) rotate(-8deg); opacity:0;} to { transform: scale(1) rotate(0); opacity:1;} }
+@keyframes memFly { from { transform: translateX(-40%) scale(.7); opacity:0;} to { transform: none; opacity:1;} }
+@keyframes memRise { from { transform: translateY(30%) scale(.85); opacity:0;} to { transform: none; opacity:1;} }
+@keyframes memSpin { from { transform: rotateY(80deg) scale(.6); opacity:0;} to { transform: none; opacity:1;} }
+.mem-in-zoom { animation: memZoom 1.1s ease-out both; }
+.mem-in-fly { animation: memFly 1.1s ease-out both; }
+.mem-in-rise { animation: memRise 1.1s ease-out both; }
+.mem-in-spin { animation: memSpin 1.15s ease-out both; }
+</style>
+<script>
+(function(){
+  const thumbs = Array.from(document.querySelectorAll('.mem-thumb'));
+  const stage = document.getElementById('showStage');
+  const img = document.getElementById('showImg');
+  const audio = document.getElementById('showAudio');
+  const styles = ['mem-in-zoom','mem-in-fly','mem-in-rise','mem-in-spin'];
+  let i = 0, timer = null, list = [];
+  function show(n){
+    if (!list.length) return;
+    i = (n + list.length) % list.length;
+    img.className = '';
+    void img.offsetWidth;
+    img.src = list[i];
+    img.className = styles[i % styles.length];
+  }
+  function start(from){
+    list = thumbs.map(t => t.getAttribute('data-src')).filter(Boolean);
+    if (!list.length) return;
+    stage.classList.remove('hidden');
+    const mu = document.getElementById('memMusic').value;
+    if (mu) { audio.src = mu; audio.volume = 0.4; audio.play().catch(function(){}); }
+    show(from || 0);
+    clearInterval(timer);
+    timer = setInterval(function(){ show(i+1); }, 4500);
+  }
+  function stop(){
+    clearInterval(timer); timer=null;
+    audio.pause();
+    stage.classList.add('hidden');
+  }
+  thumbs.forEach(function(t, idx){ t.addEventListener('click', function(){ start(idx); }); });
+  document.getElementById('btnPlayShow').onclick = function(){ start(0); };
+  document.getElementById('btnCloseShow').onclick = stop;
+})();
+</script>
+{% endblock %}

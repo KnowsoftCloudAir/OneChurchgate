@@ -2,6 +2,16 @@
 {% block title %}My Space – Churchgate{% endblock %}
 {% block content %}
 
+<div class="mx-4 mt-4 mb-2 p-4 rounded-2xl border border-amber-300/40 bg-gradient-to-r from-amber-900 via-rose-900 to-slate-900 text-white shadow-lg">
+  <div class="flex flex-wrap items-center justify-between gap-3">
+    <div>
+      <div class="font-bold text-lg">Memories</div>
+      <div class="text-sm text-amber-100 mt-0.5">Upload pictures and play a slideshow with music.</div>
+    </div>
+    <a href="/member/memories" class="px-4 py-2.5 rounded-xl bg-white/15 border border-white/30 text-sm font-semibold hover:bg-white/25">Open memories</a>
+  </div>
+</div>
+
 {# Invite & earn — extra panel only; original dashboard unchanged below #}
 {% if promo_code and not is_preview %}
 <div class="mx-4 mt-4 mb-2 p-4 rounded-2xl border border-teal-400/40 bg-gradient-to-r from-teal-800 via-teal-700 to-slate-900 text-white shadow-lg">
@@ -360,6 +370,47 @@
 </style>
 
 <div class="member-space theme-royal" id="memberSpace" x-data="memberHub()" x-init="init()">
+    <div id="cgTrialBanner" style="display:none;position:sticky;top:0;z-index:50;background:#b45309;color:#fff;text-align:center;padding:6px 10px;font-size:12px;font-weight:700;"></div>
+    <div id="cgAmbientBar" class="flex flex-wrap gap-2 items-center px-3 py-2 text-xs" style="position:relative;z-index:5;background:rgba(0,0,0,0.25);">
+      <span class="opacity-80">Ambient:</span>
+      <select id="cgAnimSelect" class="text-slate-900 rounded px-2 py-1 text-xs">
+        <option value="none">None</option>
+        <option value="sunset">Sunset</option>
+        <option value="planets">Planets around sun</option>
+        <option value="starfield">Starfield</option>
+        <option value="aurora">Aurora</option>
+        <option value="ocean_waves">Ocean waves</option>
+        <option value="ocean_fish">Ocean fish</option>
+        <option value="sky_run">Sky run</option>
+        <option value="jupiter">Jupiter flyby</option>
+        <option value="galaxy">Galaxy</option>
+        <option value="floating_orbs">Floating orbs</option>
+        <option value="word_forms">Spoken words</option>
+        <option value="great_men">Portraits from sky</option>
+        <option value="sunrise_ant">Sunrise ant</option>
+      </select>
+      <button type="button" id="cgAnimPause" class="px-2 py-1 rounded bg-white/15 border border-white/20">Pause anim</button>
+      <button type="button" id="cgAnimFS" class="px-2 py-1 rounded bg-white/15 border border-white/20">Fullscreen</button>
+    </div>
+    <script>
+    (function(){
+      var sel = document.getElementById('cgAnimSelect');
+      var pauseBtn = document.getElementById('cgAnimPause');
+      var fsBtn = document.getElementById('cgAnimFS');
+      if (sel && window.CGBgAnim) {
+        var cur = localStorage.getItem('cg_bg_anim') || 'none';
+        sel.value = cur;
+        sel.onchange = function(){ CGBgAnim.setMode(sel.value); };
+        pauseBtn.onclick = function(){
+          var p = !CGBgAnim.isPaused();
+          CGBgAnim.setPaused(p);
+          pauseBtn.textContent = p ? 'Resume anim' : 'Pause anim';
+        };
+        fsBtn.onclick = function(){ CGBgAnim.toggleFullscreen(); };
+      }
+    })();
+    </script>
+
   <div class="pray-watermark" aria-hidden="true"></div>
 
   <div class="max-w-3xl mx-auto px-4 pt-4 relative z-10">
@@ -367,7 +418,6 @@
       <h2 class="font-bold text-lg mb-1" style="color: var(--mp-text)">Member interaction</h2>
       <p class="ms-muted text-sm mb-3">Share text and pictures with members in your global church. Like, comment and share posts. Everything expires after 24 hours. You can also request to join a focus group.</p>
       <a href="/member/feed" class="ms-btn inline-block px-5 py-2.5 text-sm">Open interaction panel →</a>
-      <a href="/member/social-watch" class="ms-btn inline-block px-5 py-2.5 text-sm mt-2 ml-0 sm:ml-2" style="background:linear-gradient(135deg,#0ea5e9,#6366f1)">▶ Watch Facebook · TikTok · Instagram</a>
     </div>
   </div>
 
@@ -1276,6 +1326,15 @@ function memberHub() {
     },
 
     initAngel() {
+      function cleanAngelSpeech(s) {
+        s = String(s || "");
+        s = s.replace(/[()\[\]{}<>]/g, " ");
+        s = s.replace(/[*_~`#|\\\/]+/g, " ");
+        s = s.replace(/&/g, " and ");
+        s = s.replace(/https?:\/\/\S+/gi, " ");
+        s = s.replace(/[^A-Za-z0-9\s.,!?;:'\"\-]/g, " ");
+        return s.replace(/\s+/g, " ").trim();
+      }
       const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SR) {
         this.angel.status = 'Voice needs Chrome or Edge. Use the on-screen buttons.';
@@ -1409,7 +1468,8 @@ function memberHub() {
       if (speakBye) {
         try {
           const u = new SpeechSynthesisUtterance('Angel is off. God bless you.');
-          speechSynthesis.speak(u);
+          if (window.CGBgAnim) try { CGBgAnim.pushSpokenWord(text); } catch(e){}
+        speechSynthesis.speak(u);
         } catch (e) {}
       }
     },
@@ -1835,6 +1895,28 @@ function memberHub() {
         this.angelAction('read_book', title);
         return;
       }
+      
+      if (/\b(open|play|stream|show)\b.*\b(facebook|fb)\b/.test(t) || (/\bfacebook\b/.test(t) && /\b(stream|video|live)\b/.test(t))) {
+        this.angelSpeak("Opening Live channels, movies and news stream.");
+        setTimeout(function(){ location.href = "/member/social-watch?platform=facebook"; }, 900);
+        return;
+      }
+      if (/\b(open|play|stream|show)\b.*\btiktok\b/.test(t) || /\btiktok\b/.test(t)) {
+        this.angelSpeak("Opening Live channels, movies and news stream.");
+        setTimeout(function(){ location.href = "/member/social-watch?platform=tiktok"; }, 900);
+        return;
+      }
+      if (/\b(last book|continue reading|read last book|open my book)\b/.test(t)) {
+        try {
+          const r = await fetch("/member/api/angel-actions?action=read_ebook", { credentials: "same-origin" });
+          const j = await r.json();
+          if (j && j.speak) this.angelSpeak(j.speak);
+          if (j && j.navigate) setTimeout(function(){ location.href = j.navigate; }, 1100);
+          else setTimeout(function(){ location.href = "/member/kwealth/books?read=1&fs=1&music=1"; }, 1100);
+        } catch (e) { location.href = "/member/kwealth/books?read=1&fs=1&music=1"; }
+        return;
+      }
+
       if (/\bread ebook\b/.test(t) || /\bread e-?book\b/.test(t) || /\bcontinue (the )?(book|ebook)\b/.test(t)) {
         try {
           const r = await fetch('/member/api/angel-actions?action=read_ebook', { credentials: 'same-origin' });
@@ -1845,6 +1927,37 @@ function memberHub() {
         return;
       }
       if (/\b(list books|my books|kwealth books)\b/.test(t)) { this.angelAction('books'); return; }
+      
+      if (/\b(change animation|background animation|set animation|ocean fish|sky run|jupiter|sunset anim)\b/.test(t)) {
+        if (window.CGBgAnim) {
+          let m = 'sunset';
+          if (/ocean/.test(t)) m = 'ocean_fish';
+          else if (/sky/.test(t)) m = 'sky_run';
+          else if (/jupiter/.test(t)) m = 'jupiter';
+          else if (/portrait|great men/.test(t)) m = 'great_men';
+          else if (/ant/.test(t)) m = 'sunrise_ant';
+          else if (/word/.test(t)) m = 'word_forms';
+          else if (/none|off/.test(t)) m = 'none';
+          CGBgAnim.setMode(m);
+          const sel = document.getElementById('cgAnimSelect');
+          if (sel) sel.value = m;
+          this.angelSpeak('Background animation set.');
+        } else this.angelSpeak('Animation is not available on this page.');
+        return;
+      }
+      if (/\bpause animation\b/.test(t)) {
+        if (window.CGBgAnim) { CGBgAnim.setPaused(true); this.angelSpeak('Animation paused.'); }
+        return;
+      }
+      if (/\bresume animation\b/.test(t)) {
+        if (window.CGBgAnim) { CGBgAnim.setPaused(false); this.angelSpeak('Animation resumed.'); }
+        return;
+      }
+      if (/\bfull ?screen\b/.test(t)) {
+        if (window.CGBgAnim) { CGBgAnim.toggleFullscreen(); this.angelSpeak('Fullscreen toggled.'); }
+        return;
+      }
+
       if (/\bread bible\b/.test(t) || /\bbible reading\b/.test(t)) { this.angelReadBible('peace'); return; }
       if (/\b(receive jesus|accept jesus|how do i (get )?saved|how can i be saved)\b/.test(t)) {
         this.angelLeadSalvation(); return;
@@ -1907,9 +2020,11 @@ function memberHub() {
           this.angelSpeak(j.answer, false, '');
           return;
         }
-        // no match — stay quiet
+        if (j && j.ok && j.outside) {
+          this.angelSpeak("Sorry I can't help with that.");
+          return;
+        }
         this.angel.busy = false;
-        this.angel.status = 'No matching word found. Try another question.';
         this.angelIdleAfterAction();
         return;
       } catch (e) {}

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Social stream — Admin</title>
+  <title>Live channels, movies and news — Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 min-h-screen p-4 sm:p-6">
@@ -14,7 +14,16 @@
     </div>
 
     {% if ok %}<p class="mb-3 text-green-700 font-semibold text-sm">Saved ({{ ok }}).{% if synced %} Imported {{ synced }} video(s).{% endif %}</p>{% endif %}
-    {% if err %}<p class="mb-3 text-red-700 font-semibold text-sm">Error: {{ err }}</p>{% endif %}
+    {% if err %}<div class="mb-3 p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">
+      <p class="font-bold">Facebook / sync error</p>
+      <p class="mt-1 break-words">{{ err }}</p>
+      <ul class="mt-2 text-xs list-disc list-inside text-red-700/90">
+        <li>Page ID must be a <strong>Page</strong>, not only a personal profile</li>
+        <li>Use a <strong>Page access token</strong> from Graph API Explorer → <code>me/accounts</code></li>
+        <li>Permissions: pages_show_list, pages_read_engagement (and video/content read if shown)</li>
+        <li>Publish at least one <strong>Public</strong> video on the Page before sync</li>
+      </ul>
+    </div>{% endif %}
 
     <!-- Facebook Page connect + sync -->
     <section class="bg-white rounded-2xl border shadow-sm p-5 mb-6">
@@ -45,7 +54,7 @@
     </section>
 
     <p class="text-sm text-slate-600 mb-3">
-      Manual add: public Facebook / TikTok / Instagram / YouTube (including Live). Members: vertical feed, <strong>autoplay muted on scroll</strong>, sound toggle.
+      Manual add: public live channels, movies and news / YouTube (including Live). Members: vertical feed, <strong>autoplay muted on scroll</strong>, sound toggle.
     </p>
 
     <form method="post" action="/admin/social-stream/add" class="bg-white rounded-2xl border shadow-sm p-5 space-y-3 mb-6">

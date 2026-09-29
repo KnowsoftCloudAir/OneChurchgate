@@ -1,0 +1,14 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Backup code — Churchgate</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head><body class="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
+<form method="post" action="/auth/step3" class="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl p-6 space-y-4">
+  <p class="text-[11px] uppercase tracking-widest text-slate-400">Step 3 of 3</p>
+  <h1 class="text-xl font-bold">Backup code</h1>
+  <p class="text-sm text-slate-400">Enter a saved backup code, or the second code emailed to you.</p>
+  {% if error %}<p class="text-rose-300 text-sm">{{ error }}</p>{% endif %}
+  <input type="hidden" name="email" value="{{ email or '' }}">
+  <input name="code" class="w-full rounded-lg px-3 py-2 text-slate-900 tracking-widest" required>
+  <button class="w-full py-2.5 rounded-xl bg-teal-600 font-semibold">Enter Churchgate</button>
+</form></body></html>

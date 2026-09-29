@@ -1,0 +1,15 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Email code — Churchgate</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head><body class="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
+<form method="post" action="/auth/step2" class="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl p-6 space-y-4">
+  <p class="text-[11px] uppercase tracking-widest text-slate-400">Step 2 of 3</p>
+  <h1 class="text-xl font-bold">Email sign-in code</h1>
+  <p class="text-sm text-slate-400">We sent a 6-digit code to your mailbox.</p>
+  {% if error %}<p class="text-rose-300 text-sm">{{ error }}</p>{% endif %}
+  <input type="hidden" name="email" value="{{ email or '' }}">
+  <input name="code" inputmode="numeric" placeholder="000000" class="w-full rounded-lg px-3 py-2 text-slate-900 tracking-widest" required>
+  <button class="w-full py-2.5 rounded-xl bg-teal-600 font-semibold">Continue</button>
+  <a class="block text-center text-sm text-slate-400" href="/auth/login">Cancel</a>
+</form></body></html>

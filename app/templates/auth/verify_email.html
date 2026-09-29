@@ -1,0 +1,15 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Confirm email — Churchgate</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head><body class="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
+<form method="post" action="/auth/verify-email" class="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl p-6 space-y-4">
+  <h1 class="text-xl font-bold">Confirm your email</h1>
+  {% if error %}<p class="text-rose-300 text-sm">{{ error }}</p>{% endif %}
+  <label class="text-xs text-slate-400">Email</label>
+  <input name="email" value="{{ email or '' }}" class="w-full rounded-lg px-3 py-2 text-slate-900" required>
+  <label class="text-xs text-slate-400">6-digit code</label>
+  <input name="code" inputmode="numeric" class="w-full rounded-lg px-3 py-2 text-slate-900 tracking-widest" required>
+  <button class="w-full py-2.5 rounded-xl bg-teal-600 font-semibold">Confirm</button>
+  <a class="block text-center text-sm text-slate-400" href="/auth/login">Back to login</a>
+</form></body></html>
