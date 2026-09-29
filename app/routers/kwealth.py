@@ -402,67 +402,76 @@ def _load_book_text(book: KwealthBook) -> str:
     return ""
 
 
+class FormatConvertError(Exception):
+    """Friendly convert failure — never crash the request."""
+
+
+FAIL_MSG = "Failed to convert due to format. Please change format to simple PDF, DOC or TXT and upload again."
+
+
 def _extract_text_from_upload(data: bytes, filename: str) -> str:
-    """Convert PDF, text, Markdown, or Word (.docx/.doc) into plain text for the reader."""
+    """Convert PDF/text/Word. Raises FormatConvertError on unsupported or empty extract."""
     import io
-    name = (filename or "").lower()
-    # Plain text / markdown
-    if name.endswith(".txt") or name.endswith(".md") or name.endswith(".text") or name.endswith(".rtf"):
-        # strip minimal RTF control words if needed
-        text = data.decode("utf-8", errors="ignore")
-        if name.endswith(".rtf") or text.lstrip().startswith("{\rtf"):
-            text = re.sub(r"\\[a-zA-Z]+\d*\s?", " ", text)
-            text = re.sub(r"[{}]", " ", text)
-        return text
-    # PDF
-    if name.endswith(".pdf") or (len(data) > 4 and data[:4] == b"%PDF"):
-        try:
-            from pypdf import PdfReader
-            reader = PdfReader(io.BytesIO(data))
-            parts = []
-            for page in reader.pages:
-                try:
-                    parts.append(page.extract_text() or "")
-                except Exception:
-                    pass
-            return "\n\n".join(parts)
-        except Exception:
-            return data.decode("utf-8", errors="ignore")
-    # Word .docx
-    if name.endswith(".docx"):
-        try:
-            from docx import Document
-            doc = Document(io.BytesIO(data))
-            parts = [p.text for p in doc.paragraphs if (p.text or "").strip()]
-            # tables
-            for table in getattr(doc, "tables", []) or []:
-                for row in table.rows:
-                    cells = [c.text.strip() for c in row.cells if c.text and c.text.strip()]
-                    if cells:
-                        parts.append(" | ".join(cells))
-            return "\n\n".join(parts)
-        except Exception as e:
-            return f"(Could not read Word document: {e})"
-    # Legacy .doc — best-effort plain extract
-    if name.endswith(".doc"):
-        try:
-            # Try ole-based or binary decode of readable streams
+    name = (filename or "file").lower()
+    if not data:
+        raise FormatConvertError(FAIL_MSG)
+    try:
+        if name.endswith((".txt", ".md", ".text")):
             text = data.decode("utf-8", errors="ignore")
-            if len(text.strip()) < 40:
-                text = data.decode("latin-1", errors="ignore")
-            # keep sequences of printable text
+            if len(text.strip()) < 20:
+                raise FormatConvertError(FAIL_MSG)
+            return text
+        if name.endswith(".rtf") or data.lstrip()[:5] == b"{\\rtf" or data.lstrip().startswith(b"{\rtf"):
+            text = data.decode("utf-8", errors="ignore")
+            text = re.sub(r"\\[a-zA-Z]+\\d*\\s?", " ", text)
+            text = re.sub(r"[{}]", " ", text)
+            if len(text.strip()) < 20:
+                raise FormatConvertError(FAIL_MSG)
+            return text
+        if name.endswith(".pdf") or data[:4] == b"%PDF":
+            try:
+                from pypdf import PdfReader
+                reader = PdfReader(io.BytesIO(data), strict=False)
+                parts = []
+                for page in list(reader.pages)[:400]:
+                    try:
+                        parts.append(page.extract_text() or "")
+                    except Exception:
+                        continue
+                text = "\n\n".join(parts).strip()
+            except Exception:
+                text = ""
+            if len(text) < 20:
+                raise FormatConvertError(FAIL_MSG)
+            return text
+        if name.endswith(".docx"):
+            try:
+                from docx import Document
+                doc = Document(io.BytesIO(data))
+                parts = [p.text for p in doc.paragraphs if (p.text or "").strip()]
+                for table in getattr(doc, "tables", []) or []:
+                    for row in table.rows:
+                        cells = [c.text.strip() for c in row.cells if c.text and c.text.strip()]
+                        if cells:
+                            parts.append(" | ".join(cells))
+                text = "\n\n".join(parts).strip()
+            except Exception:
+                text = ""
+            if len(text) < 20:
+                raise FormatConvertError(FAIL_MSG)
+            return text
+        if name.endswith(".doc"):
+            text = data.decode("latin-1", errors="ignore")
             text = re.sub(r"[^\x09\x0A\x0D\x20-\x7E\u00A0-\u024F]+", " ", text)
             text = re.sub(r"[ \t]{2,}", " ", text)
-            text = re.sub(r"\n{3,}", "\n\n", text)
-            if len(text.strip()) > 80:
-                return text.strip()
-        except Exception:
-            pass
-        return (
-            "(Legacy .doc format is limited. Please re-save the file as .docx or PDF and upload again.)"
-        )
-    # Fallback
-    return data.decode("utf-8", errors="ignore")
+            if len(text.strip()) < 80:
+                raise FormatConvertError(FAIL_MSG)
+            return text.strip()
+    except FormatConvertError:
+        raise
+    except Exception:
+        raise FormatConvertError(FAIL_MSG)
+    raise FormatConvertError(FAIL_MSG)
 
 
 
@@ -655,10 +664,15 @@ async def kwealth_books_upload(
         raw = await f.read()
         if not raw or len(raw) > 15_000_000:
             continue
-        text = _extract_text_from_upload(raw, f.filename or "book.txt")
+        try:
+            text = _extract_text_from_upload(raw, f.filename or "book.txt")
+        except FormatConvertError:
+            return RedirectResponse("/member/kwealth/books?convert=fail", status_code=303)
+        except Exception:
+            return RedirectResponse("/member/kwealth/books?convert=fail", status_code=303)
         text = (text or "").strip()
         if len(text) < 20:
-            continue
+            return RedirectResponse("/member/kwealth/books?convert=fail", status_code=303)
         safe = f"u{user.id}_{uuid.uuid4().hex[:10]}.txt"
         dest = USER_BOOKS_TEXT / safe
         # prefer package-relative path
@@ -1180,7 +1194,7 @@ async def angel_actions(
             "fallback": ["/member/feed", "/member#interaction"],
         })
 
-if action in ("read_ebook", "ebook"):
+    if action in ("read_ebook", "ebook"):
         books = session.exec(select(KwealthBook).where(KwealthBook.is_active == True)).all()
         if not books:
             return JSONResponse({"ok": True, "speak": "No ebook loaded yet. Open Kwealth Books and load a PDF or text first.", "navigate": "/member/kwealth/books"})
@@ -1334,10 +1348,15 @@ async def admin_kwealth_books_upload(
         raw = await f.read()
         if not raw or len(raw) > 20_000_000:
             continue
-        text = _extract_text_from_upload(raw, f.filename or "book.txt")
+        try:
+            text = _extract_text_from_upload(raw, f.filename or "book.txt")
+        except FormatConvertError:
+            return RedirectResponse("/member/kwealth/books?convert=fail", status_code=303)
+        except Exception:
+            return RedirectResponse("/member/kwealth/books?convert=fail", status_code=303)
         text = (text or "").strip()
         if len(text) < 20:
-            continue
+            return RedirectResponse("/member/kwealth/books?convert=fail", status_code=303)
         safe = f"admin_{uuid.uuid4().hex[:10]}.txt"
         here = Path(__file__).resolve().parent.parent
         dest = here / "static" / "uploads" / "kwealth_books_text" / safe
