@@ -6,7 +6,7 @@
   <title>Books — Kwealth</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Playfair+Display:wght@500;700&family=Cormorant+Garamond:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Playfair+Display:wght@500;700&family=Cormorant+Garamond:wght@500;600&family=Dancing+Script:wght@500;700&family=Great+Vibes&family=Pacifico&family=Satisfy&family=Allura&family=Caveat:wght@500;700&family=Tangerine:wght@400;700&family=Homemade+Apple&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="/static/js/offline-store.js"></script>
   <link rel="manifest" href="/static/manifest.json">
@@ -3751,6 +3751,20 @@
       z-index: 20 !important;
     }
 
+
+/* === LAST RULES: star flyby visible in fullscreen === */
+#stage.scene-fs.scene-on #sceneStage.sc-star_bypass {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 8 !important;
+  background: #000 !important;
+}
+#stage.scene-fs.scene-on #sceneStage.sc-star_bypass .sc-star_bypass-bits {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
 </style>
   <script src="/static/js/bg-animations.js"></script>
 </head>
@@ -3771,8 +3785,7 @@
           <option value="desert">Trees growing from the desert</option>
           <option value="matrix">Matrix AI (matter chains)</option>
           <option value="glasses">Eyeglasses — man reading</option>
-          <option value="star_bypass">Giant star flyby</option>
-        </select>
+                  </select>
   <button type="button" class="chip on" id="fsRead">👼 Read</button>
   <button type="button" class="chip" id="fsSceneToggle">Scene on/off</button>
 </div>
@@ -3805,8 +3818,7 @@
           <option value="desert">Trees growing from the desert</option>
           <option value="matrix">Matrix AI (matter chains)</option>
           <option value="glasses">Eyeglasses — man reading</option>
-          <option value="star_bypass">Giant star flyby</option>
-        </select>
+                  </select>
         <button type="button" class="chip" id="btnSceneFs" title="Full screen book (captions while reading)">Full screen</button>
         <select id="wordStyle" class="ctl" style="max-width:8rem;font-size:11px;" title="Word style">
           <option value="fill">Fill colour</option>
@@ -3848,6 +3860,14 @@
               <option value="'Segoe UI', system-ui, sans-serif">Segoe UI</option>
               <option value="'Helvetica Neue', Arial, sans-serif">Helvetica</option>
               <option value="'Courier New', monospace">Courier</option>
+              <option value="'Dancing Script', cursive">Dancing Script</option>
+              <option value="'Great Vibes', cursive">Great Vibes</option>
+              <option value="Pacifico, cursive">Pacifico</option>
+              <option value="Satisfy, cursive">Satisfy</option>
+              <option value="Allura, cursive">Allura</option>
+              <option value="Caveat, cursive">Caveat</option>
+              <option value="Tangerine, cursive">Tangerine</option>
+              <option value="'Homemade Apple', cursive">Homemade Apple</option>
             </select>
           </div>
           <div>
@@ -4738,13 +4758,45 @@ id="fsBookMeta" aria-hidden="true">
     });
     $('panelTools').style.display = 'block';
     $('panelTools').dataset.open = '1';
+    
+    document.addEventListener('keydown', function(ev){
+      var tag = (ev.target && ev.target.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+      if (ev.key === 'ArrowRight') {
+        ev.preventDefault();
+        try { state.pageIndex = Math.min((state.pages||[]).length-1, (state.pageIndex||0)+1); renderPage(); } catch(e) {}
+      } else if (ev.key === 'ArrowLeft') {
+        ev.preventDefault();
+        try { state.pageIndex = Math.max(0, (state.pageIndex||0)-1); renderPage(); } catch(e) {}
+      } else if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+        ev.preventDefault();
+        var pick = document.getElementById('scenePick') || document.getElementById('fsScenePick');
+        if (!pick || !pick.options.length) return;
+        var i = pick.selectedIndex || 0;
+        i = ev.key === 'ArrowDown' ? Math.min(pick.options.length-1, i+1) : Math.max(0, i-1);
+        pick.selectedIndex = i;
+        state.sceneName = pick.value;
+        state.sceneOn = true;
+        try { applyScene(); } catch(e) {}
+      }
+    });
+
     on('btnMusic', 'onclick', () => {
       const p = $('panelMusic');
       if (!p) return;
-      const show = p.style.display === 'none';
+      const show = p.style.display === 'none' || !p.style.display;
       p.style.display = show ? 'block' : 'none';
+      var chip = $('btnMusic');
+      if (chip) {
+        var dot = $('bgmDot');
+        chip.innerHTML = (dot ? dot.outerHTML + ' ' : '') + (show ? 'Close' : 'Play');
+      }
       if (show) loadBgmList();
+      if (!show) {
+        try { if (state.bgmAudio) { state.bgmAudio.pause(); } } catch(e) {}
+      }
     });
+    (function(){ var c=$('btnMusic'); if(c && c.innerHTML.indexOf('Play')<0){ var d=$('bgmDot'); c.innerHTML=(d?d.outerHTML+' ':'')+'Play'; } })();
 
     document.querySelectorAll('.theme-btn').forEach(b => {
       b.onclick = () => { state.theme = b.dataset.theme; localStorage.setItem('kw_book_theme', state.theme); applyTheme(); };
@@ -5396,6 +5448,54 @@ id="fsBookMeta" aria-hidden="true">
         speakPage();
       }, 600);
     }
+
+    // Force Giant star flyby to paint in fullscreen
+    (function forceStarFlyby(){
+      function go(){
+        try {
+          var stage = document.getElementById('stage');
+          var surface = document.getElementById('sceneStage');
+          var bits = surface && surface.querySelector('.sc-star_bypass-bits');
+          var name = (state.sceneName || '');
+          var fs = !!(state.sceneFs || (stage && stage.classList.contains('scene-fs')));
+          var want = fs && (name === 'star_bypass') && state.sceneOn;
+          if (!surface || !stage) return;
+          if (want) {
+            stage.classList.add('scene-on','scene-fs');
+            surface.className = 'sc-star_bypass';
+            surface.style.setProperty('display','block','important');
+            surface.style.setProperty('visibility','visible','important');
+            surface.style.setProperty('opacity','1','important');
+            surface.style.setProperty('z-index','8','important');
+            if (bits) {
+              bits.style.setProperty('display','block','important');
+              bits.style.setProperty('visibility','visible','important');
+              bits.style.setProperty('opacity','1','important');
+            }
+            var sheet = document.getElementById('sheetText');
+            if (sheet) { sheet.style.opacity = '0'; }
+            var meta = document.getElementById('fsBookMeta');
+            if (meta) { meta.style.display = 'block'; meta.classList.add('is-on'); }
+          }
+        } catch(e) {}
+      }
+      setInterval(go, 400);
+      ['scenePick','fsScenePick'].forEach(function(id){
+        var el = document.getElementById(id);
+        if (!el || el._starBound) return;
+        el._starBound = true;
+        el.addEventListener('change', function(){
+          if (el.value === 'star_bypass') {
+            state.sceneName = 'star_bypass';
+            state.sceneOn = true;
+            state.sceneFs = true;
+            try { applySceneFs(true); } catch(e) {}
+            try { applyScene(); } catch(e) {}
+            go();
+          }
+        });
+      });
+    })();
   })();
   </script>
 </body>
