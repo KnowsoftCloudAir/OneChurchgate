@@ -113,15 +113,13 @@ def restore_bundled_backup(force: bool = False) -> int:
                 is_active=True,
             )
         else:
-            admin.hashed_password = get_password_hash(GA_PASSWORD)
             admin.role = UserRole.general_admin
             admin.is_active = True
-            if hasattr(admin, "must_change_password"):
-                admin.must_change_password = False
+            # keep existing hashed_password
         session.add(admin)
         session.commit()
         print(f"✅ Bundled backup restored ({restored} rows)")
-        print(f"✅ SPECIAL General Admin: {GA_EMAIL} / {GA_PASSWORD}")
+        print(f"✅ General Admin kept (password not reset)")
     try:
         MARKER.parent.mkdir(parents=True, exist_ok=True)
         MARKER.write_text(datetime.utcnow().isoformat())
@@ -143,11 +141,8 @@ def force_general_admin_password():
                 is_active=True,
             )
         else:
-            admin.hashed_password = get_password_hash(GA_PASSWORD)
             admin.role = UserRole.general_admin
             admin.is_active = True
-            if hasattr(admin, "must_change_password"):
-                admin.must_change_password = False
         session.add(admin)
         session.commit()
-        print(f"✅ Privileged GA login ready: {GA_EMAIL} / {GA_PASSWORD}")
+        print(f"✅ General Admin present — existing password kept")
