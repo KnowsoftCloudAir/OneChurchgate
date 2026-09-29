@@ -623,12 +623,6 @@ async def kwealth_books(
     page_index = 0
     if book_id:
         book = session.get(KwealthBook, book_id)
-    elif my_books:
-        book = my_books[0]
-    elif admin_books:
-        book = admin_books[0]
-    elif books:
-        book = books[0]
     if book:
         text = _load_book_text(book)
         pages = _split_pages(text)
