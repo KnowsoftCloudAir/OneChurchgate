@@ -1,4 +1,3 @@
-from app.youtube_persist import mirror_from_db, remove_from_mirror
 
 """YouTube links for home showcase + Global church data export/import."""
 from pathlib import Path
@@ -132,10 +131,6 @@ async def youtube_submit(
     )
     session.add(link)
     session.commit()
-    try:
-        mirror_from_db(session)
-    except Exception as _e:
-        print('yt mirror', _e)
     return RedirectResponse("/youtube", status_code=303)
 
 
@@ -153,10 +148,6 @@ async def youtube_approve(
     L.approved_at = datetime.utcnow()
     session.add(L)
     session.commit()
-    try:
-        mirror_from_db(session)
-    except Exception as _e:
-        print('yt mirror', _e)
     return RedirectResponse("/youtube", status_code=303)
 
 
@@ -169,18 +160,10 @@ async def youtube_reject(
     L = session.get(YoutubeChannelLink, link_id)
     if not L:
         raise HTTPException(404)
-    try:
-        remove_from_mirror(L.youtube_video_id, L.youtube_url)
-    except Exception:
-        pass
     L.is_approved = False
     L.is_active = False
     session.add(L)
     session.commit()
-    try:
-        mirror_from_db(session)
-    except Exception as _e:
-        print('yt mirror', _e)
     return RedirectResponse("/youtube", status_code=303)
 
 
@@ -198,10 +181,6 @@ async def youtube_delete(
         raise HTTPException(403)
     session.delete(L)
     session.commit()
-    try:
-        mirror_from_db(session)
-    except Exception as _e:
-        print('yt mirror', _e)
     return RedirectResponse("/youtube", status_code=303)
 
 

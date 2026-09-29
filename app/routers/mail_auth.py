@@ -1,0 +1,271 @@
+"""Email verification, 3-step login, password reset, admin mail-to-user."""
+from __future__ import annotations
+
+from datetime import datetime, timedelta
+from pathlib import Path
+import hashlib
+import os
+import secrets
+
+from fastapi import APIRouter, Depends, Form, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.templating import Jinja2Templates
+from sqlmodel import Session, select
+
+from app.database import get_session
+from app.models import User, EmailChallenge, AuthBackupCode, AdminMailLog
+from app.auth import (
+    require_user,
+    verify_password,
+    get_password_hash,
+    create_user_token,
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    validate_password_strength,
+    role_val,
+)
+from app.mailer import send_mail, branded, public_base
+
+router = APIRouter(prefix="/auth", tags=["mail-auth"])
+templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
+
+OTP_MINUTES = 12
+
+
+def _hash(code: str) -> str:
+    return hashlib.sha256((code or "").strip().upper().encode()).hexdigest()
+
+
+def _otp6() -> str:
+    return f"{secrets.randbelow(1000000):06d}"
+
+
+def _issue(session: Session, email: str, purpose: str, user_id: int | None = None) -> str:
+    code = _otp6()
+    row = EmailChallenge(
+        email=(email or "").strip().lower(),
+        purpose=purpose,
+        code_hash=_hash(code),
+        pending_user_id=user_id,
+        expires_at=datetime.utcnow() + timedelta(minutes=OTP_MINUTES),
+        used=False,
+    )
+    session.add(row)
+    session.commit()
+    return code
+
+
+def _check(session: Session, email: str, purpose: str, code: str) -> EmailChallenge | None:
+    email = (email or "").strip().lower()
+    row = session.exec(
+        select(EmailChallenge)
+        .where(
+            EmailChallenge.email == email,
+            EmailChallenge.purpose == purpose,
+            EmailChallenge.used == False,  # noqa: E712
+        )
+        .order_by(EmailChallenge.id.desc())
+    ).first()
+    if not row:
+        return None
+    if row.expires_at < datetime.utcnow():
+        return None
+    if row.code_hash != _hash(code):
+        return None
+    row.used = True
+    session.add(row)
+    session.commit()
+    return row
+
+
+def _set_session_cookie(response, user: User):
+    token = create_user_token(user)
+    response.set_cookie(
+        "access_token",
+        token,
+        httponly=True,
+        samesite="lax",
+        max_age=ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        secure=os.getenv("COOKIE_SECURE", "1") not in ("0", "false"),
+    )
+
+
+def _page(request, name, **ctx):
+    ctx["request"] = request
+    return templates.TemplateResponse(name, ctx)
+
+
+@router.get("/verify-email", response_class=HTMLResponse)
+async def verify_email_page(request: Request, email: str = ""):
+    return _page(request, "auth/verify_email.html", email=email, error=None)
+
+
+@router.post("/verify-email")
+async def verify_email_post(
+    request: Request,
+    email: str = Form(...),
+    code: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    email = email.strip().lower()
+    row = _check(session, email, "verify", code)
+    if not row:
+        return _page(request, "auth/verify_email.html", email=email, error="Invalid or expired code.")
+    user = session.exec(select(User).where(User.email == email)).first()
+    if user:
+        try:
+            user.email_verified = True  # type: ignore[attr-defined]
+        except Exception:
+            pass
+        session.add(user)
+        session.commit()
+    return RedirectResponse("/auth/login?verified=1", status_code=303)
+
+
+@router.post("/send-verify")
+async def send_verify(email: str = Form(...), session: Session = Depends(get_session)):
+    email = email.strip().lower()
+    user = session.exec(select(User).where(User.email == email)).first()
+    if user:
+        code = _issue(session, email, "verify", user.id)
+        send_mail(
+            email,
+            "Confirm your Churchgate email",
+            f"Your confirmation code is {code}. It expires in {OTP_MINUTES} minutes.",
+            branded("Confirm your email", f"<p>Your code is</p><p style='font-size:28px;letter-spacing:6px'><b>{code}</b></p>"),
+        )
+    return RedirectResponse(f"/auth/verify-email?email={email}", status_code=303)
+
+
+@router.get("/step2", response_class=HTMLResponse)
+async def step2_page(request: Request, email: str = ""):
+    return _page(request, "auth/step2_otp.html", email=email, error=None)
+
+
+@router.post("/step2")
+async def step2_post(
+    request: Request,
+    email: str = Form(...),
+    code: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    email = email.strip().lower()
+    row = _check(session, email, "login_otp", code)
+    if not row:
+        return _page(request, "auth/step2_otp.html", email=email, error="Invalid or expired code.")
+    return RedirectResponse(f"/auth/step3?email={email}", status_code=303)
+
+
+@router.get("/step3", response_class=HTMLResponse)
+async def step3_page(request: Request, email: str = ""):
+    return _page(request, "auth/step3_backup.html", email=email, error=None)
+
+
+@router.post("/step3")
+async def step3_post(
+    request: Request,
+    email: str = Form(...),
+    code: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    email = email.strip().lower()
+    user = session.exec(select(User).where(User.email == email)).first()
+    if not user:
+        return _page(request, "auth/step3_backup.html", email=email, error="Account not found.")
+    codes = session.exec(select(AuthBackupCode).where(AuthBackupCode.user_id == user.id, AuthBackupCode.used == False)).all()  # noqa
+    ok = None
+    for c in codes:
+        if c.code_hash == _hash(code):
+            ok = c
+            break
+    # Allow email OTP reused as third factor if no backup codes yet (first logins)
+    if not ok:
+        row = _check(session, email, "login_factor3", code)
+        if row:
+            ok = True
+    if not ok:
+        return _page(request, "auth/step3_backup.html", email=email, error="Invalid backup code.")
+    if ok is not True:
+        ok.used = True
+        session.add(ok)
+        session.commit()
+    resp = RedirectResponse("/", status_code=303)
+    _set_session_cookie(resp, user)
+    return resp
+
+
+@router.get("/forgot", response_class=HTMLResponse)
+async def forgot_page(request: Request):
+    return _page(request, "auth/forgot.html", error=None, sent=False)
+
+
+@router.post("/forgot")
+async def forgot_post(request: Request, email: str = Form(...), session: Session = Depends(get_session)):
+    email = email.strip().lower()
+    user = session.exec(select(User).where(User.email == email)).first()
+    if user:
+        code = _issue(session, email, "reset", user.id)
+        link = f"{public_base()}/auth/reset?email={email}"
+        send_mail(
+            email,
+            "Reset your Churchgate password",
+            f"Reset code: {code}\nOpen: {link}",
+            branded("Reset password", f"<p>Code: <b>{code}</b></p><p><a href='{link}'>Continue reset</a></p>"),
+        )
+    return _page(request, "auth/forgot.html", error=None, sent=True, email=email)
+
+
+@router.get("/reset", response_class=HTMLResponse)
+async def reset_page(request: Request, email: str = ""):
+    return _page(request, "auth/reset.html", email=email, error=None)
+
+
+@router.post("/reset")
+async def reset_post(
+    request: Request,
+    email: str = Form(...),
+    code: str = Form(...),
+    password: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    email = email.strip().lower()
+    err = validate_password_strength(password) if callable(validate_password_strength) else None
+    if err:
+        return _page(request, "auth/reset.html", email=email, error=str(err))
+    row = _check(session, email, "reset", code)
+    if not row:
+        return _page(request, "auth/reset.html", email=email, error="Invalid or expired code.")
+    user = session.exec(select(User).where(User.email == email)).first()
+    if not user:
+        return _page(request, "auth/reset.html", email=email, error="Account not found.")
+    user.hashed_password = get_password_hash(password)
+    session.add(user)
+    session.commit()
+    return RedirectResponse("/auth/login?reset=1", status_code=303)
+
+
+@router.get("/admin-mail", response_class=HTMLResponse)
+async def admin_mail_page(request: Request, user: User = Depends(require_user), session: Session = Depends(get_session)):
+    rv = role_val(user.role)
+    if rv not in ("general_admin",) and "admin" not in str(rv):
+        return RedirectResponse("/restricted", status_code=303)
+    members = session.exec(select(User).order_by(User.full_name).limit(400)).all()
+    return _page(request, "admin/mail_users.html", user=user, members=members, sent=None)
+
+
+@router.post("/admin-mail")
+async def admin_mail_post(
+    request: Request,
+    to_email: str = Form(...),
+    subject: str = Form(...),
+    body: str = Form(...),
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    rv = role_val(user.role)
+    if rv not in ("general_admin",) and "admin" not in str(rv):
+        return RedirectResponse("/restricted", status_code=303)
+    ok = send_mail(to_email.strip(), subject.strip(), body.strip(), branded(subject.strip(), f"<p>{body.strip().replace(chr(10),'<br>')}</p>"))
+    session.add(AdminMailLog(admin_id=user.id, to_email=to_email.strip(), subject=subject.strip(), ok=ok))
+    session.commit()
+    members = session.exec(select(User).order_by(User.full_name).limit(400)).all()
+    return _page(request, "admin/mail_users.html", user=user, members=members, sent=ok)

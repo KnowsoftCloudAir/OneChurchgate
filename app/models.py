@@ -640,7 +640,8 @@ class KwealthBook(SQLModel, table=True):
     source_path: Optional[str] = None  # relative path under static/books
     page_count: int = Field(default=1)
     is_active: bool = Field(default=True)
-    uploaded_by: Optional[int] = Field(default=None, index=True)  # user id; None = general admin / system
+    is_premium: bool = Field(default=False)  # True = requires active subscription
+    owner_user_id: Optional[int] = Field(default=None, index=True)  # None = admin/library; set = member upload
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -707,14 +708,23 @@ class ChurchHymnal(SQLModel, table=True):
 
 
 class TrialAccess(SQLModel, table=True):
-    """10-minute Try Churchgate access; one completed trial per IP."""
+    """IP-limited Try Churchgate sessions (10 minutes, once per IP)."""
     id: Optional[int] = Field(default=None, primary_key=True)
-    ip_address: str = Field(index=True, max_length=64)
-    user_id: Optional[int] = Field(default=None, foreign_key="user.id")
+    ip_hash: str = Field(index=True)
+    user_id: Optional[int] = Field(default=None, foreign_key="user.id", index=True)
     started_at: datetime = Field(default_factory=datetime.utcnow)
-    expires_at: Optional[datetime] = None
+    expires_at: datetime
     completed: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
+
+class MemoryPhoto(SQLModel, table=True):
+    """Member memory album photos."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    url: str
+    title: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 class SocialStreamLink(SQLModel, table=True):
     """Admin-curated public social videos for member streaming (Facebook, TikTok, Instagram)."""
@@ -727,4 +737,34 @@ class SocialStreamLink(SQLModel, table=True):
     is_active: bool = Field(default=True)
     sort_order: int = Field(default=0)
     created_by: Optional[int] = Field(default=None, foreign_key="user.id")
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+
+class EmailChallenge(SQLModel, table=True):
+    """One-time email codes: verify, login_otp, reset, backup_issue."""
+    id: Optional[int] = Field(default=None, primary_key=True)
+    email: str = Field(index=True)
+    purpose: str = Field(index=True)
+    code_hash: str
+    pending_user_id: Optional[int] = None
+    expires_at: datetime
+    used: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class AuthBackupCode(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(index=True)
+    code_hash: str
+    used: bool = Field(default=False)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+
+class AdminMailLog(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    admin_id: Optional[int] = None
+    to_email: str
+    subject: str
+    ok: bool = Field(default=False)
     created_at: datetime = Field(default_factory=datetime.utcnow)

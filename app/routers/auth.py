@@ -1,8 +1,7 @@
-from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, Depends, Request, Form, Response
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from datetime import datetime
@@ -10,7 +9,7 @@ import secrets
 import string
 
 from app.database import get_session
-from app.models import User, UserRole, ChurchUnit, ChurchLevel, ApprovalStatus, ChurchMember, TrialAccess
+from app.models import User, UserRole, ChurchUnit, ChurchLevel, ApprovalStatus, ChurchMember, TrialAccess, MemberSubscription
 from app.auth import require_user, role_val, verify_password, get_password_hash, create_access_token, create_user_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES, validate_password_strength, record_login_failure, clear_login_failures, login_lockout_seconds
 from app.activity import log_activity
 
@@ -130,6 +129,37 @@ async def login(
         return templates.TemplateResponse("auth/login.html", {
             "request": request, "error": "Account deactivated. Contact Knowsoft Churchgate support."
         }, status_code=400)
+
+    # 3-way auth: after password, email OTP then backup code (when mail is configured)
+    try:
+        import os
+        mail_on = bool(os.getenv("MAIL_HOST") or os.getenv("SMTP_HOST"))
+        require_otp = os.getenv("REQUIRE_EMAIL_OTP", "1" if mail_on else "0").strip() not in ("0", "false", "off")
+        if require_otp and mail_on and not getattr(user, "is_sample_account", False):
+            from app.routers.mail_auth import _issue
+            from app.mailer import send_mail, branded
+            code = _issue(session, email, "login_otp", user.id)
+            send_mail(
+                email,
+                "Your Churchgate sign-in code",
+                f"Your sign-in code is {code}. It expires in 12 minutes.",
+                branded("Sign-in code", f"<p style='font-size:28px;letter-spacing:6px'><b>{code}</b></p>"),
+            )
+            # factor 3 code emailed too if user has no backup codes
+            from app.models import AuthBackupCode
+            from sqlmodel import select as _sel
+            have = session.exec(_sel(AuthBackupCode).where(AuthBackupCode.user_id == user.id)).first()
+            if not have:
+                c3 = _issue(session, email, "login_factor3", user.id)
+                send_mail(
+                    email,
+                    "Your Churchgate backup sign-in code",
+                    f"Backup code (step 3): {c3}",
+                    branded("Backup code", f"<p>Use this on the third sign-in screen: <b>{c3}</b></p>"),
+                )
+            return RedirectResponse(f"/auth/step2?email={email}", status_code=303)
+    except Exception as _otp:
+        print("otp gate:", _otp)
 
     # Church admins must belong to an approved church
     if role_val(user.role) == "church_admin" and user.church_id:
@@ -482,6 +512,141 @@ async def clear_session_page(request: Request):
     return resp
 
 
+
+import hashlib
+from datetime import timedelta
+
+def _client_ip(request: Request) -> str:
+    xf = request.headers.get("x-forwarded-for") or request.headers.get("x-real-ip") or ""
+    if xf:
+        return xf.split(",")[0].strip()
+    return (request.client.host if request.client else "0.0.0.0") or "0.0.0.0"
+
+
+def _ip_hash(ip: str) -> str:
+    return hashlib.sha256((ip or "unknown").encode("utf-8")).hexdigest()[:48]
+
+
+@router.post("/try-churchgate")
+async def try_churchgate(request: Request, session: Session = Depends(get_session)):
+    """10-minute free explore account for Knowsoft church; one completed trial per IP."""
+    from app.models import TrialAccess, User, UserRole, ChurchMember, ChurchUnit
+    from app.auth import get_password_hash, create_access_token
+    import secrets
+
+    ip = _client_ip(request)
+    ih = _ip_hash(ip)
+    now = datetime.utcnow()
+
+    # Block if this IP already completed a trial
+    done = session.exec(
+        select(TrialAccess).where(TrialAccess.ip_hash == ih, TrialAccess.completed == True)
+    ).first()
+    if done:
+        return templates.TemplateResponse(
+            "auth/login.html",
+            {"request": request, "error": "Try Churchgate was already used from this network (10 minutes). Please register for full access.", "success": None},
+            status_code=400,
+        )
+
+    # Reuse active trial if still valid
+    active = session.exec(
+        select(TrialAccess).where(
+            TrialAccess.ip_hash == ih,
+            TrialAccess.completed == False,
+            TrialAccess.expires_at > now,
+        )
+    ).first()
+    if active and active.user_id:
+        user = session.get(User, active.user_id)
+        if user:
+            token = create_access_token({"sub": user.email, "sv": 0, "trial": True})
+            resp = RedirectResponse("/member/portal", status_code=303)
+            resp.set_cookie("access_token", token, httponly=True, samesite="lax")
+            return resp
+
+    # Create trial user
+    email = f"trial_{ih[:10]}_{secrets.token_hex(3)}@try.churchgate.local"
+    pwd = secrets.token_urlsafe(12)
+    user = User(
+        email=email,
+        hashed_password=get_password_hash(pwd),
+        full_name="Try Churchgate Guest",
+        role=getattr(UserRole, "member", None) or "member",
+        is_active=True,
+    )
+    # role may be enum
+    try:
+        user.role = UserRole.member
+    except Exception:
+        pass
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    # Attach to Knowsoft church if present
+    try:
+        unit = session.exec(
+            select(ChurchUnit).where(ChurchUnit.name.ilike("%knowsoft%"))
+        ).first()
+        if not unit:
+            unit = session.exec(select(ChurchUnit).limit(1)).first()
+        if unit:
+            user.church_id = unit.id
+            session.add(user)
+            cm = ChurchMember(
+                church_id=unit.id,
+                full_name="Try Churchgate Guest",
+                email=email,
+                approval_status="approved",
+                status="member",
+                is_active=True,
+            )
+            session.add(cm)
+            session.commit()
+            session.refresh(cm)
+            user.member_id = cm.id
+            session.add(user)
+            session.commit()
+    except Exception as e:
+        print("try attach church:", e)
+
+    expires = now + timedelta(minutes=10)
+    trial = TrialAccess(ip_hash=ih, user_id=user.id, started_at=now, expires_at=expires, completed=False)
+    session.add(trial)
+    session.commit()
+
+    token = create_access_token({"sub": user.email, "sv": 0, "trial": True})
+    resp = RedirectResponse("/member/portal?trial=1", status_code=303)
+    resp.set_cookie("access_token", token, httponly=True, samesite="lax", max_age=600)
+    resp.set_cookie("cg_trial_exp", expires.isoformat() + "Z", max_age=600)
+    return resp
+
+
+@router.get("/api/trial-status")
+async def trial_status(request: Request, session: Session = Depends(get_session)):
+    from app.models import TrialAccess
+    ip = _client_ip(request)
+    ih = _ip_hash(ip)
+    now = datetime.utcnow()
+    active = session.exec(
+        select(TrialAccess).where(TrialAccess.ip_hash == ih, TrialAccess.completed == False)
+    ).first()
+    if not active:
+        return JSONResponse({"ok": True, "trial": False})
+    remaining = max(0, int((active.expires_at - now).total_seconds()))
+    if remaining <= 0:
+        active.completed = True
+        session.add(active)
+        session.commit()
+        return JSONResponse({"ok": True, "trial": False, "expired": True})
+    return JSONResponse({
+        "ok": True,
+        "trial": True,
+        "remaining_sec": remaining,
+        "expires_at": active.expires_at.isoformat() + "Z",
+    })
+
 @router.get("/change-password", response_class=HTMLResponse)
 async def change_password_page(
     request: Request,
@@ -647,98 +812,3 @@ async def forgot_password_submit(
         "request": request, "error": None,
         "success": "Password updated. A confirmation was sent to your phone when SMS is configured. You can sign in now.",
     })
-
-
-@router.post("/try-churchgate")
-async def try_churchgate(request: Request, session: Session = Depends(get_session)):
-    """10-minute no-registration trial on Knowsoft church (one full use per IP)."""
-    from datetime import timedelta
-    ip = (request.client.host if request.client else "unknown") or "unknown"
-    # forwarded
-    xff = request.headers.get("x-forwarded-for") or request.headers.get("X-Forwarded-For")
-    if xff:
-        ip = xff.split(",")[0].strip() or ip
-    now = datetime.utcnow()
-    prior = session.exec(select(TrialAccess).where(TrialAccess.ip_address == ip, TrialAccess.completed == True)).first()
-    if prior:
-        return templates.TemplateResponse("auth/login.html", {
-            "request": request,
-            "error": "This device already used the free 10-minute trial.",
-        }, status_code=400)
-    active = session.exec(
-        select(TrialAccess).where(TrialAccess.ip_address == ip, TrialAccess.completed == False)
-    ).first()
-    if active and active.expires_at and active.expires_at > now and active.user_id:
-        user = session.get(User, active.user_id)
-        if user:
-            token = create_access_token({"sub": user.email, "sv": int(getattr(user, "session_version", 0) or 0)}, expires_delta=timedelta(minutes=10))
-            resp = RedirectResponse("/member/portal", status_code=303)
-            resp.set_cookie("access_token", token, httponly=True, max_age=600, samesite="lax", path="/")
-            return resp
-    # Find Knowsoft church
-    church = None
-    try:
-        for c in session.exec(select(ChurchUnit)).all():
-            nm = (getattr(c, "name", None) or "").lower()
-            code = (getattr(c, "code", None) or "").lower()
-            if "knowsoft" in nm or "knowsoft" in code:
-                church = c
-                break
-    except Exception:
-        church = None
-    if not church:
-        church = session.exec(select(ChurchUnit)).first()
-    email = f"try_{abs(hash(ip)) % 10**10}@try.churchgate.local"
-    user = session.exec(select(User).where(User.email == email)).first()
-    if not user:
-        user = User(
-            email=email,
-            hashed_password=get_password_hash("TryChurchgate10m!"),
-            role=UserRole.member,
-            is_active=True,
-            is_sample_account=True,
-            church_id=church.id if church else None,
-        )
-        if hasattr(user, "full_name"):
-            user.full_name = "Trial Guest"
-        session.add(user)
-        session.commit()
-        session.refresh(user)
-    else:
-        user.is_active = True
-        user.is_sample_account = True
-        if church:
-            user.church_id = church.id
-        session.add(user)
-        session.commit()
-    expires = now + timedelta(minutes=10)
-    if active:
-        active.user_id = user.id
-        active.expires_at = expires
-        active.started_at = now
-        session.add(active)
-    else:
-        session.add(TrialAccess(ip_address=ip, user_id=user.id, started_at=now, expires_at=expires, completed=False))
-    session.commit()
-    token = create_access_token(
-        {"sub": user.email, "sv": int(getattr(user, "session_version", 0) or 0)},
-        expires_delta=timedelta(minutes=10),
-    )
-    log_activity(session, user=user, action="try_churchgate", detail=f"trial ip={ip}", request=request)
-    resp = RedirectResponse("/member/portal", status_code=303)
-    resp.set_cookie("access_token", token, httponly=True, max_age=600, samesite="lax", path="/")
-    return resp
-
-
-@router.post("/try-churchgate/complete")
-async def try_churchgate_complete(request: Request, session: Session = Depends(get_session)):
-    ip = (request.client.host if request.client else "unknown") or "unknown"
-    xff = request.headers.get("x-forwarded-for") or request.headers.get("X-Forwarded-For")
-    if xff:
-        ip = xff.split(",")[0].strip() or ip
-    rows = session.exec(select(TrialAccess).where(TrialAccess.ip_address == ip, TrialAccess.completed == False)).all()
-    for r in rows:
-        r.completed = True
-        session.add(r)
-    session.commit()
-    return {"ok": True}
