@@ -236,6 +236,14 @@ async def lifespan(app: FastAPI):
     yield
 
 
+app = FastAPI(
+    title="Knowsoft Churchgate",
+    description="Church hierarchy, membership & growth analytics platform",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+
 @app.middleware("http")
 async def security_headers(request: Request, call_next):
     response = await call_next(request)
@@ -248,12 +256,6 @@ async def security_headers(request: Request, call_next):
     return response
 
 
-app = FastAPI(
-    title="Knowsoft Churchgate",
-    description="Church hierarchy, membership & growth analytics platform",
-    version="1.0.0",
-    lifespan=lifespan
-)
 
 BASE_DIR = Path(__file__).resolve().parent
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "app" / "static")), name="static")
