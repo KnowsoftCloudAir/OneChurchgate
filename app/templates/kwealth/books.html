@@ -6,7 +6,7 @@
   <title>Books — Kwealth</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Playfair+Display:wght@500;700&family=Cormorant+Garamond:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Playfair+Display:wght@500;700&family=Cormorant+Garamond:wght@500;700&family=Merriweather:wght@400;700&family=Lora:wght@500;700&family=EB+Garamond:wght@500;700&family=Libre+Baskerville:wght@400;700&family=Spectral:wght@500;700&family=Cardo:wght@400;700&family=Source+Serif+4:wght@500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="/static/js/offline-store.js"></script>
   <link rel="manifest" href="/static/manifest.json">
@@ -78,12 +78,13 @@
     .status-starting { background: #1d4ed8; color: #eff6ff; }
     .status-progress { background: #b45309; color: #fffbeb; }
     .status-finished { background: #047857; color: #ecfdf5; }
-    .flip-curl { transform: perspective(1400px) rotateY(-70deg) scaleX(.92); opacity: .5; }
-    .flip-slide { transform: translateX(-30%) rotateZ(-2deg); opacity: .4; }
-    .flip-fold { transform: perspective(1200px) rotateX(10deg) rotateY(-50deg); opacity: .5; }
-    .flip-fade { transform: scale(.94); opacity: 0; }
-    .flip-back { transform: perspective(1400px) rotateY(70deg) scaleX(.92); opacity: .5; }
-    .flip-back-slide { transform: translateX(30%) rotateZ(2deg); opacity: .4; }
+    .page-sheet { will-change: transform, opacity, filter; }
+    .flip-curl { transform: perspective(1600px) rotateY(-78deg) scaleX(.88) translateX(-6%); opacity: .35; filter: brightness(.85); }
+    .flip-slide { transform: translateX(-42%) rotateZ(-3deg) scale(.98); opacity: .25; }
+    .flip-fold { transform: perspective(1400px) rotateX(14deg) rotateY(-58deg) scale(.96); opacity: .3; }
+    .flip-fade { transform: scale(.9) translateY(8px); opacity: 0; filter: blur(2px); }
+    .flip-back { transform: perspective(1600px) rotateY(78deg) scaleX(.88) translateX(6%); opacity: .35; }
+    .flip-back-slide { transform: translateX(42%) rotateZ(3deg) scale(.98); opacity: .25; }
     label.lbl { font-size: 11px; color: #94a3b8; font-weight: 600; display: block; margin-bottom: 4px; }
     select.ctl, input.ctl {
       width: 100%; border-radius: 8px; padding: 6px 8px; font-size: 12px;
@@ -3666,6 +3667,9 @@
   <script src="/static/js/bg-animations.js"></script>
 </head>
 <body class="theme-parchment" id="bookBody">
+<div id="convertFail" style="display:none;margin:8px 12px;padding:10px 12px;border-radius:10px;background:#7f1d1d;color:#fecaca;font-size:13px;font-weight:600">Failed to convert due to format, please change format to simple pdf, doc or txt and upload again not to crash.</div>
+<script>if(/[?&]convert=fail/.test(location.search)){var e=document.getElementById('convertFail'); if(e) e.style.display='block';}</script>
+
 <button type="button" id="readMenuFab" onclick="document.querySelector('.bar')&&document.querySelector('.bar').scrollIntoView({behavior:'smooth',block:'start'});var t=document.getElementById('toolsPanel');if(t){t.style.display='block';}window.scrollTo({top:0,behavior:'smooth'});">☰ Menu</button>
   <div id="fsControls">
   <select id="fsScenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
@@ -3763,12 +3767,28 @@
             <span class="lbl">Font type</span>
             <select id="fontFamily" class="ctl">
               <option value="Georgia, 'Times New Roman', serif">Georgia (classic)</option>
+              <option value="'Playfair Display', Georgia, serif">Playfair Display</option>
+              <option value="'Cormorant Garamond', Garamond, serif">Cormorant Garamond</option>
+              <option value="'EB Garamond', Garamond, serif">EB Garamond</option>
+              <option value="'Libre Baskerville', Georgia, serif">Libre Baskerville</option>
+              <option value="Merriweather, Georgia, serif">Merriweather</option>
+              <option value="Lora, Georgia, serif">Lora</option>
+              <option value="Spectral, Georgia, serif">Spectral</option>
+              <option value="Cardo, Georgia, serif">Cardo</option>
+              <option value="'Source Serif 4', Georgia, serif">Source Serif</option>
+              <option value="Cinzel, Georgia, serif">Cinzel (display)</option>
               <option value="'Palatino Linotype', Palatino, serif">Palatino</option>
               <option value="'Book Antiqua', Palatino, serif">Book Antiqua</option>
-              <option value="Garamond, serif">Garamond</option>
               <option value="'Segoe UI', system-ui, sans-serif">Segoe UI</option>
               <option value="'Helvetica Neue', Arial, sans-serif">Helvetica</option>
               <option value="'Courier New', monospace">Courier</option>
+            </select>
+            <span class="lbl" style="margin-top:8px">Voice colour</span>
+            <select id="voiceColour" class="ctl">
+              <option value="warm">Warm 3D (near)</option>
+              <option value="hall">Hall 3D (deep)</option>
+              <option value="bright">Bright narrator</option>
+              <option value="soft">Soft close whisper</option>
             </select>
           </div>
           <div>
@@ -4560,7 +4580,14 @@
         u.onerror = function () {
           if (fallbackTimer) clearInterval(fallbackTimer);
         };
-        speechSynthesis.speak(u);
+        try {
+            var vc = (document.getElementById('voiceColour')||{}).value || localStorage.getItem('kw_voice_colour') || 'warm';
+            if (vc==='warm') { u.pitch = 0.92; u.rate = Math.min(u.rate||1, 0.92); }
+            if (vc==='hall') { u.pitch = 0.78; u.rate = 0.84; }
+            if (vc==='bright') { u.pitch = 1.12; u.rate = 1.02; }
+            if (vc==='soft') { u.pitch = 1.05; u.rate = 0.78; }
+          } catch (e) {}
+          speechSynthesis.speak(u);
       }
       speakPara(0);
     }
@@ -5106,6 +5133,11 @@
       state.wordStyle = localStorage.getItem('kw_book_wordStyle') || state.wordStyle || 'fill';
     } catch (e) {}
     try { applyScene(); } catch (e) { console.warn(e); }
+    var vcEl = document.getElementById('voiceColour');
+    if (vcEl) {
+      try { vcEl.value = localStorage.getItem('kw_voice_colour') || 'warm'; } catch(e) {}
+      vcEl.addEventListener('change', function(){ try { localStorage.setItem('kw_voice_colour', vcEl.value); } catch(e) {} });
+    }
 
     const btnSceneFs = document.getElementById('btnSceneFs');
     const sceneFsExit = document.getElementById('sceneFsExit');
