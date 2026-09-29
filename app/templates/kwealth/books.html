@@ -3686,12 +3686,12 @@
           <option value="desert">Trees growing from the desert</option>
           <option value="matrix">Matrix AI (matter chains)</option>
           <option value="glasses">3D magnifying glass</option>
-          <option value="aurora">Northern lights over fjord</option>
-          <option value="lighthouse">Storm lighthouse</option>
-          <option value="candle">Candle library</option>
-          <option value="comet">Comet across the heavens</option>
-          <option value="rain">Rain on a chapel window</option>
-          <option value="stained">Stained-glass sanctuary</option>
+          
+          
+          
+          
+          
+          
         </select>
   <button type="button" class="chip on" id="fsRead">👼 Read</button>
   <button type="button" class="chip" id="fsSceneToggle">Scene on/off</button>
@@ -3725,12 +3725,12 @@
           <option value="desert">Trees growing from the desert</option>
           <option value="matrix">Matrix AI (matter chains)</option>
           <option value="glasses">3D magnifying glass</option>
-          <option value="aurora">Northern lights over fjord</option>
-          <option value="lighthouse">Storm lighthouse</option>
-          <option value="candle">Candle library</option>
-          <option value="comet">Comet across the heavens</option>
-          <option value="rain">Rain on a chapel window</option>
-          <option value="stained">Stained-glass sanctuary</option>
+          
+          
+          
+          
+          
+          
         </select>
         <button type="button" class="chip" id="btnSceneFs" title="Full screen book (captions while reading)">Full screen</button>
         <select id="wordStyle" class="ctl" style="max-width:8rem;font-size:11px;" title="Word style">
@@ -4883,7 +4883,7 @@
           else { try { if (typeof prev === 'function') prev(); } catch (err) {} }
         } else if (state.sceneFs || state.sceneOn) {
           // vertical — cycle scenes only when Scene/FS active (don't steal page scroll)
-          var order = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','aurora','lighthouse','candle','comet','rain','stained'];
+          var order = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses'];
           var cur = state.sceneName || 'sun';
           var ix = order.indexOf(cur);
           if (ix < 0) ix = 0;
@@ -5029,7 +5029,7 @@
         try { if (window.CGWebGL) CGWebGL.setMode('none'); } catch (e) {}
       }
       // Show only bits for selected scene
-      ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','aurora','lighthouse','candle','comet','rain','stained'].forEach(function (n) {
+      ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses'].forEach(function (n) {
         var el = surface.querySelector('.sc-' + n + '-bits');
         if (el) {
           if (show3d && n === name) {
@@ -5252,7 +5252,7 @@
     
     // ===== Auto scene advance in Full screen + Scene =====
     (function autoSceneRotate() {
-      var SCENE_ORDER = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','aurora','lighthouse','candle','comet','rain','stained'];
+      var SCENE_ORDER = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses'];
       // Seconds to let each scene play before advancing (match long animations)
       var SCENE_SECS = {
         sun: 22, orbit: 16, voyage: 28, planets: 20,

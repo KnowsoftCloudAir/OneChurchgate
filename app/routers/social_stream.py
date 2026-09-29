@@ -76,6 +76,20 @@ def build_embed_url(platform: str, source_url: str) -> Optional[str]:
         return None
 
     if p == "youtube" or "youtube.com" in low or "youtu.be" in low:
+        # Persistent live: dock current live of the same channel (Al Jazeera etc.)
+        ch = re.search(r"youtube\.com/channel/(UC[A-Za-z0-9_-]{20,})", url)
+        if ch:
+            cid = ch.group(1)
+            return "https://www.youtube.com/embed/live_stream?channel=" + cid + "&autoplay=1&mute=1&playsinline=1&rel=0"
+        handle = re.search(r"youtube\.com/@([A-Za-z0-9._-]+)", url)
+        if handle and ("/live" in low or p == "youtube"):
+            # Handle live page — YouTube resolves current live on /embed via live_stream + handle is not official;
+            # keep @handle/live as iframe src fallback
+            h = handle.group(1)
+            return "https://www.youtube.com/embed/live_stream?autoplay=1&mute=1&playsinline=1&rel=0"
+        if url.startswith("ytchan:") or url.startswith("channel:"):
+            cid = url.split(":",1)[1].strip()
+            return "https://www.youtube.com/embed/live_stream?channel=" + cid + "&autoplay=1&mute=1&playsinline=1&rel=0"
         m = re.search(
             r"(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/|youtube\.com/live/|youtube\.com/shorts/)([A-Za-z0-9_-]{11})",
             url,
@@ -375,6 +389,7 @@ async def admin_social_stream_add(
     title: str = Form(""),
     source_url: str = Form(...),
     description: str = Form(""),
+    category: str = Form("tv"),
     user: User = Depends(require_user),
     session: Session = Depends(get_session),
 ):
@@ -387,9 +402,13 @@ async def admin_social_stream_add(
     if not source_url.startswith("http"):
         return RedirectResponse("/admin/social-stream?err=url", status_code=303)
     embed = build_embed_url(platform, source_url)
+    cat = (category or "tv").strip().lower()
+    if cat not in ("tv","movies","news","games","ministration","others"):
+        cat = "tv"
     row = SocialStreamLink(
         platform=platform,
         title=(title or (platform.title() + " video")).strip()[:200],
+        category=cat,
         source_url=source_url[:800],
         embed_url=(embed[:900] if embed else None),
         description=(description or "").strip()[:500] or None,
@@ -440,6 +459,9 @@ async def member_social_watch(
     user: User = Depends(require_user),
     session: Session = Depends(get_session),
 ):
+    cat = (request.query_params.get("cat") or "tv").strip().lower()
+    if cat not in ("tv", "movies", "news", "games", "ministration", "others"):
+        cat = "tv"
     links = list(
         session.exec(
             select(SocialStreamLink)
@@ -451,10 +473,15 @@ async def member_social_watch(
     for L in links:
         emb = getattr(L, "embed_url", None) or ""
         src = getattr(L, "source_url", None) or ""
+        if not emb:
+            emb = build_embed_url(getattr(L, "platform", "") or "youtube", src) or ""
         if not emb or "undefined" in emb or emb.strip() in ("", "#"):
+            continue
+        lc = (getattr(L, "category", None) or "tv").lower()
+        if lc != cat:
             continue
         playable.append(L)
     return templates.TemplateResponse(
         "members/social_watch.html",
-        {"request": request, "user": user, "links": playable},
+        {"request": request, "user": user, "links": playable, "cat": cat},
     )

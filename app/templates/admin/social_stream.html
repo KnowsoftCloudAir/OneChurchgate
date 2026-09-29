@@ -73,7 +73,16 @@
       </div>
       <div>
         <label class="block text-xs font-bold text-slate-500 mb-1">Public URL</label>
-        <input name="source_url" class="w-full border rounded-xl px-3 py-2 text-sm" required>
+        <label class="text-xs">Category</label>
+<select name="category" class="text-slate-900 rounded px-2 py-1">
+  <option value="tv">TV</option>
+  <option value="movies">Movies</option>
+  <option value="news">News</option>
+  <option value="games">Games</option>
+  <option value="ministration">Ministration</option>
+  <option value="others">Others</option>
+</select>
+<input name="source_url" class="w-full border rounded-xl px-3 py-2 text-sm" required>
       </div>
       <div>
         <label class="block text-xs font-bold text-slate-500 mb-1">Note (optional)</label>

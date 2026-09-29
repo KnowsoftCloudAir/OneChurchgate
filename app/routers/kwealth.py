@@ -908,7 +908,13 @@ async def angel_ask(
     q = (data.get("question") or data.get("q") or "").strip()
     topic_hint = (data.get("topic") or "").strip()
     if not q:
-        return JSONResponse({"ok": True, "answer": "", "follow_up": "", "outside": True})
+        return JSONResponse({"ok": True, "answer": "How may I help you?", "follow_up": "", "outside": False})
+    # Voice shortcuts that must never 500
+    ql0 = q.lower()
+    if any(x in ql0 for x in ("facebook", "tiktok", "instagram", "social stream", "social watch", "live tv")):
+        return JSONResponse({"ok": True, "answer": "Opening Social Stream.", "navigate": "/member/social-watch?cat=tv", "speak": "Opening Social Stream."})
+    if "memor" in ql0:
+        return JSONResponse({"ok": True, "answer": "Opening Memories.", "navigate": "/member/memories"})
 
     ql = q.lower().strip()
     uid = user.id

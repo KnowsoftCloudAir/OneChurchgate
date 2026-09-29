@@ -734,6 +734,8 @@ class SocialStreamLink(SQLModel, table=True):
     source_url: str = Field(max_length=800)
     embed_url: Optional[str] = Field(default=None, max_length=900)
     description: Optional[str] = Field(default=None, max_length=500)
+    category: str = Field(default="tv", index=True, max_length=30)  # tv|movies|news|games|ministration|others
+    youtube_channel_id: Optional[str] = Field(default=None, max_length=40)
     is_active: bool = Field(default=True)
     sort_order: int = Field(default=0)
     created_by: Optional[int] = Field(default=None, foreign_key="user.id")

@@ -1,16 +1,16 @@
 {% extends "base.html" %}
 {% block title %}My Space – Churchgate{% endblock %}
 {% block content %}
-
-<div class="mx-4 mt-4 mb-2 p-4 rounded-2xl border border-amber-300/40 bg-gradient-to-r from-amber-900 via-rose-900 to-slate-900 text-white shadow-lg">
+<div class="mx-4 mt-3 mb-2 p-4 rounded-2xl border border-sky-400/40 bg-gradient-to-r from-sky-900 via-indigo-900 to-slate-900 text-white shadow-lg">
   <div class="flex flex-wrap items-center justify-between gap-3">
     <div>
-      <div class="font-bold text-lg">Memories</div>
-      <div class="text-sm text-amber-100 mt-0.5">Upload pictures and play a slideshow with music.</div>
+      <div class="font-bold text-lg">Social Stream</div>
+      <div class="text-sm text-sky-100 mt-0.5">TV, movies, news, games, ministration — plus interaction and memories.</div>
     </div>
-    <a href="/member/memories" class="px-4 py-2.5 rounded-xl bg-white/15 border border-white/30 text-sm font-semibold hover:bg-white/25">Open memories</a>
+    <a href="/member/social-watch?cat=tv" class="px-4 py-2.5 rounded-xl bg-white/15 border border-white/30 text-sm font-semibold">Open stream</a>
   </div>
 </div>
+
 
 {# Invite & earn — extra panel only; original dashboard unchanged below #}
 {% if promo_code and not is_preview %}
@@ -371,45 +371,7 @@
 
 <div class="member-space theme-royal" id="memberSpace" x-data="memberHub()" x-init="init()">
     <div id="cgTrialBanner" style="display:none;position:sticky;top:0;z-index:50;background:#b45309;color:#fff;text-align:center;padding:6px 10px;font-size:12px;font-weight:700;"></div>
-    <div id="cgAmbientBar" class="flex flex-wrap gap-2 items-center px-3 py-2 text-xs" style="position:relative;z-index:5;background:rgba(0,0,0,0.25);">
-      <span class="opacity-80">Ambient:</span>
-      <select id="cgAnimSelect" class="text-slate-900 rounded px-2 py-1 text-xs">
-        <option value="none">None</option>
-        <option value="sunset">Sunset</option>
-        <option value="planets">Planets around sun</option>
-        <option value="starfield">Starfield</option>
-        <option value="aurora">Aurora</option>
-        <option value="ocean_waves">Ocean waves</option>
-        <option value="ocean_fish">Ocean fish</option>
-        <option value="sky_run">Sky run</option>
-        <option value="jupiter">Jupiter flyby</option>
-        <option value="galaxy">Galaxy</option>
-        <option value="floating_orbs">Floating orbs</option>
-        <option value="word_forms">Spoken words</option>
-        <option value="great_men">Portraits from sky</option>
-        <option value="sunrise_ant">Sunrise ant</option>
-      </select>
-      <button type="button" id="cgAnimPause" class="px-2 py-1 rounded bg-white/15 border border-white/20">Pause anim</button>
-      <button type="button" id="cgAnimFS" class="px-2 py-1 rounded bg-white/15 border border-white/20">Fullscreen</button>
-    </div>
-    <script>
-    (function(){
-      var sel = document.getElementById('cgAnimSelect');
-      var pauseBtn = document.getElementById('cgAnimPause');
-      var fsBtn = document.getElementById('cgAnimFS');
-      if (sel && window.CGBgAnim) {
-        var cur = localStorage.getItem('cg_bg_anim') || 'none';
-        sel.value = cur;
-        sel.onchange = function(){ CGBgAnim.setMode(sel.value); };
-        pauseBtn.onclick = function(){
-          var p = !CGBgAnim.isPaused();
-          CGBgAnim.setPaused(p);
-          pauseBtn.textContent = p ? 'Resume anim' : 'Pause anim';
-        };
-        fsBtn.onclick = function(){ CGBgAnim.toggleFullscreen(); };
-      }
-    })();
-    </script>
+    
 
   <div class="pray-watermark" aria-hidden="true"></div>
 
@@ -544,7 +506,7 @@
     <div class="ms-card p-4 mb-5">
       <div class="flex flex-wrap gap-3 items-center mb-3">
       {% if member.profile_pic %}
-      <img src="{{ member.profile_pic }}" class="w-16 h-16 rounded-full object-cover ring-2 ring-violet-300/50" alt="">
+      <img src="{{ member.profile_pic }}" class="w-28 h-28 rounded-full object-cover ring-4 ring-violet-300/60 shadow-xl -mt-6" alt="">
       {% else %}
       <div class="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-xl font-bold">{{ member.full_name[:1] if member.full_name else "M" }}</div>
       {% endif %}

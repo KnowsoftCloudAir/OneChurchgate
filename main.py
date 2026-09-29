@@ -58,6 +58,8 @@ async def lifespan(app: FastAPI):
                 "ALTER TABLE user ADD COLUMN IF NOT EXISTS session_version INTEGER DEFAULT 0",
                 "ALTER TABLE \"user\" ADD COLUMN IF NOT EXISTS session_version INTEGER DEFAULT 0",
                 "ALTER TABLE user ADD COLUMN session_version INTEGER DEFAULT 0",
+                "ALTER TABLE socialstreamlink ADD COLUMN IF NOT EXISTS category VARCHAR DEFAULT 'tv'",
+                "ALTER TABLE socialstreamlink ADD COLUMN IF NOT EXISTS youtube_channel_id VARCHAR",
             ):
                 try:
                     conn.execute(text(stmt))
