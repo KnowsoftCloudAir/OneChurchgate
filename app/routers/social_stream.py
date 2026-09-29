@@ -459,9 +459,9 @@ async def member_social_watch(
     user: User = Depends(require_user),
     session: Session = Depends(get_session),
 ):
-    cat = (request.query_params.get("cat") or "tv").strip().lower()
-    if cat not in ("tv", "movies", "news", "games", "ministration", "others"):
-        cat = "tv"
+    cat = (request.query_params.get("cat") or "all").strip().lower()
+    if cat not in ("all", "tv", "movies", "news", "games", "ministration", "others"):
+        cat = "all"
     links = list(
         session.exec(
             select(SocialStreamLink)
@@ -477,8 +477,8 @@ async def member_social_watch(
             emb = build_embed_url(getattr(L, "platform", "") or "youtube", src) or ""
         if not emb or "undefined" in emb or emb.strip() in ("", "#"):
             continue
-        lc = (getattr(L, "category", None) or "tv").lower()
-        if lc != cat:
+        lc = (getattr(L, "category", None) or "").lower() or "tv"
+        if cat != "all" and lc != cat:
             continue
         playable.append(L)
     return templates.TemplateResponse(

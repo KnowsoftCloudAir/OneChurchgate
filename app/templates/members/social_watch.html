@@ -2,31 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <title>Social Stream — Churchgate</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    html, body { margin: 0; background: #020617; color: #f8fafc; }
-    .tabs { display:flex; gap:8px; overflow-x:auto; padding:8px 12px; position:sticky; top:0; z-index:30; background:#020617; }
-    .tab { flex:0 0 auto; border:1px solid rgba(255,255,255,.2); border-radius:999px; padding:8px 14px; font-size:12px; font-weight:700; color:#e2e8f0; }
-    .tab.on { background:#0d9488; border-color:#2dd4bf; }
-    .player { height: 58vh; min-height: 280px; background:#000; position:relative; }
-    .player iframe { position:absolute; inset:0; width:100%; height:100%; border:0; }
-    .feed { max-height: 32vh; overflow-y:auto; }
-    .slide { padding:8px 12px; border-bottom:1px solid rgba(255,255,255,.08); cursor:pointer; }
-    .slide.on { background:rgba(13,148,136,.2); }
-    .btn { border:1px solid rgba(255,255,255,.25); background:rgba(15,23,42,.8); color:#fff; font-size:12px; font-weight:700; border-radius:999px; padding:8px 12px; text-decoration:none; }
-    .panel { border:1px solid rgba(255,255,255,.12); border-radius:16px; padding:12px; margin:12px; background:rgba(15,23,42,.7); }
+    html,body{margin:0;height:100%;background:#000;color:#fff;font-family:system-ui,sans-serif;overflow:hidden;}
+    #top{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:linear-gradient(#000c,#0000);}
+    #top a,#top button{color:#fff;background:rgba(15,23,42,.7);border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:7px 12px;font-size:12px;font-weight:700;text-decoration:none;}
+    .tabs{position:fixed;top:48px;left:0;right:0;z-index:20;display:flex;gap:6px;overflow-x:auto;padding:0 10px 8px;scrollbar-width:none;}
+    .tab{flex:0 0 auto;color:#e2e8f0;border:1px solid rgba(255,255,255,.25);border-radius:999px;padding:6px 12px;font-size:11px;font-weight:700;text-decoration:none;}
+    .tab.on{background:#0d9488;}
+    #stage{position:fixed;inset:0;background:#000;}
+    #stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;}
+    #hint{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);font-size:11px;opacity:.7;pointer-events:none;z-index:15;}
   </style>
 </head>
 <body>
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px">
-    <a href="/member" class="btn">Dashboard</a>
-    <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" style="height:28px;width:auto" onerror="this.src='/static/img/knowsoft-icon.svg'"> <strong>Social Stream</strong>
-    <button class="btn" id="btnSound" onclick="toggleSound()">Sound off</button>
+  <div id="top">
+    <a href="/member">Dashboard</a>
+    <img src="/static/img/knowsoft-logo.png" alt="" style="height:26px" onerror="this.style.display='none'">
+    <span>
+      <button type="button" id="btnSound">Sound off</button>
+      <button type="button" id="btnFs">Full screen</button>
+    </span>
   </div>
   <div class="tabs">
-    {% set cur = cat or 'tv' %}
+    {% set cur = cat or 'all' %}
+    <a class="tab {% if cur=='all' %}on{% endif %}" href="/member/social-watch?cat=all">All</a>
     <a class="tab {% if cur=='tv' %}on{% endif %}" href="/member/social-watch?cat=tv">TV</a>
     <a class="tab {% if cur=='movies' %}on{% endif %}" href="/member/social-watch?cat=movies">Movies</a>
     <a class="tab {% if cur=='news' %}on{% endif %}" href="/member/social-watch?cat=news">News</a>
@@ -34,39 +35,62 @@
     <a class="tab {% if cur=='ministration' %}on{% endif %}" href="/member/social-watch?cat=ministration">Ministration</a>
     <a class="tab {% if cur=='others' %}on{% endif %}" href="/member/social-watch?cat=others">Others</a>
   </div>
-  <div class="player">
+  <div id="stage">
     {% if links %}
     <iframe id="stageFrame" allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
     {% else %}
-    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;padding:24px;text-align:center">No playable streams in this section yet.</div>
+    <div style="display:flex;align-items:center;justify-content:center;height:100%;color:#94a3b8;padding:24px;text-align:center">No streams saved yet. Admin adds them on General Admin.</div>
     {% endif %}
   </div>
-  <div class="feed">
-    {% for L in links %}
-    <div class="slide {% if loop.first %}on{% endif %}" data-embed="{{ L.embed_url or '' }}" onclick="playThis(this)">
-      <div style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#5eead4">{{ L.platform }}</div>
-      <div style="font-weight:700">{{ L.title }}</div>
-    </div>
-    {% endfor %}
-  </div>
-  <div class="panel">
-    <div style="font-weight:800">Member interaction</div>
-    <p style="font-size:13px;color:#94a3b8">Posts, pictures and comments.</p>
-    <a class="btn" href="/member/feed">Open interaction</a>
-  </div>
-  <div class="panel">
-    <div style="font-weight:800">Memories</div>
-    <p style="font-size:13px;color:#94a3b8">Photo slideshow with music.</p>
-    <a class="btn" href="/member/memories">Open memories</a>
-  </div>
+  <div id="hint">Swipe up / down for next</div>
 <script>
-var soundOn=false;
-function withMute(url){if(!url)return '';try{var u=new URL(url,location.origin);u.searchParams.set('autoplay','1');u.searchParams.set('mute',soundOn?'0':'1');return u.toString();}catch(e){return url;}}
-function playThis(el){document.querySelectorAll('.slide').forEach(function(s){s.classList.remove('on')});el.classList.add('on');var fr=document.getElementById('stageFrame');var emb=el.getAttribute('data-embed')||'';if(fr&&emb){fr.src=withMute(emb);try{localStorage.setItem('cg_last_embed',emb);localStorage.setItem('cg_last_stream',location.pathname+location.search);localStorage.setItem('cg_stream_closed','0');}catch(e){}}}
-function toggleSound(){soundOn=!soundOn;var b=document.getElementById('btnSound');if(b)b.textContent=soundOn?'Sound on':'Sound off';var on=document.querySelector('.slide.on')||document.querySelector('.slide');if(on)playThis(on);}
-var lastEmb=null;try{lastEmb=localStorage.getItem('cg_last_embed');}catch(e){}
-var first=document.querySelector('.slide[data-embed="'+lastEmb+'"]')||document.querySelector('.slide');
-if(first)playThis(first);
-try{localStorage.setItem('cg_stream_closed','0');}catch(e){}
+var EMBEDS = [
+{% for L in links %}
+  {{ (L.embed_url or '')|tojson }}{% if not loop.last %},{% endif %}
+{% endfor %}
+].filter(function(u){ return u && u.indexOf('undefined')<0 && u !== '#'; });
+var idx = 0, soundOn = false, startY = null;
+function withMute(url){
+  if(!url) return '';
+  try { var u=new URL(url, location.origin); u.searchParams.set('autoplay','1'); u.searchParams.set('mute', soundOn?'0':'1'); return u.toString(); }
+  catch(e){ return url; }
+}
+function play(i){
+  if(!EMBEDS.length) return;
+  idx = (i + EMBEDS.length) % EMBEDS.length;
+  var fr = document.getElementById('stageFrame');
+  var emb = EMBEDS[idx];
+  if(fr && emb){
+    fr.src = withMute(emb);
+    try {
+      localStorage.setItem('cg_last_embed', emb);
+      localStorage.setItem('cg_last_stream', location.pathname + location.search);
+      localStorage.setItem('cg_stream_closed','0');
+    } catch(e){}
+  }
+}
+document.getElementById('btnSound').onclick = function(){
+  soundOn = !soundOn;
+  this.textContent = soundOn ? 'Sound on' : 'Sound off';
+  play(idx);
+};
+document.getElementById('btnFs').onclick = function(){
+  var el = document.getElementById('stage');
+  if(!el) return;
+  if(!document.fullscreenElement){ if(el.requestFullscreen) el.requestFullscreen(); else if(el.webkitRequestFullscreen) el.webkitRequestFullscreen(); }
+  else { if(document.exitFullscreen) document.exitFullscreen(); }
+};
+var stage = document.getElementById('stage');
+stage.addEventListener('touchstart', function(e){ startY = e.changedTouches[0].clientY; }, {passive:true});
+stage.addEventListener('touchend', function(e){
+  if(startY==null) return;
+  var dy = e.changedTouches[0].clientY - startY;
+  if(Math.abs(dy) > 50) play(idx + (dy<0 ? 1 : -1));
+  startY = null;
+}, {passive:true});
+var last=null; try{ last=localStorage.getItem('cg_last_embed'); }catch(e){}
+var start = last ? EMBEDS.indexOf(last) : 0;
+if(start<0) start=0;
+play(start);
 </script>
 </body></html>
