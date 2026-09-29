@@ -3556,6 +3556,169 @@
       70%  { transform: translate(48vw, 8vh) translateZ(-200px) scale(.4); opacity:.85; }
       88%,100% { transform: translate(88vw, 14vh) translateZ(-700px) scale(.08); opacity:0; }
     }
+
+    /* FS TITLE FORCE */
+    #stage.scene-fs #fsBookMeta,
+    body.scene-fs-on #fsBookMeta,
+    #fsBookMeta.is-on {
+      display: block !important;
+      position: absolute !important;
+      top: 14px !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      z-index: 2147483646 !important;
+      text-align: center;
+      pointer-events: none;
+      padding: 0.55rem 1.2rem;
+      border-radius: 14px;
+      background: linear-gradient(160deg, rgba(15,23,42,.92), rgba(30,41,59,.88));
+      border: 1px solid rgba(255,255,255,.22);
+      color: #f8fafc;
+      max-width: min(92vw, 36rem);
+    }
+    #fsBookMeta .fs-title, #fsBookTitle {
+      display: block !important;
+      font-family: Georgia, serif;
+      font-size: clamp(1.05rem, 3.2vw, 1.45rem);
+      font-weight: 800;
+      color: #fff;
+    }
+    #fsBookMeta .fs-page, #fsBookPage {
+      display: block !important;
+      margin-top: 0.2rem;
+      font-size: 0.78rem;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      color: #94a3b8;
+    }
+
+    #sceneStage.sc-star_bypass {
+      background:
+        radial-gradient(circle at 14% 48%, #000 0 6vmin, #2e1065 6.15vmin, transparent 8vmin),
+        radial-gradient(circle at 14% 48%, rgba(76,29,149,.55) 0 12vmin, transparent 22vmin),
+        radial-gradient(ellipse at 50% 80%, #0b1020 0%, #000 55%);
+      overflow:hidden; perspective:2000px;
+    }
+    #sceneStage.sc-star_bypass .bh {
+      position:absolute; left:10%; top:42%; width:26vmin; height:26vmin; margin:-13vmin 0 0 -13vmin;
+      border-radius:50%;
+      background:radial-gradient(circle at 45% 40%, #000 0 44%, #6d28d9 60%, transparent 64%);
+      box-shadow:0 0 80px 20px rgba(109,40,217,.35), inset 0 0 40px #000;
+      animation:bhSpinStar 26s linear infinite;
+      z-index:1;
+    }
+    #sceneStage.sc-star_bypass .bh-disk {
+      position:absolute; left:10%; top:42%; width:42vmin; height:10vmin; margin:-5vmin 0 0 -21vmin;
+      border-radius:50%;
+      background:conic-gradient(from 80deg, transparent, rgba(251,191,36,.35), rgba(244,63,94,.25), transparent 40%);
+      filter:blur(1px);
+      animation:bhSpinStar 12s linear infinite;
+      z-index:0;
+    }
+    @keyframes bhSpinStar { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+    #sceneStage.sc-star_bypass .heat {
+      position:absolute; inset:0; pointer-events:none; z-index:8;
+      mix-blend-mode:screen;
+      animation:heatPresence 40s linear infinite;
+    }
+    @keyframes heatPresence {
+      0%,7%,15%,23%,31%,39%,100% { opacity:0; background:transparent; }
+      9%,17%,25%,33% {
+        opacity:1;
+        background:
+          radial-gradient(circle at 50% 50%, rgba(255,244,200,.7) 0 8%, rgba(255,120,30,.45) 28%, transparent 58%),
+          linear-gradient(90deg, transparent, rgba(255,80,0,.18), transparent);
+      }
+    }
+    #sceneStage.sc-star_bypass .ember {
+      position:absolute; border-radius:50%; opacity:.35; z-index:2;
+      filter:blur(.4px);
+    }
+    #sceneStage.sc-star_bypass .star-fly {
+      position:absolute; top:50%; left:50%;
+      border-radius:50%;
+      transform-style:preserve-3d;
+      z-index:5;
+      animation-timing-function:cubic-bezier(.22,.7,.2,1);
+      animation-iteration-count:infinite;
+      animation-duration:40s;
+    }
+    #sceneStage.sc-star_bypass .star-fly .nm {
+      position:absolute; left:50%; top:-1.6em; transform:translateX(-50%);
+      color:#fff; font-weight:800; font-size:clamp(11px,2.4vw,16px);
+      letter-spacing:.12em; text-transform:uppercase; white-space:nowrap;
+      text-shadow:0 0 12px #000, 0 0 22px rgba(251,191,36,.9);
+    }
+    #sceneStage.sc-star_bypass .s1 {
+      width:22vmin; height:22vmin; margin:-11vmin 0 0 -11vmin;
+      background:radial-gradient(circle at 30% 28%, #fff7ed 0 18%, #facc15 40%, #ea580c 78%, #7c2d12 100%);
+      box-shadow:0 0 60px 18px rgba(250,204,21,.45);
+      animation-name:passSun;
+    }
+    #sceneStage.sc-star_bypass .s2 {
+      width:34vmin; height:34vmin; margin:-17vmin 0 0 -17vmin;
+      background:radial-gradient(circle at 30% 28%, #fff 0 16%, #bae6fd 38%, #38bdf8 62%, #1e3a8a 100%);
+      box-shadow:0 0 70px 22px rgba(56,189,248,.4);
+      animation-name:passSirius; animation-delay:8s;
+    }
+    #sceneStage.sc-star_bypass .s3 {
+      width:52vmin; height:52vmin; margin:-26vmin 0 0 -26vmin;
+      background:radial-gradient(circle at 30% 28%, #ffedd5 0 14%, #fb923c 36%, #c2410c 70%, #7f1d1d 100%);
+      box-shadow:0 0 90px 28px rgba(251,146,60,.45);
+      animation-name:passBetel; animation-delay:16s;
+    }
+    #sceneStage.sc-star_bypass .s4 {
+      width:78vmin; height:78vmin; margin:-39vmin 0 0 -39vmin;
+      background:radial-gradient(circle at 30% 28%, #fecaca 0 12%, #ef4444 34%, #991b1b 72%, #450a0a 100%);
+      box-shadow:0 0 110px 36px rgba(239,68,68,.42);
+      animation-name:passVY; animation-delay:24s;
+    }
+    #sceneStage.sc-star_bypass .s5 {
+      width:110vmin; height:110vmin; margin:-55vmin 0 0 -55vmin;
+      background:radial-gradient(circle at 30% 28%, #ffe4e6 0 10%, #fb7185 32%, #9f1239 70%, #4c0519 100%);
+      box-shadow:0 0 140px 48px rgba(251,113,133,.4);
+      animation-name:passUY; animation-delay:32s;
+    }
+    @keyframes passSun {
+      0% { transform: translate(78vw,12vh) translateZ(-900px) scale(.06); opacity:0; }
+      8% { opacity:1; }
+      38% { transform: translate(0,0) translateZ(240px) scale(2.2); opacity:1; filter:brightness(1.35); }
+      55% { transform: translate(18vw,-4vh) translateZ(80px) scale(1.1); }
+      78% { transform: translate(-42vw,18vh) translateZ(-800px) scale(.12); opacity:.55; }
+      100% { transform: translate(-48vw,20vh) translateZ(-900px) scale(.08); opacity:.4; }
+    }
+    @keyframes passSirius {
+      0% { transform: translate(80vw,8vh) translateZ(-900px) scale(.05); opacity:0; }
+      8% { opacity:1; }
+      38% { transform: translate(0,0) translateZ(260px) scale(3.4); opacity:1; filter:brightness(1.4); }
+      55% { transform: translate(22vw,-6vh) translateZ(40px) scale(1.2); }
+      78% { transform: translate(-38vw,22vh) translateZ(-820px) scale(.14); opacity:.5; }
+      100% { transform: translate(-44vw,24vh) translateZ(-920px) scale(.09); opacity:.38; }
+    }
+    @keyframes passBetel {
+      0% { transform: translate(82vw,6vh) translateZ(-900px) scale(.05); opacity:0; }
+      8% { opacity:1; }
+      38% { transform: translate(0,0) translateZ(280px) scale(5.2); opacity:1; filter:brightness(1.35); }
+      55% { transform: translate(24vw,-8vh) translateZ(20px) scale(1.35); }
+      78% { transform: translate(-34vw,26vh) translateZ(-840px) scale(.16); opacity:.48; }
+      100% { transform: translate(-40vw,28vh) translateZ(-940px) scale(.1); opacity:.35; }
+    }
+    @keyframes passVY {
+      0% { transform: translate(84vw,4vh) translateZ(-900px) scale(.04); opacity:0; }
+      8% { opacity:1; }
+      38% { transform: translate(0,0) translateZ(300px) scale(7.4); opacity:1; filter:brightness(1.3); }
+      55% { transform: translate(26vw,-6vh) translateZ(10px) scale(1.5); }
+      78% { transform: translate(-30vw,28vh) translateZ(-860px) scale(.18); opacity:.45; }
+      100% { transform: translate(-36vw,30vh) translateZ(-960px) scale(.11); opacity:.32; }
+    }
+    @keyframes passUY {
+      0% { transform: translate(86vw,2vh) translateZ(-900px) scale(.04); opacity:0; }
+      8% { opacity:1; }
+      38% { transform: translate(0,0) translateZ(320px) scale(10); opacity:1; filter:brightness(1.28); }
+      55% { transform: translate(28vw,-4vh) translateZ(0) scale(1.7); }
+      78% { transform: translate(-26vw,30vh) translateZ(-880px) scale(.2); opacity:.42; }
+      100% { transform: translate(-32vw,32vh) translateZ(-980px) scale(.12); opacity:.3; }
+    }
 </style>
   <script src="/static/js/bg-animations.js"></script>
 </head>
@@ -3876,6 +4039,7 @@
 </div>
         <div 
           <div class="sc-layer sc-star_bypass-bits" style="display:none">
+            <div class="bh-disk"></div><div class="bh"></div>
             <div class="heat"></div>
             <div class="star-fly s1"><span class="nm">Sun</span></div>
             <div class="star-fly s2"><span class="nm">Sirius</span></div>
