@@ -24,7 +24,7 @@
     body.theme-sepia { --book-bg: #2c2416; --sheet-bg: #f4ecd8; --sheet-color: #3b2f1e; --sheet-border: 1px solid rgba(90,70,40,.25); }
     body.theme-forest { --book-bg: #0c1a12; --sheet-bg: #e8f5e9; --sheet-color: #1b3a2a; --sheet-border: transparent; }
     body.theme-ocean { --book-bg: #0a1628; --sheet-bg: #e3f2fd; --sheet-color: #0d2137; --sheet-border: transparent; }
-    body { background: var(--book-bg); min-height: 100vh; transition: background .35s ease; margin: 0; }
+    body { background: var(--book-bg); min-height: 100vh; transition: background .35s ease; margin: 0; overflow-y: auto; }
     .bar { background: rgba(15,23,42,.95); border-bottom: 1px solid rgba(255,255,255,.12); }
     body.theme-night .bar { background: #000; border-color: #444; }
     .chip {
@@ -142,9 +142,9 @@
     }
     /* scene-on alone must NOT show 3D — only FS+Scene (see ABSOLUTE rules) */
     #stage.scene-on:not(.scene-fs) #sceneStage {
-      display: none !important;
-      visibility: hidden !important;
-      opacity: 0 !important;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
     }
     #stage.scene-fs:not(.scene-on) #sceneStage {
       display: none !important;
@@ -3719,6 +3719,38 @@
       78% { transform: translate(-26vw,30vh) translateZ(-880px) scale(.2); opacity:.42; }
       100% { transform: translate(-32vw,32vh) translateZ(-980px) scale(.12); opacity:.3; }
     }
+
+    
+    /* FS-ONLY 3D (including Giant star flyby) */
+    #stage:not(.scene-fs) #sceneStage,
+    #stage.scene-on:not(.scene-fs) #sceneStage {
+      display: none !important;
+      visibility: hidden !important;
+      opacity: 0 !important;
+    }
+    #stage.scene-fs.scene-on #sceneStage {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      z-index: 6 !important;
+      position: absolute !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+    }
+    #stage.scene-fs.scene-on .page-sheet,
+    #stage.scene-fs.scene-on #sheetText {
+      background: transparent !important;
+      box-shadow: none !important;
+      color: transparent !important;
+      opacity: 0 !important;
+    }
+    #stage.scene-fs #fsBookMeta,
+    #stage.scene-fs #fsBookMeta.is-on {
+      display: block !important;
+      z-index: 20 !important;
+    }
+
 </style>
   <script src="/static/js/bg-animations.js"></script>
 </head>
@@ -4394,7 +4426,7 @@ id="fsBookMeta" aria-hidden="true">
     }
     function next() {
       if (state.pageIndex >= state.pages.length - 1) {
-        state.reading = false;
+        state.reading = false; try { document.body.classList.remove("reading-on"); } catch(e) {}
         if ($('btnRead')) $('btnRead').textContent = '👼 Read';
         renderPage();
         return;
@@ -5026,6 +5058,12 @@ id="fsBookMeta" aria-hidden="true">
       ['ws-fill','ws-write','ws-glow','ws-underline'].forEach(function (c) { stage.classList.remove(c); });
       if (show3d) stage.classList.add('ws-' + wstyle);
       surface.className = 'sc-' + name;
+      try {
+        surface.querySelectorAll('.sc-layer').forEach(function(el){
+          var want = el.className.indexOf('sc-'+name+'-bits') >= 0;
+          el.style.setProperty('display', want && show3d ? 'block' : 'none', 'important');
+        });
+      } catch (e) {}
       surface.setAttribute('aria-hidden', show3d ? 'false' : 'true');
       if (show3d) {
         surface.style.setProperty('display', 'block', 'important');
@@ -5287,18 +5325,18 @@ id="fsBookMeta" aria-hidden="true">
 
       function schedule() {
         clear();
-        if (!(state.sceneFs && state.sceneOn)) return;
+        if (!state.sceneOn) return;
         var name = state.sceneName || 'sun';
         var sec = SCENE_SECS[name] || 20;
         timer = setTimeout(function () {
-          if (!(state.sceneFs && state.sceneOn)) return;
+          if (!state.sceneOn) return;
           advanceSmooth();
         }, sec * 1000);
       }
 
       function advanceSmooth() {
         if (fading) return;
-        if (!(state.sceneFs && state.sceneOn)) return;
+        if (!state.sceneOn) return;
         fading = true;
         var surface = document.getElementById('sceneStage');
         var next = nextName();
@@ -5353,7 +5391,7 @@ id="fsBookMeta" aria-hidden="true">
     // Angel "Read ebook" → auto start reading
     if (window.__AUTO_READ__ && state.pages.length) {
       setTimeout(() => {
-        state.reading = true;
+        state.reading = true; try { document.body.classList.add("reading-on"); } catch(e) {}
         if ($('btnRead')) $('btnRead').textContent = '⏹ Stop';
         speakPage();
       }, 600);
