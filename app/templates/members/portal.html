@@ -1,15 +1,49 @@
 {% extends "base.html" %}
-{% block title %}My Space – Churchgate{% endblock %}
-{% block content %}
-<div class="mx-4 mt-3 mb-2 p-4 rounded-2xl border border-sky-400/40 bg-gradient-to-r from-sky-900 via-indigo-900 to-slate-900 text-white shadow-lg">
-  <div class="flex flex-wrap items-center justify-between gap-3">
-    <div>
-      <div class="font-bold text-lg">Social Stream</div>
-      <div class="text-sm text-sky-100 mt-0.5">TV, movies, news, games, ministration — plus interaction and memories.</div>
-    </div>
-    <a href="/member/social-watch?cat=tv" class="px-4 py-2.5 rounded-xl bg-white/15 border border-white/30 text-sm font-semibold">Open stream</a>
-  </div>
+{% block title %}My Space – Churchgate
+<div class="mx-4 mb-2 flex justify-end">
+  <button type="button" id="foldDashBtn" class="text-xs px-3 py-1 rounded-full border border-white/20 bg-slate-900/70 text-slate-100">Fold dashboard</button>
 </div>
+<div id="memberDashFold">
+</div>
+<div id="socialDock" class="mx-4 mb-6 rounded-2xl overflow-hidden border border-sky-500/30 bg-slate-950">
+  <div class="flex items-center justify-between px-3 py-2 text-xs text-sky-100 bg-slate-900">
+    <span class="font-bold">Social Stream</span>
+    <span class="flex gap-2">
+      <a href="/member/social-watch?cat=tv" class="underline">Open full</a>
+      <button type="button" id="closeStreamBtn" class="px-2 py-0.5 rounded bg-white/10">Close stream</button>
+    </span>
+  </div>
+  <iframe id="socialDockFrame" title="Social Stream" style="width:100%;height:42vh;border:0;background:#000" allow="autoplay; encrypted-media; picture-in-picture"></iframe>
+</div>
+<script>
+(function(){
+  var fold = document.getElementById('memberDashFold');
+  var btn = document.getElementById('foldDashBtn');
+  var main = document.querySelector('.max-w-3xl');
+  if (btn && main) {
+    btn.onclick = function(){
+      var on = main.style.display === 'none';
+      main.style.display = on ? '' : 'none';
+      btn.textContent = on ? 'Fold dashboard' : 'Unfold dashboard';
+    };
+  }
+  var closed = localStorage.getItem('cg_stream_closed') === '1';
+  var dock = document.getElementById('socialDock');
+  var fr = document.getElementById('socialDockFrame');
+  var last = localStorage.getItem('cg_last_stream') || '/member/social-watch?cat=tv&embed=1&mute=1';
+  if (!closed && fr) fr.src = last;
+  if (closed && dock) dock.style.display = 'none';
+  var cl = document.getElementById('closeStreamBtn');
+  if (cl) cl.onclick = function(){
+    localStorage.setItem('cg_stream_closed','1');
+    if (dock) dock.style.display = 'none';
+    if (fr) fr.src = '';
+  };
+})();
+</script>
+
+{% endblock %}
+{% block content %}
 
 
 {# Invite & earn — extra panel only; original dashboard unchanged below #}
@@ -376,12 +410,7 @@
   <div class="pray-watermark" aria-hidden="true"></div>
 
   <div class="max-w-3xl mx-auto px-4 pt-4 relative z-10">
-    <div class="ms-card p-5 mb-4">
-      <h2 class="font-bold text-lg mb-1" style="color: var(--mp-text)">Member interaction</h2>
-      <p class="ms-muted text-sm mb-3">Share text and pictures with members in your global church. Like, comment and share posts. Everything expires after 24 hours. You can also request to join a focus group.</p>
-      <a href="/member/feed" class="ms-btn inline-block px-5 py-2.5 text-sm">Open interaction panel →</a>
     </div>
-  </div>
 
 
   <div class="relative z-10 max-w-4xl mx-auto px-4 py-6 pb-16">
@@ -506,7 +535,7 @@
     <div class="ms-card p-4 mb-5">
       <div class="flex flex-wrap gap-3 items-center mb-3">
       {% if member.profile_pic %}
-      <img src="{{ member.profile_pic }}" class="w-28 h-28 rounded-full object-cover ring-4 ring-violet-300/60 shadow-xl -mt-6" alt="">
+      <img src="{{ member.profile_pic }}" class="w-20 h-20 rounded-full object-cover ring-2 ring-violet-300/50 shadow-md -mt-2" alt="">
       {% else %}
       <div class="w-16 h-16 rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-600 flex items-center justify-center text-xl font-bold">{{ member.full_name[:1] if member.full_name else "M" }}</div>
       {% endif %}
@@ -527,7 +556,7 @@
           <label class="text-xs ms-muted">Change profile picture</label>
           <input type="file" name="profile_pic" accept="image/*" required class="w-full mt-1 text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:bg-violet-600 file:text-white">
         </div>
-        <button type="submit" class="ms-btn px-4 py-2 text-xs font-bold sm:col-span-2">Upload new picture</button>
+        <button type="submit" class="ms-btn px-2 py-1 text-[10px] font-semibold sm:col-span-2">Upload photo</button>
       </form>
     </div>
 

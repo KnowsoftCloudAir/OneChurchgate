@@ -62,8 +62,11 @@
 <script>
 var soundOn=false;
 function withMute(url){if(!url)return '';try{var u=new URL(url,location.origin);u.searchParams.set('autoplay','1');u.searchParams.set('mute',soundOn?'0':'1');return u.toString();}catch(e){return url;}}
-function playThis(el){document.querySelectorAll('.slide').forEach(function(s){s.classList.remove('on')});el.classList.add('on');var fr=document.getElementById('stageFrame');var emb=el.getAttribute('data-embed')||'';if(fr&&emb)fr.src=withMute(emb);}
+function playThis(el){document.querySelectorAll('.slide').forEach(function(s){s.classList.remove('on')});el.classList.add('on');var fr=document.getElementById('stageFrame');var emb=el.getAttribute('data-embed')||'';if(fr&&emb){fr.src=withMute(emb);try{localStorage.setItem('cg_last_embed',emb);localStorage.setItem('cg_last_stream',location.pathname+location.search);localStorage.setItem('cg_stream_closed','0');}catch(e){}}}
 function toggleSound(){soundOn=!soundOn;var b=document.getElementById('btnSound');if(b)b.textContent=soundOn?'Sound on':'Sound off';var on=document.querySelector('.slide.on')||document.querySelector('.slide');if(on)playThis(on);}
-var first=document.querySelector('.slide');if(first)playThis(first);
+var lastEmb=null;try{lastEmb=localStorage.getItem('cg_last_embed');}catch(e){}
+var first=document.querySelector('.slide[data-embed="'+lastEmb+'"]')||document.querySelector('.slide');
+if(first)playThis(first);
+try{localStorage.setItem('cg_stream_closed','0');}catch(e){}
 </script>
 </body></html>
