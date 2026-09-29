@@ -6,7 +6,7 @@
   <title>Books — Kwealth</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Playfair+Display:wght@500;700&family=Cormorant+Garamond:wght@500;700&family=Merriweather:wght@400;700&family=Lora:wght@500;700&family=EB+Garamond:wght@500;700&family=Libre+Baskerville:wght@400;700&family=Spectral:wght@500;700&family=Cardo:wght@400;700&family=Source+Serif+4:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=Playfair+Display:wght@500;700&family=Cormorant+Garamond:wght@500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="/static/js/offline-store.js"></script>
   <link rel="manifest" href="/static/manifest.json">
@@ -78,13 +78,12 @@
     .status-starting { background: #1d4ed8; color: #eff6ff; }
     .status-progress { background: #b45309; color: #fffbeb; }
     .status-finished { background: #047857; color: #ecfdf5; }
-    .page-sheet { will-change: transform, opacity, filter; }
-    .flip-curl { transform: perspective(1600px) rotateY(-78deg) scaleX(.88) translateX(-6%); opacity: .35; filter: brightness(.85); }
-    .flip-slide { transform: translateX(-42%) rotateZ(-3deg) scale(.98); opacity: .25; }
-    .flip-fold { transform: perspective(1400px) rotateX(14deg) rotateY(-58deg) scale(.96); opacity: .3; }
-    .flip-fade { transform: scale(.9) translateY(8px); opacity: 0; filter: blur(2px); }
-    .flip-back { transform: perspective(1600px) rotateY(78deg) scaleX(.88) translateX(6%); opacity: .35; }
-    .flip-back-slide { transform: translateX(42%) rotateZ(3deg) scale(.98); opacity: .25; }
+    .flip-curl { transform: perspective(1400px) rotateY(-70deg) scaleX(.92); opacity: .5; }
+    .flip-slide { transform: translateX(-30%) rotateZ(-2deg); opacity: .4; }
+    .flip-fold { transform: perspective(1200px) rotateX(10deg) rotateY(-50deg); opacity: .5; }
+    .flip-fade { transform: scale(.94); opacity: 0; }
+    .flip-back { transform: perspective(1400px) rotateY(70deg) scaleX(.92); opacity: .5; }
+    .flip-back-slide { transform: translateX(30%) rotateZ(2deg); opacity: .4; }
     label.lbl { font-size: 11px; color: #94a3b8; font-weight: 600; display: block; margin-bottom: 4px; }
     select.ctl, input.ctl {
       width: 100%; border-radius: 8px; padding: 6px 8px; font-size: 12px;
@@ -3509,163 +3508,6 @@
     }
 
   
-    /* === MAGNIFYING GLASS (replaces flat eyeglasses) === */
-    #sceneStage.sc-glasses { perspective: 1400px; }
-    #sceneStage.sc-glasses .glasses {
-      position: absolute; left: 50%; top: 42%;
-      width: 0; height: 0;
-      transform-style: preserve-3d;
-      animation: magOrbit 14s ease-in-out infinite;
-      z-index: 6;
-      filter: drop-shadow(0 18px 24px rgba(0,0,0,.55));
-    }
-    #sceneStage.sc-glasses .glasses .lens,
-    #sceneStage.sc-glasses .mag-lens {
-      position: absolute;
-      width: 28vmin; height: 28vmin;
-      margin: -14vmin 0 0 -14vmin;
-      border-radius: 50%;
-      border: 1.6vmin solid #d6b35c;
-      background:
-        radial-gradient(circle at 35% 30%, rgba(255,255,255,.45), rgba(186,230,253,.12) 35%, rgba(15,23,42,.15) 70%, rgba(15,23,42,.35));
-      box-shadow:
-        inset 0 0 12px rgba(255,255,255,.45),
-        inset -6px -8px 18px rgba(0,0,0,.25),
-        0 0 0 0.45vmin #8a6a2a,
-        0 10px 30px rgba(0,0,0,.4);
-      transform: rotateX(18deg) rotateY(-22deg);
-      overflow: hidden;
-      backdrop-filter: blur(0.5px);
-    }
-    #sceneStage.sc-glasses .mag-lens::after {
-      content: "";
-      position: absolute; left: 18%; top: 16%;
-      width: 38%; height: 22%;
-      border-radius: 50%;
-      background: linear-gradient(120deg, rgba(255,255,255,.7), transparent 70%);
-    }
-    #sceneStage.sc-glasses .mag-handle {
-      position: absolute;
-      left: 11vmin; top: 10vmin;
-      width: 4.2vmin; height: 26vmin;
-      border-radius: 2vmin;
-      background: linear-gradient(90deg, #8a6a2a, #e8c872 40%, #6b4f1d);
-      transform: rotateZ(38deg) rotateX(12deg);
-      box-shadow: 2px 8px 14px rgba(0,0,0,.4);
-      transform-origin: top center;
-    }
-    #sceneStage.sc-glasses .mag-handle::after {
-      content: "";
-      position: absolute; bottom: -2vmin; left: 50%;
-      width: 6vmin; height: 6vmin; margin-left: -3vmin;
-      border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #fde68a, #92400e);
-    }
-    #sceneStage.sc-glasses .reader {
-      animation: readerBreathe 8s ease-in-out infinite;
-    }
-    @keyframes magOrbit {
-      0%   { transform: translate(-8%, -6%) rotateZ(-8deg) rotateY(-18deg) scale(0.92); }
-      40%  { transform: translate(6%, 4%) rotateZ(10deg) rotateY(16deg) scale(1.08); }
-      70%  { transform: translate(-2%, 10%) rotateZ(-4deg) rotateY(-8deg) scale(1.16); }
-      100% { transform: translate(-8%, -6%) rotateZ(-8deg) rotateY(-18deg) scale(0.92); }
-    }
-    @keyframes readerBreathe {
-      0%,100% { transform: translate(-50%,-50%) scale(1); }
-      50% { transform: translate(-50%,-50%) scale(1.04); }
-    }
-
-    /* === AURORA === */
-    #sceneStage.sc-aurora {
-      background: radial-gradient(ellipse at 50% 120%, #022c22, #020617 55%);
-      overflow: hidden;
-    }
-    #sceneStage.sc-aurora .fjord {
-      position: absolute; left:0; right:0; bottom:0; height: 34%;
-      background: linear-gradient(180deg, transparent, #020617 30%, #000);
-    }
-    #sceneStage.sc-aurora .band {
-      position: absolute; left: -20%; right: -20%; height: 28%;
-      top: 12%;
-      background: linear-gradient(90deg, transparent, rgba(52,211,153,.35), rgba(56,189,248,.4), rgba(167,139,250,.35), transparent);
-      filter: blur(18px);
-      animation: auroraDrift 10s ease-in-out infinite alternate;
-    }
-    #sceneStage.sc-aurora .band.b2 { top: 22%; opacity: .7; animation-duration: 14s; }
-    @keyframes auroraDrift { from { transform: translateX(-8%) skewX(-8deg); } to { transform: translateX(8%) skewX(8deg); } }
-
-    /* === LIGHTHOUSE === */
-    #sceneStage.sc-lighthouse {
-      background: linear-gradient(180deg, #0f172a, #1e293b 40%, #0c4a6e);
-      overflow: hidden;
-    }
-    #sceneStage.sc-lighthouse .tower {
-      position: absolute; left: 50%; bottom: 8%; width: 8vmin; height: 38vmin; margin-left: -4vmin;
-      background: repeating-linear-gradient(#f8fafc 0 8vmin, #ef4444 8vmin 16vmin);
-      border-radius: 2px 2px 0 0;
-      box-shadow: 0 0 20px rgba(0,0,0,.4);
-    }
-    #sceneStage.sc-lighthouse .beam {
-      position: absolute; left: 50%; top: 28%; width: 90vmin; height: 16vmin; margin-left: -4vmin;
-      background: conic-gradient(from 0deg at 0% 50%, transparent 0 8%, rgba(254,243,199,.45) 12%, transparent 22%);
-      transform-origin: 0 50%;
-      animation: beamSweep 6s linear infinite;
-    }
-    @keyframes beamSweep { from { transform: rotate(-30deg); } to { transform: rotate(30deg); } }
-
-    /* === CANDLE LIBRARY === */
-    #sceneStage.sc-candle {
-      background: radial-gradient(ellipse at 50% 80%, #431407, #0c0a09);
-    }
-    #sceneStage.sc-candle .flame {
-      position: absolute; left: 50%; bottom: 28%; width: 5vmin; height: 9vmin; margin-left: -2.5vmin;
-      border-radius: 50% 50% 40% 40%;
-      background: radial-gradient(circle at 50% 70%, #fff7ed, #fbbf24 40%, #ea580c 80%, transparent);
-      animation: flicker 0.7s ease-in-out infinite alternate;
-      box-shadow: 0 0 40px 12px rgba(251,191,36,.45);
-    }
-    @keyframes flicker { from { transform: scaleY(1) rotate(-2deg); } to { transform: scaleY(1.15) rotate(3deg); } }
-
-    /* === COMET === */
-    #sceneStage.sc-comet { background: #020617; overflow: hidden; }
-    #sceneStage.sc-comet .rock {
-      position: absolute; width: 7vmin; height: 5vmin; border-radius: 50%;
-      background: radial-gradient(circle at 30% 30%, #e2e8f0, #57534e);
-      box-shadow: -18vmin 0 24px 8px rgba(125,211,252,.25);
-      animation: cometFly 9s linear infinite;
-    }
-    @keyframes cometFly {
-      0% { left: -10%; top: 15%; transform: rotate(-20deg); }
-      100% { left: 110%; top: 62%; transform: rotate(-20deg); }
-    }
-
-    /* === RAIN WINDOW === */
-    #sceneStage.sc-rain {
-      background: linear-gradient(180deg, #1e293b, #0f172a);
-    }
-    #sceneStage.sc-rain .drop {
-      position: absolute; width: 2px; background: rgba(186,230,253,.7);
-      animation: rainFall 1.6s linear infinite;
-    }
-    @keyframes rainFall { from { transform: translateY(-20vh); opacity: .2; } to { transform: translateY(90vh); opacity: .8; } }
-
-    /* === STAINED GLASS === */
-    #sceneStage.sc-stained {
-      background: #111827;
-    }
-    #sceneStage.sc-stained .pane {
-      position: absolute; inset: 12% 18%;
-      background:
-        conic-gradient(from 0deg, #b91c1c, #1d4ed8, #ca8a04, #047857, #7c3aed, #b91c1c);
-      clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
-      filter: saturate(1.2);
-      animation: glassPulse 8s ease-in-out infinite;
-      box-shadow: 0 0 40px rgba(251,191,36,.25);
-    }
-    @keyframes glassPulse { 0%,100% { filter: brightness(.85) saturate(1.1); } 50% { filter: brightness(1.2) saturate(1.4); } }
-
-
-    
     #sceneStage.sc-star_bypass {
       background:
         radial-gradient(circle at 16% 46%, #000 0 5.5vmin, #1e1b4b 5.7vmin, transparent 7.2vmin),
@@ -3678,18 +3520,14 @@
       border-radius:50%;
       background:radial-gradient(circle at 42% 40%, #000 0 42%, #4c1d95 58%, transparent 62%);
       box-shadow:0 0 60px 16px rgba(76,29,149,.4), inset 0 0 30px #000;
-      animation:bhSpin 22s linear infinite;
+      animation:bhSpinStar 22s linear infinite;
     }
-    #sceneStage.sc-star_bypass::after {
-      content:""; position:absolute; inset:0; pointer-events:none;
-      background:radial-gradient(circle at 16% 46%, transparent 12vmin, rgba(0,0,0,.55) 34vmin);
-    }
-    @keyframes bhSpin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+    @keyframes bhSpinStar { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
     #sceneStage.sc-star_bypass .heat {
       position:absolute; inset:0; pointer-events:none; z-index:6;
-      animation:heatWash 40s linear infinite;
+      animation:heatWashStar 40s linear infinite;
     }
-    @keyframes heatWash {
+    @keyframes heatWashStar {
       0%,6%,14%,22%,30%,38%,100% { opacity:0; background:transparent; }
       8%,16%,24%,32% { opacity:.85; background:radial-gradient(circle at 50% 50%, rgba(255,230,160,.55), rgba(255,90,20,.28) 38%, transparent 62%); }
     }
@@ -3698,38 +3536,17 @@
       border-radius:50%;
       transform-style:preserve-3d;
       animation:starOrbitPass 40s linear infinite;
-      box-shadow:0 0 40px 12px rgba(255,200,80,.25);
     }
     #sceneStage.sc-star_bypass .star-fly .nm {
       position:absolute; left:50%; top:-1.8em; transform:translateX(-50%);
       color:#fff; font-weight:800; font-size:13px; letter-spacing:.1em; text-transform:uppercase;
       text-shadow:0 0 10px #000, 0 0 16px rgba(251,191,36,.8); white-space:nowrap;
     }
-    #sceneStage.sc-star_bypass .s1 {
-      width:18vmin; height:18vmin; margin:-9vmin 0 0 -9vmin;
-      background:radial-gradient(circle at 32% 30%, #fff7ed, #facc15 38%, #ea580c 78%);
-      animation-delay:0s;
-    }
-    #sceneStage.sc-star_bypass .s2 {
-      width:28vmin; height:28vmin; margin:-14vmin 0 0 -14vmin;
-      background:radial-gradient(circle at 32% 30%, #f8fafc, #7dd3fc 40%, #1d4ed8 80%);
-      animation-delay:8s;
-    }
-    #sceneStage.sc-star_bypass .s3 {
-      width:40vmin; height:40vmin; margin:-20vmin 0 0 -20vmin;
-      background:radial-gradient(circle at 32% 30%, #fed7aa, #f97316 42%, #7f1d1d 82%);
-      animation-delay:16s;
-    }
-    #sceneStage.sc-star_bypass .s4 {
-      width:56vmin; height:56vmin; margin:-28vmin 0 0 -28vmin;
-      background:radial-gradient(circle at 32% 30%, #fecaca, #ef4444 40%, #450a0a 82%);
-      animation-delay:24s;
-    }
-    #sceneStage.sc-star_bypass .s5 {
-      width:78vmin; height:78vmin; margin:-39vmin 0 0 -39vmin;
-      background:radial-gradient(circle at 32% 30%, #ffe4e6, #fb7185 36%, #4c0519 84%);
-      animation-delay:32s;
-    }
+    #sceneStage.sc-star_bypass .s1 { width:18vmin;height:18vmin;margin:-9vmin 0 0 -9vmin; background:radial-gradient(circle at 32% 30%,#fff7ed,#facc15 38%,#ea580c 78%); animation-delay:0s; }
+    #sceneStage.sc-star_bypass .s2 { width:28vmin;height:28vmin;margin:-14vmin 0 0 -14vmin; background:radial-gradient(circle at 32% 30%,#f8fafc,#7dd3fc 40%,#1d4ed8 80%); animation-delay:8s; }
+    #sceneStage.sc-star_bypass .s3 { width:40vmin;height:40vmin;margin:-20vmin 0 0 -20vmin; background:radial-gradient(circle at 32% 30%,#fed7aa,#f97316 42%,#7f1d1d 82%); animation-delay:16s; }
+    #sceneStage.sc-star_bypass .s4 { width:56vmin;height:56vmin;margin:-28vmin 0 0 -28vmin; background:radial-gradient(circle at 32% 30%,#fecaca,#ef4444 40%,#450a0a 82%); animation-delay:24s; }
+    #sceneStage.sc-star_bypass .s5 { width:78vmin;height:78vmin;margin:-39vmin 0 0 -39vmin; background:radial-gradient(circle at 32% 30%,#ffe4e6,#fb7185 36%,#4c0519 84%); animation-delay:32s; }
     @keyframes starOrbitPass {
       0%   { transform: translate(72vw, 10vh) translateZ(-800px) scale(.08); opacity:0; }
       6%   { opacity:1; }
@@ -3737,118 +3554,12 @@
       44%  { transform: translate(0, 0) translateZ(220px) scale(1.55); opacity:1; filter:brightness(1.35); }
       52%  { transform: translate(8vw, -2vh) translateZ(280px) scale(1.85); }
       70%  { transform: translate(48vw, 8vh) translateZ(-200px) scale(.4); opacity:.85; }
-      88%  { transform: translate(88vw, 14vh) translateZ(-700px) scale(.08); opacity:0; }
-      100% { transform: translate(88vw, 14vh) translateZ(-700px) scale(.08); opacity:0; }
-    }
-#sceneStage.sc-earth_probe { background:#020617; overflow:hidden; perspective:1400px; }
-    #sceneStage.sc-earth_probe .stars {
-      position:absolute; inset:-10%;
-      background-image:radial-gradient(1.5px 1.5px at 10% 20%,#fff,transparent),radial-gradient(1px 1px at 40% 60%,#fff,transparent),radial-gradient(2px 2px at 70% 15%,#fff,transparent),radial-gradient(1px 1px at 88% 70%,#fff,transparent),radial-gradient(1.5px 1.5px at 22% 80%,#fff,transparent);
-      animation:starTwinkle 5s ease-in-out infinite alternate;
-    }
-    #sceneStage.sc-earth_probe .probe-cam {
-      position:absolute; inset:0;
-      animation:earthCam 28s ease-in-out infinite;
-      transform-style:preserve-3d;
-    }
-    #sceneStage.sc-earth_probe .earth-ball {
-      position:absolute; left:50%; top:46%; width:42vmin; height:42vmin; margin:-21vmin 0 0 -21vmin;
-      border-radius:50%;
-      background:
-        radial-gradient(circle at 32% 30%, rgba(125,211,252,.55), transparent 42%),
-        radial-gradient(ellipse 40% 22% at 30% 40%, #22c55e 0%, transparent 70%),
-        radial-gradient(ellipse 28% 18% at 62% 48%, #4ade80 0%, transparent 70%),
-        radial-gradient(circle at 50% 50%, #0369a1, #0c4a6e 60%, #020617);
-      box-shadow: inset -10vmin -6vmin 18vmin rgba(2,6,23,.55), 0 0 40px rgba(56,189,248,.35);
-      animation:earthAxis 18s linear infinite;
-    }
-    #sceneStage.sc-earth_probe .earth-ball::after {
-      content:""; position:absolute; inset:-3%; border-radius:50%;
-      box-shadow:inset 0 0 12px 3px rgba(186,230,253,.28);
-    }
-    #sceneStage.sc-earth_probe .under-sun {
-      position:absolute; left:46%; bottom:6%; width:10vmin; height:10vmin; margin-left:-5vmin;
-      border-radius:50%;
-      background:radial-gradient(circle at 35% 35%,#fff7ed,#facc15 40%,#ea580c);
-      box-shadow:0 0 50px 18px rgba(250,204,21,.45);
-      animation:underSun 28s ease-in-out infinite;
-    }
-    @keyframes earthAxis { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
-    @keyframes earthCam {
-      0% { transform: translateY(-8%) scale(.92) rotateX(8deg); }
-      35% { transform: translateY(4%) scale(1.05) rotateX(18deg); }
-      60% { transform: translateY(18%) scale(1.12) rotateX(38deg) rotateY(-12deg); }
-      85% { transform: translateY(28%) scale(1.18) rotateX(52deg) rotateY(-8deg); }
-      100% { transform: translateY(-8%) scale(.92) rotateX(8deg); }
-    }
-    @keyframes underSun {
-      0%,20% { opacity:.15; transform:scale(.6); }
-      55% { opacity:1; transform:scale(1.15) translateY(6%); }
-      100% { opacity:.2; transform:scale(.7); }
-    }
-
-    /* Camera close to surface → void → ISS + sun + earth */
-    #sceneStage.sc-station_probe { background:#000; overflow:hidden; perspective:1600px; }
-    #sceneStage.sc-station_probe .surf {
-      position:absolute; left:-20%; right:-20%; top:20%; height:90%;
-      background:
-        radial-gradient(ellipse at 50% 0%, #075985 0%, #0c4a6e 30%, #020617 70%);
-      animation:surfPull 26s ease-in-out infinite;
-    }
-    #sceneStage.sc-station_probe .void {
-      position:absolute; inset:0;
-      background:radial-gradient(circle at 50% 40%, transparent 0%, #000 70%);
-      animation:voidOpen 26s ease-in-out infinite;
-    }
-    #sceneStage.sc-station_probe .iss {
-      position:absolute; left:18%; top:28%; width:22vmin; height:8vmin;
-      background:linear-gradient(90deg,#cbd5e1,#94a3b8 40%,#e2e8f0 50%,#94a3b8);
-      box-shadow:0 0 16px rgba(226,232,240,.4);
-      clip-path:polygon(0 40%, 18% 40%, 22% 10%, 28% 10%, 32% 40%, 68% 40%, 72% 10%, 78% 10%, 82% 40%, 100% 40%, 100% 60%, 0 60%);
-      animation:issDrift 26s ease-in-out infinite;
-    }
-    #sceneStage.sc-station_probe .st-sun {
-      position:absolute; right:12%; top:14%; width:7vmin; height:7vmin; border-radius:50%;
-      background:radial-gradient(circle at 35% 35%,#fff,#fde047 40%,#f97316);
-      box-shadow:0 0 40px 14px rgba(253,224,71,.45);
-      animation:stSun 26s ease-in-out infinite;
-    }
-    #sceneStage.sc-station_probe .st-earth {
-      position:absolute; left:58%; bottom:10%; width:18vmin; height:18vmin; border-radius:50%;
-      background:radial-gradient(circle at 35% 30%,#38bdf8,#0369a1 45%,#022c22);
-      box-shadow:0 0 24px rgba(56,189,248,.4);
-      animation:stEarth 26s ease-in-out infinite;
-    }
-    @keyframes surfPull {
-      0% { transform:scale(2.2) translateY(10%); }
-      40% { transform:scale(1.1) translateY(30%); }
-      70%,100% { transform:scale(.4) translateY(80%); opacity:.35; }
-    }
-    @keyframes voidOpen {
-      0% { opacity:.2; }
-      45% { opacity:.7; }
-      100% { opacity:.35; }
-    }
-    @keyframes issDrift {
-      0%,30% { opacity:0; transform:translateX(-20%) scale(.4); }
-      55% { opacity:1; transform:translateX(10%) scale(1); }
-      100% { opacity:.8; transform:translateX(40%) scale(.85); }
-    }
-    @keyframes stSun {
-      0%,35% { opacity:0; transform:scale(.3); }
-      60%,100% { opacity:1; transform:scale(1); }
-    }
-    @keyframes stEarth {
-      0%,40% { opacity:0; transform:scale(.2) translateY(20%); }
-      70%,100% { opacity:1; transform:scale(1); }
+      88%,100% { transform: translate(88vw, 14vh) translateZ(-700px) scale(.08); opacity:0; }
     }
 </style>
   <script src="/static/js/bg-animations.js"></script>
 </head>
 <body class="theme-parchment" id="bookBody">
-<div id="convertFail" style="display:none;margin:8px 12px;padding:10px 12px;border-radius:10px;background:#7f1d1d;color:#fecaca;font-size:13px;font-weight:600">Failed to convert due to format, please change format to simple pdf, doc or txt and upload again not to crash.</div>
-<script>if(/[?&]convert=fail/.test(location.search)){var e=document.getElementById('convertFail'); if(e) e.style.display='block';}</script>
-
 <button type="button" id="readMenuFab" onclick="document.querySelector('.bar')&&document.querySelector('.bar').scrollIntoView({behavior:'smooth',block:'start'});var t=document.getElementById('toolsPanel');if(t){t.style.display='block';}window.scrollTo({top:0,behavior:'smooth'});">☰ Menu</button>
   <div id="fsControls">
   <select id="fsScenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
@@ -3864,16 +3575,8 @@
           <option value="earth">Earth close pass-by</option>
           <option value="desert">Trees growing from the desert</option>
           <option value="matrix">Matrix AI (matter chains)</option>
-          <option value="glasses">3D magnifying glass</option>
-                    <option value="star_bypass">Giant star flyby</option>
-          <option value="earth_probe">Earth probe — underside sun</option>
-          <option value="station_probe">Close surface to ISS</option>
-          
-          
-          
-          
-          
-          
+          <option value="glasses">Eyeglasses — man reading</option>
+          <option value="star_bypass">Giant star flyby</option>
         </select>
   <button type="button" class="chip on" id="fsRead">👼 Read</button>
   <button type="button" class="chip" id="fsSceneToggle">Scene on/off</button>
@@ -3884,7 +3587,6 @@
     <div class="bar sticky top-0 z-30">
       <div style="max-width:56rem;margin:0 auto;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
         <a href="/member/kwealth" style="color:#5eead4;font-size:12px;text-decoration:none;">← Kwealth</a>
-        {% if book %}<a href="/member/kwealth/books" class="chip" style="text-decoration:none;">Close book</a>{% endif %}
         <strong style="color:#f1f5f9;font-size:14px;">Books</strong>
         <input type="file" id="filePick" hidden accept=".pdf,.txt,.text,.md,.doc,.docx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple>
         <button type="button" class="chip" id="btnLoad">Load</button>
@@ -3907,16 +3609,8 @@
           <option value="earth">Earth close pass-by</option>
           <option value="desert">Trees growing from the desert</option>
           <option value="matrix">Matrix AI (matter chains)</option>
-          <option value="glasses">3D magnifying glass</option>
-                    <option value="star_bypass">Giant star flyby</option>
-          <option value="earth_probe">Earth probe — underside sun</option>
-          <option value="station_probe">Close surface to ISS</option>
-          
-          
-          
-          
-          
-          
+          <option value="glasses">Eyeglasses — man reading</option>
+          <option value="star_bypass">Giant star flyby</option>
         </select>
         <button type="button" class="chip" id="btnSceneFs" title="Full screen book (captions while reading)">Full screen</button>
         <select id="wordStyle" class="ctl" style="max-width:8rem;font-size:11px;" title="Word style">
@@ -3953,28 +3647,12 @@
             <span class="lbl">Font type</span>
             <select id="fontFamily" class="ctl">
               <option value="Georgia, 'Times New Roman', serif">Georgia (classic)</option>
-              <option value="'Playfair Display', Georgia, serif">Playfair Display</option>
-              <option value="'Cormorant Garamond', Garamond, serif">Cormorant Garamond</option>
-              <option value="'EB Garamond', Garamond, serif">EB Garamond</option>
-              <option value="'Libre Baskerville', Georgia, serif">Libre Baskerville</option>
-              <option value="Merriweather, Georgia, serif">Merriweather</option>
-              <option value="Lora, Georgia, serif">Lora</option>
-              <option value="Spectral, Georgia, serif">Spectral</option>
-              <option value="Cardo, Georgia, serif">Cardo</option>
-              <option value="'Source Serif 4', Georgia, serif">Source Serif</option>
-              <option value="Cinzel, Georgia, serif">Cinzel (display)</option>
               <option value="'Palatino Linotype', Palatino, serif">Palatino</option>
               <option value="'Book Antiqua', Palatino, serif">Book Antiqua</option>
+              <option value="Garamond, serif">Garamond</option>
               <option value="'Segoe UI', system-ui, sans-serif">Segoe UI</option>
               <option value="'Helvetica Neue', Arial, sans-serif">Helvetica</option>
               <option value="'Courier New', monospace">Courier</option>
-            </select>
-            <span class="lbl" style="margin-top:8px">Voice colour</span>
-            <select id="voiceColour" class="ctl">
-              <option value="warm">Warm 3D (near)</option>
-              <option value="hall">Hall 3D (deep)</option>
-              <option value="bright">Bright narrator</option>
-              <option value="soft">Soft close whisper</option>
             </select>
           </div>
           <div>
@@ -4040,52 +3718,8 @@
       <p style="text-align:center;color:#6ee7b7;font-size:13px;">Background music library updated.</p>
       {% endif %}
 
-
-      <div id="bookLibrary" style="max-width:56rem;margin:0 auto 12px;padding:0 12px;">
-        <p style="color:#94a3b8;font-size:12px;font-weight:700;margin:8px 0 6px;">Your uploads</p>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          {% for b in my_books %}
-          <a href="/member/kwealth/books?book_id={{ b.id }}&open=1" class="chip" style="display:block;text-align:left;text-decoration:none;">{{ b.title }}</a>
-          {% else %}
-          <p style="color:#64748b;font-size:12px;">No uploads yet. Tap Load.</p>
-          {% endfor %}
-        </div>
-        <p style="color:#94a3b8;font-size:12px;font-weight:700;margin:14px 0 6px;">Admin library</p>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-          {% for b in admin_books %}
-          <a href="/member/kwealth/books?book_id={{ b.id }}&open=1" class="chip" style="display:block;text-align:left;text-decoration:none;">{{ b.title }}</a>
-          {% else %}
-          <p style="color:#64748b;font-size:12px;">No admin books yet.</p>
-          {% endfor %}
-        </div>
-      </div>
-
       {% if book %}
-      <div id="readerWrap" style="display:none;">
-      <div style="max-width:56rem;margin:0 auto;padding:0 12px 8px;display:flex;justify-content:flex-end;">
-        <button type="button" class="chip" id="btnCloseReader">Close book</button>
-      </div>
-      
-      <div id="bookShelf" style="max-width:56rem;margin:0 auto;padding:12px;">
-        <p style="color:#fbbf24;font-size:13px;font-weight:800;margin:0 0 8px;">Your uploads — tap to open</p>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          {% for b in my_books %}
-          <a href="/member/kwealth/books?book_id={{ b.id }}" style="display:block;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.08);color:#f8fafc;text-decoration:none;font-weight:700;">{{ b.title }}</a>
-          {% else %}
-          <p style="color:#94a3b8;font-size:13px;">No uploads yet. Tap Load.</p>
-          {% endfor %}
-        </div>
-        <p style="color:#fbbf24;font-size:13px;font-weight:800;margin:16px 0 8px;">Admin library</p>
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          {% for b in admin_books %}
-          <a href="/member/kwealth/books?book_id={{ b.id }}" style="display:block;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.06);color:#e2e8f0;text-decoration:none;font-weight:700;">{{ b.title }}</a>
-          {% else %}
-          <p style="color:#94a3b8;font-size:13px;">No admin books yet.</p>
-          {% endfor %}
-        </div>
-      </div>
-
-      <div class="stage" id="stage" {% if not book %}style="display:none"{% endif %}>
+      <div class="stage" id="stage">
         <div id="sceneStage" class="sc-sun" aria-hidden="true">
           <div class="sc-layer sc-sun-bits">
             <div class="rays"></div>
@@ -4232,48 +3866,15 @@
               <div class="book"></div>
             </div>
             <div class="glasses">
-              <div class="mag-lens lens"></div>
-              <div class="mag-handle"></div>
+              <div class="temple l"></div>
+              <div class="temple r"></div>
+              <div class="lens left"></div>
+              <div class="lens right"></div>
+              <div class="bridge"></div>
             </div>
           </div>
-          <div class="sc-layer sc-aurora-bits" style="display:none">
-            <div class="band"></div><div class="band b2"></div><div class="fjord"></div>
-          </div>
-          <div class="sc-layer sc-lighthouse-bits" style="display:none">
-            <div class="beam"></div><div class="tower"></div>
-          </div>
-          <div class="sc-layer sc-candle-bits" style="display:none">
-            <div class="flame"></div>
-          </div>
-          <div class="sc-layer sc-comet-bits" style="display:none">
-            <div class="rock"></div>
-          </div>
-          <div class="sc-layer sc-rain-bits" style="display:none">
-            <div class="drop" style="left:12%;height:18px;animation-delay:.1s"></div>
-            <div class="drop" style="left:28%;height:22px;animation-delay:.4s"></div>
-            <div class="drop" style="left:47%;height:16px;animation-delay:.2s"></div>
-            <div class="drop" style="left:63%;height:24px;animation-delay:.7s"></div>
-            <div class="drop" style="left:81%;height:19px;animation-delay:.3s"></div>
-          </div>
-          <div class="sc-layer sc-stained-bits" style="display:none">
-            <div class="pane"></div>
-          </div>
-          
-          <div class="sc-layer sc-earth_probe-bits" style="display:none">
-            <div class="stars"></div>
-            <div class="probe-cam">
-              <div class="earth-ball"></div>
-              <div class="under-sun"></div>
-            </div>
-          </div>
-          <div class="sc-layer sc-station_probe-bits" style="display:none">
-            <div class="surf"></div>
-            <div class="void"></div>
-            <div class="iss"></div>
-            <div class="st-sun"></div>
-            <div class="st-earth"></div>
-          </div>
-
+</div>
+        <div 
           <div class="sc-layer sc-star_bypass-bits" style="display:none">
             <div class="heat"></div>
             <div class="star-fly s1"><span class="nm">Sun</span></div>
@@ -4282,8 +3883,7 @@
             <div class="star-fly s4"><span class="nm">VY Canis Majoris</span></div>
             <div class="star-fly s5"><span class="nm">UY Scuti</span></div>
           </div>
-
-        <div id="fsBookMeta" aria-hidden="true">
+id="fsBookMeta" aria-hidden="true">
           <span class="fs-title" id="fsBookTitle">Book</span>
           <span class="fs-page" id="fsBookPage">Page 1 / 1</span>
         </div>
@@ -4307,7 +3907,6 @@
       {% else %}
       <p style="text-align:center;color:#94a3b8;padding:4rem 1rem;">Tap <strong>Load</strong> for PDF, Word (.docx), or text books — or <strong>Music</strong> for background tracks.</p>
       <script>window.__BOOK__ = { id: null, pages: [], pageIndex: 0 }; window.__AUTO_READ__ = false;</script>
-      </div>
       {% endif %}
     </main>
   </div>
@@ -4491,11 +4090,6 @@
     })();
 
     function updateCaption(si, wordIdx) {
-      if (!(state && state.sceneFs)) {
-        var capOff = document.getElementById('fsCaption');
-        if (capOff) { capOff.classList.remove('is-on'); capOff.style.display='none'; capOff.innerHTML=''; }
-        return;
-      }
       var cap = document.getElementById('fsCaption');
       if (!cap) {
         cap = document.createElement('div');
@@ -4840,14 +4434,7 @@
         u.onerror = function () {
           if (fallbackTimer) clearInterval(fallbackTimer);
         };
-        try {
-            var vc = (document.getElementById('voiceColour')||{}).value || localStorage.getItem('kw_voice_colour') || 'warm';
-            if (vc==='warm') { u.pitch = 0.92; u.rate = Math.min(u.rate||1, 0.92); }
-            if (vc==='hall') { u.pitch = 0.78; u.rate = 0.84; }
-            if (vc==='bright') { u.pitch = 1.12; u.rate = 1.02; }
-            if (vc==='soft') { u.pitch = 1.05; u.rate = 0.78; }
-          } catch (e) {}
-          speechSynthesis.speak(u);
+        speechSynthesis.speak(u);
       }
       speakPara(0);
     }
@@ -5143,7 +4730,7 @@
           else { try { if (typeof prev === 'function') prev(); } catch (err) {} }
         } else if (state.sceneFs || state.sceneOn) {
           // vertical — cycle scenes only when Scene/FS active (don't steal page scroll)
-          var order = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','star_bypass','earth_probe','station_probe'];
+          var order = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','star_bypass'];
           var cur = state.sceneName || 'sun';
           var ix = order.indexOf(cur);
           if (ix < 0) ix = 0;
@@ -5289,7 +4876,7 @@
         try { if (window.CGWebGL) CGWebGL.setMode('none'); } catch (e) {}
       }
       // Show only bits for selected scene
-      ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','star_bypass','earth_probe','station_probe'].forEach(function (n) {
+      ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','star_bypass'].forEach(function (n) {
         var el = surface.querySelector('.sc-' + n + '-bits');
         if (el) {
           if (show3d && n === name) {
@@ -5393,11 +4980,6 @@
       state.wordStyle = localStorage.getItem('kw_book_wordStyle') || state.wordStyle || 'fill';
     } catch (e) {}
     try { applyScene(); } catch (e) { console.warn(e); }
-    var vcEl = document.getElementById('voiceColour');
-    if (vcEl) {
-      try { vcEl.value = localStorage.getItem('kw_voice_colour') || 'warm'; } catch(e) {}
-      vcEl.addEventListener('change', function(){ try { localStorage.setItem('kw_voice_colour', vcEl.value); } catch(e) {} });
-    }
 
     const btnSceneFs = document.getElementById('btnSceneFs');
     const sceneFsExit = document.getElementById('sceneFsExit');
@@ -5512,14 +5094,13 @@
     
     // ===== Auto scene advance in Full screen + Scene =====
     (function autoSceneRotate() {
-      var SCENE_ORDER = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','star_bypass','earth_probe','station_probe'];
+      var SCENE_ORDER = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','star_bypass'];
       // Seconds to let each scene play before advancing (match long animations)
       var SCENE_SECS = {
         sun: 22, orbit: 16, voyage: 28, planets: 20,
         milkyway: 20, wavelength: 16, fishes3d: 16,
         jupiter: 48, neptune: 50, earth: 46,
-        desert: 60, matrix: 18, glasses: 18, star_bypass: 16, earth_probe: 28, station_probe: 26,
-        aurora: 12, lighthouse: 12, candle: 10, comet: 9, rain: 10, stained: 12
+        desert: 60, matrix: 18, glasses: 18, star_bypass: 40
       };
       var timer = null;
       var fading = false;
@@ -5615,31 +5196,5 @@
     }
   })();
   </script>
-
-<script>
-(function(){
-  var wrap = document.getElementById('readerWrap');
-  var lib = document.getElementById('bookLibrary');
-  function openReader(){
-    if (wrap) wrap.style.display = 'block';
-    if (lib) lib.style.display = 'none';
-    try { sessionStorage.setItem('kw_reader_open','1'); } catch(e) {}
-  }
-  function closeReader(){
-    if (wrap) wrap.style.display = 'none';
-    if (lib) lib.style.display = 'block';
-    try { sessionStorage.setItem('kw_reader_open','0'); } catch(e) {}
-    window.scrollTo({top:0,behavior:'smooth'});
-  }
-  var btn = document.getElementById('btnCloseReader');
-  if (btn) btn.addEventListener('click', closeReader);
-  var want = /[?&]open=1/.test(location.search);
-  var keep = false;
-  try { keep = sessionStorage.getItem('kw_reader_open') === '1'; } catch(e) {}
-  if (want || keep) openReader();
-  else closeReader();
-})();
-</script>
-
 </body>
 </html>
