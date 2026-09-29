@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Live channels, movies and news — Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 sm:p-6">
+  <div class="max-w-3xl mx-auto">
+    <div class="flex items-center gap-3 mb-4">
+      <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" class="h-10 w-auto" onerror="this.src='/static/img/knowsoft-icon.svg'">
+      <div>
+        <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Knowsoft Churchgate</p>
+        <h1 class="text-2xl font-black text-slate-900">Add live YouTube &amp; Facebook</h1>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between gap-3 mb-4">
+      
+      <a href="/admin" class="text-sm font-semibold text-indigo-700">← Admin</a>
+    </div>
+
+    {% if ok %}<p class="mb-3 text-green-700 font-semibold text-sm">Saved ({{ ok }}).{% if synced %} Imported {{ synced }} video(s).{% endif %}</p>{% endif %}
+    {% if err %}<div class="mb-3 p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">
+      <p class="font-bold">Facebook / sync error</p>
+      <p class="mt-1 break-words">{{ err }}</p>
+      <ul class="mt-2 text-xs list-disc list-inside text-red-700/90">
+        <li>Page ID must be a <strong>Page</strong>, not only a personal profile</li>
+        <li>Use a <strong>Page access token</strong> from Graph API Explorer → <code>me/accounts</code></li>
+        <li>Permissions: pages_show_list, pages_read_engagement (and video/content read if shown)</li>
+        <li>Publish at least one <strong>Public</strong> video on the Page before sync</li>
+      </ul>
+    </div>{% endif %}
+
+    <!-- Facebook Page connect + sync -->
+    <section class="bg-white rounded-2xl border shadow-sm p-5 mb-6">
+      <h2 class="font-black text-slate-900 text-lg">Churchgate Facebook Page (auto import)</h2>
+      <ol class="text-sm text-slate-600 mt-2 space-y-1 list-decimal list-inside">
+        <li>On Facebook, create a <strong>Page</strong> for your church (or use existing).</li>
+        <li>Upload / publish videos as <strong>Public</strong> on that Page.</li>
+        <li>In <a class="text-indigo-700 font-semibold" href="https://developers.facebook.com/" target="_blank" rel="noopener">Meta for Developers</a>, create an app → get a <strong>Page access token</strong> with <code>pages_read_engagement</code> / pages video read permissions.</li>
+        <li>Paste Page ID + token below → <strong>Save</strong> → <strong>Sync videos from Page</strong>.</li>
+      </ol>
+      <form method="post" action="/admin/social-stream/facebook-page" class="mt-4 space-y-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">Facebook Page ID</label>
+          <input name="page_id" value="{{ fb_page_id }}" class="w-full border rounded-xl px-3 py-2 text-sm" placeholder="e.g. 123456789012345">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">Page access token {% if has_token %}<span class="text-green-700">(saved)</span>{% endif %}</label>
+          <input name="page_token" type="password" class="w-full border rounded-xl px-3 py-2 text-sm" placeholder="{% if has_token %}Leave blank to keep current token{% else %}Paste Page access token{% endif %}">
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <button type="submit" class="px-4 py-2 rounded-xl bg-slate-800 text-white text-sm font-bold">Save Page settings</button>
+        </div>
+      </form>
+      <form method="post" action="/admin/social-stream/sync-facebook" class="mt-3">
+        <button type="submit" class="px-4 py-2 rounded-xl bg-blue-700 text-white text-sm font-bold shadow">Sync videos from Facebook Page → member feed</button>
+      </form>
+      <p class="text-xs text-slate-500 mt-2">Sync imports new public Page videos into the member Social Watch feed. Duplicates are skipped. You can still paste individual links below.</p>
+    </section>
+
+    <p class="text-sm text-slate-600 mb-3">
+      Manual add: public live channels, movies and news / YouTube (including Live). Members: vertical feed, <strong>autoplay muted on scroll</strong>, sound toggle.
+    </p>
+
+    <form method="post" action="/admin/social-stream/add" class="bg-white rounded-2xl border shadow-sm p-5 space-y-3 mb-6">
+      <div>
+        <label class="block text-xs font-bold text-slate-500 mb-1">Platform</label>
+        <select name="platform" class="w-full border rounded-xl px-3 py-2 text-sm" required>
+          <option value="facebook">Facebook (video or Live)</option>
+          <option value="tiktok">TikTok</option>
+          <option value="instagram">Instagram</option>
+          <option value="youtube">YouTube (video or Live)</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-500 mb-1">Title</label>
+        <input name="title" class="w-full border rounded-xl px-3 py-2 text-sm" maxlength="200">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-500 mb-1">Public URL</label>
+        <label class="text-xs">Category</label>
+<select name="category" class="text-slate-900 rounded px-2 py-1">
+  <option value="tv">TV</option>
+  <option value="movies">Movies</option>
+  <option value="news">News</option>
+  <option value="games">Games</option>
+  <option value="ministration">Ministration</option>
+  <option value="others">Others</option>
+</select>
+<input name="source_url" class="w-full border rounded-xl px-3 py-2 text-sm" required>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-500 mb-1">Note (optional)</label>
+        <input name="description" class="w-full border rounded-xl px-3 py-2 text-sm" maxlength="500" placeholder="Live · Advert · Testimony">
+      </div>
+      <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-700 text-white font-bold shadow">Add single link</button>
+    </form>
+
+    <h2 class="font-bold text-slate-800 mb-2">Library ({{ links|length }})</h2>
+    <ul class="space-y-3">
+      {% for L in links %}
+      <li class="bg-white border rounded-2xl p-4 shadow-sm">
+        <div class="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wide px-2 py-0.5 rounded-full
+              {% if L.platform=='facebook' %}bg-blue-100 text-blue-800
+              {% elif L.platform=='tiktok' %}bg-slate-900 text-white
+              {% elif L.platform=='youtube' %}bg-red-100 text-red-800
+              {% else %}bg-pink-100 text-pink-800{% endif %}">{{ L.platform }}</span>
+            <p class="font-bold text-slate-900 mt-1">{{ L.title }}</p>
+            {% if L.description %}<p class="text-xs text-slate-500">{{ L.description }}</p>{% endif %}
+            <a class="text-xs text-indigo-600 break-all" href="{{ L.source_url }}" target="_blank" rel="noopener">{{ L.source_url }}</a>
+            <p class="text-xs mt-1 {% if L.is_active %}text-green-700{% else %}text-slate-400{% endif %}">
+              {{ 'Active' if L.is_active else 'Hidden' }}{% if not L.embed_url %} · open-original only{% endif %}
+            </p>
+          </div>
+          <div class="flex gap-2">
+            <form method="post" action="/admin/social-stream/{{ L.id }}/toggle">
+              <button class="text-xs px-3 py-1.5 rounded-lg border font-semibold">{{ 'Hide' if L.is_active else 'Show' }}</button>
+            </form>
+            <form method="post" action="/admin/social-stream/{{ L.id }}/delete" onsubmit="return confirm('Delete?');">
+              <button class="text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-700 font-semibold">Delete</button>
+            </form>
+          </div>
+        </div>
+      </li>
+      {% else %}
+      <li class="text-slate-400 text-sm">No videos yet — sync from Facebook Page or add a link.</li>
+      {% endfor %}
+    </ul>
+  </div>
+</body>
+</html>
