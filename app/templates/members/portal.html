@@ -2277,7 +2277,8 @@ window.memberHub = memberHub;
 </script>
 
 
-<div class="mx-4 mt-4 mb-2 flex justify-end relative z-10">
+<div class="mx-4 mt-4 mb-2 flex justify-end gap-2 relative z-10">
+  <button type="button" id="openStreamBtn" class="text-xs px-3 py-1 rounded-full border border-teal-400/40 bg-teal-900/80 text-teal-50">Open Social Stream</button>
   <button type="button" id="foldDashBtn" class="text-xs px-3 py-1 rounded-full border border-white/20 bg-slate-900/80 text-slate-100">Fold dashboard</button>
 </div>
 <div id="socialDock" class="mx-4 mb-8 rounded-2xl overflow-hidden border border-sky-500/30 bg-slate-950 relative z-10">
@@ -2314,6 +2315,16 @@ window.memberHub = memberHub;
     try { localStorage.setItem('cg_stream_closed','1'); } catch(e) {}
     if (dock) dock.style.display = 'none';
     if (fr) fr.src = '';
+  };
+  var op = document.getElementById('openStreamBtn');
+  if (op) op.onclick = function(){
+    try { localStorage.setItem('cg_stream_closed','0'); } catch(e) {}
+    if (dock) dock.style.display = '';
+    if (fr) {
+      var last = '/member/social-watch?cat=tv';
+      try { last = localStorage.getItem('cg_last_stream') || last; } catch(e) {}
+      fr.src = last;
+    }
   };
 })();
 </script>
