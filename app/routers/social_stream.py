@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Optional, Dict, Any, List, Tuple
 from urllib.parse import quote, urlencode
 import json
+import time
 import re
 import urllib.request
 import urllib.error
@@ -46,7 +47,6 @@ def _cfg_set(session: Session, key: str, value: str) -> None:
 
 
 def extract_youtube_channel_id(url: str) -> Optional[str]:
-    """Return UC… channel id from common YouTube URL shapes, if present."""
     if not url:
         return None
     u = url.strip()
@@ -64,7 +64,6 @@ def extract_youtube_channel_id(url: str) -> Optional[str]:
 
 
 def resolve_youtube_handle_to_channel_id(handle: str) -> Optional[str]:
-    """Best-effort resolve @handle → UC… without API key (HTML scrape)."""
     handle = (handle or "").lstrip("@").strip()
     if not handle or not re.match(r"^[A-Za-z0-9._-]+$", handle):
         return None
@@ -73,7 +72,7 @@ def resolve_youtube_handle_to_channel_id(handle: str) -> Optional[str]:
         req = urllib.request.Request(
             page,
             headers={
-                "User-Agent": "Mozilla/5.0 (compatible; ChurchgateSocial/1.2)",
+                "User-Agent": "Mozilla/5.0 (compatible; ChurchgateSocial/1.3)",
                 "Accept-Language": "en-US,en;q=0.9",
             },
         )
@@ -92,6 +91,99 @@ def resolve_youtube_handle_to_channel_id(handle: str) -> Optional[str]:
     return None
 
 
+# channel_id -> (ts, video_id, is_live)
+_channel_dock_cache = {}
+_CHANNEL_DOCK_TTL = 120
+
+
+def _yt_fetch(url: str) -> str:
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": (
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36"
+            ),
+            "Accept-Language": "en-US,en;q=0.9",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=15) as resp:
+        return resp.read().decode("utf-8", errors="ignore")
+
+
+def _unique_video_ids(html: str) -> List[str]:
+    ids = re.findall(r'"videoId":"([A-Za-z0-9_-]{11})"', html)
+    if not ids:
+        ids = re.findall(r"watch\?v=([A-Za-z0-9_-]{11})", html)
+    seen = set()
+    out: List[str] = []
+    for v in ids:
+        if v not in seen:
+            seen.add(v)
+            out.append(v)
+    return out
+
+
+def resolve_channel_dock(channel_id: str) -> Tuple[Optional[str], bool]:
+    """Return (video_id, is_live).
+
+    Prefer current live broadcast; if none, latest available video on channel.
+    """
+    cid = (channel_id or "").strip()
+    if not cid.startswith("UC"):
+        return None, False
+
+    now = time.time()
+    cached = _channel_dock_cache.get(cid)
+    if cached and (now - cached[0]) < _CHANNEL_DOCK_TTL:
+        return cached[1], cached[2]
+
+    video_id: Optional[str] = None
+    is_live = False
+    try:
+        live_html = _yt_fetch(f"https://www.youtube.com/channel/{cid}/live")
+        live_match = re.search(
+            r'"videoId":"([A-Za-z0-9_-]{11})"([\s\S]{0,400})"isLive(?:Now|Content)?"\s*:\s*true',
+            live_html,
+        )
+        if not live_match:
+            live_match = re.search(
+                r'"isLive(?:Now|Content)?"\s*:\s*true([\s\S]{0,400})"videoId":"([A-Za-z0-9_-]{11})"',
+                live_html,
+            )
+            if live_match:
+                video_id = live_match.group(2)
+                is_live = True
+        else:
+            video_id = live_match.group(1)
+            is_live = True
+        if not video_id and re.search(r'"isLive(?:Now|Content)?"\s*:\s*true', live_html):
+            vids = _unique_video_ids(live_html)
+            if vids:
+                video_id = vids[0]
+                is_live = True
+        if not video_id:
+            vids = _unique_video_ids(live_html)
+            if vids:
+                video_id = vids[0]
+                is_live = False
+    except Exception:
+        pass
+
+    if not video_id:
+        try:
+            vids_html = _yt_fetch(f"https://www.youtube.com/channel/{cid}/videos")
+            vids = _unique_video_ids(vids_html)
+            if vids:
+                video_id = vids[0]
+                is_live = False
+        except Exception:
+            pass
+
+    _channel_dock_cache[cid] = (now, video_id, is_live)
+    return video_id, is_live
+
+
 def is_channel_live_embed(embed_url: Optional[str]) -> bool:
     if not embed_url:
         return False
@@ -99,8 +191,15 @@ def is_channel_live_embed(embed_url: Optional[str]) -> bool:
 
 
 def channel_live_embed(channel_id: str, muted: bool = True) -> str:
+    """Dock to current live video, else latest video on channel."""
     cid = (channel_id or "").strip()
     mute = "1" if muted else "0"
+    vid, _is_live = resolve_channel_dock(cid)
+    if vid:
+        return (
+            f"https://www.youtube.com/embed/{vid}"
+            f"?autoplay=1&mute={mute}&playsinline=1&rel=0&modestbranding=1&enablejsapi=1"
+        )
     return (
         "https://www.youtube.com/embed/live_stream?channel="
         + quote(cid, safe="")
@@ -109,7 +208,7 @@ def channel_live_embed(channel_id: str, muted: bool = True) -> str:
 
 
 def build_embed_url(platform: str, source_url: str) -> Optional[str]:
-    """Build iframe embed URL. YouTube channel /live → persistent live_stream embed."""
+    """Build iframe embed. Channel /live docks to current live or latest video."""
     if not source_url:
         return None
     url = source_url.strip()
@@ -140,8 +239,6 @@ def build_embed_url(platform: str, source_url: str) -> Optional[str]:
         return None
 
     if p == "youtube" or "youtube.com" in low or "youtu.be" in low:
-        # Persistent channel live — e.g.
-        # https://www.youtube.com/channel/UCEXGDNclvmg6RW0vipJYsTQ/live
         cid = extract_youtube_channel_id(url)
         if cid:
             return channel_live_embed(cid)
@@ -165,12 +262,15 @@ def build_embed_url(platform: str, source_url: str) -> Optional[str]:
             m = re.search(r"(?:live/|v=|embed/|shorts/)([A-Za-z0-9_-]{11})", url)
         if m:
             vid = m.group(1)
-            host = "https://www.youtube.com/embed/"
-            q = "autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1"
-            return host + vid + "?" + q
+            return (
+                "https://www.youtube.com/embed/"
+                + vid
+                + "?autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1"
+            )
         return None
 
     return None
+
 
 
 def _graph_get(path: str, params: Dict[str, str]) -> Dict[str, Any]:
