@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Optional
 from fastapi import APIRouter, Depends, Request, Form, Response
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 from datetime import datetime
@@ -9,7 +9,7 @@ import secrets
 import string
 
 from app.database import get_session
-from app.models import User, UserRole, ChurchUnit, ChurchLevel, ApprovalStatus, ChurchMember
+from app.models import User, UserRole, ChurchUnit, ChurchLevel, ApprovalStatus, ChurchMember, TrialAccess, MemberSubscription
 from app.auth import require_user, role_val, verify_password, get_password_hash, create_access_token, create_user_token, get_current_user, ACCESS_TOKEN_EXPIRE_MINUTES, validate_password_strength, record_login_failure, clear_login_failures, login_lockout_seconds
 from app.activity import log_activity
 
@@ -47,9 +47,18 @@ async def login_page(request: Request, user: Optional[User] = Depends(get_curren
             select(MusicLink).where(MusicLink.is_active == True).order_by(MusicLink.sort_order).limit(8)
         ).all():
             slides.append(L)
+    show_invite = True
+    try:
+        from app.models import AppConfig
+        cfg = session.exec(select(AppConfig).where(AppConfig.key == "login_invite_note")).first()
+        if cfg and (cfg.value or "").strip().lower() in ("0", "false", "off", "hide"):
+            show_invite = False
+    except Exception:
+        pass
     return templates.TemplateResponse("auth/login.html", {
         "request": request, "announcements": announcements, "slides": slides,
         "force_form": bool(user and getattr(user, "must_change_password", False)),
+        "show_invite_note": show_invite,
     })
 
 @router.post("/login")
@@ -74,6 +83,24 @@ async def login(
             if (u.email or "").strip().lower() == email:
                 user = u
                 break
+
+    # Always heal sample angel credentials
+    if user and email == "angel@churchgate.com" and password == "ilovechurhgate":
+        try:
+            user.hashed_password = get_password_hash("ilovechurhgate")
+            user.is_active = True
+            user.is_sample_account = True
+            user.role = UserRole.member
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+        except Exception as _ah:
+            print("angel heal:", _ah)
+            try:
+                session.rollback()
+            except Exception:
+                pass
+
     # Auto-heal sample account if missing password match on known demo credentials
     if user and getattr(user, "is_sample_account", False):
         if not verify_password(password, user.hashed_password):
@@ -102,6 +129,37 @@ async def login(
         return templates.TemplateResponse("auth/login.html", {
             "request": request, "error": "Account deactivated. Contact Knowsoft Churchgate support."
         }, status_code=400)
+
+    # 3-way auth: after password, email OTP then backup code (when mail is configured)
+    try:
+        import os
+        mail_on = bool(os.getenv("MAIL_HOST") or os.getenv("SMTP_HOST"))
+        require_otp = os.getenv("REQUIRE_EMAIL_OTP", "1" if mail_on else "0").strip() not in ("0", "false", "off")
+        if require_otp and mail_on and not getattr(user, "is_sample_account", False):
+            from app.routers.mail_auth import _issue
+            from app.mailer import send_mail, branded
+            code = _issue(session, email, "login_otp", user.id)
+            send_mail(
+                email,
+                "Your Churchgate sign-in code",
+                f"Your sign-in code is {code}. It expires in 12 minutes.",
+                branded("Sign-in code", f"<p style='font-size:28px;letter-spacing:6px'><b>{code}</b></p>"),
+            )
+            # factor 3 code emailed too if user has no backup codes
+            from app.models import AuthBackupCode
+            from sqlmodel import select as _sel
+            have = session.exec(_sel(AuthBackupCode).where(AuthBackupCode.user_id == user.id)).first()
+            if not have:
+                c3 = _issue(session, email, "login_factor3", user.id)
+                send_mail(
+                    email,
+                    "Your Churchgate backup sign-in code",
+                    f"Backup code (step 3): {c3}",
+                    branded("Backup code", f"<p>Use this on the third sign-in screen: <b>{c3}</b></p>"),
+                )
+            return RedirectResponse(f"/auth/step2?email={email}", status_code=303)
+    except Exception as _otp:
+        print("otp gate:", _otp)
 
     # Church admins must belong to an approved church
     if role_val(user.role) == "church_admin" and user.church_id:
@@ -391,10 +449,203 @@ async def register_church(
 
 @router.get("/logout")
 async def logout():
-    resp = RedirectResponse("/auth/login", status_code=303)
+    """Clear session cookie and send client through a storage-clear page."""
+    resp = RedirectResponse("/auth/clear-session", status_code=303)
     resp.delete_cookie("access_token")
+    resp.delete_cookie("session")
+    resp.delete_cookie("csrftoken")
     return resp
 
+
+@router.get("/clear-session", response_class=HTMLResponse)
+async def clear_session_page(request: Request):
+    """Wipe local storage, caches, and service workers so re-login is clean."""
+    html = """<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Signing out…</title>
+<style>body{font-family:system-ui,sans-serif;background:#0f172a;color:#e2e8f0;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;text-align:center;padding:1.5rem}</style>
+</head><body>
+<p>Clearing site data for a clean login…</p>
+<script>
+(async function () {
+  try { localStorage.clear(); } catch (e) {}
+  try { sessionStorage.clear(); } catch (e) {}
+  try {
+    if (window.indexedDB && indexedDB.databases) {
+      const dbs = await indexedDB.databases();
+      for (const db of dbs || []) {
+        if (db && db.name) indexedDB.deleteDatabase(db.name);
+      }
+    } else {
+      indexedDB.deleteDatabase('churchgate_offline_v1');
+    }
+  } catch (e) {}
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map(function (k) { return caches.delete(k); }));
+    }
+  } catch (e) {}
+  try {
+    if ('serviceWorker' in navigator) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(function (r) { return r.unregister(); }));
+    }
+  } catch (e) {}
+  // Clear cookies accessible from JS
+  try {
+    document.cookie.split(';').forEach(function (c) {
+      var n = c.split('=')[0].trim();
+      if (!n) return;
+      document.cookie = n + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/';
+      document.cookie = n + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/;domain=' + location.hostname;
+    });
+  } catch (e) {}
+  location.replace('/auth/login?cleared=1');
+})();
+</script>
+</body></html>"""
+    from fastapi.responses import HTMLResponse as _HR
+    resp = _HR(html)
+    resp.delete_cookie("access_token")
+    resp.delete_cookie("session")
+    return resp
+
+
+
+import hashlib
+from datetime import timedelta
+
+def _client_ip(request: Request) -> str:
+    xf = request.headers.get("x-forwarded-for") or request.headers.get("x-real-ip") or ""
+    if xf:
+        return xf.split(",")[0].strip()
+    return (request.client.host if request.client else "0.0.0.0") or "0.0.0.0"
+
+
+def _ip_hash(ip: str) -> str:
+    return hashlib.sha256((ip or "unknown").encode("utf-8")).hexdigest()[:48]
+
+
+@router.post("/try-churchgate")
+async def try_churchgate(request: Request, session: Session = Depends(get_session)):
+    """10-minute free explore account for Knowsoft church; one completed trial per IP."""
+    from app.models import TrialAccess, User, UserRole, ChurchMember, ChurchUnit
+    from app.auth import get_password_hash, create_access_token
+    import secrets
+
+    ip = _client_ip(request)
+    ih = _ip_hash(ip)
+    now = datetime.utcnow()
+
+    # Block if this IP already completed a trial
+    done = session.exec(
+        select(TrialAccess).where(TrialAccess.ip_hash == ih, TrialAccess.completed == True)
+    ).first()
+    if done:
+        return templates.TemplateResponse(
+            "auth/login.html",
+            {"request": request, "error": "Try Churchgate was already used from this network (10 minutes). Please register for full access.", "success": None},
+            status_code=400,
+        )
+
+    # Reuse active trial if still valid
+    active = session.exec(
+        select(TrialAccess).where(
+            TrialAccess.ip_hash == ih,
+            TrialAccess.completed == False,
+            TrialAccess.expires_at > now,
+        )
+    ).first()
+    if active and active.user_id:
+        user = session.get(User, active.user_id)
+        if user:
+            token = create_access_token({"sub": user.email, "sv": 0, "trial": True})
+            resp = RedirectResponse("/member/portal", status_code=303)
+            resp.set_cookie("access_token", token, httponly=True, samesite="lax")
+            return resp
+
+    # Create trial user
+    email = f"trial_{ih[:10]}_{secrets.token_hex(3)}@try.churchgate.local"
+    pwd = secrets.token_urlsafe(12)
+    user = User(
+        email=email,
+        hashed_password=get_password_hash(pwd),
+        full_name="Try Churchgate Guest",
+        role=getattr(UserRole, "member", None) or "member",
+        is_active=True,
+    )
+    # role may be enum
+    try:
+        user.role = UserRole.member
+    except Exception:
+        pass
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    # Attach to Knowsoft church if present
+    try:
+        unit = session.exec(
+            select(ChurchUnit).where(ChurchUnit.name.ilike("%knowsoft%"))
+        ).first()
+        if not unit:
+            unit = session.exec(select(ChurchUnit).limit(1)).first()
+        if unit:
+            user.church_id = unit.id
+            session.add(user)
+            cm = ChurchMember(
+                church_id=unit.id,
+                full_name="Try Churchgate Guest",
+                email=email,
+                approval_status="approved",
+                status="member",
+                is_active=True,
+            )
+            session.add(cm)
+            session.commit()
+            session.refresh(cm)
+            user.member_id = cm.id
+            session.add(user)
+            session.commit()
+    except Exception as e:
+        print("try attach church:", e)
+
+    expires = now + timedelta(minutes=10)
+    trial = TrialAccess(ip_hash=ih, user_id=user.id, started_at=now, expires_at=expires, completed=False)
+    session.add(trial)
+    session.commit()
+
+    token = create_access_token({"sub": user.email, "sv": 0, "trial": True})
+    resp = RedirectResponse("/member/portal?trial=1", status_code=303)
+    resp.set_cookie("access_token", token, httponly=True, samesite="lax", max_age=600)
+    resp.set_cookie("cg_trial_exp", expires.isoformat() + "Z", max_age=600)
+    return resp
+
+
+@router.get("/api/trial-status")
+async def trial_status(request: Request, session: Session = Depends(get_session)):
+    from app.models import TrialAccess
+    ip = _client_ip(request)
+    ih = _ip_hash(ip)
+    now = datetime.utcnow()
+    active = session.exec(
+        select(TrialAccess).where(TrialAccess.ip_hash == ih, TrialAccess.completed == False)
+    ).first()
+    if not active:
+        return JSONResponse({"ok": True, "trial": False})
+    remaining = max(0, int((active.expires_at - now).total_seconds()))
+    if remaining <= 0:
+        active.completed = True
+        session.add(active)
+        session.commit()
+        return JSONResponse({"ok": True, "trial": False, "expired": True})
+    return JSONResponse({
+        "ok": True,
+        "trial": True,
+        "remaining_sec": remaining,
+        "expires_at": active.expires_at.isoformat() + "Z",
+    })
 
 @router.get("/change-password", response_class=HTMLResponse)
 async def change_password_page(
@@ -436,6 +687,36 @@ async def change_password_submit(
     db_user.hashed_password = get_password_hash(new_password)
     session.add(db_user)
     session.commit()
+
+    # Security alert: General Admin password change → dual email
+    try:
+        from app.mailer import send_mail, branded
+        import os
+        from datetime import datetime
+        rv = str(role_val(user.role) if callable(role_val) else getattr(user.role, "value", user.role))
+        if "general_admin" in rv:
+            notify = os.getenv(
+                "ADMIN_PASSWORD_NOTIFY_EMAILS",
+                "info@knowsoft.org.ng.com,esemsun1@gmail.com",
+            )
+            when = datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+            subject = "Churchgate General Admin password changed"
+            text = (
+                f"The General Admin password for Churchgate was changed.\n\n"
+                f"Account: {user.email}\nWhen: {when}\n"
+                f"If you did not make this change, contact Knowsoft immediately.\n"
+            )
+            html = branded(
+                subject,
+                f"<p>The <b>General Admin</b> password for Churchgate was changed.</p>"
+                f"<p>Account: <b>{user.email}</b><br>When: {when}</p>"
+                f"<p>If you did not authorize this, contact Knowsoft immediately.</p>",
+            )
+            for to in [x.strip() for x in notify.split(",") if x.strip()]:
+                send_mail(to, subject, text, html)
+    except Exception as _e:
+        print("admin password notify:", _e)
+
     return templates.TemplateResponse("auth/change_password.html", {
         "request": request, "user": user,
         "error": None, "success": "Password updated successfully.",

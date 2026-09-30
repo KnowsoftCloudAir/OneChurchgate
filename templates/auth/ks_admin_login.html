@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>General Admin — Churchgate</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-900 flex items-center justify-center p-4">
+  <div class="w-full max-w-md">
+    <div class="text-center mb-6">
+      <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" class="h-12 mx-auto mb-3" onerror="this.style.display='none'">
+      <p class="text-xs uppercase tracking-widest text-amber-400/90 font-bold">Restricted</p>
+      <h1 class="text-2xl font-black text-white mt-1">General Admin login</h1>
+      <p class="text-sm text-slate-400 mt-2">Knowsoft Churchgate control access</p>
+    </div>
+    {% if error %}
+    <div class="mb-4 p-3 rounded-xl bg-red-500/20 border border-red-400/40 text-red-100 text-sm">{{ error }}</div>
+    {% endif %}
+    <form method="post" action="/ks-admin/login" class="bg-slate-800/80 border border-slate-700 rounded-2xl p-6 space-y-4 shadow-xl">
+      <div>
+        <label class="block text-xs font-bold text-slate-400 mb-1">Admin email</label>
+        <input type="email" name="email" required autocomplete="username"
+               value="{{ email or 'admin@knowsoft.com' }}"
+               class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-600 text-white focus:ring-2 focus:ring-amber-400 outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-slate-400 mb-1">Password</label>
+        <input type="password" name="password" required autocomplete="current-password"
+               class="w-full px-4 py-3 rounded-xl bg-slate-900 border border-slate-600 text-white focus:ring-2 focus:ring-amber-400 outline-none"
+               placeholder="Admin password">
+      </div>
+      <button type="submit" class="w-full py-3.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-900 font-bold shadow">
+        Sign in as General Admin
+      </button>
+    </form>
+    <p class="text-center text-xs text-slate-500 mt-6">
+      Member login: <a class="text-teal-400 hover:underline" href="/auth/login">/auth/login</a>
+    </p>
+    <p class="text-center text-xs text-slate-500 mt-2">
+      Alerts: info@knowsoft.org.ng.com · esemsun1@gmail.com
+    </p>
+  </div>
+</body>
+</html>
