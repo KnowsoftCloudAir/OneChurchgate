@@ -10,7 +10,7 @@ import urllib.request
 import urllib.error
 
 from fastapi import APIRouter, Depends, Request, Form, HTTPException
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from sqlmodel import Session, select
 
@@ -622,6 +622,149 @@ async def admin_social_stream_delete(
         session.delete(row)
         session.commit()
     return RedirectResponse("/admin/social-stream?ok=del", status_code=303)
+
+
+
+
+# ========== CSV backup / restore for Social Stream links ==========
+@router.get("/admin/social-stream/export.csv")
+async def admin_social_stream_export_csv(
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    """Download all stream links as CSV so they can be re-uploaded after a redeploy."""
+    if not _is_admin(user):
+        raise HTTPException(403, "Admin only")
+    import csv
+    import io
+    from fastapi.responses import StreamingResponse
+
+    rows = list(
+        session.exec(
+            select(SocialStreamLink).order_by(SocialStreamLink.sort_order, SocialStreamLink.id)
+        ).all()
+    )
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow([
+        "platform", "title", "source_url", "embed_url", "description",
+        "category", "youtube_channel_id", "is_active", "sort_order",
+    ])
+    for L in rows:
+        w.writerow([
+            L.platform or "",
+            L.title or "",
+            L.source_url or "",
+            L.embed_url or "",
+            L.description or "",
+            L.category or "tv",
+            L.youtube_channel_id or "",
+            "1" if L.is_active else "0",
+            int(L.sort_order or 0),
+        ])
+    buf.seek(0)
+    headers = {
+        "Content-Disposition": 'attachment; filename="churchgate_social_stream_links.csv"'
+    }
+    return StreamingResponse(iter([buf.getvalue()]), media_type="text/csv", headers=headers)
+
+
+@router.post("/admin/social-stream/import-csv")
+async def admin_social_stream_import_csv(
+    request: Request,
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    """Upload a CSV (same columns as export) to restore links after deploy."""
+    if not _is_admin(user):
+        raise HTTPException(403, "Admin only")
+    import csv
+    import io
+    from datetime import datetime
+
+    form = await request.form()
+    replace = str(form.get("replace") or "").strip() in ("1", "true", "yes", "on")
+    upload = form.get("file")
+    if not upload or not hasattr(upload, "read"):
+        return RedirectResponse("/admin/social-stream?err=csv_file", status_code=303)
+
+    raw = await upload.read()
+    try:
+        text = raw.decode("utf-8-sig")
+    except Exception:
+        text = raw.decode("latin-1", errors="ignore")
+
+    reader = csv.DictReader(io.StringIO(text))
+    if not reader.fieldnames:
+        return RedirectResponse("/admin/social-stream?err=csv_empty", status_code=303)
+
+    # normalize headers
+    def cell(row, *keys):
+        for k in keys:
+            for fk in row.keys():
+                if (fk or "").strip().lower() == k.lower():
+                    return (row.get(fk) or "").strip()
+        return ""
+
+    if replace:
+        for old in session.exec(select(SocialStreamLink)).all():
+            session.delete(old)
+        session.commit()
+
+    existing = {
+        ((r.source_url or "").strip(), (r.platform or "").strip().lower())
+        for r in session.exec(select(SocialStreamLink)).all()
+    }
+    added = 0
+    skipped = 0
+    for row in reader:
+        platform = cell(row, "platform").lower() or "youtube"
+        source_url = cell(row, "source_url", "url", "link")
+        if not source_url:
+            skipped += 1
+            continue
+        key = (source_url, platform)
+        if key in existing and not replace:
+            skipped += 1
+            continue
+        title = cell(row, "title") or (platform.title() + " stream")
+        description = cell(row, "description", "note") or None
+        category = (cell(row, "category") or "tv").lower()
+        if category not in ("tv", "movies", "news", "games", "ministration", "others"):
+            category = "tv"
+        ycid = cell(row, "youtube_channel_id", "channel_id") or None
+        if not ycid:
+            ycid = extract_youtube_channel_id(source_url)
+        emb = cell(row, "embed_url") or None
+        if not emb:
+            emb = build_embed_url(platform, source_url)
+        if ycid and platform in ("youtube", ""):
+            emb = channel_live_embed(ycid)
+        is_active = cell(row, "is_active", "active") not in ("0", "false", "no", "off")
+        try:
+            sort_order = int(cell(row, "sort_order") or "0")
+        except ValueError:
+            sort_order = 0
+        session.add(SocialStreamLink(
+            platform=platform[:20],
+            title=title[:200],
+            source_url=source_url[:800],
+            embed_url=(emb[:900] if emb else None),
+            description=(description[:500] if description else None),
+            category=category[:30],
+            youtube_channel_id=(ycid[:40] if ycid else None),
+            is_active=is_active,
+            sort_order=sort_order,
+            created_by=getattr(user, "id", None),
+            created_at=datetime.utcnow(),
+        ))
+        existing.add(key)
+        added += 1
+    session.commit()
+    return RedirectResponse(
+        f"/admin/social-stream?ok=csv&added={added}&skipped={skipped}",
+        status_code=303,
+    )
 
 
 @router.get("/member/social-watch", response_class=HTMLResponse)

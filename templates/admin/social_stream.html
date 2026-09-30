@@ -65,6 +65,34 @@
       Manual add: public live channels, movies and news / YouTube (including Live). Members: vertical feed, <strong>autoplay muted on scroll</strong>, sound toggle.
     </p>
 
+    
+    <div class="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-6">
+      <h2 class="font-bold text-slate-900 mb-1">Backup &amp; restore links (CSV)</h2>
+      <p class="text-xs text-slate-600 mb-3">
+        After a deployment, stream links can be empty. Download a CSV backup anytime, then re-upload to restore without retyping.
+      </p>
+      <div class="flex flex-wrap gap-3 items-center mb-3">
+        <a href="/admin/social-stream/export.csv"
+           class="inline-flex px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-bold shadow">
+          Download CSV template / backup
+        </a>
+      </div>
+      <form method="post" action="/admin/social-stream/import-csv" enctype="multipart/form-data" class="space-y-2">
+        <input type="file" name="file" accept=".csv,text/csv" required
+               class="block w-full text-sm text-slate-700">
+        <label class="flex items-center gap-2 text-xs text-slate-700">
+          <input type="checkbox" name="replace" value="1" class="rounded">
+          Replace all existing links (full restore). Leave unchecked to only add new URLs.
+        </label>
+        <button type="submit" class="px-4 py-2 rounded-xl bg-amber-600 text-white text-sm font-bold">
+          Upload CSV
+        </button>
+      </form>
+      <p class="text-[11px] text-slate-500 mt-2">
+        Columns: platform, title, source_url, embed_url, description, category, youtube_channel_id, is_active, sort_order
+      </p>
+    </div>
+
     <form method="post" action="/admin/social-stream/add" class="bg-white rounded-2xl border shadow-sm p-5 space-y-3 mb-6">
       <div>
         <label class="block text-xs font-bold text-slate-500 mb-1">Platform</label>

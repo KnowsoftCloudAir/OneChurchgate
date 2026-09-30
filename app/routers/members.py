@@ -21,6 +21,38 @@ from app.auth import (
 
 router = APIRouter(tags=["members"])
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
+
+def resolve_knowsoft_default_hierarchy(session: Session):
+    """Return (global, country, state, group, district) for Knowsoft default tree."""
+    def find_level(level, name_part: str, parent_id=None):
+        rows = list(session.exec(select(ChurchUnit).where(ChurchUnit.level == level)).all())
+        for r in rows:
+            n = (r.name or "").lower()
+            if "knowsoft" in n and (not name_part or name_part.lower() in n):
+                if parent_id is None or r.parent_id == parent_id:
+                    return r
+        for r in rows:
+            if parent_id is None or r.parent_id == parent_id:
+                if "knowsoft" in (r.name or "").lower():
+                    return r
+        return None
+    g = find_level(ChurchLevel.global_church, "")
+    if not g:
+        return None
+    c = find_level(ChurchLevel.country, "nigeria", g.id) or find_level(ChurchLevel.country, "", g.id)
+    if not c:
+        return None
+    s = find_level(ChurchLevel.state, "lagos", c.id) or find_level(ChurchLevel.state, "", c.id)
+    if not s:
+        return None
+    gr = find_level(ChurchLevel.group, "ikeja", s.id) or find_level(ChurchLevel.group, "", s.id)
+    if not gr:
+        return None
+    d = find_level(ChurchLevel.district, "allen", gr.id) or find_level(ChurchLevel.district, "", gr.id)
+    if not d:
+        return None
+    return g, c, s, gr, d
+
 UPLOAD = Path("app/static/uploads")
 UPLOAD.mkdir(parents=True, exist_ok=True)
 
@@ -35,6 +67,20 @@ async def join_page(request: Request, session: Session = Depends(get_session)):
     return templates.TemplateResponse("members/join.html", {
         "request": request, "globals": globals_
     })
+
+
+@router.get("/api/knowsoft-default-hierarchy")
+async def api_knowsoft_default_hierarchy(session: Session = Depends(get_session)):
+    tree = resolve_knowsoft_default_hierarchy(session)
+    if not tree:
+        return {"ok": False, "error": "Knowsoft default hierarchy not seeded"}
+    g, c, s, gr, d = tree
+    return {
+        "ok": True,
+        "global_id": g.id, "country_id": c.id, "state_id": s.id,
+        "group_id": gr.id, "district_id": d.id,
+        "names": {"global": g.name, "country": c.name, "state": s.name, "group": gr.name, "district": d.name},
+    }
 
 @router.get("/api/churches")
 async def list_child_churches(
@@ -70,6 +116,7 @@ async def join_submit(
     district_id: int = Form(...),
     profile_pic: UploadFile = File(None),
     promo_code: str = Form(""),
+    non_affiliate: str = Form(""),
     session: Session = Depends(get_session)
 ):
     if session.exec(select(User).where(User.email == email)).first():
@@ -80,6 +127,28 @@ async def join_submit(
             "request": request, "globals": globals_,
             "error": "Email already registered. Please sign in."
         }, status_code=400)
+
+    
+    # Non-Church affiliate → Knowsoft default hierarchy
+    if (non_affiliate or "").strip().lower() in ("1", "true", "yes", "on"):
+        tree = resolve_knowsoft_default_hierarchy(session)
+        if not tree:
+            globals_ = session.exec(
+                select(ChurchUnit).where(ChurchUnit.level == ChurchLevel.global_church)
+            ).all()
+            return templates.TemplateResponse(
+                "members/join.html",
+                {"request": request, "globals": globals_,
+                 "error": "Knowsoft default church is not set up yet. Contact admin."},
+                status_code=400,
+            )
+        g, c, s, gr, d = tree
+        global_id = g.id
+        country_id = c.id
+        state_id = s.id
+        group_id = gr.id
+        district_id = d.id
+        confession = "non_affiliate"
 
     district = session.get(ChurchUnit, district_id)
     if not district or district.level != ChurchLevel.district:
@@ -143,9 +212,17 @@ async def join_submit(
         user.referred_by_user_id = ref.id
     session.add(user)
     session.commit()
+    session.refresh(user)
+
+    # Email confirmation link (required before Knowsoft auto-approve / church approval queue)
+    try:
+        from app.routers.mail_auth import send_registration_confirm_email
+        send_registration_confirm_email(session, email.strip(), full_name.strip(), user.id)
+    except Exception as e:
+        print("registration email:", e)
 
     return templates.TemplateResponse("members/pending.html", {
-        "request": request, "full_name": full_name, "email": email
+        "request": request, "full_name": full_name, "email": email, "check_email": True
     })
 
 

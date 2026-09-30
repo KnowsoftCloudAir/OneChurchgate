@@ -14,12 +14,15 @@
     <div class="grid sm:grid-cols-2 gap-4">
       <div>
         <label class="text-sm font-medium">Global Church *</label>
-        <select name="global_id" x-model="globalId" @change="loadCountries()" required class="w-full mt-1 px-3 py-2 rounded-xl border">
+        <select name="global_id" x-model="globalId" @change="onGlobalChange()" required class="w-full mt-1 px-3 py-2 rounded-xl border">
           <option value="">— Select —</option>
+          <option value="non_affiliate">Non-Church affiliate</option>
           {% for g in globals %}
           <option value="{{ g.id }}">{{ g.name }} ({{ g.code }})</option>
           {% endfor %}
         </select>
+        <input type="hidden" name="non_affiliate" :value="nonAffiliate ? '1' : ''">
+        <p x-show="nonAffiliate" class="text-xs text-teal-700 mt-1" x-cloak>Knowsoft default church · Confession: Non-affiliate</p>
       </div>
       <div>
         <label class="text-sm font-medium">Country Church *</label>
@@ -71,6 +74,7 @@
         <option value="unsaved">Unsaved</option>
         <option value="backslidden">Backslidden</option>
         <option value="restored">Restored</option>
+        <option value="non_affiliate">Non-affiliate</option>
       </select>
       <div>
         <label class="text-xs text-slate-500">Member since</label>
@@ -97,21 +101,64 @@
   </form>
 </div>
 <script>
+
 function churchCascade() {
   return {
-    globalId: '', countryId: '', stateId: '', groupId: '',
+    globalId: '', countryId: '', stateId: '', groupId: '', districtId: '',
     countries: [], states: [], groups: [], districts: [],
+    nonAffiliate: false,
     init() {},
-    async load(parentId) {
-      if (!parentId) return [];
-      const r = await fetch('/api/churches?parent_id=' + parentId);
-      return await r.json();
+    async onGlobalChange() {
+      if (String(this.globalId) === 'non_affiliate') {
+        this.nonAffiliate = true;
+        await this.applyKnowsoftDefault();
+        return;
+      }
+      this.nonAffiliate = false;
+      await this.loadCountries();
     },
-    async loadCountries() { this.countries = await this.load(this.globalId); this.states=[]; this.groups=[]; this.districts=[]; this.countryId=''; this.stateId=''; this.groupId=''; },
-    async loadStates() { this.states = await this.load(this.countryId); this.groups=[]; this.districts=[]; this.stateId=''; this.groupId=''; },
-    async loadGroups() { this.groups = await this.load(this.stateId); this.districts=[]; this.groupId=''; },
-    async loadDistricts() { this.districts = await this.load(this.groupId); },
+    async applyKnowsoftDefault() {
+      try {
+        const r = await fetch('/api/knowsoft-default-hierarchy');
+        const d = await r.json();
+        if (!d.ok) { alert(d.error || 'Knowsoft default not available'); this.globalId=''; this.nonAffiliate=false; return; }
+        this.globalId = String(d.global_id);
+        this.countryId = String(d.country_id);
+        this.stateId = String(d.state_id);
+        this.groupId = String(d.group_id);
+        this.districtId = String(d.district_id);
+        this.countries = [{id: d.country_id, name: d.names.country}];
+        this.states = [{id: d.state_id, name: d.names.state}];
+        this.groups = [{id: d.group_id, name: d.names.group}];
+        this.districts = [{id: d.district_id, name: d.names.district}];
+        const conf = document.querySelector('select[name="confession"]');
+        if (conf) conf.value = 'non_affiliate';
+      } catch (e) { alert('Could not load Knowsoft hierarchy'); this.nonAffiliate=false; }
+    },
+    async loadCountries() {
+      this.countries=[]; this.states=[]; this.groups=[]; this.districts=[];
+      this.countryId=this.stateId=this.groupId=this.districtId='';
+      if (!this.globalId || this.globalId==='non_affiliate') return;
+      this.countries = await (await fetch('/api/churches?parent_id='+this.globalId)).json();
+    },
+    async loadStates() {
+      this.states=[]; this.groups=[]; this.districts=[];
+      this.stateId=this.groupId=this.districtId='';
+      if (!this.countryId) return;
+      this.states = await (await fetch('/api/churches?parent_id='+this.countryId)).json();
+    },
+    async loadGroups() {
+      this.groups=[]; this.districts=[]; this.groupId=this.districtId='';
+      if (!this.stateId) return;
+      this.groups = await (await fetch('/api/churches?parent_id='+this.stateId)).json();
+    },
+    async loadDistricts() {
+      this.districts=[]; this.districtId='';
+      if (!this.groupId) return;
+      this.districts = await (await fetch('/api/churches?parent_id='+this.groupId)).json();
+    },
   }
 }
+
 </script>
 {% endblock %}

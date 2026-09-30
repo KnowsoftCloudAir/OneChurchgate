@@ -28,7 +28,7 @@ from app.mailer import send_mail, branded, public_base
 router = APIRouter(prefix="/auth", tags=["mail-auth"])
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
 
-OTP_MINUTES = 12
+OTP_MINUTES = 5
 
 
 def _hash(code: str) -> str:
@@ -209,7 +209,7 @@ async def forgot_post(request: Request, email: str = Form(...), session: Session
             email,
             "Reset your Churchgate password",
             f"Reset code: {code}\nOpen: {link}",
-            branded("Reset password", f"<p>Code: <b>{code}</b></p><p><a href='{link}'>Continue reset</a></p>"),
+            branded("Reset password", f"<p>You requested a password reset for Knowsoft Churchgate.</p> <p>Your code (expires in 5 minutes): <b>{code}</b></p> <p><a href='{link}' style='background:#0d9488;color:#fff;padding:12px 18px;border-radius:10px;text-decoration:none;font-weight:700'>Open password reset form</a></p> <p style='font-size:13px'>Or open: {link}</p> <p style='font-size:13px'>Contact: info@knowsoft.org.uk</p>"),
         )
     return _page(request, "auth/forgot.html", error=None, sent=True, email=email)
 
@@ -269,3 +269,143 @@ async def admin_mail_post(
     session.commit()
     members = session.exec(select(User).order_by(User.full_name).limit(400)).all()
     return _page(request, "admin/mail_users.html", user=user, members=members, sent=ok)
+
+
+# ---- Registration email confirmation link ----
+CONFIRM_HOURS = 48
+
+
+@router.get("/confirm-registration", response_class=HTMLResponse)
+async def confirm_registration(
+    request: Request,
+    email: str = "",
+    token: str = "",
+    session: Session = Depends(get_session),
+):
+    """User clicks link in registration email → confirm email; auto-approve Knowsoft / non-affiliate."""
+    from app.models import ChurchMember, ChurchUnit, ChurchLevel
+
+    email = (email or "").strip().lower()
+    token = (token or "").strip()
+    if not email or not token:
+        return _page(
+            request,
+            "auth/confirm_registration.html",
+            ok=False,
+            message="Invalid confirmation link.",
+            login=False,
+        )
+
+    row = session.exec(
+        select(EmailChallenge)
+        .where(
+            EmailChallenge.email == email,
+            EmailChallenge.purpose == "register_confirm",
+            EmailChallenge.used == False,  # noqa: E712
+        )
+        .order_by(EmailChallenge.id.desc())
+    ).first()
+    if not row or row.expires_at < datetime.utcnow() or row.code_hash != _hash(token):
+        return _page(
+            request,
+            "auth/confirm_registration.html",
+            ok=False,
+            message="This confirmation link is invalid or has expired. Please register again or contact Knowsoft.",
+            login=False,
+        )
+
+    row.used = True
+    session.add(row)
+
+    user = session.exec(select(User).where(User.email == email)).first()
+    member = None
+    if user and user.member_id:
+        member = session.get(ChurchMember, user.member_id)
+    if not member:
+        member = session.exec(select(ChurchMember).where(ChurchMember.email == email)).first()
+
+    auto_approved = False
+    if member:
+        # Knowsoft global or non-affiliate confession → auto approve after email confirm
+        g = session.get(ChurchUnit, member.global_church_id) if member.global_church_id else None
+        gname = (g.name or "").lower() if g else ""
+        conf = (member.confession or "").lower()
+        if conf == "non_affiliate" or "knowsoft" in gname:
+            member.approval_status = "approved"
+            auto_approved = True
+        else:
+            # Email confirmed; church admin must still approve
+            if (member.approval_status or "") == "pending":
+                pass  # stays pending for church
+        session.add(member)
+
+    if user:
+        user.is_active = True
+        session.add(user)
+    session.commit()
+
+    if auto_approved:
+        msg = (
+            "Your email is confirmed and your registration is approved. "
+            "You can sign in with the password you created."
+        )
+    else:
+        msg = (
+            "Your email is confirmed. Your church admin must still approve your membership "
+            "before full access. You may sign in with limited access until then."
+        )
+    return _page(
+        request,
+        "auth/confirm_registration.html",
+        ok=True,
+        message=msg,
+        login=True,
+        auto_approved=auto_approved,
+    )
+
+
+def send_registration_confirm_email(session: Session, email: str, full_name: str, user_id: int | None = None) -> bool:
+    """Issue token and email confirmation link for new registration."""
+    token = secrets.token_urlsafe(24)
+    row = EmailChallenge(
+        email=(email or "").strip().lower(),
+        purpose="register_confirm",
+        code_hash=_hash(token),
+        pending_user_id=user_id,
+        expires_at=datetime.utcnow() + timedelta(hours=CONFIRM_HOURS),
+        used=False,
+    )
+    session.add(row)
+    session.commit()
+    link = f"{public_base()}/auth/confirm-registration?email={email.strip()}&token={token}"
+    text = (
+        f"Hello {full_name},\n\n"
+        "You are receiving this email because you have sent a registration request with Knowsoft Churchgate.\n\n"
+        "Click the link below to confirm your registration:\n"
+        f"{link}\n\n"
+        "This link expires in 48 hours.\n\n"
+        "If you did not register, you can ignore this email.\n\n"
+        "— Knowsoft Churchgate\n"
+        f"Contact: info@knowsoft.org.uk"
+    )
+    html = branded(
+        "Confirm your registration",
+        f"<p>Hello <b>{full_name}</b>,</p>"
+        "<p>You are receiving this email because you have sent a registration request with "
+        "<b>Knowsoft Churchgate</b>.</p>"
+        "<p>Click the button below to confirm your registration:</p>"
+        f"<p style='margin:24px 0'><a href='{link}' style='background:#0d9488;color:#fff;"
+        "padding:12px 20px;border-radius:10px;text-decoration:none;font-weight:700'>"
+        "Confirm my registration</a></p>"
+        f"<p style='font-size:13px;color:#94a3b8'>Or copy this link:<br>{link}</p>"
+        "<p style='font-size:13px'>This link expires in 48 hours.</p>"
+        "<p style='font-size:13px'>Contact: <a href='mailto:info@knowsoft.org.uk'>info@knowsoft.org.uk</a></p>",
+    )
+    return send_mail(
+        email.strip(),
+        "Confirm your Knowsoft Churchgate registration",
+        text,
+        html,
+    )
+
+
