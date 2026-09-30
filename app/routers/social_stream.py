@@ -647,20 +647,20 @@ async def admin_social_stream_export_csv(
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow([
-        "platform", "title", "source_url", "embed_url", "description",
-        "category", "youtube_channel_id", "is_active", "sort_order",
+        "platform", "title", "source_url", "category", "description",
+        "is_active", "sort_order", "embed_url", "youtube_channel_id",
     ])
     for L in rows:
         w.writerow([
             L.platform or "",
             L.title or "",
             L.source_url or "",
-            L.embed_url or "",
-            L.description or "",
             L.category or "tv",
-            L.youtube_channel_id or "",
+            L.description or "",
             "1" if L.is_active else "0",
             int(L.sort_order or 0),
+            L.embed_url or "",
+            L.youtube_channel_id or "",
         ])
     buf.seek(0)
     headers = {
@@ -719,7 +719,7 @@ async def admin_social_stream_import_csv(
     skipped = 0
     for row in reader:
         platform = cell(row, "platform").lower() or "youtube"
-        source_url = cell(row, "source_url", "url", "link")
+        source_url = cell(row, "source_url", "url", "link", "public_url", "public url")
         if not source_url:
             skipped += 1
             continue
