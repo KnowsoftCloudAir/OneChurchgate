@@ -1,29 +1,27 @@
-## Privileged General Admin
+# Social stream starter CSV + login code clarification
 
-- Email: `admin@knowsoft.com`
-- Password: `Knowsoft#GA2026!`
-- Use `/ks-admin/login` or `/auth/login`
-- Exempt from mass force-password resets
+## CSV file
+`churchgate_social_stream_links.csv` — your full library arranged for upload.
 
-# Knowsoft Churchgate
+Columns: **platform, title, source_url (Public URL), category, description (Note), is_active, sort_order**
 
-Church hierarchy, membership and growth analytics platform.
+Categories used:
+- **movies** — faith films (Noah, Passion, Pilgrim's Progress, …)
+- **news** — CNN, BBC, Sky, Al Jazeera, Channels, …
+- **tv** — general TV / regional channels
+- **ministration** — sermons, teachers, church live services
+- **games** — sports (NBA, F1, FIFA, WWE, …)
 
-## Hierarchy
-Global → Country → State → Group → District (primary data unit)
+## Upload after deploy
+1. Admin → Social Stream  
+2. Upload this CSV  
+3. Tick **Replace all** if the list should match the file exactly  
 
-## Quick start
-```bash
-pip install -r requirements.txt
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
+## Login codes (confirmed behaviour)
+| Situation | Code / link required? |
+|-----------|------------------------|
+| **Every normal login** | **No** — only email + password |
+| **New registration** | **Yes, once** — confirmation link in email |
+| **Password reset** | **Yes, only when resetting** — code + form link |
 
-## Default General Admin
-- URL: /ks-admin/login
-- Email: admin@knowsoft.com
-- Password: Knowsoft#GA2026!
-
-## Render
-- Build: `pip install -r requirements.txt`
-- Start: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-- Env: `PYTHON_VERSION=3.12.8`, `SECRET_KEY=...`, `DATABASE_URL=...`
+Users do **not** receive a login code every time they sign in.
