@@ -3,15 +3,18 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Social Stream — Admin</title>
+  <title>Social Stream Links — Admin</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-slate-100 min-h-screen p-4 sm:p-6">
   <div class="max-w-3xl mx-auto">
     <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-      <div>
-        <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Knowsoft Churchgate · Admin</p>
-        <h1 class="text-2xl font-black text-slate-900">Stream links (YouTube &amp; more)</h1>
+      <div class="flex items-center gap-3">
+        <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" class="h-10 w-auto" onerror="this.style.display='none'">
+        <div>
+          <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">Knowsoft Churchgate · Admin</p>
+          <h1 class="text-2xl font-black text-slate-900">YouTube &amp; stream links</h1>
+        </div>
       </div>
       <a href="/admin" class="text-sm font-semibold text-indigo-700">← Admin</a>
     </div>
@@ -25,86 +28,153 @@
       CSV import — added {{ request.query_params.get("added") }}, skipped {{ request.query_params.get("skipped") }}.
     </div>
     {% elif ok %}
-    <p class="mb-3 text-green-700 text-sm font-semibold">OK: {{ ok }}</p>
+    <p class="mb-3 text-green-700 font-semibold text-sm">Saved ({{ ok }}).{% if synced %} Imported {{ synced }} video(s).{% endif %}</p>
     {% endif %}
-    {% if err %}<p class="mb-3 text-red-700 text-sm font-semibold">{{ err }}</p>{% endif %}
+    {% if err == "csv_file" %}
+    <p class="mb-3 text-red-700 font-semibold text-sm">Please choose a CSV file.</p>
+    {% elif err == "csv_empty" %}
+    <p class="mb-3 text-red-700 font-semibold text-sm">CSV was empty or invalid.</p>
+    {% elif err %}
+    <div class="mb-3 p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-sm">{{ err }}</div>
+    {% endif %}
 
-    <!-- ONE primary action: load all links -->
-    <section class="bg-teal-50 border-2 border-teal-400 rounded-2xl p-5 mb-6">
-      <h2 class="font-black text-slate-900 text-lg">Load full Churchgate library</h2>
-      <p class="text-sm text-slate-600 mt-1 mb-3">Adds all movies, news, TV, ministration and sports links in one click (after a deploy when the list is empty).</p>
-      <form method="post" action="/admin/social-stream/load-library" class="flex flex-wrap gap-3 items-center">
+    <!-- PRIMARY: load all stream links -->
+    <section class="bg-teal-50 border-2 border-teal-500 rounded-2xl p-5 mb-6 shadow-sm">
+      <h2 class="font-black text-slate-900 text-lg">Load all YouTube / stream links</h2>
+      <p class="text-sm text-slate-600 mt-1 mb-4">
+        One click restores the full library (movies, news, TV, ministration, sports) after a deploy when links are missing.
+      </p>
+      <form method="post" action="/admin/social-stream/load-library">
         <input type="hidden" name="replace" value="1">
-        <button type="submit" class="px-5 py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold shadow">
-          Load / restore all links now
+        <button type="submit" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold shadow-lg text-base">
+          Load / restore all stream links now
         </button>
       </form>
     </section>
 
-    <section class="bg-amber-50 border border-amber-300 rounded-2xl p-5 mb-6">
-      <h2 class="font-bold text-slate-900">CSV backup</h2>
-      <p class="text-xs text-slate-600 mb-3">Download a backup, or upload your own CSV (platform, title, source_url, category, description).</p>
-      <div class="flex flex-wrap gap-2 mb-3">
-        <a href="/admin/social-stream/export.csv" class="px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-bold">Download CSV</a>
+    <!-- CSV download + upload -->
+    <section class="bg-amber-50 border-2 border-amber-400 rounded-2xl p-5 mb-6 shadow-sm">
+      <h2 class="font-black text-slate-900 text-lg">Download / upload links (CSV)</h2>
+      <p class="text-sm text-slate-600 mt-1 mb-4">
+        Backup every link to a file, or restore from a CSV after an upgrade.
+      </p>
+      <div class="mb-4">
+        <a href="/admin/social-stream/export.csv"
+           class="inline-flex items-center px-5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold shadow">
+          ↓ Download all links as CSV
+        </a>
       </div>
-      <form method="post" action="/admin/social-stream/import-csv" enctype="multipart/form-data" class="space-y-2">
-        <input type="file" name="file" accept=".csv,text/csv" required class="block w-full text-sm">
-        <label class="flex items-center gap-2 text-xs"><input type="checkbox" name="replace" value="1"> Replace all existing</label>
-        <button type="submit" class="px-4 py-2 rounded-xl bg-amber-600 text-white text-sm font-bold">Upload CSV</button>
+      <form method="post" action="/admin/social-stream/import-csv" enctype="multipart/form-data"
+            class="space-y-3 bg-white rounded-xl border border-amber-200 p-4">
+        <label class="block text-xs font-bold text-slate-500">Upload CSV file</label>
+        <input type="file" name="file" accept=".csv,text/csv" required
+               class="block w-full text-sm text-slate-700">
+        <label class="flex items-center gap-2 text-sm text-slate-700">
+          <input type="checkbox" name="replace" value="1" class="rounded">
+          <span>Replace all existing links (full restore)</span>
+        </label>
+        <button type="submit" class="px-5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-sm font-bold shadow">
+          ↑ Upload CSV
+        </button>
       </form>
+      <p class="text-[11px] text-slate-500 mt-3">
+        Columns: platform, title, source_url, category, description · Categories: tv, movies, news, games, ministration, others
+      </p>
     </section>
 
-    <section class="bg-white rounded-2xl border p-5 mb-6">
+    <!-- Add single -->
+    <section class="bg-white rounded-2xl border shadow-sm p-5 mb-6">
       <h2 class="font-bold text-slate-900 mb-3">Add one link</h2>
       <form method="post" action="/admin/social-stream/add" class="space-y-3">
         <div class="grid sm:grid-cols-2 gap-3">
-          <select name="platform" class="border rounded-xl px-3 py-2 text-sm" required>
-            <option value="youtube">YouTube</option>
-            <option value="facebook">Facebook</option>
-            <option value="tiktok">TikTok</option>
-            <option value="instagram">Instagram</option>
-          </select>
-          <select name="category" class="border rounded-xl px-3 py-2 text-sm">
-            <option value="tv">TV</option>
-            <option value="movies">Movies</option>
-            <option value="news">News</option>
-            <option value="games">Games / Sports</option>
-            <option value="ministration">Ministration</option>
-            <option value="others">Others</option>
-          </select>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Platform</label>
+            <select name="platform" class="w-full border rounded-xl px-3 py-2 text-sm" required>
+              <option value="youtube">YouTube</option>
+              <option value="facebook">Facebook</option>
+              <option value="tiktok">TikTok</option>
+              <option value="instagram">Instagram</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-500 mb-1">Category</label>
+            <select name="category" class="w-full border rounded-xl px-3 py-2 text-sm">
+              <option value="tv">TV</option>
+              <option value="movies">Movies</option>
+              <option value="news">News</option>
+              <option value="games">Games / Sports</option>
+              <option value="ministration">Ministration</option>
+              <option value="others">Others</option>
+            </select>
+          </div>
         </div>
-        <input name="title" placeholder="Title" required class="w-full border rounded-xl px-3 py-2 text-sm">
-        <input name="source_url" placeholder="Public URL" required class="w-full border rounded-xl px-3 py-2 text-sm">
-        <input name="description" placeholder="Note (optional)" class="w-full border rounded-xl px-3 py-2 text-sm">
-        <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-700 text-white font-bold text-sm">Add link</button>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">Title</label>
+          <input name="title" required class="w-full border rounded-xl px-3 py-2 text-sm" placeholder="e.g. CNN Live">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">Public URL</label>
+          <input name="source_url" required class="w-full border rounded-xl px-3 py-2 text-sm" placeholder="https://www.youtube.com/...">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-500 mb-1">Note (optional)</label>
+          <input name="description" class="w-full border rounded-xl px-3 py-2 text-sm" placeholder="Short note">
+        </div>
+        <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-700 hover:bg-indigo-600 text-white font-bold text-sm shadow">
+          Add this link
+        </button>
       </form>
     </section>
 
-    <section class="bg-white rounded-2xl border p-5 mb-6">
-      <h2 class="font-bold text-slate-900 mb-3">Current links ({{ links|length }})</h2>
-      <ul class="space-y-2 max-h-96 overflow-y-auto">
+    <!-- List -->
+    <section class="bg-white rounded-2xl border shadow-sm p-5 mb-6">
+      <div class="flex items-center justify-between mb-3">
+        <h2 class="font-bold text-slate-900">Current links ({{ links|length }})</h2>
+        <a href="/admin/social-stream/export.csv" class="text-xs font-bold text-indigo-700">Download CSV</a>
+      </div>
+      <ul class="space-y-2 max-h-[28rem] overflow-y-auto">
         {% for L in links %}
-        <li class="flex flex-wrap justify-between gap-2 p-3 rounded-xl border bg-slate-50">
+        <li class="flex flex-wrap items-start justify-between gap-2 p-3 rounded-xl border bg-slate-50">
           <div class="min-w-0 flex-1">
-            <span class="text-[10px] font-bold uppercase text-red-700">{{ L.platform }}</span>
-            <span class="text-[10px] text-slate-500">{{ L.category }}</span>
-            <p class="font-semibold text-sm truncate">{{ L.title }}</p>
+            <div class="flex flex-wrap gap-2 mb-1">
+              <span class="text-[10px] font-bold uppercase px-2 py-0.5 rounded
+                {% if L.platform=='facebook' %}bg-blue-100 text-blue-800
+                {% elif L.platform=='youtube' %}bg-red-100 text-red-800
+                {% else %}bg-slate-200 text-slate-800{% endif %}">{{ L.platform }}</span>
+              <span class="text-[10px] font-semibold px-2 py-0.5 rounded bg-white border text-slate-600">{{ L.category or 'tv' }}</span>
+              {% if not L.is_active %}<span class="text-[10px] text-amber-700 font-bold">Hidden</span>{% endif %}
+            </div>
+            <p class="font-semibold text-sm text-slate-900 truncate">{{ L.title }}</p>
             <p class="text-xs text-slate-500 break-all">{{ L.source_url }}</p>
+            {% if L.description %}<p class="text-xs text-slate-400">{{ L.description }}</p>{% endif %}
           </div>
-          <div class="flex gap-2">
+          <div class="flex gap-2 shrink-0">
             <form method="post" action="/admin/social-stream/{{ L.id }}/toggle">
-              <button class="text-xs px-2 py-1 border rounded-lg bg-white">{{ 'Hide' if L.is_active else 'Show' }}</button>
+              <button type="submit" class="text-xs px-3 py-1.5 rounded-lg border font-semibold bg-white">{{ 'Hide' if L.is_active else 'Show' }}</button>
             </form>
-            <form method="post" action="/admin/social-stream/{{ L.id }}/delete" onsubmit="return confirm('Delete?');">
-              <button class="text-xs px-2 py-1 border border-red-200 text-red-700 rounded-lg bg-white">Delete</button>
+            <form method="post" action="/admin/social-stream/{{ L.id }}/delete" onsubmit="return confirm('Delete this link?');">
+              <button type="submit" class="text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-700 font-semibold bg-white">Delete</button>
             </form>
           </div>
         </li>
         {% else %}
-        <li class="text-slate-400 text-sm text-center py-6">Empty — use “Load / restore all links now” above.</li>
+        <li class="text-slate-400 text-sm py-8 text-center">No links yet — use <b>Load / restore all stream links now</b> above.</li>
         {% endfor %}
       </ul>
     </section>
+
+    <!-- Facebook optional -->
+    <details class="bg-white rounded-2xl border shadow-sm p-5 mb-8">
+      <summary class="font-bold text-slate-900 cursor-pointer">Optional: Facebook Page auto-import</summary>
+      <form method="post" action="/admin/social-stream/facebook-page" class="mt-4 space-y-3">
+        <input name="page_id" value="{{ fb_page_id or '' }}" placeholder="Facebook Page ID" class="w-full border rounded-xl px-3 py-2 text-sm">
+        <input name="page_token" type="password" placeholder="Page access token" class="w-full border rounded-xl px-3 py-2 text-sm">
+        <button type="submit" class="px-4 py-2 rounded-xl bg-slate-800 text-white text-sm font-bold">Save Facebook settings</button>
+      </form>
+      <form method="post" action="/admin/social-stream/sync-facebook" class="mt-3">
+        <button type="submit" class="px-4 py-2 rounded-xl border text-sm font-semibold">Sync videos from Page</button>
+      </form>
+    </details>
   </div>
 </body>
 </html>
