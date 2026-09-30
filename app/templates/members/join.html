@@ -3,60 +3,83 @@
 {% block content %}
 <div class="max-w-2xl mx-auto px-4 py-10">
   <div class="mb-4 flex flex-wrap gap-2">
-    <a href="/" class="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold shadow">← Back to home page</a>
+    <a href="/" class="inline-flex items-center gap-1 px-4 py-2 rounded-xl bg-slate-900 text-white text-sm font-semibold shadow">← Home</a>
     <a href="/auth/login" class="inline-flex items-center gap-1 px-4 py-2 rounded-xl border text-sm font-semibold text-slate-700">Sign in</a>
   </div>
-  <h1 class="text-2xl font-bold mb-2">Member Registration</h1>
-  <p class="text-sm text-slate-500 mb-6">Select your church hierarchy. Your district admin will approve before full access.</p>
+
+  <h1 class="text-2xl font-bold mb-1">Member registration</h1>
+  <p class="text-sm text-slate-500 mb-4" x-data x-text="new URLSearchParams(location.search).get('mode')==='non_affiliate' ? 'Non-church affiliate — Knowsoft default church is filled for you. Fields stay editable.' : 'Select your church hierarchy. Your district admin will approve before full access.'"></p>
+
+  <div class="flex flex-wrap gap-2 mb-6">
+    <a href="/join?mode=affiliate"
+       class="px-4 py-2 rounded-xl text-sm font-bold border {% if request.query_params.get('mode') != 'non_affiliate' %}bg-navy-900 text-white border-navy-900{% else %}bg-white text-slate-700{% endif %}">
+      Church affiliate
+    </a>
+    <a href="/join?mode=non_affiliate"
+       class="px-4 py-2 rounded-xl text-sm font-bold border {% if request.query_params.get('mode') == 'non_affiliate' %}bg-teal-600 text-white border-teal-600{% else %}bg-white text-slate-700{% endif %}">
+      Non-church affiliate
+    </a>
+  </div>
+
   {% if error %}<div class="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-lg">{{ error }}</div>{% endif %}
+
   <form method="post" action="/join" enctype="multipart/form-data" class="bg-white rounded-2xl border p-6 space-y-4"
         x-data="churchCascade()" x-init="init()">
+    <input type="hidden" name="non_affiliate" :value="nonAffiliate ? '1' : ''">
+
     <div class="grid sm:grid-cols-2 gap-4">
       <div>
         <label class="text-sm font-medium">Global Church *</label>
-        <select name="global_id" x-model="globalId" @change="loadCountries()" required class="w-full mt-1 px-3 py-2 rounded-xl border">
+        <select name="global_id" x-model="globalId" @change="onGlobalChange()" required
+                class="w-full mt-1 px-3 py-2 rounded-xl border bg-white text-slate-900">
           <option value="">— Select —</option>
+          <option value="non_affiliate">Non-Church affiliate</option>
           {% for g in globals %}
           <option value="{{ g.id }}">{{ g.name }} ({{ g.code }})</option>
           {% endfor %}
         </select>
+        <p x-show="nonAffiliate" class="text-xs text-teal-700 mt-1" x-cloak>Knowsoft default hierarchy applied (still editable).</p>
       </div>
       <div>
         <label class="text-sm font-medium">Country Church *</label>
-        <select name="country_id" x-model="countryId" @change="loadStates()" required class="w-full mt-1 px-3 py-2 rounded-xl border">
+        <select name="country_id" x-model="countryId" @change="loadStates()" required
+                class="w-full mt-1 px-3 py-2 rounded-xl border bg-white text-slate-900">
           <option value="">— Select —</option>
           <template x-for="c in countries" :key="c.id"><option :value="c.id" x-text="c.name"></option></template>
         </select>
       </div>
       <div>
         <label class="text-sm font-medium">State Church *</label>
-        <select name="state_id" x-model="stateId" @change="loadGroups()" required class="w-full mt-1 px-3 py-2 rounded-xl border">
+        <select name="state_id" x-model="stateId" @change="loadGroups()" required
+                class="w-full mt-1 px-3 py-2 rounded-xl border bg-white text-slate-900">
           <option value="">— Select —</option>
           <template x-for="c in states" :key="c.id"><option :value="c.id" x-text="c.name"></option></template>
         </select>
       </div>
       <div>
         <label class="text-sm font-medium">Group Church *</label>
-        <select name="group_id" x-model="groupId" @change="loadDistricts()" required class="w-full mt-1 px-3 py-2 rounded-xl border">
+        <select name="group_id" x-model="groupId" @change="loadDistricts()" required
+                class="w-full mt-1 px-3 py-2 rounded-xl border bg-white text-slate-900">
           <option value="">— Select —</option>
           <template x-for="c in groups" :key="c.id"><option :value="c.id" x-text="c.name"></option></template>
         </select>
       </div>
       <div class="sm:col-span-2">
         <label class="text-sm font-medium">District Church *</label>
-        <select name="district_id" required class="w-full mt-1 px-3 py-2 rounded-xl border">
+        <select name="district_id" x-model="districtId" required
+                class="w-full mt-1 px-3 py-2 rounded-xl border bg-white text-slate-900">
           <option value="">— Select —</option>
           <template x-for="c in districts" :key="c.id"><option :value="c.id" x-text="c.name"></option></template>
         </select>
       </div>
     </div>
-    <hr>
-    <input name="full_name" required placeholder="Full name *" class="w-full px-3 py-2 rounded-xl border">
+
     <div class="grid sm:grid-cols-2 gap-4">
+      <input name="full_name" required placeholder="Full name *" class="w-full px-3 py-2 rounded-xl border">
       <select name="sex" required class="w-full px-3 py-2 rounded-xl border">
         <option value="">Sex *</option>
-        <option value="brother">Brother</option>
-        <option value="sister">Sister</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
       </select>
       <select name="age_category" required class="w-full px-3 py-2 rounded-xl border">
         <option value="">Age category *</option>
@@ -65,25 +88,26 @@
         <option value="campus">Campus / Young adult (21–40)</option>
         <option value="adult">Adult (30–100)</option>
       </select>
-      <select name="confession" required class="w-full px-3 py-2 rounded-xl border">
+      <select name="confession" x-model="confession" required class="w-full px-3 py-2 rounded-xl border bg-white text-slate-900">
         <option value="">Confession *</option>
         <option value="saved">Saved</option>
         <option value="unsaved">Unsaved</option>
         <option value="backslidden">Backslidden</option>
         <option value="restored">Restored</option>
+        <option value="non_affiliate">Non-affiliate</option>
       </select>
       <div>
         <label class="text-xs text-slate-500">Member since</label>
-        <input type="date" name="member_since" class="w-full px-3 py-2 rounded-xl border">
+        <input type="date" name="member_since" x-model="memberSince" class="w-full px-3 py-2 rounded-xl border bg-white text-slate-900">
       </div>
     </div>
+
     <input type="email" name="email" required placeholder="Email (login) *" class="w-full px-3 py-2 rounded-xl border">
     <input type="password" name="password" required minlength="6" placeholder="Password *" class="w-full px-3 py-2 rounded-xl border">
     <div>
-      <label class="text-sm font-medium">Promo code <span class="text-slate-400 font-normal">(optional — from a friend)</span></label>
+      <label class="text-sm font-medium">Promo code <span class="text-slate-400 font-normal">(optional)</span></label>
       <input type="text" name="promo_code" value="{{ request.query_params.get('promo', '') }}"
              placeholder="e.g. KS-AB12CD" class="w-full mt-1 px-3 py-2 rounded-xl border uppercase font-mono tracking-wide">
-      <p class="text-xs text-slate-500 mt-1">Using a valid code may unlock free subscription months after you subscribe.</p>
     </div>
     <input name="whatsapp" placeholder="WhatsApp number" class="w-full px-3 py-2 rounded-xl border">
     <input name="phone" placeholder="Phone" class="w-full px-3 py-2 rounded-xl border">
@@ -95,22 +119,100 @@
     </div>
     <button class="w-full py-3 rounded-xl bg-teal-500 text-white font-semibold">Submit for approval</button>
   </form>
+
+  <div class="mt-8 rounded-xl border bg-slate-50 p-4 text-center text-sm">
+    <p class="font-bold text-slate-800 mb-1">Contact us</p>
+    <p><a class="text-teal-700 font-semibold" href="https://www.knowsoft.org.uk" target="_blank" rel="noopener">www.knowsoft.org.uk</a></p>
+    <p class="mt-1"><a class="text-teal-700 font-semibold" href="mailto:info@knowsoft.org.uk">info@knowsoft.org.uk</a></p>
+  </div>
 </div>
 <script>
 function churchCascade() {
   return {
-    globalId: '', countryId: '', stateId: '', groupId: '',
-    countries: [], states: [], groups: [], districts: [],
-    init() {},
+    globalId: '',
+    countryId: '',
+    stateId: '',
+    groupId: '',
+    districtId: '',
+    countries: [],
+    states: [],
+    groups: [],
+    districts: [],
+    nonAffiliate: false,
+    confession: '',
+    memberSince: '',
+    async init() {
+      const mode = new URLSearchParams(location.search).get('mode') || '';
+      // default date = today
+      const t = new Date();
+      this.memberSince = t.toISOString().slice(0, 10);
+      if (mode === 'non_affiliate') {
+        this.globalId = 'non_affiliate';
+        await this.applyKnowsoftDefault();
+      }
+    },
+    async onGlobalChange() {
+      if (String(this.globalId) === 'non_affiliate') {
+        await this.applyKnowsoftDefault();
+        return;
+      }
+      this.nonAffiliate = false;
+      await this.loadCountries();
+    },
+    async applyKnowsoftDefault() {
+      this.nonAffiliate = true;
+      try {
+        const r = await fetch('/api/knowsoft-default-hierarchy');
+        const d = await r.json();
+        if (!d.ok) {
+          alert(d.error || 'Knowsoft default church is not set up yet. Contact admin.');
+          this.nonAffiliate = false;
+          this.globalId = '';
+          return;
+        }
+        // Fill selects — keep ENABLED (not greyed out)
+        this.globalId = String(d.global_id);
+        this.countries = [{ id: d.country_id, name: d.names.country }];
+        this.states = [{ id: d.state_id, name: d.names.state }];
+        this.groups = [{ id: d.group_id, name: d.names.group }];
+        this.districts = [{ id: d.district_id, name: d.names.district }];
+        this.countryId = String(d.country_id);
+        this.stateId = String(d.state_id);
+        this.groupId = String(d.group_id);
+        this.districtId = String(d.district_id);
+        this.confession = 'non_affiliate';
+        if (!this.memberSince) {
+          this.memberSince = new Date().toISOString().slice(0, 10);
+        }
+      } catch (e) {
+        alert('Could not load Knowsoft hierarchy');
+        this.nonAffiliate = false;
+      }
+    },
     async load(parentId) {
       if (!parentId) return [];
       const r = await fetch('/api/churches?parent_id=' + parentId);
       return await r.json();
     },
-    async loadCountries() { this.countries = await this.load(this.globalId); this.states=[]; this.groups=[]; this.districts=[]; this.countryId=''; this.stateId=''; this.groupId=''; },
-    async loadStates() { this.states = await this.load(this.countryId); this.groups=[]; this.districts=[]; this.stateId=''; this.groupId=''; },
-    async loadGroups() { this.groups = await this.load(this.stateId); this.districts=[]; this.groupId=''; },
-    async loadDistricts() { this.districts = await this.load(this.groupId); },
+    async loadCountries() {
+      this.countries = await this.load(this.globalId);
+      this.states = []; this.groups = []; this.districts = [];
+      this.countryId = ''; this.stateId = ''; this.groupId = ''; this.districtId = '';
+    },
+    async loadStates() {
+      this.states = await this.load(this.countryId);
+      this.groups = []; this.districts = [];
+      this.stateId = ''; this.groupId = ''; this.districtId = '';
+    },
+    async loadGroups() {
+      this.groups = await this.load(this.stateId);
+      this.districts = [];
+      this.groupId = ''; this.districtId = '';
+    },
+    async loadDistricts() {
+      this.districts = await this.load(this.groupId);
+      this.districtId = '';
+    },
   }
 }
 </script>
