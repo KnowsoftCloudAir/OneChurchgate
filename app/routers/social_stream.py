@@ -45,7 +45,71 @@ def _cfg_set(session: Session, key: str, value: str) -> None:
     session.add(row)
 
 
+def extract_youtube_channel_id(url: str) -> Optional[str]:
+    """Return UC… channel id from common YouTube URL shapes, if present."""
+    if not url:
+        return None
+    u = url.strip()
+    m = re.search(r"youtube\.com/channel/(UC[A-Za-z0-9_-]{20,})", u)
+    if m:
+        return m.group(1)
+    if u.startswith("ytchan:") or u.startswith("channel:"):
+        cid = u.split(":", 1)[1].strip()
+        if cid.startswith("UC") and len(cid) >= 22:
+            return cid
+    m = re.search(r"[?&]channel=(UC[A-Za-z0-9_-]{20,})", u)
+    if m:
+        return m.group(1)
+    return None
+
+
+def resolve_youtube_handle_to_channel_id(handle: str) -> Optional[str]:
+    """Best-effort resolve @handle → UC… without API key (HTML scrape)."""
+    handle = (handle or "").lstrip("@").strip()
+    if not handle or not re.match(r"^[A-Za-z0-9._-]+$", handle):
+        return None
+    page = f"https://www.youtube.com/@{handle}"
+    try:
+        req = urllib.request.Request(
+            page,
+            headers={
+                "User-Agent": "Mozilla/5.0 (compatible; ChurchgateSocial/1.2)",
+                "Accept-Language": "en-US,en;q=0.9",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=12) as resp:
+            html = resp.read().decode("utf-8", errors="ignore")
+        for pat in (
+            r'"channelId":"(UC[A-Za-z0-9_-]{20,})"',
+            r'"externalId":"(UC[A-Za-z0-9_-]{20,})"',
+            r"channel/(UC[A-Za-z0-9_-]{20,})",
+        ):
+            m = re.search(pat, html)
+            if m:
+                return m.group(1)
+    except Exception:
+        return None
+    return None
+
+
+def is_channel_live_embed(embed_url: Optional[str]) -> bool:
+    if not embed_url:
+        return False
+    return "embed/live_stream" in embed_url and "channel=" in embed_url
+
+
+def channel_live_embed(channel_id: str, muted: bool = True) -> str:
+    cid = (channel_id or "").strip()
+    mute = "1" if muted else "0"
+    return (
+        "https://www.youtube.com/embed/live_stream?channel="
+        + quote(cid, safe="")
+        + f"&autoplay=1&mute={mute}&playsinline=1&rel=0&modestbranding=1"
+    )
+
+
 def build_embed_url(platform: str, source_url: str) -> Optional[str]:
+    """Build iframe embed URL. YouTube channel /live → persistent live_stream embed."""
     if not source_url:
         return None
     url = source_url.strip()
@@ -76,35 +140,33 @@ def build_embed_url(platform: str, source_url: str) -> Optional[str]:
         return None
 
     if p == "youtube" or "youtube.com" in low or "youtu.be" in low:
-        # Persistent live: dock current live of the same channel (Al Jazeera etc.)
-        ch = re.search(r"youtube\.com/channel/(UC[A-Za-z0-9_-]{20,})", url)
-        if ch:
-            cid = ch.group(1)
-            return "https://www.youtube.com/embed/live_stream?channel=" + cid + "&autoplay=1&mute=1&playsinline=1&rel=0"
+        # Persistent channel live — e.g.
+        # https://www.youtube.com/channel/UCEXGDNclvmg6RW0vipJYsTQ/live
+        cid = extract_youtube_channel_id(url)
+        if cid:
+            return channel_live_embed(cid)
+
         handle = re.search(r"youtube\.com/@([A-Za-z0-9._-]+)", url)
-        if handle and ("/live" in low or p == "youtube"):
-            # Handle live page — YouTube resolves current live on /embed via live_stream + handle is not official;
-            # keep @handle/live as iframe src fallback
-            h = handle.group(1)
-            return "https://www.youtube.com/embed/live_stream?autoplay=1&mute=1&playsinline=1&rel=0"
-        if url.startswith("ytchan:") or url.startswith("channel:"):
-            cid = url.split(":",1)[1].strip()
-            return "https://www.youtube.com/embed/live_stream?channel=" + cid + "&autoplay=1&mute=1&playsinline=1&rel=0"
+        if handle:
+            resolved = resolve_youtube_handle_to_channel_id(handle.group(1))
+            if resolved:
+                return channel_live_embed(resolved)
+            return None
+
+        if re.search(r"youtube\.com/(?:c|user)/[A-Za-z0-9._-]+", url) and "/live" in low:
+            return None
+
         m = re.search(
-            r"(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/|youtube\.com/live/|youtube\.com/shorts/)([A-Za-z0-9_-]{11})",
+            r"(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/"
+            r"|youtube\.com/live/|youtube\.com/shorts/)([A-Za-z0-9_-]{11})",
             url,
         )
         if not m:
-            # fallback: any 11-id after live/ or v=
             m = re.search(r"(?:live/|v=|embed/|shorts/)([A-Za-z0-9_-]{11})", url)
         if m:
             vid = m.group(1)
-            is_live = ("/live/" in low) or ("live" == p) or ("live=1" in low)
-            # Live streams often fail on youtube-nocookie; use standard embed host
-            host = "https://www.youtube.com/embed/" if is_live else "https://www.youtube-nocookie.com/embed/"
+            host = "https://www.youtube.com/embed/"
             q = "autoplay=1&mute=1&playsinline=1&rel=0&modestbranding=1&enablejsapi=1"
-            if is_live:
-                q += "&v=" + vid  # helps some live players bind the stream
             return host + vid + "?" + q
         return None
 
@@ -405,6 +467,14 @@ async def admin_social_stream_add(
     cat = (category or "tv").strip().lower()
     if cat not in ("tv","movies","news","games","ministration","others"):
         cat = "tv"
+    ycid = extract_youtube_channel_id(source_url)
+    if not ycid and embed:
+        ycid = extract_youtube_channel_id(embed)
+    if platform == "youtube" and not embed:
+        return RedirectResponse(
+            "/admin/social-stream?err=yt_channel",
+            status_code=303,
+        )
     row = SocialStreamLink(
         platform=platform,
         title=(title or (platform.title() + " video")).strip()[:200],
@@ -412,6 +482,7 @@ async def admin_social_stream_add(
         source_url=source_url[:800],
         embed_url=(embed[:900] if embed else None),
         description=(description or "").strip()[:500] or None,
+        youtube_channel_id=(ycid[:40] if ycid else None),
         is_active=True,
         created_by=getattr(user, "id", None),
         created_at=datetime.utcnow(),
@@ -472,9 +543,20 @@ async def member_social_watch(
     playable = []
     for L in links:
         emb = getattr(L, "embed_url", None) or ""
-        src = getattr(L, "source_url", None) or ""
-        if not emb:
-            emb = build_embed_url(getattr(L, "platform", "") or "youtube", src) or ""
+        src_u = getattr(L, "source_url", None) or ""
+        ycid = getattr(L, "youtube_channel_id", None) or extract_youtube_channel_id(src_u)
+        if ycid and (getattr(L, "platform", "") or "").lower() in ("youtube", ""):
+            emb = channel_live_embed(ycid)
+            try:
+                L.embed_url = emb
+            except Exception:
+                pass
+        elif not emb:
+            emb = build_embed_url(getattr(L, "platform", "") or "youtube", src_u) or ""
+            try:
+                L.embed_url = emb
+            except Exception:
+                pass
         if not emb or "undefined" in emb or emb.strip() in ("", "#"):
             continue
         lc = (getattr(L, "category", None) or "").lower() or "tv"

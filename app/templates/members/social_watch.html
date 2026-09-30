@@ -23,6 +23,18 @@
       opacity:0;transform:translateY(8px);transition:opacity .4s, transform .4s;pointer-events:none;
     }
     #nowTitle.show{opacity:1;transform:translateY(0);}
+
+    #liveBadge{
+      position:fixed;left:12px;bottom:108px;z-index:30;
+      padding:5px 10px;border-radius:999px;font-size:11px;font-weight:800;
+      background:#b91c1c;color:#fff;letter-spacing:.04em;
+      display:none;align-items:center;gap:6px;
+    }
+    #liveBadge.on{display:inline-flex;}
+    #liveBadge i{width:7px;height:7px;border-radius:50%;background:#fff;animation:blink 1s infinite;}
+    @keyframes blink{50%{opacity:.35}}
+    body.fs-on #liveBadge{bottom:18px;}
+
     #hint{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:25;font-size:11px;opacity:.65;pointer-events:none;}
     body.fs-on .tabs, body.fs-on #hint{display:none;}
     body.fs-on #nowTitle{bottom:18px;}
@@ -49,6 +61,7 @@
     <a class="tab {% if cur=='ministration' %}on{% endif %}" href="/member/social-watch?cat=ministration">Ministration</a>
     <a class="tab {% if cur=='others' %}on{% endif %}" href="/member/social-watch?cat=others">Others</a>
   </div>
+  <div id="liveBadge"><i></i> CHANNEL LIVE</div>
   <div id="nowTitle"></div>
   <div id="stage">
     {% if links %}
@@ -58,15 +71,22 @@
     {% endif %}
     <div id="swipeLayer" aria-hidden="true"></div>
   </div>
-  <div id="hint">Swipe or arrow keys</div>
+  <div id="hint">Swipe or arrow keys · Channel live stays on the channel</div>
 <script>
 var ITEMS = [
 {% for L in links %}
-  {url: {{ (L.embed_url or '')|tojson }}, title: {{ (L.title or 'Stream')|tojson }}}{% if not loop.last %},{% endif %}
+  {
+    url: {{ (L.embed_url or '')|tojson }},
+    title: {{ (L.title or 'Stream')|tojson }},
+    source: {{ (L.source_url or '')|tojson }},
+    channelLive: {% if L.embed_url and 'embed/live_stream' in (L.embed_url or '') and 'channel=' in (L.embed_url or '') %}true{% else %}false{% endif %}
+  }{% if not loop.last %},{% endif %}
 {% endfor %}
 ].filter(function(x){ return x && x.url && String(x.url).indexOf('undefined')<0 && x.url !== '#'; });
 var idx = 0, startY = null, startX = null, titleTimer = null, leaving = false;
 var soundOn = false;
+var liveReloadTimer = null;
+var LIVE_RELOAD_MS = 4 * 60 * 1000;
 try { soundOn = localStorage.getItem('cg_stream_sound') === '1'; } catch(e){}
 
 function flashTitle(text){
@@ -77,7 +97,11 @@ function flashTitle(text){
   clearTimeout(titleTimer);
   titleTimer = setTimeout(function(){ el.classList.remove('show'); }, 2800);
 }
-function hdUrl(url){
+function setLiveBadge(on){
+  var b = document.getElementById('liveBadge');
+  if(b) b.classList.toggle('on', !!on);
+}
+function hdUrl(url, isChannelLive){
   if(!url) return '';
   try {
     var u=new URL(url, location.origin);
@@ -86,28 +110,44 @@ function hdUrl(url){
     u.searchParams.set('playsinline','1');
     u.searchParams.set('rel','0');
     if(u.hostname.indexOf('youtube')>=0){
-      u.searchParams.set('vq','hd1080');
-      u.searchParams.set('hd','1');
-      u.searchParams.set('quality','hd1080');
       u.searchParams.set('modestbranding','1');
+      if(!isChannelLive){
+        u.searchParams.set('vq','hd1080');
+        u.searchParams.set('hd','1');
+        u.searchParams.set('quality','hd1080');
+      } else {
+        u.searchParams.set('_cg', String(Date.now()));
+      }
     }
     return u.toString();
   } catch(e){ return url; }
 }
-function play(i){
+function clearLiveReload(){
+  if(liveReloadTimer){ clearInterval(liveReloadTimer); liveReloadTimer = null; }
+}
+function scheduleLiveReload(){
+  clearLiveReload();
+  var item = ITEMS[idx];
+  if(!item || !item.channelLive) return;
+  liveReloadTimer = setInterval(function(){ play(idx, true); }, LIVE_RELOAD_MS);
+}
+function play(i, softReload){
   if(!ITEMS.length) return;
   idx = (i + ITEMS.length) % ITEMS.length;
   var fr = document.getElementById('stageFrame');
   var item = ITEMS[idx];
-  flashTitle(item.title || 'Stream');
+  var isCL = !!item.channelLive;
+  setLiveBadge(isCL);
+  flashTitle((isCL ? '🔴 ' : '') + (item.title || 'Stream'));
   if(fr && item.url){
-    fr.src = hdUrl(item.url);
+    fr.src = hdUrl(item.url, isCL);
     try {
       localStorage.setItem('cg_last_embed', item.url);
       localStorage.setItem('cg_last_stream', location.pathname + location.search);
       localStorage.setItem('cg_stream_closed','0');
     } catch(e){}
   }
+  if(!softReload) scheduleLiveReload();
 }
 function next(){ play(idx+1); }
 function prev(){ play(idx-1); }
@@ -115,6 +155,7 @@ function isFs(){ return !!(document.fullscreenElement || document.webkitFullscre
 function goDashboard(){
   if(leaving) return;
   leaving = true;
+  clearLiveReload();
   window.location.replace('/member');
 }
 function syncFsBtns(){
@@ -134,17 +175,12 @@ function enterFs(){
   play(idx);
 }
 function lockLandscape(){
-  var o = screen.orientation || screen.mozOrientation;
   var lock = screen.orientation && screen.orientation.lock;
   enterFs();
-  if(lock){
-    lock.call(screen.orientation, 'landscape').catch(function(){});
-  }
+  if(lock){ lock.call(screen.orientation, 'landscape').catch(function(){}); }
 }
 function exitFs(){
-  try {
-    if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
-  } catch(e){}
+  try { if(screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch(e){}
   var ex = document.exitFullscreen || document.webkitExitFullscreen;
   if(ex && isFs()){
     leaving = true;
@@ -207,6 +243,11 @@ window.addEventListener('keydown', function(e){
   if(['ArrowUp','PageUp','ArrowLeft'].indexOf(e.key)>=0){ e.preventDefault(); prev(); }
   if(e.key==='Escape') exitFs();
   if(e.key==='f' || e.key==='F'){ isFs()?exitFs():enterFs(); }
+});
+document.addEventListener('visibilitychange', function(){
+  if(document.visibilityState === 'visible' && ITEMS[idx] && ITEMS[idx].channelLive){
+    play(idx, true);
+  }
 });
 var last=null; try{ last=localStorage.getItem('cg_last_embed'); }catch(e){}
 var start=0;

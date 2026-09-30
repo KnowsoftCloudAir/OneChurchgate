@@ -23,7 +23,6 @@
       opacity:0;transform:translateY(8px);transition:opacity .4s, transform .4s;pointer-events:none;
     }
     #nowTitle.show{opacity:1;transform:translateY(0);}
-
     #liveBadge{
       position:fixed;left:12px;bottom:108px;z-index:30;
       padding:5px 10px;border-radius:999px;font-size:11px;font-weight:800;
@@ -33,11 +32,9 @@
     #liveBadge.on{display:inline-flex;}
     #liveBadge i{width:7px;height:7px;border-radius:50%;background:#fff;animation:blink 1s infinite;}
     @keyframes blink{50%{opacity:.35}}
-    body.fs-on #liveBadge{bottom:18px;}
-
     #hint{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);z-index:25;font-size:11px;opacity:.65;pointer-events:none;}
     body.fs-on .tabs, body.fs-on #hint{display:none;}
-    body.fs-on #nowTitle{bottom:18px;}
+    body.fs-on #nowTitle, body.fs-on #liveBadge{bottom:18px;}
   </style>
 </head>
 <body>
@@ -73,20 +70,23 @@
   </div>
   <div id="hint">Swipe or arrow keys · Channel live stays on the channel</div>
 <script>
+/* Items: url = embed, title, channelLive = true if persistent channel live_stream embed */
 var ITEMS = [
 {% for L in links %}
   {
     url: {{ (L.embed_url or '')|tojson }},
     title: {{ (L.title or 'Stream')|tojson }},
     source: {{ (L.source_url or '')|tojson }},
-    channelLive: {% if L.embed_url and 'embed/live_stream' in (L.embed_url or '') and 'channel=' in (L.embed_url or '') %}true{% else %}false{% endif %}
+    channelLive: {{ ('true' if (L.embed_url and 'embed/live_stream' in (L.embed_url or '') and 'channel=' in (L.embed_url or '')) else 'false') }}
   }{% if not loop.last %},{% endif %}
 {% endfor %}
 ].filter(function(x){ return x && x.url && String(x.url).indexOf('undefined')<0 && x.url !== '#'; });
+
 var idx = 0, startY = null, startX = null, titleTimer = null, leaving = false;
 var soundOn = false;
 var liveReloadTimer = null;
-var LIVE_RELOAD_MS = 4 * 60 * 1000;
+var LIVE_RELOAD_MS = 4 * 60 * 1000; /* re-dock channel live every 4 min so a new broadcast can attach */
+
 try { soundOn = localStorage.getItem('cg_stream_sound') === '1'; } catch(e){}
 
 function flashTitle(text){
@@ -104,20 +104,22 @@ function setLiveBadge(on){
 function hdUrl(url, isChannelLive){
   if(!url) return '';
   try {
-    var u=new URL(url, location.origin);
+    var u = new URL(url, location.origin);
     u.searchParams.set('autoplay','1');
-    u.searchParams.set('mute', soundOn?'0':'1');
+    u.searchParams.set('mute', soundOn ? '0' : '1');
     u.searchParams.set('playsinline','1');
     u.searchParams.set('rel','0');
     if(u.hostname.indexOf('youtube')>=0){
       u.searchParams.set('modestbranding','1');
+      /* channel live_stream: do NOT force a video id — channel= is the persistent dock */
       if(!isChannelLive){
         u.searchParams.set('vq','hd1080');
         u.searchParams.set('hd','1');
-        u.searchParams.set('quality','hd1080');
-      } else {
-        u.searchParams.set('_cg', String(Date.now()));
       }
+    }
+    /* cache-bust channel live reloads so player re-resolves current broadcast */
+    if(isChannelLive){
+      u.searchParams.set('_cg', String(Date.now()));
     }
     return u.toString();
   } catch(e){ return url; }
@@ -129,7 +131,10 @@ function scheduleLiveReload(){
   clearLiveReload();
   var item = ITEMS[idx];
   if(!item || !item.channelLive) return;
-  liveReloadTimer = setInterval(function(){ play(idx, true); }, LIVE_RELOAD_MS);
+  liveReloadTimer = setInterval(function(){
+    /* soft reload: same channel embed, new cache buster — picks up next live if prior ended */
+    play(idx, true);
+  }, LIVE_RELOAD_MS);
 }
 function play(i, softReload){
   if(!ITEMS.length) return;
@@ -244,15 +249,18 @@ window.addEventListener('keydown', function(e){
   if(e.key==='Escape') exitFs();
   if(e.key==='f' || e.key==='F'){ isFs()?exitFs():enterFs(); }
 });
+/* Re-resolve channel live when tab becomes visible again */
 document.addEventListener('visibilitychange', function(){
   if(document.visibilityState === 'visible' && ITEMS[idx] && ITEMS[idx].channelLive){
     play(idx, true);
   }
 });
+
 var last=null; try{ last=localStorage.getItem('cg_last_embed'); }catch(e){}
 var start=0;
 if(last){ for(var i=0;i<ITEMS.length;i++){ if(ITEMS[i].url===last){ start=i; break; } } }
 play(start);
 syncFsBtns();
 </script>
-</body></html>
+</body>
+</html>
