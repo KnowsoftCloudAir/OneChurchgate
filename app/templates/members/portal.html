@@ -1301,31 +1301,40 @@ function memberHub() {
           if (!this.angel.enabled || this.angel.busy) return;
           try {
             let said = '';
+            let conf = 0;
             for (let i = ev.resultIndex; i < ev.results.length; i++) {
-              if (ev.results[i].isFinal) said += ev.results[i][0].transcript + ' ';
+              if (ev.results[i].isFinal) {
+                said += ev.results[i][0].transcript + ' ';
+                conf = Math.max(conf, ev.results[i][0].confidence || 0);
+              }
             }
             said = (said || '').trim();
-            if (said) this.handleAngelCommand(said);
+            if (!said) {
+              this.angelSpeak('Did not get that, can you repeat?');
+              this.angel.status = 'Did not catch that — please repeat.';
+              return;
+            }
+            // faint / low confidence speech
+            if (conf > 0 && conf < 0.35 && said.split(/\s+/).length <= 2) {
+              this.angelSpeak('Did not get that, can you repeat?');
+              this.angel.status = 'Voice was unclear — please repeat.';
+              return;
+            }
+            this.handleAngelCommand(said);
           } catch (e) {
-      const low = (said || '').toLowerCase();
-      if (low.includes('daily manna') || low.includes('read manna') || (low.includes('manna') && low.includes('read'))) {
-        this.angelReadManna();
-        return true;
-      }
-      if (low.includes('continuous music') || low.includes('shuffle music') || low.includes('keep playing music') || (low.includes('play music') && low.includes('continuous'))) {
-        this.angelStartContinuousMusic();
-        return true;
-      }
-      if ((low.includes('play music') || low.includes('play song') || low.includes('worship music')) && !low.includes('stop')) {
-        this.angelStartContinuousMusic();
-        return true;
-      }
- console.warn(e); }
+            console.warn(e);
+            this.angelSpeak('Did not get that, can you repeat?');
+          }
         };
         rec.onerror = (e) => {
           if (e.error === 'not-allowed') {
             this.angel.listening = false;
             this.angel.status = 'Allow the microphone, then turn Angel on again.';
+          } else if (e.error === 'no-speech' || e.error === 'audio-capture') {
+            if (this.angel.enabled && !this.angel.busy) {
+              this.angelSpeak('Did not get that, can you repeat?');
+              this.angel.status = 'Did not get that — please repeat.';
+            }
           }
         };
         rec.onend = () => {
@@ -1384,8 +1393,8 @@ function memberHub() {
       if (this.angel.enabled) {
         if (!this.angel.recognition) this.initAngel();
         this.angel.busy = false;
-        this.angel.status = 'Angel is on — silent and listening. Speak or type a question.';
-        // stay quiet until user asks
+        this.angel.status = 'Angel is up and ready.';
+        this.angelSpeak('Angel is up and ready');
         try {
           fetch('/member/api/log', {
             method: 'POST',
@@ -1763,20 +1772,21 @@ function memberHub() {
         return;
       }
       if (!this.angel.enabled) {
-        if (/^angel\b/.test(t) || /\bhey angel\b/.test(t) || t === 'angel') {
+        if (/^angel\b/.test(t) || /\bhey angel\b/.test(t) || /\bhi angel\b/.test(t) || t === 'angel') {
           this.angel.enabled = true;
           if (!this.angel.recognition) this.initAngel();
           this.angel.busy = false;
-          this.angel.status = 'Angel is on — silent and listening.';
-          // quiet until asked
+          this.angel.status = 'Angel is up and ready.';
+          this.angelSpeak('Angel is up and ready');
           this.angelVisibilityHook();
           this._angelResumeListen();
           this._startAngelProbe();
         }
         return;
       }
-      if (/^angel\b$/.test(t) || t === 'angel') {
-        this.angel.status = 'Listening…';
+      if (/^angel\b$/.test(t) || t === 'angel' || /^(hey|hi)\s+angel$/.test(t)) {
+        this.angel.status = 'Angel is up and ready.';
+        this.angelSpeak('Angel is up and ready');
         return;
       }
 

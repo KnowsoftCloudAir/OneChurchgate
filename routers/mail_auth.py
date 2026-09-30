@@ -294,6 +294,7 @@ async def admin_mail_post(
 CONFIRM_HOURS = 48
 
 
+
 @router.get("/confirm-registration", response_class=HTMLResponse)
 async def confirm_registration(
     request: Request,
@@ -301,86 +302,119 @@ async def confirm_registration(
     token: str = "",
     session: Session = Depends(get_session),
 ):
-    """User clicks link in registration email → confirm email; auto-approve Knowsoft / non-affiliate."""
-    from app.models import ChurchMember, ChurchUnit, ChurchLevel
+    """User clicks link in registration email → friendly page (never raw 400)."""
+    from app.models import ChurchMember, ChurchUnit
+    from urllib.parse import unquote
 
-    email = (email or "").strip().lower()
-    token = (token or "").strip()
-    if not email or not token:
-        return _page(
-            request,
-            "auth/confirm_registration.html",
-            ok=False,
-            message="Invalid confirmation link.",
-            login=False,
+    def show(ok: bool, message: str, login: bool = False, auto_approved: bool = False):
+        try:
+            return _page(
+                request,
+                "auth/confirm_registration.html",
+                ok=ok,
+                message=message,
+                login=login,
+                auto_approved=auto_approved,
+            )
+        except Exception:
+            # Absolute fallback if template missing
+            color = "#0d9488" if ok else "#b45309"
+            title = "Registration confirmed" if ok else "Confirmation link"
+            body = f"""<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+            <title>{title}</title></head><body style="font-family:system-ui;background:#f8fafc;padding:2rem;text-align:center">
+            <div style="max-width:28rem;margin:auto;background:#fff;border-radius:1rem;padding:2rem;border:1px solid #e2e8f0">
+            <h1 style="color:{color}">{title}</h1>
+            <p style="color:#334155;line-height:1.5">{message}</p>
+            {"<p><a href='/auth/login' style='display:inline-block;margin-top:1rem;background:#0d9488;color:#fff;padding:0.75rem 1.25rem;border-radius:0.75rem;text-decoration:none;font-weight:700'>Sign in</a></p>" if login else ""}
+            <p style="margin-top:1.5rem;font-size:0.875rem"><a href="mailto:info@knowsoft.org.uk">info@knowsoft.org.uk</a></p>
+            </div></body></html>"""
+            return HTMLResponse(body)
+
+    try:
+        email = unquote((email or "").strip()).lower()
+        token = unquote((token or "").strip())
+        if not email or not token:
+            return show(False, "This confirmation link is incomplete. Please use the full link from your email, or register again.")
+
+        row = session.exec(
+            select(EmailChallenge)
+            .where(
+                EmailChallenge.email == email,
+                EmailChallenge.purpose == "register_confirm",
+                EmailChallenge.used == False,  # noqa: E712
+            )
+            .order_by(EmailChallenge.id.desc())
+        ).first()
+
+        # Also accept already-used token once (friendly message, not error)
+        if not row:
+            used = session.exec(
+                select(EmailChallenge)
+                .where(
+                    EmailChallenge.email == email,
+                    EmailChallenge.purpose == "register_confirm",
+                    EmailChallenge.used == True,  # noqa: E712
+                )
+                .order_by(EmailChallenge.id.desc())
+            ).first()
+            if used and used.code_hash == _hash(token):
+                user = session.exec(select(User).where(User.email == email)).first()
+                member = None
+                if user and user.member_id:
+                    member = session.get(ChurchMember, user.member_id)
+                if not member:
+                    member = session.exec(select(ChurchMember).where(ChurchMember.email == email)).first()
+                auto = bool(member and (member.approval_status or "") == "approved")
+                if auto:
+                    return show(True, "Your registration is already confirmed and approved. You can sign in with your password.", True, True)
+                return show(True, "Your email is already confirmed. You are awaiting church admin approval before full access.", True, False)
+
+        if not row or row.expires_at < datetime.utcnow() or row.code_hash != _hash(token):
+            return show(False, "This confirmation link is invalid or has expired. Please register again or contact Knowsoft at info@knowsoft.org.uk.")
+
+        row.used = True
+        session.add(row)
+
+        user = session.exec(select(User).where(User.email == email)).first()
+        member = None
+        if user and user.member_id:
+            member = session.get(ChurchMember, user.member_id)
+        if not member:
+            member = session.exec(select(ChurchMember).where(ChurchMember.email == email)).first()
+
+        auto_approved = False
+        if member:
+            g = session.get(ChurchUnit, member.global_church_id) if member.global_church_id else None
+            gname = (g.name or "").lower() if g else ""
+            conf = (member.confession or "").lower()
+            if conf in ("non_affiliate", "non-affiliate") or "knowsoft" in gname:
+                member.approval_status = "approved"
+                auto_approved = True
+            session.add(member)
+
+        if user:
+            user.is_active = True
+            session.add(user)
+        session.commit()
+
+        if auto_approved:
+            return show(
+                True,
+                "Your email is confirmed and your registration is approved. You can sign in with the password you created.",
+                True,
+                True,
+            )
+        return show(
+            True,
+            "Confirmed, but awaiting church admin approval. You may sign in with limited access until your church admin approves full membership.",
+            True,
+            False,
         )
+    except Exception as e:
+        print("confirm-registration error:", e)
+        return show(False, "We could not process this link right now. Please try again or contact info@knowsoft.org.uk.")
 
-    row = session.exec(
-        select(EmailChallenge)
-        .where(
-            EmailChallenge.email == email,
-            EmailChallenge.purpose == "register_confirm",
-            EmailChallenge.used == False,  # noqa: E712
-        )
-        .order_by(EmailChallenge.id.desc())
-    ).first()
-    if not row or row.expires_at < datetime.utcnow() or row.code_hash != _hash(token):
-        return _page(
-            request,
-            "auth/confirm_registration.html",
-            ok=False,
-            message="This confirmation link is invalid or has expired. Please register again or contact Knowsoft.",
-            login=False,
-        )
 
-    row.used = True
-    session.add(row)
-
-    user = session.exec(select(User).where(User.email == email)).first()
-    member = None
-    if user and user.member_id:
-        member = session.get(ChurchMember, user.member_id)
-    if not member:
-        member = session.exec(select(ChurchMember).where(ChurchMember.email == email)).first()
-
-    auto_approved = False
-    if member:
-        # Knowsoft global or non-affiliate confession → auto approve after email confirm
-        g = session.get(ChurchUnit, member.global_church_id) if member.global_church_id else None
-        gname = (g.name or "").lower() if g else ""
-        conf = (member.confession or "").lower()
-        if conf == "non_affiliate" or "knowsoft" in gname:
-            member.approval_status = "approved"
-            auto_approved = True
-        else:
-            # Email confirmed; church admin must still approve
-            if (member.approval_status or "") == "pending":
-                pass  # stays pending for church
-        session.add(member)
-
-    if user:
-        user.is_active = True
-        session.add(user)
-    session.commit()
-
-    if auto_approved:
-        msg = (
-            "Your email is confirmed and your registration is approved. "
-            "You can sign in with the password you created."
-        )
-    else:
-        msg = (
-            "Your email is confirmed. Your church admin must still approve your membership "
-            "before full access. You may sign in with limited access until then."
-        )
-    return _page(
-        request,
-        "auth/confirm_registration.html",
-        ok=True,
-        message=msg,
-        login=True,
-        auto_approved=auto_approved,
-    )
 
 
 def send_registration_confirm_email(session: Session, email: str, full_name: str, user_id: int | None = None) -> bool:
@@ -396,7 +430,8 @@ def send_registration_confirm_email(session: Session, email: str, full_name: str
     )
     session.add(row)
     session.commit()
-    link = f"{public_base()}/auth/confirm-registration?email={email.strip()}&token={token}"
+    from urllib.parse import quote as _q
+    link = f"{public_base()}/auth/confirm-registration?email={_q(email.strip())}&token={_q(token)}"
     text = (
         f"Hello {full_name},\n\n"
         "You are receiving this email because you have sent a registration request with Knowsoft Churchgate.\n\n"
