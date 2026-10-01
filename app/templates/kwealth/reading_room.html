@@ -3820,30 +3820,25 @@
 /* Library is clean when no book is selected. */
 body:not(.reader-mode) #app>.bar .chip,body:not(.reader-mode) #app>.bar select{display:none!important}
 body:not(.reader-mode) #panelTools,body:not(.reader-mode) #panelMusic,body:not(.reader-mode) #stage,body:not(.reader-mode) #fsControls,body:not(.reader-mode) #sceneFs,body:not(.reader-mode) #sceneFsExit{display:none!important}
-/* The library and reading room are separate views. The reader opens from a distinct URL state. */
-body.reader-mode #bookLib{display:none!important}
-body.reader-mode .library-only{display:none!important}
-.lib-cover-text{width:100%;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;overflow:hidden}
-.lib-book .book-title{display:block;width:100%;max-width:104px;max-height:3.55em;overflow:hidden;white-space:normal;overflow-wrap:anywhere;word-break:break-word;hyphens:auto;font-family:Georgia,serif;font-size:13px;line-height:1.18;font-weight:800;text-wrap:balance}
-.lib-book .book-author{display:block;width:100%;max-width:104px;max-height:2.45em;overflow:hidden;white-space:normal;overflow-wrap:anywhere;word-break:break-word;hyphens:auto;font-family:Georgia,serif;font-size:10px;line-height:1.15;font-weight:700;opacity:.82;text-wrap:balance}
-.reader-heading{max-width:56rem;margin:0 auto;padding:12px 12px 0}
-.reader-heading h1{margin:0;color:#f8fafc;font-family:Georgia,serif;font-size:clamp(20px,3vw,30px);line-height:1.15;overflow-wrap:anywhere}
-.reader-heading .reader-author{margin:5px 0 0;color:#94a3b8;font-size:12px}
-
 @media(max-width:650px){.lib-upload-card{flex-direction:column;align-items:stretch}.lib-wall{grid-template-columns:repeat(2,minmax(0,1fr));padding:24px 12px}.lib-book{width:110px;height:155px}}
+
+/* === Dedicated Reading Room settings launcher === */
+.reader-settings-launch{max-width:56rem;margin:8px auto 0;padding:0 12px;display:flex;justify-content:flex-end;position:sticky;top:52px;z-index:55}
+.reading-settings-btn{border:1px solid rgba(45,212,191,.55);background:rgba(15,23,42,.96);color:#f8fafc;border-radius:12px;padding:10px 15px;font-weight:800;font-size:13px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.28)}
+.reading-settings-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
+#panelTools[data-open="0"]{display:none!important}
+#panelTools[data-open="1"]{display:block!important}
+</style>
+
+<style id="dedicated-reading-room">
+  /* Dedicated Reading Room: only the reader surface and controls are shown. */
+  #bookLib{display:none!important}
+  #filePick,#btnLoad,#btnLoadLib,#bookSelect{display:none!important}
+  .reader-room-title{max-width:56rem;margin:8px auto 0;padding:0 12px;color:#f8fafc;font-weight:800;font-size:15px}
 </style>
 </head>
 <body class="theme-parchment reader-mode" id="bookBody">
-  <div style="max-width:72rem;margin:0 auto;padding:12px 14px 0;">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-      <div style="color:#f8fafc;font-family:Georgia,serif;font-size:15px;font-weight:800;">📖 Reading Room</div>
-      <div class="reader-nav" style="margin:0;">
-        <a href="/member/kwealth/books" class="reader-back">← Back to Book Library</a>
-        <a href="/member/kwealth" class="reader-back secondary">← Kwealth</a>
-      </div>
-    </div>
-  </div>
-<button type="button" id="readMenuFab" onclick="document.querySelector('.bar')&&document.querySelector('.bar').scrollIntoView({behavior:'smooth',block:'start'});var t=document.getElementById('toolsPanel');if(t){t.style.display='block';}window.scrollTo({top:0,behavior:'smooth'});">☰ Menu</button>
+<button type="button" id="readMenuFab" onclick="document.querySelector('.bar')&&document.querySelector('.bar').scrollIntoView({behavior:'smooth',block:'start'});var t=document.getElementById('panelTools');if(t){t.style.display='block';}window.scrollTo({top:0,behavior:'smooth'});">☰ Menu</button>
   <div id="fsControls">
   <select id="fsScenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
           <option value="sun">Sunrise → Sunset</option>
@@ -3869,10 +3864,13 @@ body.reader-mode .library-only{display:none!important}
     <div class="bar sticky top-0 z-30">
       <div style="max-width:56rem;margin:0 auto;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
         <a href="/member/kwealth" class="nav-back">← Kwealth</a><a href="/member/kwealth/books" class="nav-back">📚 Library</a>
-        <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" style="height:28px;width:auto" onerror="this.src='/static/img/knowsoft-icon.svg'"> <strong style="color:#f1f5f9;font-size:14px;">{% if book %}Reading Room{% else %}Book Library{% endif %}</strong>
-                                <button type="button" class="chip" id="btnRead">👼 Read</button>
+        <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" style="height:28px;width:auto" onerror="this.src='/static/img/knowsoft-icon.svg'"> <strong style="color:#f1f5f9;font-size:14px;">Books</strong>
+        <input type="file" id="filePick" hidden accept=".pdf,.txt,.text,.md,.doc,.docx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple>
+        <button type="button" class="chip" id="btnLoad">Load</button>
+        <button type="button" class="chip" id="btnDelBook" title="Delete selected book you uploaded">Delete book</button>
+        <button type="button" class="chip" id="btnRead">👼 Read</button>
         <button type="button" class="chip" id="btnArrange">Arrange</button>
-        <button type="button" class="chip" id="btnTools" aria-controls="panelTools" aria-expanded="false">⚙ Reading Settings</button>
+        <button type="button" class="chip on" id="btnTools">⚙ Settings</button>
         <button type="button" class="chip" id="btnMusic"><span id="bgmDot" class="off"></span> Music</button>
         <button type="button" class="chip" id="btnScene" title="Reading ambience animation">Scene</button>
         <select id="sceneMix" class="ctl" style="max-width:8rem;font-size:11px" title="Scene mode"><option value="one">One 3D</option><option value="mix">Mix all</option></select>
@@ -3908,9 +3906,43 @@ body.reader-mode .library-only{display:none!important}
       </div>
 
       
-    
+    <section id="bookLib">
+      <h2>📚 Book Library</h2>
+      <p class="lib-subtitle">A clean 3D library wall. Click any book to open the reading room and all reading settings.</p>
+      <div class="lib-upload-card">
+        <div><strong>Personal Books</strong><div class="lib-upload-help">Upload up to <b>3 books</b>. PDF, TXT and DOCX are supported. For faster upload and smoother reading, remove pictures/images before uploading. <b>Maximum 4 MB per book.</b></div></div>
+        <button type="button" class="chip on" id="btnLoadLib" onclick="document.getElementById('filePick').click()">＋ Upload Personal Book</button>
+      </div>
+      <h3 class="lib-section-title knowsoft-title">Knowsoft Books</h3>
+      <div class="lib-wall" id="libKnowsoft">
+        {% for b in admin_books %}
+        {% set colors = ['#bae6fd','#bbf7d0','#fecdd3','#ddd6fe','#fed7aa'] %}
+        <a class="lib-book" style="background:{{ colors[loop.index0 % 5] }}" href="/member/kwealth/books/reading-room?book_id={{ b.id }}">
+          <span></span>
+          <b>{{ b.title }}</b>
+          <small class="lib-page">Page 1</small>
+        </a>
+        {% endfor %}
+      </div>
+      <h3 class="lib-section-title personal-title">Personal Books</h3>
+      <div class="lib-wall" id="libPersonal">
+        {% for b in my_books %}
+        {% set colors = ['#fbcfe8','#c4b5fd','#a5f3fc','#fde68a'] %}
+        <a class="lib-book" style="background:{{ colors[loop.index0 % 4] }}" href="/member/kwealth/books/reading-room?book_id={{ b.id }}">
+          <span></span>
+          <b>{{ b.title }}</b>
+          <small class="lib-page">Page 1</small>
+        </a>
+        {% else %}
+        <p style="color:#94a3b8;font-size:12px">No personal books yet. Upload one.</p>
+        {% endfor %}
+      </div>
+    </section>
 
-      {% if book %}<div class="reader-heading"><h1>{{ book.title }}</h1><p class="reader-author">{{ book.author or book.writer or '' }}</p></div><div id="panelTools" style="max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
+      {% if book %}<div class="reader-settings-launch">
+        <button type="button" id="readingSettingsBtn" class="reading-settings-btn" aria-controls="panelTools" aria-expanded="false" onclick="(function(){var p=document.getElementById('panelTools');var b=document.getElementById('readingSettingsBtn');if(!p)return;var open=p.dataset.open==='1';p.style.display=open?'none':'block';p.dataset.open=open?'0':'1';if(b){b.setAttribute('aria-expanded',open?'false':'true');b.textContent=open?'⚙ Reading Settings':'✕ Close Reading Settings';}})()">⚙ Reading Settings</button>
+      </div>
+      {% if book %}<div id="panelTools" data-open="0" style="display:none;max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
         <div class="reader-nav"><a href="/member/kwealth/books" class="reader-back">← Back to Book Library</a><a href="/member/kwealth" class="reader-back secondary">← Kwealth</a></div><p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Book settings (theme · font · flip · jump)</p>
         <div class="grid-tools">
           <div>
@@ -4858,22 +4890,17 @@ id="fsBookMeta" aria-hidden="true">
     on('btnTools', 'onclick', () => {
       const p = $('panelTools');
       if (!p) return;
-      if (p.dataset.open === '1') {
-        p.style.display = 'none';
-        p.dataset.open = '0';
-        this.classList.remove('on');
-        this.setAttribute('aria-expanded', 'false');
-      } else {
-        p.style.display = 'block';
-        p.dataset.open = '1';
-        this.classList.add('on');
-        this.setAttribute('aria-expanded', 'true');
+      const isOpen = p.dataset.open === '1';
+      p.style.display = isOpen ? 'none' : 'block';
+      p.dataset.open = isOpen ? '0' : '1';
+      const btn = $('btnTools');
+      if (btn) {
+        btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+        btn.classList.toggle('on', !isOpen);
       }
     });
-    $('panelTools').style.display = 'none';
-    $('panelTools').dataset.open = '0';
-    var toolsBtn = $('btnTools');
-    if (toolsBtn) { toolsBtn.classList.remove('on'); toolsBtn.setAttribute('aria-expanded', 'false'); }
+    var _panelTools = $('panelTools');
+    if (_panelTools) { _panelTools.style.display = 'none'; _panelTools.dataset.open = '0'; }
     
     document.addEventListener('keydown', function(ev){
       var tag = (ev.target && ev.target.tagName || '').toLowerCase();
@@ -5669,7 +5696,7 @@ id="fsBookMeta" aria-hidden="true">
   var lib=document.getElementById("bookLib");
   if(lib && /book_id=/.test(location.search)) lib.style.display="none";
   var tools=document.getElementById("panelTools");
-  if(tools && !/book_id=/.test(location.search)) tools.style.display="none";
+  if(tools && !/book_id=/.test(location.search)) { tools.style.display="none"; tools.dataset.open="0"; }
   var stop=document.getElementById("fsStop");
   if(stop) stop.onclick=function(){ var b=document.getElementById("btnRead"); if(b) b.click(); };
   var all=document.getElementById("fsAll");
