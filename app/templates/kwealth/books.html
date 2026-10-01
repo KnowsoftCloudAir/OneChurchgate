@@ -4010,9 +4010,7 @@ There were two possessions of which they were proud. One was Jim's gold watch. T
       {% if request.query_params.get('bgm') %}
       <p style="text-align:center;color:#6ee7b7;font-size:13px;">Background music library updated.</p>
       {% endif %}
-      {% endif %}
 
-      {% if book %}
       <div class="stage" id="stage">
         <div id="sceneStage" class="sc-sun" aria-hidden="true">
           <div class="sc-layer sc-clock-bits" style="display:none">
@@ -5634,17 +5632,22 @@ id="fsBookMeta" aria-hidden="true">
     el.textContent="Page "+(n||1);
   });
   var magi=document.getElementById("sampleMagi");
-  if(magi) magi.addEventListener("click", function(ev){
+  function openMagi(ev){ if(ev) ev.preventDefault();
+
     ev.preventDefault();
     var lib=document.getElementById("bookLib");
     if(lib) lib.style.display="none";
     var tools=document.getElementById("panelTools");
     if(tools) tools.style.display="block";
+    var stage=document.getElementById("stage");
+    if(stage) stage.style.display="block";
     var text=(document.getElementById("magiText")||{}).textContent||"";
     var pages=[]; var chunk=700;
     for(var i=0;i<text.length;i+=chunk) pages.push(text.slice(i,i+chunk));
     try{ state.pages=pages; state.pageIndex=0; state.title="The Gift of the Magi"; if(typeof renderPage==="function") renderPage(); var st=document.getElementById("sheetText"); if(st) st.textContent=pages[0]||text; }catch(e){}
-    var ft=document.getElementById("fsBookTitle"); if(ft) ft.textContent="The Gift of the Magi";
+    var ft=document.getElementById("fsBookTitle"); if(ft) ft.textContent="The Gift of the Magi"; }
+  if(magi) magi.addEventListener("click", openMagi);
+  if(/sample=1/.test(location.search)) openMagi();
   });
 
   function tick(){
