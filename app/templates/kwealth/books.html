@@ -3765,6 +3765,36 @@
   visibility: visible !important;
   opacity: 1 !important;
 }
+
+    #panelTools, .bar { position: sticky; top: 0; z-index: 40; }
+    body.reading-on { overflow-y: auto !important; }
+    #bookLib { padding: 18px 16px 40px; }
+    #bookLib h2 { color:#f8fafc; font-size:1.4rem; margin:0 0 8px; }
+    .lib-wall { display:grid; grid-template-columns: repeat(auto-fill, minmax(118px,1fr)); gap:22px 16px; padding:18px; background:linear-gradient(180deg,#44403c,#292524); border-radius:16px; box-shadow:inset 0 0 40px rgba(0,0,0,.35); }
+    .lib-book { display:flex; align-items:center; justify-content:center; text-align:center; text-decoration:none; color:#1c1917; width:108px; height:148px; margin:0 auto; border-radius:3px 8px 8px 3px; padding:14px 10px 14px 16px; position:relative; box-shadow:6px 8px 0 rgba(0,0,0,.28), 10px 14px 18px rgba(0,0,0,.35); transform:rotate(-1deg); }
+    .lib-book:nth-child(even){ transform:rotate(1.5deg); }
+    .lib-book b { display:block; font-family:Georgia,serif; font-size:13px; line-height:1.25; font-weight:800; } .lib-page{display:block;margin-top:8px;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#44403c}
+    .lib-book span { position:absolute; left:0; top:0; bottom:0; width:8px; background:rgba(0,0,0,.28); border-radius:3px 0 0 3px; }
+    #fsDock { display:none; position:fixed; left:0; right:0; bottom:0; z-index:10020; gap:8px; justify-content:center; flex-wrap:wrap; padding:10px; background:rgba(2,6,23,.88); }
+    body.scene-fs-on #fsDock, #stage.scene-fs #fsDock { display:flex; }
+    .kw-clock { position:absolute; left:50%; top:46%; width:min(70vmin,420px); height:min(70vmin,420px); margin:-35vmin 0 0 -35vmin; border-radius:50%; background:radial-gradient(circle at 35% 30%, #f8fafc, #cbd5e1 40%, #64748b 78%); box-shadow:0 20px 50px rgba(0,0,0,.45), inset 0 0 0 10px #0f172a, inset 0 0 0 14px #e2e8f0; }
+    .kw-clock-logo { position:absolute; left:50%; top:42%; width:28%; transform:translate(-50%,-50%); }
+    .kw-hand { position:absolute; left:50%; bottom:50%; transform-origin:50% 100%; background:#0f172a; border-radius:4px; }
+    .kw-hour { width:8px; height:22%; margin-left:-4px; }
+    .kw-min { width:5px; height:32%; margin-left:-2px; background:#1e293b; }
+    .kw-sec { width:2px; height:38%; margin-left:-1px; background:#b91c1c; }
+    .kw-cap { position:absolute; left:50%; top:50%; width:14px; height:14px; margin:-7px 0 0 -7px; border-radius:50%; background:#0f172a; }
+    #sceneStage.sc-giants { background:#020617; }
+    .kw-void { position:absolute; inset:0; background:radial-gradient(circle at 70% 40%, #1e1b4b, #020617 60%); }
+    .kw-star { position:absolute; top:42%; border-radius:50%; animation: starPass 18s linear infinite; }
+    .kw-star:after { content:attr(data-name); position:absolute; left:50%; top:105%; transform:translateX(-50%); color:#fff; font-size:12px; font-weight:800; }
+    .s1 { width:18vmin; height:18vmin; background:radial-gradient(circle,#fff7ed,#fbbf24 40%,#f97316); animation-delay:0s; }
+    .s2 { width:24vmin; height:24vmin; background:radial-gradient(circle,#eff6ff,#93c5fd 40%,#2563eb); animation-delay:3.6s; }
+    .s3 { width:32vmin; height:32vmin; background:radial-gradient(circle,#fff7ed,#fb923c 40%,#c2410c); animation-delay:7.2s; }
+    .s4 { width:42vmin; height:42vmin; background:radial-gradient(circle,#fee2e2,#ef4444 40%,#7f1d1d); animation-delay:10.8s; }
+    .s5 { width:56vmin; height:56vmin; background:radial-gradient(circle,#fef9c3,#f59e0b 35%,#9a3412); animation-delay:14.4s; }
+    @keyframes starPass { 0%{left:-30%; opacity:0} 15%{opacity:1} 50%{left:42%} 100%{left:120%; opacity:.2} }
+
 </style>
   <script src="/static/js/bg-animations.js"></script>
 </head>
@@ -3804,8 +3834,10 @@
         <button type="button" class="chip on" id="btnTools">⚙ Settings</button>
         <button type="button" class="chip" id="btnMusic"><span id="bgmDot" class="off"></span> Music</button>
         <button type="button" class="chip" id="btnScene" title="Reading ambience animation">Scene</button>
-        <select id="scenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
-          <option value="sun">Sunrise → Sunset</option>
+        <select id="scenePick" class="ctl" style="max-width:14rem;font-size:11px;" title="Ambience">
+          <option value="clock">Knowsoft wall clock</option>
+          <option value="giants">Five giant stars</option>
+          <option value="sun">Sunrise to sunset</option>
           <option value="orbit">Earth around the Sun</option>
           <option value="voyage">Earth revelation</option>
           <option value="planets">Planets around the Sun</option>
@@ -3816,9 +3848,9 @@
           <option value="neptune">Neptune close pass-by</option>
           <option value="earth">Earth close pass-by</option>
           <option value="desert">Trees growing from the desert</option>
-          <option value="matrix">Matrix AI (matter chains)</option>
-          <option value="glasses">Eyeglasses — man reading</option>
-                  </select>
+          <option value="matrix">Matrix AI</option>
+          <option value="star_bypass">Giant star flyby</option>
+        </select>
         <button type="button" class="chip" id="btnSceneFs" title="Full screen book (captions while reading)">Full screen</button>
         <select id="wordStyle" class="ctl" style="max-width:8rem;font-size:11px;" title="Word style">
           <option value="fill">Fill colour</option>
@@ -3826,14 +3858,39 @@
           <option value="glow">Glow</option>
           <option value="underline">Underline</option>
         </select>
-        <select id="bookSelect" class="ctl" style="max-width:45%;margin-left:auto;width:auto;">
+        <select id="bookSelect" class="ctl" style="display:none;max-width:45%;margin-left:auto;width:auto;">
           {% for b in books %}
           <option value="{{ b.id }}" {% if book and b.id==book.id %}selected{% endif %}>{{ b.title }}</option>
           {% endfor %}
         </select>
       </div>
 
-      <div id="panelTools" style="max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
+      
+    <section id="bookLib">
+      <h2>Book Lib</h2>
+      <p style="color:#94a3b8;font-size:13px;margin:0 0 12px">Tap a cover to open the reading page. Music and settings stay. The book picker is hidden once a book is open.</p>
+      <button type="button" class="chip" id="btnLoadLib" onclick="var b=document.getElementById('btnLoad'); if(b) b.click();">Upload books</button>
+      <h3 style="color:#fde68a;margin:16px 0 8px">Knowsoft uploaded</h3>
+      <div class="lib-wall" id="libKnowsoft">
+        <a class="lib-book" id="sampleMagi" style="background:#fde68a" href="#" data-sample="magi">
+          <span></span>
+          <b>The Gift of the Magi</b>
+          <small class="lib-page">Page 1</small>
+        </a>
+        {% for b in books %}
+        {% set colors = ['#bae6fd','#bbf7d0','#fecdd3','#ddd6fe','#fed7aa'] %}
+        <a class="lib-book" style="background:{{ colors[loop.index0 % 5] }}" href="/member/kwealth/books?book_id={{ b.id }}">
+          <span></span>
+          <b>{{ b.title }}</b>
+          <small class="lib-page" data-book-page="{{ b.id }}">Page 1</small>
+        </a>
+        {% endfor %}
+      </div>
+      <h3 style="color:#93c5fd;margin:16px 0 8px">Personal</h3>
+      <div class="lib-wall" id="libPersonal"></div>
+    </section>
+
+      {% if book %}<div id="panelTools" style="max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
         <p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Book settings (theme · font · flip · jump)</p>
         <div class="grid-tools">
           <div>
@@ -3908,10 +3965,10 @@
       </div>
 
       <div id="panelMusic" style="display:none;max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
-        <p style="color:#6ee7b7;font-size:12px;font-weight:700;margin:0 0 6px;">Your background music library (max 10)</p>
+        <p style="color:#6ee7b7;font-size:12px;font-weight:700;margin:0 0 6px;">Background music — Memories track is always on. Admin may add up to 9 more.</p>
         <p style="color:#64748b;font-size:11px;margin:0 0 8px;">Upload calm tracks from your device. They stay in your list for reading sessions.</p>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-          <button type="button" class="chip on" id="btnLoadBgm">+ Upload / sync from device</button>
+          <button type="button" class="chip on" id="btnLoadBgm" style="display:none">+ Upload / sync from device</button>
           <input type="file" id="bgmFile" hidden accept="audio/*,.mp3,.m4a,.ogg,.wav,.aac" multiple>
           <button type="button" class="chip" id="btnBgmStop">Stop music</button>
           <label class="lbl" style="display:flex;align-items:center;gap:8px;margin:0;">Volume
@@ -3936,6 +3993,24 @@
       {% if book %}
       <div class="stage" id="stage">
         <div id="sceneStage" class="sc-sun" aria-hidden="true">
+          <div class="sc-layer sc-clock-bits" style="display:none">
+            <div class="kw-clock">
+              <img class="kw-clock-logo" src="/static/img/knowsoft-logo.png" alt="Knowsoft" onerror="this.style.display='none'">
+              <div class="kw-hand kw-hour" id="kwHour"></div>
+              <div class="kw-hand kw-min" id="kwMin"></div>
+              <div class="kw-hand kw-sec" id="kwSec"></div>
+              <div class="kw-cap"></div>
+            </div>
+          </div>
+          <div class="sc-layer sc-giants-bits" style="display:none">
+            <div class="kw-void"></div>
+            <div class="kw-star s1" data-name="Sun"></div>
+            <div class="kw-star s2" data-name="Sirius"></div>
+            <div class="kw-star s3" data-name="Arcturus"></div>
+            <div class="kw-star s4" data-name="Betelgeuse"></div>
+            <div class="kw-star s5" data-name="UY Scuti"></div>
+          </div>
+
           <div class="sc-layer sc-sun-bits">
             <div class="rays"></div>
             <div class="sun"></div>
@@ -4658,8 +4733,8 @@ id="fsBookMeta" aria-hidden="true">
       try {
         const r = await fetch('/member/api/kwealth/bgm', { credentials: 'same-origin' });
         const j = await r.json();
-        state.bgmItems = (j && j.items) || [];
-      } catch (e) { state.bgmItems = []; }
+        var extra=((j&&j.items)||[]).filter(function(x){return x&&x.url&&x.url.indexOf('nature_ambient.mp3')<0;}).slice(0,9); state.bgmItems=[{id:'memories-default',title:'Memories (default)',url:'/static/uploads/kwealth_bgm/admin_global/nature_ambient.mp3',permanent:true}].concat(extra); if(!state.bgmId) state.bgmId='memories-default';
+      } catch (e) { state.bgmItems=[{id:'memories-default',title:'Memories (default)',url:'/static/uploads/kwealth_bgm/admin_global/nature_ambient.mp3',permanent:true}]; }
       renderBgmList();
     }
     function renderBgmList() {
@@ -5348,7 +5423,7 @@ id="fsBookMeta" aria-hidden="true">
     
     // ===== Auto scene advance in Full screen + Scene =====
     (function autoSceneRotate() {
-      var SCENE_ORDER = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','star_bypass'];
+      var SCENE_ORDER = ['clock','giants','sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','star_bypass'];
       // Seconds to let each scene play before advancing (match long animations)
       var SCENE_SECS = {
         sun: 22, orbit: 16, voyage: 28, planets: 20,
@@ -5498,5 +5573,84 @@ id="fsBookMeta" aria-hidden="true">
     })();
   })();
   </script>
+
+    <div id="fsDock">
+      <button type="button" class="chip" id="fsStop">Stop</button>
+      <button type="button" class="chip" id="fsAll">All 3D</button>
+      <select id="fsScenePick" class="ctl" style="width:auto">
+        <option value="clock">Wall clock</option>
+        <option value="giants">Five giant stars</option>
+        <option value="sun">Sunrise</option>
+        <option value="orbit">Orbit</option>
+        <option value="voyage">Earth revelation</option>
+        <option value="planets">Planets</option>
+        <option value="milkyway">Milky Way</option>
+        <option value="wavelength">Wavelength</option>
+        <option value="fishes3d">Fishes</option>
+        <option value="jupiter">Jupiter</option>
+        <option value="neptune">Neptune</option>
+        <option value="earth">Earth pass</option>
+        <option value="desert">Desert</option>
+        <option value="matrix">Matrix</option>
+        <option value="star_bypass">Star flyby</option>
+        <option value="off">3D off</option>
+      </select>
+      <button type="button" class="chip" id="fsExit">Exit full screen</button>
+    </div>
+
+<script>
+(function(){
+  
+  var memAudio="/static/uploads/kwealth_bgm/admin_global/nature_ambient.mp3";
+  document.querySelectorAll("audio").forEach(function(a){ if(!a.getAttribute("src")) a.src=memAudio; });
+  var bg=document.getElementById("bgmAudio")||document.querySelector("audio");
+  if(bg && !bg.src) bg.src=memAudio;
+  document.querySelectorAll("[data-book-page]").forEach(function(el){
+    var id=el.getAttribute("data-book-page");
+    var n=1;
+    try{ n=(JSON.parse(localStorage.getItem("kw_book_page_"+id)||"1")); }catch(e){}
+    el.textContent="Page "+(n||1);
+  });
+  var magi=document.getElementById("sampleMagi");
+  if(magi) magi.addEventListener("click", function(ev){
+    ev.preventDefault();
+    var lib=document.getElementById("bookLib");
+    if(lib) lib.style.display="none";
+    var tools=document.getElementById("panelTools");
+    if(tools) tools.style.display="block";
+    fetch("/static/books/gift_of_the_magi.txt").then(function(r){return r.text()}).then(function(text){
+      var pages=[]; var chunk=900;
+      for(var i=0;i<text.length;i+=chunk) pages.push(text.slice(i,i+chunk));
+      try{ state.pages=pages; state.pageIndex=0; state.title="The Gift of the Magi"; if(typeof renderPage==="function") renderPage(); }catch(e){ alert("Open sample from Book Lib after the reader loads."); }
+      var ft=document.getElementById("fsBookTitle"); if(ft) ft.textContent="The Gift of the Magi";
+    }).catch(function(){ alert("Sample file missing on server: /static/books/gift_of_the_magi.txt"); });
+  });
+
+  function tick(){
+    var d=new Date();
+    var s=d.getSeconds()+d.getMilliseconds()/1000;
+    var m=d.getMinutes()+s/60;
+    var h=(d.getHours()%12)+m/60;
+    var hs=document.getElementById("kwHour"), ms=document.getElementById("kwMin"), ss=document.getElementById("kwSec");
+    if(hs) hs.style.transform="rotate("+(h*30)+"deg)";
+    if(ms) ms.style.transform="rotate("+(m*6)+"deg)";
+    if(ss) ss.style.transform="rotate("+(s*6)+"deg)";
+    requestAnimationFrame(tick);
+  }
+  tick();
+  var lib=document.getElementById("bookLib");
+  if(lib && /book_id=/.test(location.search)) lib.style.display="none";
+  var tools=document.getElementById("panelTools");
+  if(tools && !/book_id=/.test(location.search)) tools.style.display="none";
+  var stop=document.getElementById("fsStop");
+  if(stop) stop.onclick=function(){ var b=document.getElementById("btnRead"); if(b) b.click(); };
+  var all=document.getElementById("fsAll");
+  if(all) all.onclick=function(){ try{ state.sceneOn=true; state.sceneFs=true; if(window.__kwSceneSchedule) window.__kwSceneSchedule(); }catch(e){} };
+  var ex=document.getElementById("fsExit");
+  if(ex) ex.onclick=function(){ var b=document.getElementById("sceneFsExit")||document.getElementById("btnSceneFs"); if(b) b.click(); };
+  var fp=document.getElementById("fsScenePick");
+  if(fp) fp.onchange=function(){ if(this.value==="off"){ try{ state.sceneOn=false; }catch(e){} } else { try{ state.sceneName=this.value; state.sceneOn=true; state.sceneFs=true; }catch(e){} var p=document.getElementById("scenePick"); if(p){ p.value=this.value; p.dispatchEvent(new Event("change")); } } };
+})();
+</script>
 </body>
 </html>

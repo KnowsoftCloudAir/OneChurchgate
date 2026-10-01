@@ -1290,7 +1290,9 @@ async def admin_kwealth_bgm_upload(
     if "admin" not in role.lower() and "general" not in role.lower():
         return RedirectResponse("/member/portal", status_code=303)
     d = _admin_bgm_dir()
-    for f in files or []:
+    existing = [x for x in d.iterdir() if x.is_file() and x.suffix.lower() in {".mp3",".m4a",".ogg",".wav",".aac",".webm"} and x.name != "nature_ambient.mp3"]
+    room = max(0, 9 - len(existing))
+    for f in (files or [])[:room]:
         raw = await f.read()
         if not raw or len(raw) > 15_000_000:
             continue
