@@ -11,7 +11,7 @@ import app.models  # ensure tables registered including TrialAccess
 from app.database import create_db_and_tables, get_session, engine
 from app.models import User, UserRole, AngelResourceFile, ChurchHymnal  # noqa: F401 — register tables
 from app.auth import get_password_hash, get_current_user, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
-from app.routers import feed, manna, auth, admin, church, district, members, programs, projects, community, payments, youtube_data, messages, subscriptions, backup, announcements, device_music, referrals, kwealth, memories, social_stream, mail_auth
+from app.routers import feed, manna, auth, admin, church, district, members, programs, projects, community, payments, youtube_data, messages, subscriptions, backup, announcements, device_music, referrals, kwealth, memories, social_stream, mail_auth, confirm_registration, angel_resources_admin
 from app.seed_sample import ensure_all_sample_data
 
 @asynccontextmanager
@@ -285,6 +285,13 @@ app.include_router(kwealth.router)
 app.include_router(memories.router)
 app.include_router(social_stream.router)
 app.include_router(mail_auth.router)
+app.include_router(confirm_registration.router)
+app.include_router(angel_resources_admin.router)
+try:
+    from app.routers import permanent_library
+    app.include_router(permanent_library.router)
+except Exception as _pl:
+    print('permanent_library not loaded:', _pl)
 
 
 @app.get("/privacy")
