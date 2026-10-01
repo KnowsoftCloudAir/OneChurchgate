@@ -647,6 +647,51 @@ async def kwealth_books(
         })
 
 
+@router.get("/member/kwealth/books/reading-room", response_class=HTMLResponse)
+async def kwealth_reading_room(
+    request: Request,
+    book_id: Optional[int] = None,
+    user: User = Depends(require_user),
+    session: Session = Depends(get_session),
+):
+    """Open the existing reading-room template. Library page is unchanged."""
+    books = session.exec(select(KwealthBook).where(KwealthBook.is_active == True).order_by(KwealthBook.title)).all()
+    admin_books, my_books = [], []
+    uid = int(user.id)
+    for b in books:
+        own = getattr(b, "owner_user_id", None)
+        sp = (b.source_path or "").replace("\\", "/")
+        is_mine = (own is not None and int(own) == uid) or (f"/u{uid}_" in sp) or sp.split("/")[-1].startswith(f"u{uid}_")
+        if is_mine:
+            my_books.append(b)
+        else:
+            admin_books.append(b)
+    book = session.get(KwealthBook, book_id) if book_id else None
+    pages, page_index = [], 0
+    if book:
+        text = _load_book_text(book)
+        pages = _split_pages(text)
+        prog = session.exec(
+            select(KwealthProgress).where(
+                KwealthProgress.user_id == user.id,
+                KwealthProgress.book_id == book.id,
+            )
+        ).first()
+        if prog and pages:
+            page_index = max(0, min(prog.page_index, len(pages) - 1))
+    return templates.TemplateResponse("kwealth/reading_room.html", {
+        "request": request,
+        "user": user,
+        "books": books,
+        "book": book,
+        "pages": pages,
+        "page_index": page_index,
+        "mh_url": MH_URL,
+        "admin_books": admin_books,
+        "my_books": my_books,
+    })
+
+
 @router.post("/member/kwealth/books/upload")
 async def kwealth_books_upload(
     files: List[UploadFile] = File(...),
