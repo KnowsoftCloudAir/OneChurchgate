@@ -3769,26 +3769,6 @@
     #panelTools, .bar { position: sticky; top: 0; z-index: 40; }
     body.reading-on { overflow-y: auto !important; }
     #bookLib { padding: 18px 16px 40px; }
-    #bookLib .booklib-head { max-width: 720px; margin: 0 auto 10px; text-align:center; }
-    #bookLib h2 { color:#f8fafc; font-size:1.55rem; margin:0 0 6px; }
-    #bookLib .booklib-head p { color:#94a3b8; font-size:12px; line-height:1.55; margin:0; }
-    .lib-wall-hero { min-height: 52vh; align-items:center; justify-content:center; grid-template-columns:1fr !important; padding:48px 20px !important; background:radial-gradient(circle at 50% 25%,#57534e,#292524 62%,#171717) !important; border:1px solid rgba(251,191,36,.16); }
-    .lib-book-3d { width:220px !important; height:310px !important; padding:28px 24px 24px 34px !important; transform:rotateY(-12deg) rotateZ(-1deg) !important; transform-style:preserve-3d; transition:transform .35s ease, filter .35s ease; background:linear-gradient(135deg,#f8e7b0 0%,#c99a3b 34%,#7c4a18 100%) !important; border:2px solid rgba(255,244,200,.5); box-shadow:-12px 14px 0 #4b2e0d, 20px 30px 35px rgba(0,0,0,.55), inset 12px 0 0 rgba(255,255,255,.12) !important; flex-direction:column; gap:12px; }
-    .lib-book-3d:hover { transform:rotateY(-2deg) rotateZ(0deg) translateY(-10px) scale(1.04) !important; filter:brightness(1.08); }
-    .lib-book-3d .spine { position:absolute; left:0; top:0; bottom:0; width:18px; background:linear-gradient(90deg,#3b220b,#8a5a20,#4b2e0d); border-radius:3px 0 0 3px; }
-    .lib-book-3d .cover-shine { position:absolute; inset:8px; border:1px solid rgba(255,248,220,.35); border-radius:3px 8px 8px 3px; pointer-events:none; }
-    .book-emblem { width:54px; height:54px; border-radius:50%; display:flex; align-items:center; justify-content:center; color:#5b370e; background:rgba(255,245,190,.72); border:2px solid rgba(91,55,14,.45); font:700 30px Georgia,serif; }
-    .lib-book-3d b { font-family:Cinzel,Georgia,serif !important; font-size:24px !important; line-height:1.2 !important; color:#fff8dc; text-shadow:0 2px 4px rgba(0,0,0,.55); }
-    .lib-author { color:#fef3c7; font:600 14px Georgia,serif; }
-    .lib-open { margin-top:auto; padding:7px 12px; border-radius:999px; background:rgba(15,23,42,.75); color:#fde68a; font:800 10px system-ui,sans-serif; letter-spacing:.12em; }
-    .lib-empty { color:#cbd5e1; text-align:center; max-width:360px; margin:auto; }
-    .personal-upload { max-width:720px; margin:16px auto 0; padding:14px 16px; display:flex; align-items:center; gap:12px; border:1px solid rgba(96,165,250,.22); background:rgba(15,23,42,.72); border-radius:14px; }
-    .personal-upload .upload-icon { width:38px; height:38px; flex:0 0 38px; border-radius:10px; background:#0f766e; color:#fff; display:flex; align-items:center; justify-content:center; font-size:24px; }
-    .personal-upload strong { color:#e2e8f0; font-size:13px; }
-    .personal-upload p { margin:3px 0 0; color:#94a3b8; font-size:11px; line-height:1.45; }
-    .personal-upload .chip { margin-left:auto; }
-    .personal-note { max-width:720px; margin:8px auto 0; text-align:center; color:#64748b; font-size:10px; }
-
     #bookLib h2 { color:#f8fafc; font-size:1.4rem; margin:0 0 8px; }
     .lib-wall { display:grid; grid-template-columns: repeat(auto-fill, minmax(118px,1fr)); gap:22px 16px; padding:18px; background:linear-gradient(180deg,#44403c,#292524); border-radius:16px; box-shadow:inset 0 0 40px rgba(0,0,0,.35); }
     .lib-book { display:flex; align-items:center; justify-content:center; text-align:center; text-decoration:none; color:#1c1917; width:108px; height:148px; margin:0 auto; border-radius:3px 8px 8px 3px; padding:14px 10px 14px 16px; position:relative; box-shadow:6px 8px 0 rgba(0,0,0,.28), 10px 14px 18px rgba(0,0,0,.35); transform:rotate(-1deg); }
@@ -3818,8 +3798,32 @@
 
 </style>
   <script src="/static/js/bg-animations.js"></script>
+
+<style>
+/* Clean 3D Book Library */
+#bookLib{max-width:1200px;margin:0 auto;padding:26px 18px 60px;min-height:72vh}
+#bookLib h2{font-size:2rem;letter-spacing:.02em;text-align:center;margin:0 0 6px;color:#fff}
+.lib-subtitle{text-align:center;color:#94a3b8;font-size:13px;margin:0 auto 18px;max-width:720px}
+.lib-upload-card{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 16px;margin:0 auto 22px;max-width:900px;border:1px solid rgba(148,163,184,.2);border-radius:18px;background:rgba(15,23,42,.78);box-shadow:0 12px 35px rgba(0,0,0,.2)}
+.lib-upload-help{color:#94a3b8;font-size:11px;line-height:1.45;margin-top:4px}
+.lib-section-title{max-width:1080px;margin:22px auto 10px;padding-left:4px;font-size:15px;letter-spacing:.04em}
+.knowsoft-title{color:#fde68a}.personal-title{color:#93c5fd}
+.lib-wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:34px 28px;padding:32px 30px 38px;max-width:1080px;margin:0 auto;background:linear-gradient(180deg,#3b3028,#211c19 55%,#171310);border:1px solid rgba(255,255,255,.08);border-radius:20px;box-shadow:inset 0 18px 50px rgba(0,0,0,.35),0 18px 50px rgba(0,0,0,.22);perspective:1200px}
+.lib-book{display:flex!important;align-items:center;justify-content:center;text-align:center;text-decoration:none;color:#17120e;width:126px;height:174px;margin:auto;padding:16px 12px 16px 18px;border-radius:4px 11px 11px 4px;position:relative;box-shadow:9px 10px 0 rgba(0,0,0,.3),18px 20px 28px rgba(0,0,0,.38),inset 5px 0 0 rgba(0,0,0,.22);transform:rotateY(-8deg) rotateZ(-1deg);transform-style:preserve-3d;transition:transform .28s ease,filter .28s ease;overflow:hidden}
+.lib-book:nth-child(even){transform:rotateY(8deg) rotateZ(1.5deg)}
+.lib-book:hover{transform:translateY(-12px) rotateY(0deg) rotateZ(0deg) scale(1.04);filter:brightness(1.08);z-index:5}
+.lib-book:after{content:"";position:absolute;right:-18px;top:5px;width:18px;height:calc(100% - 10px);background:linear-gradient(90deg,#d6d3d1,#fafaf9,#a8a29e);transform:skewY(-8deg);opacity:.8}
+.lib-book b{display:block;font-family:Georgia,serif;font-size:14px;line-height:1.25;font-weight:800;max-width:95px}.lib-page{display:block;margin-top:9px;font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#44403c}
+.lib-book span{position:absolute;left:0;top:0;bottom:0;width:9px;background:rgba(0,0,0,.3);border-radius:3px 0 0 3px}
+.nav-back{color:#5eead4;font-size:12px;text-decoration:none;padding:5px 7px;border-radius:8px;background:rgba(20,184,166,.08)}
+.reader-nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.reader-back{display:inline-block;color:#5eead4;text-decoration:none;border:1px solid rgba(45,212,191,.35);border-radius:10px;padding:7px 10px;font-size:12px;font-weight:700;background:rgba(15,23,42,.7)}.reader-back.secondary{color:#cbd5e1;border-color:rgba(255,255,255,.15)}
+/* Library is clean when no book is selected. */
+body:not(.reader-mode) #app>.bar .chip,body:not(.reader-mode) #app>.bar select{display:none!important}
+body:not(.reader-mode) #panelTools,body:not(.reader-mode) #panelMusic,body:not(.reader-mode) #stage,body:not(.reader-mode) #fsControls,body:not(.reader-mode) #sceneFs,body:not(.reader-mode) #sceneFsExit{display:none!important}
+@media(max-width:650px){.lib-upload-card{flex-direction:column;align-items:stretch}.lib-wall{grid-template-columns:repeat(2,minmax(0,1fr));padding:24px 12px}.lib-book{width:110px;height:155px}}
+</style>
 </head>
-<body class="theme-parchment" id="bookBody">
+<body class="theme-parchment{% if book %} reader-mode{% endif %}" id="bookBody">
 <button type="button" id="readMenuFab" onclick="document.querySelector('.bar')&&document.querySelector('.bar').scrollIntoView({behavior:'smooth',block:'start'});var t=document.getElementById('toolsPanel');if(t){t.style.display='block';}window.scrollTo({top:0,behavior:'smooth'});">☰ Menu</button>
   <div id="fsControls">
   <select id="fsScenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
@@ -3845,11 +3849,11 @@
   <div id="app">
     <div class="bar sticky top-0 z-30">
       <div style="max-width:56rem;margin:0 auto;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
-        <a href="/member/kwealth" style="color:#5eead4;font-size:12px;text-decoration:none;">← Kwealth</a>
+        <a href="/member/kwealth" class="nav-back">← Kwealth</a><a href="/member/kwealth/books" class="nav-back">📚 Library</a>
         <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" style="height:28px;width:auto" onerror="this.src='/static/img/knowsoft-icon.svg'"> <strong style="color:#f1f5f9;font-size:14px;">Books</strong>
-        <input type="file" id="filePick" hidden accept=".txt,.text,text/plain" multiple>
-        <button type="button" class="chip" id="btnLoad">Personal book</button>
-        <button type="button" class="chip" id="btnDelBook" title="Delete selected personal book">Delete book</button>
+        <input type="file" id="filePick" hidden accept=".pdf,.txt,.text,.md,.doc,.docx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple>
+        <button type="button" class="chip" id="btnLoad">Load</button>
+        <button type="button" class="chip" id="btnDelBook" title="Delete selected book you uploaded">Delete book</button>
         <button type="button" class="chip" id="btnRead">👼 Read</button>
         <button type="button" class="chip" id="btnArrange">Arrange</button>
         <button type="button" class="chip on" id="btnTools">⚙ Settings</button>
@@ -3888,47 +3892,41 @@
       </div>
 
       
-    <section id="bookLib" aria-label="Knowsoft Book Library">
-      <div class="booklib-head">
-        <div>
-          <h2>Knowsoft Books</h2>
-          <p>One permanent book is always available on the wall. Click the 3D book to open the reader and continue to the full reading settings.</p>
-        </div>
+    <section id="bookLib">
+      <h2>📚 Book Library</h2>
+      <p class="lib-subtitle">A clean 3D library wall. Click any book to open the reading room and all reading settings.</p>
+      <div class="lib-upload-card">
+        <div><strong>Personal Books</strong><div class="lib-upload-help">Upload up to <b>3 books</b>. PDF, TXT and DOCX are supported. For faster upload and smoother reading, remove pictures/images before uploading. <b>Maximum 4 MB per book.</b></div></div>
+        <button type="button" class="chip on" id="btnLoadLib" onclick="document.getElementById('filePick').click()">＋ Upload Personal Book</button>
       </div>
-
-      <div class="lib-wall lib-wall-hero" id="libKnowsoft">
-        {% set ns = namespace(araby=None) %}
+      <h3 class="lib-section-title knowsoft-title">Knowsoft Books</h3>
+      <div class="lib-wall" id="libKnowsoft">
         {% for b in admin_books %}
-          {% if 'araby' in (b.title|lower) and ns.araby is none %}{% set ns.araby = b %}{% endif %}
+        {% set colors = ['#bae6fd','#bbf7d0','#fecdd3','#ddd6fe','#fed7aa'] %}
+        <a class="lib-book" style="background:{{ colors[loop.index0 % 5] }}" href="/member/kwealth/books?book_id={{ b.id }}">
+          <span></span>
+          <b>{{ b.title }}</b>
+          <small class="lib-page">Page 1</small>
+        </a>
         {% endfor %}
-        {% set wallbook = ns.araby or (admin_books|first if admin_books else none) %}
-        {% if wallbook %}
-        <a class="lib-book lib-book-3d" href="/member/kwealth/books?book_id={{ wallbook.id }}" aria-label="Open {{ wallbook.title }}">
-          <span class="spine"></span>
-          <span class="cover-shine"></span>
-          <span class="book-emblem">K</span>
-          <b>{{ wallbook.title }}</b>
-          <small class="lib-author">James Joyce</small>
-          <small class="lib-open">CLICK TO READ</small>
+      </div>
+      <h3 class="lib-section-title personal-title">Personal Books</h3>
+      <div class="lib-wall" id="libPersonal">
+        {% for b in my_books %}
+        {% set colors = ['#fbcfe8','#c4b5fd','#a5f3fc','#fde68a'] %}
+        <a class="lib-book" style="background:{{ colors[loop.index0 % 4] }}" href="/member/kwealth/books?book_id={{ b.id }}">
+          <span></span>
+          <b>{{ b.title }}</b>
+          <small class="lib-page">Page 1</small>
         </a>
         {% else %}
-        <div class="lib-empty">The permanent Knowsoft book will appear here when the server book is deployed.</div>
-        {% endif %}
+        <p style="color:#94a3b8;font-size:12px">No personal books yet. Upload one.</p>
+        {% endfor %}
       </div>
-
-      <div class="personal-upload">
-        <div class="upload-icon">＋</div>
-        <div>
-          <strong>Upload a personal book</strong>
-          <p>Convert your book to <b>TXT</b> format first and remove all pictures/images. Plain text makes books faster and easier to upload and read.</p>
-        </div>
-        <button type="button" class="chip on" id="btnLoadLib">Upload TXT</button>
-      </div>
-      <p class="personal-note">Personal books are separate from Knowsoft Books. The permanent Knowsoft book remains on the wall.</p>
     </section>
 
       {% if book %}<div id="panelTools" style="max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
-        <p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Book settings (theme · font · flip · jump)</p>
+        <div class="reader-nav"><a href="/member/kwealth/books" class="reader-back">← Back to Book Library</a><a href="/member/kwealth" class="reader-back secondary">← Kwealth</a></div><p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Book settings (theme · font · flip · jump)</p>
         <div class="grid-tools">
           <div>
             <span class="lbl">Theme</span>
@@ -4846,20 +4844,19 @@ id="fsBookMeta" aria-hidden="true">
       location.href = '/member/kwealth/books?deleted=1';
     });
 
-    on('btnLoad', 'onclick', () => {
-      alert('Personal books only: convert the book to TXT format and remove all pictures/images before uploading.');
-      const f = $('filePick'); if (f) f.click();
-    });
-    on('btnLoadLib', 'onclick', () => {
-      alert('Personal books only. Please convert your book to TXT format and remove all pictures/images for an easy upload.');
-      const f = $('filePick'); if (f) f.click();
-    });
+    on('btnLoad', 'onclick', () => { const f = $('filePick'); if (f) f.click(); });
     on('filePick', 'onchange', async (ev) => {
       const files = Array.from(ev.target.files || []);
       if (!files.length) return;
-      const bad = files.filter(f => !/\.(txt|text)$/i.test(f.name) && f.type !== 'text/plain');
-      if (bad.length) {
-        alert('Only TXT/text books are accepted. Convert the book to TXT and remove all pictures/images first.');
+      const allowed = /\.(pdf|txt|docx)$/i;
+      const maxBytes = 4 * 1024 * 1024;
+      const currentPersonal = {{ my_books|length if my_books else 0 }};
+      if (files.length > 3 || currentPersonal + files.length > 3) {
+        alert('You can have a maximum of 3 personal books.'); ev.target.value = ''; return;
+      }
+      const bad = files.find(f => !allowed.test(f.name) || f.size > maxBytes);
+      if (bad) {
+        alert('Each personal book must be PDF, TXT or DOCX and no more than 4 MB. Remove pictures/images before uploading to make the book easier to upload and read.');
         ev.target.value = ''; return;
       }
       $('btnLoad').textContent = 'Uploading…';
@@ -4868,8 +4865,8 @@ id="fsBookMeta" aria-hidden="true">
       try {
         const r = await fetch('/member/kwealth/books/upload', { method: 'POST', body: fd, credentials: 'same-origin' });
         location.href = r.redirected ? r.url : '/member/kwealth/books';
-      } catch (e) { alert('Could not upload the personal TXT book'); }
-      $('btnLoad').textContent = 'Personal book';
+      } catch (e) { alert('Could not upload books'); }
+      $('btnLoad').textContent = 'Load';
       ev.target.value = '';
     });
     if ($('bookSelect')) on('bookSelect', 'onchange', () => { location.href = '/member/kwealth/books?book_id=' + $('bookSelect').value; });
@@ -5659,6 +5656,8 @@ id="fsBookMeta" aria-hidden="true">
     try{ n=(JSON.parse(localStorage.getItem("kw_book_page_"+id)||"1")); }catch(e){}
     el.textContent="Page "+(n||1);
   });
+  });
+
   function tick(){
     var d=new Date();
     var s=d.getSeconds()+d.getMilliseconds()/1000;
