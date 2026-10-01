@@ -1,5 +1,7 @@
 {% extends "base.html" %}
-{% block title %}My Space – Churchgate<script src="/static/js/wallet_badge.js"></script>
+{% block title %}My Space – Churchgate{% endblock %}
+{% block content %}
+<script src="/static/js/wallet_badge.js"></script>
 
 <style>
 #kwDashClock{display:block!important;position:fixed;right:18px;bottom:96px;z-index:2147483647;width:230px;touch-action:none;pointer-events:auto}
@@ -52,9 +54,6 @@
   tick();
 })();
 </script>
-
-{% endblock %}
-{% block content %}
 
 
 {# Invite & earn — extra panel only; original dashboard unchanged below #}
