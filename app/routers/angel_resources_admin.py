@@ -13,23 +13,12 @@ from sqlalchemy import Text
 
 from app.database import get_session, engine
 from app.auth import require_roles
-from app.models import User, UserRole
+from app.models import User, UserRole, AngelResourceFile
 
 router = APIRouter(tags=["angel-admin"])
 templates = Jinja2Templates(directory=str(Path(__file__).resolve().parent.parent / "templates"))
 DISK = Path(__file__).resolve().parent.parent / "data" / "angel_resources"
 DISK.mkdir(parents=True, exist_ok=True)
-
-
-class AngelResourceFile(SQLModel, table=True):
-    __tablename__ = "angelresourcefile"
-    id: Optional[int] = Field(default=None, primary_key=True)
-    title: str
-    body: str = Field(sa_column=Column(Text))
-    is_active: bool = Field(default=True)
-    created_by: Optional[int] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 def _ensure_table():
