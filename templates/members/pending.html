@@ -4,21 +4,13 @@
 <div class="max-w-lg mx-auto px-4 py-14 text-center">
   <div class="rounded-2xl border bg-white p-8 shadow-sm">
     <div class="text-4xl mb-3">✉️</div>
-    <h1 class="text-xl font-bold text-slate-900 mb-2">Check your email</h1>
+    <h1 class="text-xl font-bold mb-2">Check your email</h1>
     <p class="text-sm text-slate-600 mb-4">Thank you, <b>{{ full_name }}</b>.</p>
-    <p class="text-sm text-teal-900 bg-teal-50 border border-teal-100 rounded-xl p-4 mb-4 leading-relaxed">
-      We sent a message to <b>{{ email }}</b>.
-      Please <strong>open that email and click the link</strong> to confirm your registration.
+    <p class="text-sm text-teal-900 bg-teal-50 border border-teal-100 rounded-xl p-4 mb-4">
+      We sent a message to <b>{{ email }}</b>. Open it and <strong>click the confirmation link</strong>.
     </p>
-    <p class="text-xs text-slate-500 mb-6 leading-relaxed">
-      After you click the link:<br>
-      • <b>Non-church affiliate</b> — your account is approved and you can sign in with your password.<br>
-      • <b>Church affiliate</b> — your email is confirmed, then your church admin must still approve full access.
-    </p>
+    <p class="text-xs text-slate-500 mb-6">After confirm: non-church affiliates get <b>1 day full access</b>, then subscription is required. Church affiliates: confirmed, then church admin approval.</p>
     <a href="/auth/login" class="inline-flex px-5 py-2.5 rounded-xl bg-slate-900 text-white text-sm font-bold">Go to sign in</a>
-    <p class="mt-6 text-sm">
-      <a class="text-teal-700 font-semibold" href="mailto:info@knowsoft.org.uk">Contact Knowsoft — info@knowsoft.org.uk</a>
-    </p>
   </div>
 </div>
 {% endblock %}

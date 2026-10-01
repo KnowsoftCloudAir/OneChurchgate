@@ -1,57 +1,33 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Angel Resources — General Admin</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-</head>
-<body class="min-h-screen bg-slate-950 text-slate-100">
-  <header class="border-b border-white/10 bg-slate-900/80">
-    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center gap-4">
-      <a href="/admin/" class="text-teal-300 text-sm font-semibold">← Admin</a>
-      <h1 class="font-bold text-lg">Angel knowledge resources</h1>
-    </div>
-  </header>
-  <main class="max-w-4xl mx-auto px-4 py-6 space-y-6">
-    <p class="text-sm text-slate-400">Paste plain-text FAQ, doctrine notes, or study material. Active resources are searched when members ask Angel. Built-in file resources remain available.</p>
-    {% if request.query_params.get('ok') %}<p class="text-emerald-400 text-sm">Saved.</p>{% endif %}
-    {% if request.query_params.get('err') %}<p class="text-rose-400 text-sm">Body cannot be empty.</p>{% endif %}
-
-    <form method="post" action="/admin/angel-resources/upload" class="rounded-2xl border border-white/10 bg-slate-900/60 p-4 space-y-3">
-      <label class="block text-xs uppercase text-slate-400">Title</label>
-      <input name="title" class="w-full rounded-xl px-3 py-2 text-slate-900" placeholder="e.g. Extra FAQ batch" value="Angel resource">
-      <label class="block text-xs uppercase text-slate-400">Text body (plain text)</label>
-      <textarea name="body" rows="14" class="w-full rounded-xl px-3 py-2 text-slate-900 font-mono text-sm" placeholder="Paste FAQ or doctrine text here…" required></textarea>
-      <button type="submit" class="rounded-xl bg-teal-600 hover:bg-teal-500 px-4 py-2 font-bold text-sm">Upload for Angel</button>
+{% extends "base.html" %}
+{% block title %}Angel resources – Admin{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <div class="flex justify-between gap-3 mb-6">
+    <div><p class="text-xs uppercase text-slate-500 font-bold">General Admin</p><h1 class="text-2xl font-black">Angel resources room</h1></div>
+    <a href="/admin" class="text-sm font-semibold text-indigo-700">← Admin</a>
+  </div>
+  <div class="grid sm:grid-cols-2 gap-4 mb-8">
+    <a href="/admin/angel-resources" class="p-5 rounded-2xl border bg-white hover:border-teal-400"><p class="font-bold">Knowledge files</p><p class="text-xs text-slate-500">Texts Angel uses to answer</p></a>
+    <a href="/admin/social-stream" class="p-5 rounded-2xl border bg-white hover:border-teal-400"><p class="font-bold">Stream links</p><p class="text-xs text-slate-500">YouTube library</p></a>
+  </div>
+  {% if ok %}<p class="text-green-700 text-sm font-semibold mb-3">{{ ok }}</p>{% endif %}
+  <section class="bg-white rounded-2xl border p-5 mb-6">
+    <h2 class="font-bold mb-3">Upload resource (.txt)</h2>
+    <form method="post" action="/admin/angel-resources/upload" enctype="multipart/form-data" class="space-y-3">
+      <input type="file" name="file" accept=".txt,text/plain" required class="block w-full text-sm">
+      <input name="title" placeholder="Title (optional)" class="w-full border rounded-xl px-3 py-2 text-sm">
+      <button class="px-4 py-2 rounded-xl bg-teal-600 text-white font-bold text-sm">Upload</button>
     </form>
-
-    <section>
-      <h2 class="font-semibold mb-3">Uploaded resources ({{ rows|length }})</h2>
-      <div class="space-y-3">
-        {% for r in rows %}
-        <div class="rounded-xl border border-white/10 bg-slate-900/40 p-3 flex flex-wrap gap-2 items-start justify-between">
-          <div class="min-w-0 flex-1">
-            <p class="font-semibold">{{ r.title }}
-              {% if r.is_active %}<span class="text-xs text-emerald-400">active</span>{% else %}<span class="text-xs text-slate-500">off</span>{% endif %}
-            </p>
-            <p class="text-xs text-slate-500">{{ r.updated_at }} · {{ (r.body or '')|length }} chars</p>
-            <pre class="text-xs text-slate-400 mt-1 max-h-20 overflow-hidden">{{ (r.body or '')[:280] }}…</pre>
-          </div>
-          <div class="flex gap-2">
-            <form method="post" action="/admin/angel-resources/{{ r.id }}/toggle">
-              <button class="text-xs px-2 py-1 rounded-lg bg-slate-700">Toggle</button>
-            </form>
-            <form method="post" action="/admin/angel-resources/{{ r.id }}/delete" onsubmit="return confirm('Delete?')">
-              <button class="text-xs px-2 py-1 rounded-lg bg-rose-800">Delete</button>
-            </form>
-          </div>
-        </div>
-        {% else %}
-        <p class="text-slate-500 text-sm">No uploaded resources yet. Built-in FAQ file still feeds Angel.</p>
-        {% endfor %}
-      </div>
-    </section>
-  </main>
-</body>
-</html>
+  </section>
+  <section class="bg-white rounded-2xl border p-5">
+    <h2 class="font-bold mb-3">Files</h2>
+    <ul class="space-y-2 text-sm">
+      {% for f in files or [] %}
+      <li class="border rounded-xl p-3 bg-slate-50 font-medium">{{ f.title or f.filename or f }}</li>
+      {% else %}
+      <li class="text-slate-400">Built-in knowledge still loads from app/data/angel_resources. Upload custom .txt files here when the upload route is active.</li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}

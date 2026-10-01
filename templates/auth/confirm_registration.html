@@ -1,29 +1,22 @@
 {% extends "base.html" %}
-{% block title %}Registration confirmation – Churchgate{% endblock %}
+{% block title %}Registration confirmed – Churchgate{% endblock %}
 {% block content %}
 <div class="max-w-lg mx-auto px-4 py-16 text-center">
   {% if ok %}
   <div class="rounded-2xl border border-teal-200 bg-teal-50 p-8 shadow-sm">
     <div class="text-4xl mb-3">✓</div>
-    <h1 class="text-xl font-bold text-slate-900 mb-2">
-      {% if auto_approved %}You're approved{% else %}Email confirmed{% endif %}
-    </h1>
-    <p class="text-sm text-slate-700 mb-6 leading-relaxed">{{ message }}</p>
-    {% if login %}
-    <a href="/auth/login" class="inline-flex px-6 py-3 rounded-xl bg-teal-600 text-white font-bold shadow hover:bg-teal-500">Sign in</a>
-    {% endif %}
+    <h1 class="text-xl font-bold text-slate-900 mb-2">{% if auto_approved %}Welcome — you are in{% else %}Email confirmed{% endif %}</h1>
+    <p class="text-sm text-slate-700 mb-4 leading-relaxed">{{ message }}</p>
+    {% if trial_note %}<p class="text-sm text-teal-900 bg-white/70 border border-teal-100 rounded-xl p-3 mb-6">{{ trial_note }}</p>{% endif %}
+    {% if login %}<a href="{{ login_url or '/auth/login' }}" class="inline-flex px-6 py-3 rounded-xl bg-teal-600 text-white font-bold shadow">Sign in / Continue</a>{% endif %}
   </div>
   {% else %}
   <div class="rounded-2xl border border-amber-200 bg-amber-50 p-8 shadow-sm">
-    <h1 class="text-xl font-bold text-slate-900 mb-2">Link problem</h1>
-    <p class="text-sm text-slate-700 mb-6 leading-relaxed">{{ message or "This confirmation link is invalid or has expired." }}</p>
-    <div class="flex flex-col sm:flex-row gap-3 justify-center">
-      <a href="/join" class="inline-flex px-5 py-2.5 rounded-xl bg-slate-900 text-white font-semibold">Register again</a>
-      <a href="/auth/login" class="inline-flex px-5 py-2.5 rounded-xl border font-semibold text-slate-700">Sign in</a>
-    </div>
-    <p class="mt-6 text-sm">
-      <a class="text-teal-700 font-semibold" href="mailto:info@knowsoft.org.uk">Contact Knowsoft — info@knowsoft.org.uk</a>
-    </p>
+    <h1 class="text-xl font-bold text-slate-900 mb-2">Could not confirm</h1>
+    <p class="text-sm text-slate-700 mb-6">{{ message or "This link is invalid or expired." }}</p>
+    <a href="/join" class="inline-flex px-5 py-2.5 rounded-xl bg-slate-900 text-white font-semibold">Register again</a>
+    <a href="/auth/login" class="inline-flex px-5 py-2.5 rounded-xl border font-semibold ml-2">Sign in</a>
+    <p class="mt-6 text-sm"><a class="text-teal-700 font-semibold" href="mailto:info@knowsoft.org.uk">info@knowsoft.org.uk</a></p>
   </div>
   {% endif %}
 </div>
