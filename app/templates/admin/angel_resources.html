@@ -2,30 +2,34 @@
 {% block title %}Angel resources – Admin{% endblock %}
 {% block content %}
 <div class="max-w-4xl mx-auto px-4 py-8">
-  <div class="flex justify-between gap-3 mb-6">
-    <div><p class="text-xs uppercase text-slate-500 font-bold">General Admin</p><h1 class="text-2xl font-black">Angel resources room</h1></div>
-    <a href="/admin" class="text-sm font-semibold text-indigo-700">← Admin</a>
+  <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+    <div>
+      <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">General Admin</p>
+      <h1 class="text-2xl font-black text-slate-900">Angel resources repository</h1>
+      <p class="text-sm text-slate-500 mt-1">Knowledge files Angel uses when answering members</p>
+    </div>
+    <a href="/admin" class="text-sm font-semibold text-indigo-700">← Admin home</a>
   </div>
-  <div class="grid sm:grid-cols-2 gap-4 mb-8">
-    <a href="/admin/angel-resources" class="p-5 rounded-2xl border bg-white hover:border-teal-400"><p class="font-bold">Knowledge files</p><p class="text-xs text-slate-500">Texts Angel uses to answer</p></a>
-    <a href="/admin/social-stream" class="p-5 rounded-2xl border bg-white hover:border-teal-400"><p class="font-bold">Stream links</p><p class="text-xs text-slate-500">YouTube library</p></a>
-  </div>
-  {% if ok %}<p class="text-green-700 text-sm font-semibold mb-3">{{ ok }}</p>{% endif %}
-  <section class="bg-white rounded-2xl border p-5 mb-6">
-    <h2 class="font-bold mb-3">Upload resource (.txt)</h2>
+  {% if ok %}<div class="mb-4 p-3 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm font-bold">Saved ({{ ok }})</div>{% endif %}
+  {% if err %}<div class="mb-4 p-3 rounded-xl bg-red-50 border text-red-800 text-sm">{{ err }}</div>{% endif %}
+  <section class="bg-white rounded-2xl border p-5 mb-6 shadow-sm">
+    <h2 class="font-bold mb-3">Upload knowledge file (.txt / .md)</h2>
     <form method="post" action="/admin/angel-resources/upload" enctype="multipart/form-data" class="space-y-3">
-      <input type="file" name="file" accept=".txt,text/plain" required class="block w-full text-sm">
-      <input name="title" placeholder="Title (optional)" class="w-full border rounded-xl px-3 py-2 text-sm">
-      <button class="px-4 py-2 rounded-xl bg-teal-600 text-white font-bold text-sm">Upload</button>
+      <input type="file" name="file" accept=".txt,.md,text/plain" required class="block w-full text-sm">
+      <input name="title" placeholder="Display title (optional)" class="w-full border rounded-xl px-3 py-2 text-sm">
+      <button type="submit" class="px-5 py-2.5 rounded-xl bg-teal-600 text-white font-bold text-sm shadow">Upload to Angel room</button>
     </form>
   </section>
-  <section class="bg-white rounded-2xl border p-5">
-    <h2 class="font-bold mb-3">Files</h2>
-    <ul class="space-y-2 text-sm">
-      {% for f in files or [] %}
-      <li class="border rounded-xl p-3 bg-slate-50 font-medium">{{ f.title or f.filename or f }}</li>
+  <section class="bg-white rounded-2xl border p-5 shadow-sm">
+    <h2 class="font-bold mb-3">Files in repository ({{ files|length }})</h2>
+    <ul class="space-y-2 max-h-96 overflow-y-auto">
+      {% for f in files %}
+      <li class="flex justify-between gap-2 p-3 rounded-xl border bg-slate-50 text-sm">
+        <span class="font-semibold text-slate-800">{{ f.title or f.filename }}</span>
+        <span class="text-xs text-slate-400">{{ f.filename }}</span>
+      </li>
       {% else %}
-      <li class="text-slate-400">Built-in knowledge still loads from app/data/angel_resources. Upload custom .txt files here when the upload route is active.</li>
+      <li class="text-slate-400 text-sm py-6 text-center">No files yet — upload .txt knowledge for Angel.</li>
       {% endfor %}
     </ul>
   </section>

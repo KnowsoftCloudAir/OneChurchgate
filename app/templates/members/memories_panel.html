@@ -1,0 +1,28 @@
+{# Include above social stream in portal / social_watch #}
+<link rel="stylesheet" href="/static/css/memories.css">
+<section id="cg-memories" class="cg-memories-root" aria-label="Memories slideshow">
+  <div id="cg-memories-stage"></div>
+  <div id="cg-memories-empty">
+    <div>
+      <p class="text-lg font-bold text-white mb-1">Memories</p>
+      <p class="text-slate-300 text-sm max-w-xs mx-auto">Add photos from your device for a beautiful slideshow. Optional soft music from Books.</p>
+    </div>
+  </div>
+  <div id="cg-memories-ui">
+    <div class="flex flex-wrap gap-2 items-center">
+      <span class="cg-mem-title">✦ Memories</span>
+      <button type="button" class="cg-mem-btn" id="cg-memories-toggle">Memories on</button>
+      <button type="button" class="cg-mem-btn" id="cg-memories-landscape">Landscape</button>
+      <button type="button" class="cg-mem-btn" id="cg-memories-prev">‹</button>
+      <button type="button" class="cg-mem-btn" id="cg-memories-next">›</button>
+      <button type="button" class="cg-mem-btn" id="cg-memories-music">♪ Music off</button>
+      <button type="button" class="cg-mem-btn" id="cg-memories-clear">Clear</button>
+    </div>
+    <label class="cg-mem-btn cursor-pointer">
+      + Add photos
+      <input type="file" id="cg-memories-add" accept="image/*" multiple class="hidden" style="display:none">
+    </label>
+  </div>
+  <audio id="cg-memories-audio" loop preload="none"></audio>
+</section>
+<script src="/static/js/memories.js"></script>
