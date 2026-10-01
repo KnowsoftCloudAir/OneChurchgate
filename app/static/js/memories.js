@@ -1,18 +1,18 @@
 
 (function () {
-  const KEY = "cg_memories_v3";
+  const KEY = "cg_memories_v4";
   const MAX = 36;
-  const EFFECTS = ["kenburns", "fade", "slide", "zoom", "flip"];
-  let state = { on: true, landscape: false, intervalMs: 5000, items: [], idx: 0, timer: null, musicOn: false, effect: "kenburns" };
+  const EFFECTS = ["kenburns", "fade", "slide", "zoom", "flip", "glow", "pan"];
+  let state = { on: true, landscape: false, intervalMs: 5500, items: [], idx: 0, timer: null, musicOn: false, effect: "kenburns" };
 
   function load() {
     try {
-      const raw = localStorage.getItem(KEY);
+      const raw = localStorage.getItem(KEY) || localStorage.getItem("cg_memories_v3");
       if (raw) {
         const p = JSON.parse(raw);
         state.on = p.on !== false;
         state.landscape = !!p.landscape;
-        state.intervalMs = p.intervalMs || 5000;
+        state.intervalMs = p.intervalMs || 5500;
         state.musicOn = !!p.musicOn;
         state.effect = EFFECTS.indexOf(p.effect) >= 0 ? p.effect : "kenburns";
         state.items = Array.isArray(p.items) ? p.items.slice(0, MAX) : [];
@@ -37,18 +37,35 @@
   }
   function $(id) { return document.getElementById(id); }
 
-  function paintBarToggle() {
-    const btn = $("cg-memories-bar-toggle");
+  function paintExtToggle() {
+    const btn = $("cg-memories-ext-toggle");
     if (!btn) return;
     if (state.on) {
       btn.textContent = "Memories ON";
       btn.classList.remove("is-off");
       btn.setAttribute("aria-pressed", "true");
     } else {
-      btn.textContent = "Memories OFF · tap to show";
+      btn.textContent = "Memories OFF";
       btn.classList.add("is-off");
       btn.setAttribute("aria-pressed", "false");
     }
+  }
+
+  function paintDots() {
+    const dots = $("cg-memories-dots");
+    if (!dots) return;
+    if (!state.items.length || !state.on) {
+      dots.innerHTML = "";
+      return;
+    }
+    const n = Math.min(state.items.length, 12);
+    let html = "";
+    for (let i = 0; i < n; i++) {
+      const active = (state.idx % state.items.length) === i || (state.items.length > 12 && i === n - 1 && state.idx >= 12);
+      const on = (state.idx % state.items.length) % n === i;
+      html += '<span class="' + (on ? "on" : "") + '"></span>';
+    }
+    dots.innerHTML = html;
   }
 
   function render() {
@@ -56,7 +73,8 @@
     if (!root) return;
     root.classList.toggle("is-off", !state.on);
     root.classList.toggle("is-landscape", state.landscape);
-    paintBarToggle();
+    paintExtToggle();
+    paintDots();
     const stage = $("cg-memories-stage");
     const empty = $("cg-memories-empty");
     if (!state.items.length) {
@@ -74,6 +92,7 @@
     img.className = "cg-mem-img cg-fx-" + (state.effect || "kenburns");
     stage.appendChild(img);
   }
+
   function next() {
     if (state.items.length < 1) return;
     state.idx = (state.idx + 1) % state.items.length;
@@ -115,7 +134,7 @@
   async function addFiles(fileList) {
     const files = Array.from(fileList || []).filter(function (f) { return /^image\//.test(f.type); }).slice(0, MAX);
     for (let i = 0; i < files.length; i++) {
-      const packed = await compress(files[i], 1400, 0.75);
+      const packed = await compress(files[i], 1400, 0.78);
       if (!packed) continue;
       state.items.push({ id: Date.now() + Math.random(), dataUrl: packed.dataUrl, name: packed.name });
       if (state.items.length > MAX) state.items = state.items.slice(-MAX);
@@ -129,7 +148,7 @@
     if (!audio.getAttribute("src")) {
       audio.src = "/static/uploads/kwealth_bgm/admin_global/nature_ambient.mp3";
     }
-    if (state.musicOn) { audio.volume = 0.4; audio.play().catch(function () {}); }
+    if (state.musicOn) { audio.volume = 0.38; audio.play().catch(function () {}); }
     else audio.pause();
   }
 
@@ -145,11 +164,8 @@
     const root = $("cg-memories");
     if (!root) return;
 
-    // Primary toggle lives on Social Stream title bar
-    const barToggle = $("cg-memories-bar-toggle");
-    if (barToggle) {
-      barToggle.addEventListener("click", function () { setOn(!state.on); });
-    }
+    const ext = $("cg-memories-ext-toggle");
+    if (ext) ext.addEventListener("click", function () { setOn(!state.on); });
 
     $("cg-memories-landscape") && $("cg-memories-landscape").addEventListener("click", function () {
       state.landscape = !state.landscape; save();

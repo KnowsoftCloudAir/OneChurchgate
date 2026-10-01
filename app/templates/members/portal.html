@@ -2299,14 +2299,15 @@ window.memberHub = memberHub;
 
 
 
-<!-- MEMORIES (above social stream) — ON/OFF lives in Social Stream title bar -->
+<!-- MEMORIES (above social stream) -->
 <link rel="stylesheet" href="/static/css/memories.css">
 <section id="cg-memories" class="mx-4 mb-4" aria-label="Memories slideshow">
+  <div id="cg-memories-dots" aria-hidden="true"></div>
   <div id="cg-memories-stage"></div>
   <div id="cg-memories-empty">
-    <div>
-      <p class="text-lg font-bold text-white mb-1">Memories</p>
-      <p class="text-slate-300 text-sm max-w-xs mx-auto">Add photos from your device. Choose a slide style. Optional soft music. Use the Memories button on the Social Stream bar to show or hide this panel.</p>
+    <div class="cg-empty-card">
+      <h3>Memories</h3>
+      <p>Sync photos from your device. Pick a slide style. Soft music optional. Use <strong>Memories ON/OFF</strong> next to Wallet to show or hide this panel.</p>
     </div>
   </div>
   <div id="cg-memories-ui">
@@ -2316,12 +2317,14 @@ window.memberHub = memberHub;
       <button type="button" class="cg-mem-btn" id="cg-memories-prev">‹</button>
       <button type="button" class="cg-mem-btn" id="cg-memories-next">›</button>
       <button type="button" class="cg-mem-btn" id="cg-memories-music">♪ Music off</button>
-      <select id="cg-memories-effect" class="cg-mem-btn" title="Slide style">
+      <select id="cg-memories-effect" title="Slide style">
         <option value="kenburns">Ken Burns</option>
         <option value="fade">Fade</option>
         <option value="slide">Slide</option>
         <option value="zoom">Zoom</option>
         <option value="flip">Flip</option>
+        <option value="glow">Glow</option>
+        <option value="pan">Pan</option>
       </select>
       <button type="button" class="cg-mem-btn" id="cg-memories-clear">Clear</button>
     </div>
@@ -2336,6 +2339,7 @@ window.memberHub = memberHub;
 
 <div class="mx-4 mt-4 mb-2 flex justify-end gap-2 relative z-10">
   
+  <button type="button" id="cg-memories-ext-toggle" class="text-xs" aria-pressed="true">Memories ON</button>
   <a href="/member/wallet" id="cg-wallet-btn"
      class="text-xs px-3 py-1 rounded-full font-bold shadow"
      style="background:linear-gradient(135deg,#059669,#10b981);color:#fff">
@@ -2346,12 +2350,11 @@ window.memberHub = memberHub;
   <button type="button" id="foldDashBtn" class="text-xs px-3 py-1 rounded-full border border-white/20 bg-slate-900/80 text-slate-100">Fold dashboard</button>
 </div>
 <div id="socialDock" class="mx-4 mb-8 rounded-2xl overflow-hidden border border-sky-500/30 bg-slate-950 relative z-10">
-  <div class="cg-stream-bar">
-    <span class="title">Social Stream</span>
-    <span class="cg-stream-actions">
-      <button type="button" id="cg-memories-bar-toggle" class="cg-btn-3d" aria-pressed="true">Memories ON</button>
-      <a href="/member/social-watch?cat=tv" class="cg-btn-3d cg-btn-3d-sky" style="text-decoration:none;display:inline-block">Open full</a>
-      <button type="button" id="closeStreamBtn" class="cg-btn-3d cg-btn-3d-rose">Close stream</button>
+  <div class="flex items-center justify-between px-3 py-2 text-xs text-sky-100 bg-slate-900">
+    <span class="font-bold">Social Stream</span>
+    <span class="flex gap-2 items-center">
+      <a href="/member/social-watch?cat=tv" class="underline">Open full</a>
+      <button type="button" id="closeStreamBtn" class="px-2 py-0.5 rounded bg-white/10">Close stream</button>
     </span>
   </div>
   <iframe id="socialDockFrame" title="Social Stream" style="width:100%;height:42vh;border:0;background:#000" allow="autoplay; encrypted-media; picture-in-picture"></iframe>
