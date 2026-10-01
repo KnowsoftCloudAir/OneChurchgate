@@ -27,16 +27,28 @@
       }));
     } catch (e) {
       while (state.items.length > 8) state.items.shift();
-      try { localStorage.setItem(KEY, JSON.stringify({ on: state.on, landscape: state.landscape, intervalMs: state.intervalMs, musicOn: state.musicOn, effect: state.effect, items: state.items })); } catch (e2) {}
+      try {
+        localStorage.setItem(KEY, JSON.stringify({
+          on: state.on, landscape: state.landscape, intervalMs: state.intervalMs,
+          musicOn: state.musicOn, effect: state.effect, items: state.items
+        }));
+      } catch (e2) {}
     }
   }
   function $(id) { return document.getElementById(id); }
 
-  function syncShowBtn() {
-    const show = $("cg-memories-show");
-    if (!show) return;
-    if (state.on) show.classList.remove("is-visible");
-    else show.classList.add("is-visible");
+  function paintBarToggle() {
+    const btn = $("cg-memories-bar-toggle");
+    if (!btn) return;
+    if (state.on) {
+      btn.textContent = "Memories ON";
+      btn.classList.remove("is-off");
+      btn.setAttribute("aria-pressed", "true");
+    } else {
+      btn.textContent = "Memories OFF · tap to show";
+      btn.classList.add("is-off");
+      btn.setAttribute("aria-pressed", "false");
+    }
   }
 
   function render() {
@@ -44,7 +56,7 @@
     if (!root) return;
     root.classList.toggle("is-off", !state.on);
     root.classList.toggle("is-landscape", state.landscape);
-    syncShowBtn();
+    paintBarToggle();
     const stage = $("cg-memories-stage");
     const empty = $("cg-memories-empty");
     if (!state.items.length) {
@@ -126,8 +138,6 @@
     save();
     render();
     if (state.on) startTimer(); else stopTimer();
-    const tb = $("cg-memories-toggle");
-    if (tb) tb.textContent = state.on ? "Memories on" : "Memories off";
   }
 
   function init() {
@@ -135,12 +145,12 @@
     const root = $("cg-memories");
     if (!root) return;
 
-    $("cg-memories-toggle") && $("cg-memories-toggle").addEventListener("click", function () {
-      setOn(!state.on);
-    });
-    $("cg-memories-show-btn") && $("cg-memories-show-btn").addEventListener("click", function () {
-      setOn(true);
-    });
+    // Primary toggle lives on Social Stream title bar
+    const barToggle = $("cg-memories-bar-toggle");
+    if (barToggle) {
+      barToggle.addEventListener("click", function () { setOn(!state.on); });
+    }
+
     $("cg-memories-landscape") && $("cg-memories-landscape").addEventListener("click", function () {
       state.landscape = !state.landscape; save();
       root.classList.toggle("is-landscape", state.landscape);
@@ -171,8 +181,6 @@
     render();
     if (state.on) startTimer();
     music();
-    const tb = $("cg-memories-toggle");
-    if (tb) tb.textContent = state.on ? "Memories on" : "Memories off";
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

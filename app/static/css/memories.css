@@ -17,20 +17,16 @@
   min-height: 100vh; height: 100vh; max-height: none; margin: 0;
 }
 #cg-memories-stage { position: absolute; inset: 0; }
-.cg-mem-img {
-  width: 100%; height: 100%; object-fit: cover;
-  animation: cgIn .7s ease both;
-}
-/* Effects */
+.cg-mem-img { width: 100%; height: 100%; object-fit: cover; animation: cgIn .7s ease both; }
 .cg-fx-kenburns { animation: cgKen 8s ease-in-out infinite alternate, cgIn .7s ease both; }
 .cg-fx-fade { animation: cgFade 1s ease both; }
 .cg-fx-slide { animation: cgSlide .8s ease both; }
 .cg-fx-zoom { animation: cgZoom 1s ease both; }
 .cg-fx-flip { animation: cgFlip .9s ease both; }
 @keyframes cgIn { from { opacity: 0; } to { opacity: 1; } }
-@keyframes cgKen { from { transform: scale(1) translate(0,0); } to { transform: scale(1.12) translate(-2%,-1%); } }
+@keyframes cgKen { from { transform: scale(1); } to { transform: scale(1.12) translate(-2%,-1%); } }
 @keyframes cgFade { from { opacity: 0; } to { opacity: 1; } }
-@keyframes cgSlide { from { opacity: 0; transform: translateX(8%); } to { opacity: 1; transform: translateX(0); } }
+@keyframes cgSlide { from { opacity: 0; transform: translateX(8%); } to { opacity: 1; transform: none; } }
 @keyframes cgZoom { from { opacity: 0; transform: scale(1.2); } to { opacity: 1; transform: scale(1); } }
 @keyframes cgFlip { from { opacity: 0; transform: rotateY(12deg) scale(.96); } to { opacity: 1; transform: none; } }
 #cg-memories-ui {
@@ -51,17 +47,85 @@
 }
 .cg-mem-btn:hover { background: rgba(45,212,191,.55); }
 .cg-mem-title { font-weight: 900; letter-spacing: .08em; text-transform: uppercase; font-size: .62rem; color: #5eead4; }
-#cg-memories-show {
-  display: none; margin: 0 1rem 0.75rem;
-}
-#cg-memories-show.is-visible { display: block; }
-#cg-memories-show button {
-  width: 100%; padding: .7rem 1rem; border-radius: 1rem;
-  background: linear-gradient(135deg,#0f766e,#134e4a); color: #fff;
-  font-weight: 800; font-size: .8rem; border: 1px solid rgba(94,234,212,.35);
-  box-shadow: 0 8px 24px rgba(15,118,110,.35); cursor: pointer;
-}
 #cg-memories-effect {
   background: rgba(0,0,0,.35); color: #fff; border: 1px solid rgba(255,255,255,.25);
   border-radius: .7rem; font-size: .65rem; font-weight: 700; padding: .35rem .5rem;
+}
+
+/* 3D buttons in Social Stream title bar */
+.cg-btn-3d {
+  appearance: none;
+  border: none;
+  cursor: pointer;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .02em;
+  padding: .38rem .85rem;
+  border-radius: .7rem;
+  color: #fff;
+  text-shadow: 0 1px 0 rgba(0,0,0,.35);
+  background: linear-gradient(180deg, #5eead4 0%, #0d9488 45%, #115e59 100%);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.35) inset,
+    0 -2px 0 rgba(0,0,0,.25) inset,
+    0 4px 0 #0f766e,
+    0 6px 12px rgba(0,0,0,.35);
+  transform: translateY(0);
+  transition: transform .08s ease, box-shadow .08s ease, filter .15s ease;
+}
+.cg-btn-3d:hover { filter: brightness(1.08); }
+.cg-btn-3d:active {
+  transform: translateY(3px);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.25) inset,
+    0 -1px 0 rgba(0,0,0,.2) inset,
+    0 1px 0 #0f766e,
+    0 2px 6px rgba(0,0,0,.3);
+}
+.cg-btn-3d.is-off {
+  background: linear-gradient(180deg, #94a3b8 0%, #475569 45%, #334155 100%);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.2) inset,
+    0 -2px 0 rgba(0,0,0,.25) inset,
+    0 4px 0 #1e293b,
+    0 6px 12px rgba(0,0,0,.35);
+}
+.cg-btn-3d-sky {
+  background: linear-gradient(180deg, #7dd3fc 0%, #0284c7 45%, #075985 100%);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.35) inset,
+    0 -2px 0 rgba(0,0,0,.25) inset,
+    0 4px 0 #0c4a6e,
+    0 6px 12px rgba(0,0,0,.35);
+}
+.cg-btn-3d-rose {
+  background: linear-gradient(180deg, #fda4af 0%, #e11d48 45%, #9f1239 100%);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.3) inset,
+    0 -2px 0 rgba(0,0,0,.25) inset,
+    0 4px 0 #881337,
+    0 6px 12px rgba(0,0,0,.35);
+}
+#socialDock .cg-stream-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem;
+  flex-wrap: wrap;
+  padding: .55rem .75rem;
+  background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+  border-bottom: 1px solid rgba(56,189,248,.2);
+}
+#socialDock .cg-stream-bar .title {
+  font-weight: 900;
+  font-size: .75rem;
+  color: #e0f2fe;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+#socialDock .cg-stream-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem;
+  align-items: center;
 }
