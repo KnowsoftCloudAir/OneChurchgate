@@ -3777,7 +3777,7 @@
     .lib-book span { position:absolute; left:0; top:0; bottom:0; width:8px; background:rgba(0,0,0,.28); border-radius:3px 0 0 3px; }
     #fsDock { display:none; position:fixed; left:0; right:0; bottom:0; z-index:10020; gap:8px; justify-content:center; flex-wrap:wrap; padding:10px; background:rgba(2,6,23,.88); }
     body.scene-fs-on #fsDock, #stage.scene-fs #fsDock { display:flex; }
-    .kw-clock { position:absolute; left:50%; top:46%; width:min(70vmin,420px); height:min(70vmin,420px); margin:-35vmin 0 0 -35vmin; animation:clockGrow 16s ease-in-out infinite; border-radius:50%; background:radial-gradient(circle at 35% 30%, #f8fafc, #cbd5e1 40%, #64748b 78%); box-shadow:0 20px 50px rgba(0,0,0,.45), inset 0 0 0 10px #0f172a, inset 0 0 0 14px #e2e8f0; }
+    .kw-clock { position:absolute; left:50%; top:46%; width:min(70vmin,420px); height:min(70vmin,420px); margin:-35vmin 0 0 -35vmin; border-radius:50%; background:radial-gradient(circle at 35% 30%, #f8fafc, #cbd5e1 40%, #64748b 78%); box-shadow:0 20px 50px rgba(0,0,0,.45), inset 0 0 0 10px #0f172a, inset 0 0 0 14px #e2e8f0; }
     .kw-clock-logo { position:absolute; left:50%; top:42%; width:28%; transform:translate(-50%,-50%); }
     .kw-hand { position:absolute; left:50%; bottom:50%; transform-origin:50% 100%; background:#0f172a; border-radius:4px; }
     .kw-hour { width:8px; height:22%; margin-left:-4px; }
@@ -3793,7 +3793,6 @@
     .s3 { width:32vmin; height:32vmin; background:radial-gradient(circle,#fff7ed,#fb923c 40%,#c2410c); animation-delay:7.2s; }
     .s4 { width:42vmin; height:42vmin; background:radial-gradient(circle,#fee2e2,#ef4444 40%,#7f1d1d); animation-delay:10.8s; }
     .s5 { width:56vmin; height:56vmin; background:radial-gradient(circle,#fef9c3,#f59e0b 35%,#9a3412); animation-delay:14.4s; }
-    @keyframes clockGrow { 0%{transform:scale(.45)} 70%{transform:scale(2.4)} 100%{transform:scale(6)} }
     @keyframes starPass { 0%{left:-30%; opacity:0} 15%{opacity:1} 50%{left:42%} 100%{left:120%; opacity:.2} }
 
 </style>
@@ -3835,8 +3834,7 @@
         <button type="button" class="chip on" id="btnTools">⚙ Settings</button>
         <button type="button" class="chip" id="btnMusic"><span id="bgmDot" class="off"></span> Music</button>
         <button type="button" class="chip" id="btnScene" title="Reading ambience animation">Scene</button>
-        <select id="sceneMix" class="ctl" style="max-width:8rem;font-size:11px" title="Scene mode"><option value="one">One 3D</option><option value="mix">Mix all</option></select>
-          <select id="scenePick" class="ctl" style="max-width:14rem;font-size:11px;" title="Ambience">
+        <select id="scenePick" class="ctl" style="max-width:14rem;font-size:11px;" title="Ambience">
           <option value="clock">Knowsoft wall clock</option>
           <option value="giants">Five giant stars</option>
           <option value="sun">Sunrise to sunset</option>
@@ -3879,36 +3877,17 @@
           <b>The Gift of the Magi</b>
           <small class="lib-page">Page 1</small>
         </a>
-        {% for b in admin_books %}
+        {% for b in books %}
         {% set colors = ['#bae6fd','#bbf7d0','#fecdd3','#ddd6fe','#fed7aa'] %}
         <a class="lib-book" style="background:{{ colors[loop.index0 % 5] }}" href="/member/kwealth/books?book_id={{ b.id }}">
           <span></span>
           <b>{{ b.title }}</b>
-          <small class="lib-page">Page 1</small>
+          <small class="lib-page" data-book-page="{{ b.id }}">Page 1</small>
         </a>
         {% endfor %}
       </div>
       <h3 style="color:#93c5fd;margin:16px 0 8px">Personal</h3>
-      <div class="lib-wall" id="libPersonal">
-        {% for b in my_books %}
-        {% set colors = ['#fbcfe8','#c4b5fd','#a5f3fc','#fde68a'] %}
-        <a class="lib-book" style="background:{{ colors[loop.index0 % 4] }}" href="/member/kwealth/books?book_id={{ b.id }}">
-          <span></span>
-          <b>{{ b.title }}</b>
-          <small class="lib-page">Page 1</small>
-        </a>
-        {% else %}
-        <p style="color:#94a3b8;font-size:12px">No personal books yet. Upload one.</p>
-        {% endfor %}
-      </div>
-      <pre id="magiText" style="display:none">The Gift of the Magi
-by O. Henry
-
-One dollar and eighty-seven cents. That was all. And sixty cents of it was in pennies. Three times Della counted it. And the next day would be Christmas. There was clearly nothing to do but flop down on the shabby little couch and howl. So Della did it. Life is made up of sobs, sniffles, and smiles, with sniffles predominating.
-
-Tomorrow would be Christmas Day, and she had only $1.87 with which to buy Jim a present. She had been saving every penny she could for months. Twenty dollars a week does not go far. Only $1.87 to buy a present for Jim. Her Jim.
-
-There were two possessions of which they were proud. One was Jim's gold watch. The other was Della's hair. She sold her hair for twenty dollars and bought him a platinum fob chain. Jim sold the watch to buy her the combs she had wanted. Of all who give gifts, these two were the wisest. They are the magi.</pre>
+      <div class="lib-wall" id="libPersonal"></div>
     </section>
 
       {% if book %}<div id="panelTools" style="max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
@@ -4011,6 +3990,7 @@ There were two possessions of which they were proud. One was Jim's gold watch. T
       <p style="text-align:center;color:#6ee7b7;font-size:13px;">Background music library updated.</p>
       {% endif %}
 
+      {% if book %}
       <div class="stage" id="stage">
         <div id="sceneStage" class="sc-sun" aria-hidden="true">
           <div class="sc-layer sc-clock-bits" style="display:none">
@@ -5413,7 +5393,7 @@ id="fsBookMeta" aria-hidden="true">
         var show = !!(state.sceneFs || document.body.classList.contains('scene-fs-on') || (stage && stage.classList.contains('scene-fs')));
         if (show) {
           meta.classList.add('is-on');
-          meta.style.cssText = 'display:block!important;position:fixed!important;top:10px!important;left:50%!important;transform:translateX(-50%)!important;z-index:2147483646!important;text-align:center;pointer-events:none;padding:0.6rem 1.35rem;border-radius:14px;background:linear-gradient(160deg,rgba(15,23,42,.92),rgba(30,41,59,.88));border:1px solid rgba(255,255,255,.22);box-shadow:0 8px 28px rgba(0,0,0,.5);max-width:min(90%,36rem);color:#f8fafc;';
+          meta.style.cssText = 'display:block!important;position:absolute!important;top:12px!important;left:50%!important;transform:translateX(-50%)!important;z-index:2147483646!important;text-align:center;pointer-events:none;padding:0.6rem 1.35rem;border-radius:14px;background:linear-gradient(160deg,rgba(15,23,42,.92),rgba(30,41,59,.88));border:1px solid rgba(255,255,255,.22);box-shadow:0 8px 28px rgba(0,0,0,.5);max-width:min(90%,36rem);color:#f8fafc;';
           // refresh title/page
           try {
             var ft = document.getElementById('fsBookTitle');
@@ -5472,7 +5452,7 @@ id="fsBookMeta" aria-hidden="true">
 
       function schedule() {
         clear();
-        if (!state.sceneOn) return; if((document.getElementById("sceneMix")||{}).value!=="mix") return;
+        if (!state.sceneOn) return;
         var name = state.sceneName || 'sun';
         var sec = SCENE_SECS[name] || 20;
         timer = setTimeout(function () {
@@ -5632,22 +5612,18 @@ id="fsBookMeta" aria-hidden="true">
     el.textContent="Page "+(n||1);
   });
   var magi=document.getElementById("sampleMagi");
-  function openMagi(ev){ if(ev) ev.preventDefault();
-
+  if(magi) magi.addEventListener("click", function(ev){
     ev.preventDefault();
     var lib=document.getElementById("bookLib");
     if(lib) lib.style.display="none";
     var tools=document.getElementById("panelTools");
     if(tools) tools.style.display="block";
-    var stage=document.getElementById("stage");
-    if(stage) stage.style.display="block";
-    var text=(document.getElementById("magiText")||{}).textContent||"";
-    var pages=[]; var chunk=700;
-    for(var i=0;i<text.length;i+=chunk) pages.push(text.slice(i,i+chunk));
-    try{ state.pages=pages; state.pageIndex=0; state.title="The Gift of the Magi"; if(typeof renderPage==="function") renderPage(); var st=document.getElementById("sheetText"); if(st) st.textContent=pages[0]||text; }catch(e){}
-    var ft=document.getElementById("fsBookTitle"); if(ft) ft.textContent="The Gift of the Magi"; }
-  if(magi) magi.addEventListener("click", openMagi);
-  if(/sample=1/.test(location.search)) openMagi();
+    fetch("/static/books/gift_of_the_magi.txt").then(function(r){return r.text()}).then(function(text){
+      var pages=[]; var chunk=900;
+      for(var i=0;i<text.length;i+=chunk) pages.push(text.slice(i,i+chunk));
+      try{ state.pages=pages; state.pageIndex=0; state.title="The Gift of the Magi"; if(typeof renderPage==="function") renderPage(); }catch(e){ alert("Open sample from Book Lib after the reader loads."); }
+      var ft=document.getElementById("fsBookTitle"); if(ft) ft.textContent="The Gift of the Magi";
+    }).catch(function(){ alert("Sample file missing on server: /static/books/gift_of_the_magi.txt"); });
   });
 
   function tick(){
