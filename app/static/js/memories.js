@@ -81,9 +81,27 @@
     stage.innerHTML = "";
     var img = document.createElement("img");
     img.src = it.dataUrl; img.alt = it.name || "Memory";
-    img.className = "cg-mem-img cg-fx-" + (state.effect || "kenburns");
+    var fx = state.effect || "kenburns";
+    if (fx === "mix") {
+      var pool = ["bounce","leaves","wipe","blinds","fly","cube","swirl","kenburns","zoom","flip"];
+      fx = pool[Math.floor(Math.random()*pool.length)];
+    }
+    img.className = "cg-mem-img cg-fx-" + fx;
     img.draggable = false;
     stage.appendChild(img);
+    if (fx === "leaves") {
+      var layer = document.createElement("div");
+      layer.className = "cg-leaves";
+      for (var n=0;n<14;n++) {
+        var leaf = document.createElement("span");
+        leaf.className = "cg-leaf";
+        leaf.style.left = (n*7)+"%";
+        leaf.style.animationDelay = (n*0.35)+"s";
+        leaf.style.animationDuration = (4+ (n%4))+"s";
+        layer.appendChild(leaf);
+      }
+      stage.appendChild(layer);
+    }
   }
   function next() { if (state.items.length < 1) return; state.idx = (state.idx + 1) % state.items.length; render(); }
   function prev() { if (state.items.length < 1) return; state.idx = (state.idx - 1 + state.items.length) % state.items.length; render(); }
@@ -132,13 +150,16 @@
   }
   function setOn(on) {
     state.on = !!on; save(); render();
-    if (state.on && state.playing) startTimer(); else stopTimer();
+    if (!state.on) { stopTimer(); var a=$("cg-memories-audio"); if(a) a.pause(); }
+    else if (state.playing) { startTimer(); music(); }
   }
   function setPlaying(playing) {
     state.playing = !!playing; save(); paintPlayBtn();
     var root = $("cg-memories");
     if (root) root.classList.toggle("is-paused", !state.playing);
-    if (state.playing && state.on) startTimer(); else stopTimer();
+    var a = $("cg-memories-audio");
+    if (state.playing && state.on) { startTimer(); music(); }
+    else { stopTimer(); if (a) a.pause(); }
   }
   function on(el, ev, fn) { if (el) el.addEventListener(ev, fn, false); }
   function init() {
