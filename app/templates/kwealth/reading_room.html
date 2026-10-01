@@ -3872,7 +3872,7 @@ body.reader-mode .library-only{display:none!important}
         <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" style="height:28px;width:auto" onerror="this.src='/static/img/knowsoft-icon.svg'"> <strong style="color:#f1f5f9;font-size:14px;">{% if book %}Reading Room{% else %}Book Library{% endif %}</strong>
                                 <button type="button" class="chip" id="btnRead">👼 Read</button>
         <button type="button" class="chip" id="btnArrange">Arrange</button>
-        <button type="button" class="chip on" id="btnTools">⚙ Settings</button>
+        <button type="button" class="chip" id="btnTools" aria-controls="panelTools" aria-expanded="false">⚙ Reading Settings</button>
         <button type="button" class="chip" id="btnMusic"><span id="bgmDot" class="off"></span> Music</button>
         <button type="button" class="chip" id="btnScene" title="Reading ambience animation">Scene</button>
         <select id="sceneMix" class="ctl" style="max-width:8rem;font-size:11px" title="Scene mode"><option value="one">One 3D</option><option value="mix">Mix all</option></select>
@@ -4858,11 +4858,22 @@ id="fsBookMeta" aria-hidden="true">
     on('btnTools', 'onclick', () => {
       const p = $('panelTools');
       if (!p) return;
-      if (p.dataset.open === '1') { p.style.display = 'none'; p.dataset.open = '0'; }
-      else { p.style.display = 'block'; p.dataset.open = '1'; }
+      if (p.dataset.open === '1') {
+        p.style.display = 'none';
+        p.dataset.open = '0';
+        this.classList.remove('on');
+        this.setAttribute('aria-expanded', 'false');
+      } else {
+        p.style.display = 'block';
+        p.dataset.open = '1';
+        this.classList.add('on');
+        this.setAttribute('aria-expanded', 'true');
+      }
     });
-    $('panelTools').style.display = 'block';
-    $('panelTools').dataset.open = '1';
+    $('panelTools').style.display = 'none';
+    $('panelTools').dataset.open = '0';
+    var toolsBtn = $('btnTools');
+    if (toolsBtn) { toolsBtn.classList.remove('on'); toolsBtn.setAttribute('aria-expanded', 'false'); }
     
     document.addEventListener('keydown', function(ev){
       var tag = (ev.target && ev.target.tagName || '').toLowerCase();
