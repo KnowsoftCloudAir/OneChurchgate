@@ -39,8 +39,8 @@
   function paintExtToggle() {
     var btn = $("cg-memories-ext-toggle");
     if (!btn) return;
-    if (state.on) { btn.textContent = "Memories ON"; btn.classList.remove("is-off"); btn.setAttribute("aria-pressed", "true"); }
-    else { btn.textContent = "Memories OFF"; btn.classList.add("is-off"); btn.setAttribute("aria-pressed", "false"); }
+    if (state.on) { btn.textContent = "Mem On"; btn.classList.remove("is-off"); btn.setAttribute("aria-pressed", "true"); }
+    else { btn.textContent = "Mem Off"; btn.classList.add("is-off"); btn.setAttribute("aria-pressed", "false"); }
   }
   function paintPlayBtn() {
     var btn = $("cg-memories-play");
@@ -66,6 +66,7 @@
     var root = $("cg-memories");
     if (!root) return;
     root.classList.toggle("is-off", !state.on);
+    root.classList.toggle("is-paused", !state.playing);
     root.classList.toggle("is-landscape", state.landscape);
     paintExtToggle(); paintPlayBtn(); paintDots();
     var stage = $("cg-memories-stage"), empty = $("cg-memories-empty");
@@ -135,6 +136,8 @@
   }
   function setPlaying(playing) {
     state.playing = !!playing; save(); paintPlayBtn();
+    var root = $("cg-memories");
+    if (root) root.classList.toggle("is-paused", !state.playing);
     if (state.playing && state.on) startTimer(); else stopTimer();
   }
   function on(el, ev, fn) { if (el) el.addEventListener(ev, fn, false); }
