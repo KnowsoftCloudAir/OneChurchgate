@@ -6,21 +6,20 @@
     <div>
       <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">General Admin</p>
       <h1 class="text-2xl font-black text-slate-900">Angel resources repository</h1>
-      <p class="text-sm text-slate-500 mt-1">Upload text knowledge Angel can use in answers</p>
+      <p class="text-sm text-slate-500 mt-1">Upload one or many .txt files — content is stored for Angel</p>
     </div>
     <a href="/admin" class="text-sm font-semibold text-indigo-700">← Admin home</a>
   </div>
-  {% if ok %}<div class="mb-4 p-3 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm font-bold">OK: {{ ok }}</div>{% endif %}
+  {% if ok %}<div class="mb-4 p-3 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm font-bold">OK: {{ ok }}{% if added %} · {{ added }} file(s){% endif %}</div>{% endif %}
   {% if err %}<div class="mb-4 p-3 rounded-xl bg-red-50 border text-red-800 text-sm font-bold">Error: {{ err }}</div>{% endif %}
 
   <section class="bg-white rounded-2xl border p-5 mb-6 shadow-sm">
-    <h2 class="font-bold mb-3">Upload knowledge file (.txt)</h2>
+    <h2 class="font-bold mb-3">Upload knowledge files (multiple allowed)</h2>
     <form method="post" action="/admin/angel-resources/upload" enctype="multipart/form-data" class="space-y-3">
-      <input type="file" name="file" accept=".txt,.md,text/plain" required class="block w-full text-sm border rounded-xl p-2">
-      <input name="title" placeholder="Title (e.g. Prayer teachings)" class="w-full border rounded-xl px-3 py-2 text-sm">
+      <input type="file" name="files" accept=".txt,.md,text/plain" multiple required class="block w-full text-sm border rounded-xl p-2">
+      <input name="title" placeholder="Title only if uploading a single file (optional)" class="w-full border rounded-xl px-3 py-2 text-sm">
       <button type="submit" class="px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm shadow">Upload to Angel repository</button>
     </form>
-    <p class="text-xs text-slate-500 mt-2">File content is stored in the database so Angel can read it after upload.</p>
   </section>
 
   <section class="bg-white rounded-2xl border p-5 shadow-sm">
@@ -31,8 +30,8 @@
         <div class="flex flex-wrap justify-between gap-2">
           <div class="min-w-0 flex-1">
             <p class="font-semibold text-sm">{{ f.title }}</p>
-            <p class="text-xs text-slate-500">{{ f.source }}{% if f.filename %} · {{ f.filename }}{% endif %}{% if f.active is defined and not f.active %} · <span class="text-amber-700">inactive</span>{% endif %}</p>
-            {% if f.preview %}<p class="text-xs text-slate-400 mt-1 line-clamp-2">{{ f.preview }}…</p>{% endif %}
+            <p class="text-xs text-slate-500">{{ f.source }}{% if f.active is defined and not f.active %} · inactive{% endif %}</p>
+            {% if f.preview %}<p class="text-xs text-slate-400 mt-1">{{ f.preview }}…</p>{% endif %}
           </div>
           {% if f.id %}
           <div class="flex gap-2">
@@ -43,7 +42,7 @@
         </div>
       </li>
       {% else %}
-      <li class="text-slate-400 text-sm text-center py-8">No resources yet — upload a .txt file above.</li>
+      <li class="text-slate-400 text-sm text-center py-8">No resources yet — upload .txt files above.</li>
       {% endfor %}
     </ul>
   </section>

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
-{% block title %}My Space – Churchgate{% endblock %}
+{% block title %}My Space – Churchgate<script src="/static/js/wallet_badge.js"></script>
+{% endblock %}
 {% block content %}
 
 
@@ -2300,12 +2301,15 @@ window.memberHub = memberHub;
 
 <!-- MEMORIES (above social stream) -->
 <link rel="stylesheet" href="/static/css/memories.css">
+<div id="cg-memories-show" class="mx-4">
+  <button type="button" id="cg-memories-show-btn">✦ Show Memories panel</button>
+</div>
 <section id="cg-memories" class="mx-4 mb-4" aria-label="Memories slideshow">
   <div id="cg-memories-stage"></div>
   <div id="cg-memories-empty">
     <div>
       <p class="text-lg font-bold text-white mb-1">Memories</p>
-      <p class="text-slate-300 text-sm max-w-xs mx-auto">Add photos from your device for a captivating slideshow. Optional soft music.</p>
+      <p class="text-slate-300 text-sm max-w-xs mx-auto">Add photos from your device. Choose a slide style. Optional soft music.</p>
     </div>
   </div>
   <div id="cg-memories-ui">
@@ -2316,6 +2320,13 @@ window.memberHub = memberHub;
       <button type="button" class="cg-mem-btn" id="cg-memories-prev">‹</button>
       <button type="button" class="cg-mem-btn" id="cg-memories-next">›</button>
       <button type="button" class="cg-mem-btn" id="cg-memories-music">♪ Music off</button>
+      <select id="cg-memories-effect" class="cg-mem-btn" title="Slide style">
+        <option value="kenburns">Ken Burns</option>
+        <option value="fade">Fade</option>
+        <option value="slide">Slide</option>
+        <option value="zoom">Zoom</option>
+        <option value="flip">Flip</option>
+      </select>
       <button type="button" class="cg-mem-btn" id="cg-memories-clear">Clear</button>
     </div>
     <label class="cg-mem-btn cursor-pointer">+ Add photos
@@ -2328,6 +2339,13 @@ window.memberHub = memberHub;
 
 
 <div class="mx-4 mt-4 mb-2 flex justify-end gap-2 relative z-10">
+  
+  <a href="/member/wallet" id="cg-wallet-btn"
+     class="text-xs px-3 py-1 rounded-full font-bold shadow"
+     style="background:linear-gradient(135deg,#059669,#10b981);color:#fff">
+    Wallet · <span data-wallet-bal>—</span>
+  </a>
+
   <button type="button" id="openStreamBtn" class="text-xs px-3 py-1 rounded-full border border-teal-400/40 bg-teal-900/80 text-teal-50">Open Social Stream</button>
   <button type="button" id="foldDashBtn" class="text-xs px-3 py-1 rounded-full border border-white/20 bg-slate-900/80 text-slate-100">Fold dashboard</button>
 </div>

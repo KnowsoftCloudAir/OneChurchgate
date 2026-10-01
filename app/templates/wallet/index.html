@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wallet — Churchgate</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <style>
+    body { background: radial-gradient(ellipse at top, #ecfdf5 0%, #f8fafc 40%, #eef2ff 100%); }
+    .card { background: #fff; border-radius: 1.25rem; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(15,23,42,.06); }
+    .bal-good { background: linear-gradient(135deg,#059669,#10b981); }
+    .bal-warn { background: linear-gradient(135deg,#dc2626,#f97316); }
+  </style>
+</head>
+<body class="min-h-screen text-slate-900">
+  <div class="max-w-3xl mx-auto px-4 py-6">
+    <div class="flex items-center justify-between mb-4">
+      <div>
+        <a href="/member/portal" class="text-sm text-teal-700 font-semibold">← Member portal</a>
+        <h1 class="text-2xl font-black mt-1">Wallet</h1>
+        <p class="text-xs text-slate-500">Track income & expenses · monthly & annual view</p>
+      </div>
+    </div>
+
+    {% if ok %}<p class="mb-3 text-sm font-semibold text-emerald-700">Saved.</p>{% endif %}
+
+    <div class="grid grid-cols-3 gap-3 mb-4">
+      <div class="card p-3 text-center">
+        <p class="text-[10px] uppercase font-bold text-slate-400">Income</p>
+        <p class="text-lg font-black text-emerald-700">{{ "%.2f"|format(s.income) }}</p>
+      </div>
+      <div class="card p-3 text-center">
+        <p class="text-[10px] uppercase font-bold text-slate-400">Expenses</p>
+        <p class="text-lg font-black text-rose-600">{{ "%.2f"|format(s.expense) }}</p>
+      </div>
+      <div class="card p-3 text-center {% if s.healthy %}bal-good{% else %}bal-warn{% endif %} text-white">
+        <p class="text-[10px] uppercase font-bold opacity-90">Balance</p>
+        <p class="text-lg font-black">{{ "%.2f"|format(s.balance) }}</p>
+        <p class="text-[10px] opacity-90">{% if s.income > 0 %}{{ s.pct }}% of income{% else %}—{% endif %}</p>
+      </div>
+    </div>
+
+    <div class="card p-4 mb-4">
+      <h2 class="font-bold mb-3 text-sm">Add record</h2>
+      <form method="post" action="/member/wallet/add" class="space-y-3" id="walletForm">
+        <div class="flex gap-2">
+          <label class="flex-1"><span class="text-xs font-bold text-slate-500">Type</span>
+            <select name="kind" id="kind" class="w-full border rounded-xl px-3 py-2 text-sm">
+              <option value="income">Income</option>
+              <option value="expense">Expense / Payment</option>
+            </select>
+          </label>
+          <label class="flex-1"><span class="text-xs font-bold text-slate-500">Amount</span>
+            <input type="number" step="0.01" min="0.01" name="amount" required class="w-full border rounded-xl px-3 py-2 text-sm" placeholder="0.00">
+          </label>
+        </div>
+        <div id="incomeFields" class="grid sm:grid-cols-2 gap-2">
+          <label><span class="text-xs font-bold text-slate-500">Cash or Bank</span>
+            <select name="payment_method" class="w-full border rounded-xl px-3 py-2 text-sm">
+              <option value="cash">Cash</option>
+              <option value="bank">Bank</option>
+            </select>
+          </label>
+          <label><span class="text-xs font-bold text-slate-500">Source</span>
+            <select name="source" id="source" class="w-full border rounded-xl px-3 py-2 text-sm">
+              <option>Salary</option>
+              <option>Profit</option>
+              <option>Earnings</option>
+              <option>Sales</option>
+              <option>Gift</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label class="sm:col-span-2"><span class="text-xs font-bold text-slate-500">Or add custom source</span>
+            <input name="custom_source" class="w-full border rounded-xl px-3 py-2 text-sm" placeholder="Custom source (optional)">
+          </label>
+        </div>
+        <div id="expenseFields" class="grid sm:grid-cols-2 gap-2 hidden">
+          <label class="sm:col-span-2"><span class="text-xs font-bold text-slate-500">Payment category</span>
+            <select name="category" class="w-full border rounded-xl px-3 py-2 text-sm">
+              <option>School fee</option>
+              <option>Utility</option>
+              <option>Food</option>
+              <option>Health bills</option>
+              <option>Siblings</option>
+              <option>Rent</option>
+              <option>Transport</option>
+              <option>Tithe / Offering</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label class="sm:col-span-2"><span class="text-xs font-bold text-slate-500">Or add custom category</span>
+            <input name="custom_category" class="w-full border rounded-xl px-3 py-2 text-sm" placeholder="Custom category (optional)">
+          </label>
+        </div>
+        <div class="grid sm:grid-cols-2 gap-2">
+          <label><span class="text-xs font-bold text-slate-500">Date</span>
+            <input type="date" name="entry_date" class="w-full border rounded-xl px-3 py-2 text-sm">
+          </label>
+          <label><span class="text-xs font-bold text-slate-500">More information</span>
+            <input name="note" class="w-full border rounded-xl px-3 py-2 text-sm" placeholder="Note (optional)">
+          </label>
+        </div>
+        <button class="w-full py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm">Save record</button>
+      </form>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-4 mb-4">
+      <div class="card p-4">
+        <h3 class="font-bold text-sm mb-2">Income sources</h3>
+        <canvas id="pieIncome" height="200"></canvas>
+      </div>
+      <div class="card p-4">
+        <h3 class="font-bold text-sm mb-2">Payments by category</h3>
+        <canvas id="pieExpense" height="200"></canvas>
+      </div>
+      <div class="card p-4 sm:col-span-2">
+        <h3 class="font-bold text-sm mb-2">Monthly income vs expenses</h3>
+        <canvas id="barMonth" height="120"></canvas>
+      </div>
+    </div>
+
+    <div class="card p-4">
+      <h3 class="font-bold text-sm mb-3">Recent records</h3>
+      <ul class="space-y-2 max-h-80 overflow-y-auto text-sm">
+        {% for r in s.rows|reverse %}
+        <li class="flex justify-between gap-2 border-b border-slate-100 pb-2">
+          <div>
+            <p class="font-semibold {% if r.kind=='income' %}text-emerald-700{% else %}text-rose-600{% endif %}">
+              {{ r.kind|upper }} · {{ "%.2f"|format(r.amount) }}
+            </p>
+            <p class="text-xs text-slate-500">
+              {{ r.entry_date }} ·
+              {% if r.kind=='income' %}{{ r.payment_method or '' }} {{ r.source or '' }}{% else %}{{ r.category or '' }}{% endif %}
+              {% if r.note %}· {{ r.note }}{% endif %}
+            </p>
+          </div>
+          <form method="post" action="/member/wallet/{{ r.id }}/delete" onsubmit="return confirm('Delete?')">
+            <button class="text-xs text-red-600 font-semibold">Delete</button>
+          </form>
+        </li>
+        {% else %}
+        <li class="text-slate-400 text-center py-6">No records yet — add income or an expense above.</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const bySrc = {{ s.by_src | tojson }};
+    const byCat = {{ s.by_cat | tojson }};
+    const byIn = {{ s.by_month_in | tojson }};
+    const byEx = {{ s.by_month_ex | tojson }};
+
+    function pie(id, data, colors) {
+      const labels = Object.keys(data);
+      const values = Object.values(data);
+      if (!labels.length) return;
+      new Chart(document.getElementById(id), {
+        type: 'doughnut',
+        data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0 }] },
+        options: {
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } },
+          cutout: '45%',
+        }
+      });
+    }
+    const c1 = ['#059669','#10b981','#34d399','#6ee7b7','#a7f3d0','#047857','#065f46','#14b8a6'];
+    const c2 = ['#e11d48','#f43f5e','#fb7185','#f97316','#fb923c','#a855f7','#6366f1','#0ea5e9'];
+    pie('pieIncome', bySrc, c1);
+    pie('pieExpense', byCat, c2);
+
+    const months = Array.from(new Set([...Object.keys(byIn), ...Object.keys(byEx)])).sort();
+    new Chart(document.getElementById('barMonth'), {
+      type: 'bar',
+      data: {
+        labels: months,
+        datasets: [
+          { label: 'Income', data: months.map(m => byIn[m] || 0), backgroundColor: '#10b981', borderRadius: 6 },
+          { label: 'Expenses', data: months.map(m => byEx[m] || 0), backgroundColor: '#f43f5e', borderRadius: 6 },
+        ]
+      },
+      options: {
+        plugins: { legend: { position: 'bottom' } },
+        scales: { y: { beginAtZero: true } }
+      }
+    });
+
+    const kind = document.getElementById('kind');
+    function toggle() {
+      const inc = kind.value === 'income';
+      document.getElementById('incomeFields').classList.toggle('hidden', !inc);
+      document.getElementById('expenseFields').classList.toggle('hidden', inc);
+    }
+    kind.addEventListener('change', toggle);
+    toggle();
+  </script>
+</body>
+</html>
