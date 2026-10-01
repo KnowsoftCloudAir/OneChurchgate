@@ -428,7 +428,17 @@
           <p class="text-xs text-emerald-300 mt-1" x-show="angel.enabled && angel.listening && !angel.busy">🎤 Waves active · listening</p>
           <p class="text-xs text-sky-200/90 mt-1" x-show="angel.enabled && !angel.listening && !angel.busy">◐ Attentive · waiting for instruction</p>
         </div>
-        <button type="button" @click="toggleAngel()"
+        
+<div class="flex flex-wrap items-center gap-2 mt-2 relative z-20">
+  <button type="button" id="angel-mic-request" data-angel-mic-request
+    class="px-3 py-2 rounded-xl text-xs font-bold bg-white/15 text-white border border-white/25 hover:bg-amber-400 hover:text-slate-900">
+    🎤 Allow microphone
+  </button>
+  <span id="angel-mic-status" class="text-xs text-sky-200">Mic: tap to allow for Angel voice</span>
+</div>
+<script src="/static/js/angel_mic_control.js"></script>
+
+<button type="button" @click="toggleAngel()"
                 class="shrink-0 px-3 py-1.5 rounded-full text-xs font-bold border border-white/30"
                 :class="angel.enabled ? 'bg-amber-400 text-slate-900' : 'bg-white/15'">
           <span x-text="angel.enabled ? 'Turn off' : 'Turn on'"></span>
@@ -2285,6 +2295,36 @@ window.memberHub = memberHub;
   else { tick(); setInterval(tick, 1000); }
 })();
 </script>
+
+
+
+<!-- MEMORIES (above social stream) -->
+<link rel="stylesheet" href="/static/css/memories.css">
+<section id="cg-memories" class="mx-4 mb-4" aria-label="Memories slideshow">
+  <div id="cg-memories-stage"></div>
+  <div id="cg-memories-empty">
+    <div>
+      <p class="text-lg font-bold text-white mb-1">Memories</p>
+      <p class="text-slate-300 text-sm max-w-xs mx-auto">Add photos from your device for a captivating slideshow. Optional soft music.</p>
+    </div>
+  </div>
+  <div id="cg-memories-ui">
+    <div class="flex flex-wrap gap-2 items-center">
+      <span class="cg-mem-title">✦ Memories</span>
+      <button type="button" class="cg-mem-btn" id="cg-memories-toggle">Memories on</button>
+      <button type="button" class="cg-mem-btn" id="cg-memories-landscape">Landscape</button>
+      <button type="button" class="cg-mem-btn" id="cg-memories-prev">‹</button>
+      <button type="button" class="cg-mem-btn" id="cg-memories-next">›</button>
+      <button type="button" class="cg-mem-btn" id="cg-memories-music">♪ Music off</button>
+      <button type="button" class="cg-mem-btn" id="cg-memories-clear">Clear</button>
+    </div>
+    <label class="cg-mem-btn cursor-pointer">+ Add photos
+      <input type="file" id="cg-memories-add" accept="image/*" multiple style="display:none">
+    </label>
+  </div>
+  <audio id="cg-memories-audio" loop preload="none" src="/static/kwealth_bgm/nature_ambient.mp3"></audio>
+</section>
+<script src="/static/js/memories.js"></script>
 
 
 <div class="mx-4 mt-4 mb-2 flex justify-end gap-2 relative z-10">

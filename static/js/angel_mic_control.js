@@ -1,46 +1,39 @@
 
 (function () {
   function status(msg) {
-    const el = document.getElementById('angel-mic-status') || document.getElementById('angel-voice-status');
+    var el = document.getElementById("angel-mic-status") || document.getElementById("angel-voice-status");
     if (el) el.textContent = msg;
   }
   async function ensureMic() {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      status('Microphone API not available in this browser.');
+      status("Mic not supported in this browser (use Chrome/Edge).");
       return false;
     }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      stream.getTracks().forEach(t => t.stop()); // permission only
-      status('Microphone allowed — Angel can listen.');
+      var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach(function (t) { t.stop(); });
       window.__cgMicAllowed = true;
+      status("Microphone ON — Angel can listen.");
+      document.dispatchEvent(new CustomEvent("cg-mic-granted"));
       return true;
     } catch (e) {
-      status('Microphone blocked — allow mic for this site in browser settings.');
       window.__cgMicAllowed = false;
+      status("Microphone OFF/blocked — allow mic for churchgate.knowsoft.org.uk");
       return false;
     }
   }
   function bind() {
-    document.querySelectorAll('[data-angel-mic-request], #angel-mic-request').forEach(btn => {
+    document.querySelectorAll("[data-angel-mic-request], #angel-mic-request").forEach(function (btn) {
       if (btn.dataset.boundMic) return;
-      btn.dataset.boundMic = '1';
-      btn.addEventListener('click', async (e) => {
+      btn.dataset.boundMic = "1";
+      btn.addEventListener("click", async function (e) {
         e.preventDefault();
-        const ok = await ensureMic();
-        btn.textContent = ok ? '🎤 Mic on' : '🎤 Allow microphone';
-        btn.classList.toggle('mic-on', ok);
-        // If Alpine angel exists, try resume listen
-        try {
-          if (ok && window.Alpine) {
-            /* portal may call _angelResumeListen via custom event */
-            document.dispatchEvent(new CustomEvent('cg-mic-granted'));
-          }
-        } catch (err) {}
+        var ok = await ensureMic();
+        btn.textContent = ok ? "🎤 Mic on" : "🎤 Allow microphone";
       });
     });
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', bind);
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", bind);
   else bind();
   window.cgRequestAngelMic = ensureMic;
 })();
