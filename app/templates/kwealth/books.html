@@ -3778,6 +3778,7 @@
     #fsDock { display:none; position:fixed; left:0; right:0; bottom:0; z-index:10020; gap:8px; justify-content:center; flex-wrap:wrap; padding:10px; background:rgba(2,6,23,.88); }
     body.scene-fs-on #fsDock, #stage.scene-fs #fsDock { display:flex; }
     .kw-clock { position:absolute; left:50%; top:46%; width:min(70vmin,420px); height:min(70vmin,420px); margin:-35vmin 0 0 -35vmin; animation:clockGrow 16s ease-in-out infinite; border-radius:50%; background:radial-gradient(circle at 35% 30%, #f8fafc, #cbd5e1 40%, #64748b 78%); box-shadow:0 20px 50px rgba(0,0,0,.45), inset 0 0 0 10px #0f172a, inset 0 0 0 14px #e2e8f0; }
+    .kw-clock-digital { position:absolute; left:50%; top:55%; transform:translate(-50%,-50%); z-index:3; font:800 clamp(12px,2.2vmin,18px)/1 monospace; color:#0f172a; letter-spacing:.04em; background:rgba(255,255,255,.62); padding:4px 7px; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,.16); }
     .kw-clock-logo { position:absolute; left:50%; top:42%; width:28%; transform:translate(-50%,-50%); }
     .kw-hand { position:absolute; left:50%; bottom:50%; transform-origin:50% 100%; background:#0f172a; border-radius:4px; }
     .kw-hour { width:8px; height:22%; margin-left:-4px; }
@@ -4006,6 +4007,7 @@
         <div id="sceneStage" class="sc-sun" aria-hidden="true">
           <div class="sc-layer sc-clock-bits" style="display:none">
             <div class="kw-clock">
+              <div class="kw-clock-digital" id="kwClockDigital" aria-live="polite">--:--:--</div>
               <img class="kw-clock-logo" src="/static/img/knowsoft-logo.png" alt="Knowsoft" onerror="this.style.display='none'">
               <div class="kw-hand kw-hour" id="kwHour"></div>
               <div class="kw-hand kw-min" id="kwMin"></div>
@@ -5064,7 +5066,7 @@ id="fsBookMeta" aria-hidden="true">
           else { try { if (typeof prev === 'function') prev(); } catch (err) {} }
         } else if (state.sceneFs || state.sceneOn) {
           // vertical — cycle scenes only when Scene/FS active (don't steal page scroll)
-          var order = ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','star_bypass'];
+          var order = ['clock','sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','star_bypass'];
           var cur = state.sceneName || 'sun';
           var ix = order.indexOf(cur);
           if (ix < 0) ix = 0;
@@ -5216,7 +5218,7 @@ id="fsBookMeta" aria-hidden="true">
         try { if (window.CGWebGL) CGWebGL.setMode('none'); } catch (e) {}
       }
       // Show only bits for selected scene
-      ['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','star_bypass'].forEach(function (n) {
+      ['clock','sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','star_bypass'].forEach(function (n) {
         var el = surface.querySelector('.sc-' + n + '-bits');
         if (el) {
           if (show3d && n === name) {
@@ -5622,6 +5624,8 @@ id="fsBookMeta" aria-hidden="true">
     try{ n=(JSON.parse(localStorage.getItem("kw_book_page_"+id)||"1")); }catch(e){}
     el.textContent="Page "+(n||1);
   });
+  // Knowsoft clock: always follows the visitor's computer/device local clock.
+  // Date() intentionally uses the browser's local timezone and therefore does not depend on server time.
   function tick(){
     var d=new Date();
     var s=d.getSeconds()+d.getMilliseconds()/1000;
@@ -5631,9 +5635,11 @@ id="fsBookMeta" aria-hidden="true">
     if(hs) hs.style.transform="rotate("+(h*30)+"deg)";
     if(ms) ms.style.transform="rotate("+(m*6)+"deg)";
     if(ss) ss.style.transform="rotate("+(s*6)+"deg)";
-    requestAnimationFrame(tick);
+    var dg=document.getElementById("kwClockDigital");
+    if(dg) dg.textContent=d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
   }
   tick();
+  setInterval(tick, 250);
   var lib=document.getElementById("bookLib");
   if(lib && /book_id=/.test(location.search)) lib.style.display="none";
   var tools=document.getElementById("panelTools");
