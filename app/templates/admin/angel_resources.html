@@ -6,37 +6,73 @@
     <div>
       <p class="text-xs uppercase tracking-widest text-slate-500 font-bold">General Admin</p>
       <h1 class="text-2xl font-black text-slate-900">Angel resources repository</h1>
-      <p class="text-sm text-slate-500 mt-1">Upload one or many .txt files — content is stored for Angel</p>
+      <p class="text-sm text-slate-500 mt-1">Upload one or many .txt files. Content is stored for Angel.</p>
     </div>
     <a href="/admin" class="text-sm font-semibold text-indigo-700">← Admin home</a>
   </div>
-  {% if ok %}<div class="mb-4 p-3 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm font-bold">OK: {{ ok }}{% if added %} · {{ added }} file(s){% endif %}</div>{% endif %}
-  {% if err %}<div class="mb-4 p-3 rounded-xl bg-red-50 border text-red-800 text-sm font-bold">Error: {{ err }}</div>{% endif %}
+
+  {% if ok == "uploaded" %}
+  <div class="mb-4 p-4 rounded-xl bg-green-50 border border-green-300 text-green-900 text-sm font-bold">
+    ✓ Upload successful — {{ added or 0 }} file(s) saved to Angel repository.
+  </div>
+  {% elif ok == "deleted" %}
+  <div class="mb-4 p-4 rounded-xl bg-green-50 border border-green-300 text-green-800 text-sm font-bold">✓ Resource deleted.</div>
+  {% elif ok == "toggled" %}
+  <div class="mb-4 p-4 rounded-xl bg-green-50 border border-green-300 text-green-800 text-sm font-bold">✓ Active status updated.</div>
+  {% elif ok %}
+  <div class="mb-4 p-4 rounded-xl bg-green-50 border border-green-300 text-green-800 text-sm font-bold">OK: {{ ok }}</div>
+  {% endif %}
+
+  {% if err == "nofile" %}
+  <div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-300 text-red-800 text-sm font-bold">✗ No file selected. Choose one or more .txt files.</div>
+  {% elif err == "empty" %}
+  <div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-300 text-red-800 text-sm font-bold">✗ File had no readable text.</div>
+  {% elif err == "save_failed" %}
+  <div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-300 text-red-800 text-sm font-bold">✗ Could not save to database. Check server logs.</div>
+  {% elif err %}
+  <div class="mb-4 p-4 rounded-xl bg-red-50 border border-red-300 text-red-800 text-sm font-bold">✗ Error: {{ err }}</div>
+  {% endif %}
 
   <section class="bg-white rounded-2xl border p-5 mb-6 shadow-sm">
     <h2 class="font-bold mb-3">Upload knowledge files (multiple allowed)</h2>
     <form method="post" action="/admin/angel-resources/upload" enctype="multipart/form-data" class="space-y-3">
-      <input type="file" name="files" accept=".txt,.md,text/plain" multiple required class="block w-full text-sm border rounded-xl p-2">
-      <input name="title" placeholder="Title only if uploading a single file (optional)" class="w-full border rounded-xl px-3 py-2 text-sm">
-      <button type="submit" class="px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm shadow">Upload to Angel repository</button>
+      <input type="file" name="files" id="angelFiles" accept=".txt,.md,text/plain" multiple required
+             class="block w-full text-sm border rounded-xl p-2 bg-slate-50">
+      <p id="angelFileHint" class="text-xs text-slate-500">No files selected yet.</p>
+      <input name="title" placeholder="Optional title (only used if uploading a single file)" class="w-full border rounded-xl px-3 py-2 text-sm">
+      <button type="submit" class="px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm shadow">
+        Upload to Angel repository
+      </button>
     </form>
   </section>
 
   <section class="bg-white rounded-2xl border p-5 shadow-sm">
-    <h2 class="font-bold mb-3">Repository ({{ files|length }})</h2>
-    <ul class="space-y-2 max-h-[28rem] overflow-y-auto">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-bold">Repository</h2>
+      <span class="text-xs font-bold text-slate-500">{{ count or files|length }} item(s)</span>
+    </div>
+    <ul class="space-y-2 max-h-[32rem] overflow-y-auto">
       {% for f in files %}
       <li class="p-3 rounded-xl border bg-slate-50">
         <div class="flex flex-wrap justify-between gap-2">
           <div class="min-w-0 flex-1">
-            <p class="font-semibold text-sm">{{ f.title }}</p>
-            <p class="text-xs text-slate-500">{{ f.source }}{% if f.active is defined and not f.active %} · inactive{% endif %}</p>
+            <p class="font-semibold text-sm text-slate-900">{{ f.title }}</p>
+            <p class="text-xs text-slate-500">
+              {{ f.source }}
+              {% if f.chars %} · {{ f.chars }} chars{% endif %}
+              {% if f.active is defined and not f.active %} · <span class="text-amber-600">inactive</span>{% endif %}
+              {% if f.filename %} · {{ f.filename }}{% endif %}
+            </p>
             {% if f.preview %}<p class="text-xs text-slate-400 mt-1">{{ f.preview }}…</p>{% endif %}
           </div>
           {% if f.id %}
-          <div class="flex gap-2">
-            <form method="post" action="/admin/angel-resources/{{ f.id }}/toggle"><button class="text-xs px-2 py-1 border rounded-lg bg-white">On/Off</button></form>
-            <form method="post" action="/admin/angel-resources/{{ f.id }}/delete" onsubmit="return confirm('Delete?');"><button class="text-xs px-2 py-1 border border-red-200 text-red-700 rounded-lg bg-white">Delete</button></form>
+          <div class="flex gap-2 shrink-0">
+            <form method="post" action="/admin/angel-resources/{{ f.id }}/toggle">
+              <button type="submit" class="text-xs px-2 py-1 border rounded-lg bg-white">On/Off</button>
+            </form>
+            <form method="post" action="/admin/angel-resources/{{ f.id }}/delete" onsubmit="return confirm('Delete this resource?');">
+              <button type="submit" class="text-xs px-2 py-1 border border-red-200 text-red-700 rounded-lg bg-white">Delete</button>
+            </form>
           </div>
           {% endif %}
         </div>
@@ -47,4 +83,19 @@
     </ul>
   </section>
 </div>
+<script>
+(function(){
+  var input = document.getElementById('angelFiles');
+  var hint = document.getElementById('angelFileHint');
+  if (input && hint) {
+    input.addEventListener('change', function(){
+      var n = (input.files && input.files.length) || 0;
+      if (!n) { hint.textContent = 'No files selected yet.'; return; }
+      var names = [];
+      for (var i = 0; i < Math.min(n, 8); i++) names.push(input.files[i].name);
+      hint.textContent = n + ' file(s): ' + names.join(', ') + (n > 8 ? '…' : '');
+    });
+  }
+})();
+</script>
 {% endblock %}

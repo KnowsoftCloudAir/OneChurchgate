@@ -2313,6 +2313,7 @@ window.memberHub = memberHub;
   <div id="cg-memories-ui">
     <div class="flex flex-wrap gap-2 items-center">
       <span class="cg-mem-title">✦ Memories</span>
+      <button type="button" class="cg-mem-btn is-playing" id="cg-memories-play">⏸ Stop</button>
       <button type="button" class="cg-mem-btn" id="cg-memories-landscape">Landscape</button>
       <button type="button" class="cg-mem-btn" id="cg-memories-prev">‹</button>
       <button type="button" class="cg-mem-btn" id="cg-memories-next">›</button>
@@ -2328,18 +2329,17 @@ window.memberHub = memberHub;
       </select>
       <button type="button" class="cg-mem-btn" id="cg-memories-clear">Clear</button>
     </div>
-    <label class="cg-mem-btn cursor-pointer">+ Add photos
-      <input type="file" id="cg-memories-add" accept="image/*" multiple style="display:none">
-    </label>
+    <label class="cg-mem-btn cursor-pointer" for="cg-memories-add">+ Add photos</label>
+    <input type="file" id="cg-memories-add" accept="image/*" multiple style="position:absolute;width:1px;height:1px;opacity:0;overflow:hidden;">
   </div>
   <audio id="cg-memories-audio" loop preload="none" src="/static/uploads/kwealth_bgm/admin_global/nature_ambient.mp3"></audio>
 </section>
-<script src="/static/js/memories.js"></script>
+<script src="/static/js/memories.js" defer></script>
 
 
 <div class="mx-4 mt-4 mb-2 flex justify-end gap-2 relative z-10">
   
-  <button type="button" id="cg-memories-ext-toggle" class="text-xs" aria-pressed="true">Memories ON</button>
+  <button type="button" id="cg-memories-ext-toggle" class="text-xs" aria-pressed="true" style="position:relative;z-index:40">Memories ON</button>
   <a href="/member/wallet" id="cg-wallet-btn"
      class="text-xs px-3 py-1 rounded-full font-bold shadow"
      style="background:linear-gradient(135deg,#059669,#10b981);color:#fff">
