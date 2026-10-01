@@ -3821,17 +3821,10 @@
 body:not(.reader-mode) #app>.bar .chip,body:not(.reader-mode) #app>.bar select{display:none!important}
 body:not(.reader-mode) #panelTools,body:not(.reader-mode) #panelMusic,body:not(.reader-mode) #stage,body:not(.reader-mode) #fsControls,body:not(.reader-mode) #sceneFs,body:not(.reader-mode) #sceneFsExit{display:none!important}
 @media(max-width:650px){.lib-upload-card{flex-direction:column;align-items:stretch}.lib-wall{grid-template-columns:repeat(2,minmax(0,1fr));padding:24px 12px}.lib-book{width:110px;height:155px}}
-
-/* === Dedicated Reading Room settings launcher === */
-.reader-settings-launch{max-width:56rem;margin:8px auto 0;padding:0 12px;display:flex;justify-content:flex-end;position:sticky;top:52px;z-index:55}
-.reading-settings-btn{border:1px solid rgba(45,212,191,.55);background:rgba(15,23,42,.96);color:#f8fafc;border-radius:12px;padding:10px 15px;font-weight:800;font-size:13px;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.28)}
-.reading-settings-btn:hover{filter:brightness(1.1);transform:translateY(-1px)}
-#panelTools[data-open="0"]{display:none!important}
-#panelTools[data-open="1"]{display:block!important}
 </style>
 </head>
 <body class="theme-parchment{% if book %} reader-mode{% endif %}" id="bookBody">
-<button type="button" id="readMenuFab" onclick="document.querySelector('.bar')&&document.querySelector('.bar').scrollIntoView({behavior:'smooth',block:'start'});var t=document.getElementById('panelTools');if(t){t.style.display='block';}window.scrollTo({top:0,behavior:'smooth'});">☰ Menu</button>
+<button type="button" id="readMenuFab" onclick="var t=document.getElementById('panelTools');if(t){var o=t.dataset.open==='1';t.style.display=o?'none':'block';t.dataset.open=o?'0':'1';var b=document.getElementById('btnTools');if(b){b.classList.toggle('on',!o);b.setAttribute('aria-expanded',String(!o));}t.scrollIntoView({behavior:'smooth',block:'start'});}">⚙ Reading Settings</button>
   <div id="fsControls">
   <select id="fsScenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
           <option value="sun">Sunrise → Sunset</option>
@@ -3863,7 +3856,7 @@ body:not(.reader-mode) #panelTools,body:not(.reader-mode) #panelMusic,body:not(.
         <button type="button" class="chip" id="btnDelBook" title="Delete selected book you uploaded">Delete book</button>
         <button type="button" class="chip" id="btnRead">👼 Read</button>
         <button type="button" class="chip" id="btnArrange">Arrange</button>
-        <button type="button" class="chip on" id="btnTools">⚙ Settings</button>
+        <button type="button" class="chip on" id="btnTools" aria-expanded="false">⚙ Reading Settings</button>
         <button type="button" class="chip" id="btnMusic"><span id="bgmDot" class="off"></span> Music</button>
         <button type="button" class="chip" id="btnScene" title="Reading ambience animation">Scene</button>
         <select id="sceneMix" class="ctl" style="max-width:8rem;font-size:11px" title="Scene mode"><option value="one">One 3D</option><option value="mix">Mix all</option></select>
@@ -3932,10 +3925,7 @@ body:not(.reader-mode) #panelTools,body:not(.reader-mode) #panelMusic,body:not(.
       </div>
     </section>
 
-      {% if book %}<div class="reader-settings-launch">
-        <button type="button" id="readingSettingsBtn" class="reading-settings-btn" aria-controls="panelTools" aria-expanded="false" onclick="(function(){var p=document.getElementById('panelTools');var b=document.getElementById('readingSettingsBtn');if(!p)return;var open=p.dataset.open==='1';p.style.display=open?'none':'block';p.dataset.open=open?'0':'1';if(b){b.setAttribute('aria-expanded',open?'false':'true');b.textContent=open?'⚙ Reading Settings':'✕ Close Reading Settings';}})()">⚙ Reading Settings</button>
-      </div>
-      {% if book %}<div id="panelTools" data-open="0" style="display:none;max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
+      {% if book %}<div id="panelTools" style="max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
         <div class="reader-nav"><a href="/member/kwealth/books" class="reader-back">← Back to Book Library</a><a href="/member/kwealth" class="reader-back secondary">← Kwealth</a></div><p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Book settings (theme · font · flip · jump)</p>
         <div class="grid-tools">
           <div>
@@ -4883,17 +4873,11 @@ id="fsBookMeta" aria-hidden="true">
     on('btnTools', 'onclick', () => {
       const p = $('panelTools');
       if (!p) return;
-      const isOpen = p.dataset.open === '1';
-      p.style.display = isOpen ? 'none' : 'block';
-      p.dataset.open = isOpen ? '0' : '1';
-      const btn = $('btnTools');
-      if (btn) {
-        btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
-        btn.classList.toggle('on', !isOpen);
-      }
+      if (p.dataset.open === '1') { p.style.display = 'none'; p.dataset.open = '0'; }
+      else { p.style.display = 'block'; p.dataset.open = '1'; }
     });
-    var _panelTools = $('panelTools');
-    if (_panelTools) { _panelTools.style.display = 'none'; _panelTools.dataset.open = '0'; }
+    if ($('panelTools')) { $('panelTools').style.display = 'none'; $('panelTools').dataset.open = '0'; }
+    if ($('btnTools')) { $('btnTools').classList.remove('on'); $('btnTools').setAttribute('aria-expanded','false'); }
     
     document.addEventListener('keydown', function(ev){
       var tag = (ev.target && ev.target.tagName || '').toLowerCase();
@@ -5689,7 +5673,7 @@ id="fsBookMeta" aria-hidden="true">
   var lib=document.getElementById("bookLib");
   if(lib && /book_id=/.test(location.search)) lib.style.display="none";
   var tools=document.getElementById("panelTools");
-  if(tools && !/book_id=/.test(location.search)) { tools.style.display="none"; tools.dataset.open="0"; }
+  if(tools && !/book_id=/.test(location.search)) tools.style.display="none";
   var stop=document.getElementById("fsStop");
   if(stop) stop.onclick=function(){ var b=document.getElementById("btnRead"); if(b) b.click(); };
   var all=document.getElementById("fsAll");
