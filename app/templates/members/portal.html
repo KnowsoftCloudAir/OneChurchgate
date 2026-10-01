@@ -2344,9 +2344,27 @@ window.memberHub = memberHub;
 </section>
 <script src="/static/js/memories.js" defer></script>
 
+<link rel="stylesheet" href="/static/css/remind.css">
+<section id="cg-remind" class="is-off" aria-label="Reminders">
+  <h3>Remind</h3>
+  <p class="sub">Up to 10 notes. At the time it rings for 3 seconds and says “Reminder,” then the note. Turn Remind off to silence it. Background bell needs notifications allowed.</p>
+  <div class="row">
+    <textarea id="cg-remind-note" maxlength="180" placeholder="Note to remember"></textarea>
+  </div>
+  <div class="row" style="margin-top:8px;align-items:center">
+    <input id="cg-remind-when" type="datetime-local">
+    <button type="button" class="add" id="cg-remind-add">Save reminder</button>
+  </div>
+  <div id="cg-remind-list"></div>
+  <audio id="cg-remind-audio" preload="auto" src="/static/sounds/remind.wav"></audio>
+</section>
+<script src="/static/js/remind.js" defer></script>
+
+
 
 <div class="mx-4 mt-4 mb-2 flex justify-end gap-2 relative z-10">
   
+  <button type="button" id="cg-remind-btn" class="cg-remind-3d">Remind</button>
   <button type="button" id="cg-memories-ext-toggle" class="cg-mem-on-3d" aria-pressed="true">Mem On</button>
   <a href="/member/wallet" id="cg-wallet-btn"
      class="text-xs px-3 py-1 rounded-full font-bold shadow"

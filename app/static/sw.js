@@ -93,3 +93,38 @@ self.addEventListener('fetch', (event) => {
     )
   );
 });
+
+self.addEventListener("message", function (event) {
+  var data = event.data || {};
+  if (data.type !== "cg-remind") return;
+  var n = Number(data.count) || 0;
+  if (self.navigator && self.navigator.setAppBadge) {
+    if (n > 0) self.navigator.setAppBadge(n).catch(function () {});
+    else if (self.navigator.clearAppBadge) self.navigator.clearAppBadge().catch(function () {});
+  }
+  if (n > 0 && data.notify && self.registration && self.registration.showNotification) {
+    self.registration.showNotification("Churchgate", {
+      body: n === 1 ? "1 reminder is waiting in the app." : (n + " reminders are waiting in the app."),
+      tag: "cg-remind-badge",
+      renotify: false,
+      icon: "/static/icons/icon-192.png",
+      badge: "/static/icons/icon-192.png",
+      data: { url: "/member/portal" }
+    });
+  }
+  if (n === 0 && self.registration && self.registration.getNotifications) {
+    self.registration.getNotifications({ tag: "cg-remind-badge" }).then(function (list) {
+      list.forEach(function (note) { note.close(); });
+    });
+  }
+});
+self.addEventListener("notificationclick", function (event) {
+  event.notification.close();
+  var target = (event.notification.data && event.notification.data.url) || "/member/portal";
+  event.waitUntil(clients.matchAll({ type: "window", includeUncontrolled: true }).then(function (list) {
+    for (var i = 0; i < list.length; i++) {
+      if (list[i].url.indexOf("/member") >= 0 && list[i].focus) return list[i].focus();
+    }
+    if (clients.openWindow) return clients.openWindow(target);
+  }));
+});
