@@ -1447,8 +1447,8 @@
     body:not(.scene-fs-on) .bar a {
       pointer-events: auto !important;
     }
-    body:not(.scene-fs-on) #toolsPanel,
-    body:not(.scene-fs-on) #toolsPanel * {
+    body:not(.scene-fs-on) #panelTools,
+    body:not(.scene-fs-on) #panelTools * {
       pointer-events: auto !important;
     }
     body.kw-speaking:not(.scene-fs-on) {
@@ -3799,6 +3799,9 @@
 }
 
     #panelTools, .bar { position: sticky; top: 0; z-index: 40; }
+    /* Permanent Reading Room fix: keep settings visible when open */
+    body.reader-mode #panelTools[data-open="1"]{display:block!important;}
+    body.reader-mode #panelTools.rr-settings-pop[data-open="1"]{display:block!important;}
     body.reading-on { overflow-y: auto !important; }
     #bookLib { padding: 18px 16px 40px; }
     #bookLib h2 { color:#f8fafc; font-size:1.4rem; margin:0 0 8px; }
@@ -3870,7 +3873,7 @@ body.reader-mode .library-only{display:none!important}
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
       <div style="color:#f8fafc;font-family:Georgia,serif;font-size:15px;font-weight:800;">📖 Reading Room</div>
       <div class="reader-nav" style="margin:0;">
-        <div class="rr-settings-wrap"><button type="button" class="chip rr-settings-icon" id="btnTools" aria-label="Reading settings" aria-expanded="false" title="Reading settings">⚙</button><div id="panelTools" class="rr-settings-pop" data-open="0" hidden>
+        <div class="rr-settings-wrap"><button type="button" class="chip rr-settings-icon on" id="btnTools" aria-label="Reading settings" aria-expanded="true" title="Reading settings">⚙</button><div id="panelTools" class="rr-settings-pop" data-open="1" style="display:block;">
         <p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Reading settings</p>
         <div class="grid-tools">
           <div>
@@ -4903,7 +4906,10 @@ id="fsBookMeta" aria-hidden="true">
       if (!p) return;
       setReadingSettings(p.dataset.open !== '1');
     });
-    setReadingSettings(false);
+    // Permanent fix: in Reading Room, open the full settings panel by default when a book is loaded.
+    // User can still close it with the ⚙ button, outside click, or Escape.
+    var hasBook = /book_id=/.test(location.search) || !!(window.B && window.B.id);
+    setReadingSettings(!!hasBook);
     document.addEventListener('click', (ev) => {
       const p = $('panelTools');
       const b = $('btnTools');
@@ -5709,6 +5715,13 @@ id="fsBookMeta" aria-hidden="true">
   var lib=document.getElementById("bookLib");
   if(lib && /book_id=/.test(location.search)) lib.style.display="none";
   var tools=document.getElementById("panelTools");
+  if(tools && /book_id=/.test(location.search)){
+    tools.style.display="block";
+    tools.dataset.open="1";
+    tools.hidden=false;
+    var tb=document.getElementById("btnTools");
+    if(tb){ tb.classList.add("on"); tb.setAttribute("aria-expanded","true"); }
+  }
   if(tools && !/book_id=/.test(location.search)) tools.style.display="none";
   var stop=document.getElementById("fsStop");
   if(stop) stop.onclick=function(){ var b=document.getElementById("btnRead"); if(b) b.click(); };
