@@ -1240,9 +1240,11 @@
       box-shadow: 0 8px 32px rgba(0,0,0,.5);
     }
     body.scene-fs-on #fsControls,
-    #stage.scene-fs ~ #fsControls,
-    .scene-fs-on #fsControls {
+    .scene-fs-on #fsControls,
+    body.scene-fs-on > #fsControls {
       display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
     }
     #fsControls .chip, #fsControls select, #fsControls button {
       font-size: 13px;
@@ -3768,7 +3770,7 @@
 
     #panelTools, .bar { position: sticky; top: 0; z-index: 40; }
 
-    /* ===== REDESIGNED READING SETTINGS DASHBOARD (ALL CONTROLS FORCED VISIBLE) ===== */
+    /* ===== REDESIGNED READING SETTINGS PANEL (forced visible) ===== */
     #panelTools {
       display: block !important;
       max-width: 56rem;
@@ -3782,13 +3784,12 @@
       position: relative;
       z-index: 50;
     }
-    /* Settings are intentionally ALWAYS visible. The settings button no longer hides them. */
-    #panelTools[data-open="0"],
+    #panelTools[data-open="0"] {
+      display: none !important;
+    }
     #panelTools[data-open="1"],
     #panelTools:not([data-open]) {
       display: block !important;
-      visibility: visible !important;
-      opacity: 1 !important;
     }
     body.reader-mode #panelTools[data-open="1"] {
       display: block !important;
@@ -3831,49 +3832,6 @@
     #panelTools input[type=range] {
       accent-color: #14b8a6;
       width: 100%;
-    }
-    #panelTools .settings-section {
-      margin-top: 14px;
-      padding: 12px;
-      border: 1px solid rgba(148,163,184,.18);
-      border-radius: 12px;
-      background: rgba(2,6,23,.28);
-    }
-    #panelTools .settings-section:first-of-type { margin-top: 0; }
-    #panelTools .settings-section-title {
-      color: #6ee7b7;
-      font-size: 11px;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      margin: 0 0 10px;
-    }
-    #panelTools .settings-actions {
-      display:flex; flex-wrap:wrap; gap:6px; align-items:center;
-    }
-    #panelTools .settings-actions .ctl { flex:1 1 150px; max-width:none !important; }
-    #panelMusic {
-      display:block !important;
-      max-width:56rem !important;
-      margin:12px auto !important;
-      padding:12px 14px 16px !important;
-      border:1px solid rgba(45,212,191,.25) !important;
-      border-radius:12px !important;
-      background:rgba(15,23,42,.92) !important;
-    }
-    #panelMusic .settings-section-title {
-      color:#6ee7b7; font-size:11px; font-weight:800;
-      text-transform:uppercase; letter-spacing:.08em;
-    }
-    #panelMusic #btnLoadBgm { display:inline-flex !important; }
-    #bookSelect {
-      display:block !important;
-      width:100% !important;
-      max-width:none !important;
-      margin:0 !important;
-    }
-    @media (max-width:719px) {
-      #panelTools .grid-tools { grid-template-columns:1fr !important; }
     }
     #btnTools.on {
       background: #0d9488 !important;
@@ -3951,13 +3909,23 @@
 /* Library is clean when no book is selected. */
 body:not(.reader-mode) #app>.bar .chip,body:not(.reader-mode) #app>.bar select{display:none!important}
 body:not(.reader-mode) #panelTools,body:not(.reader-mode) #panelMusic,body:not(.reader-mode) #stage,body:not(.reader-mode) #fsControls,body:not(.reader-mode) #sceneFs,body:not(.reader-mode) #sceneFsExit{display:none!important}
-body.reader-mode #panelTools, body.reader-mode #panelMusic { display:block !important; visibility:visible !important; opacity:1 !important; }
 /* The library and reading room are separate views. The reader opens from a distinct URL state. */
 body.reader-mode #bookLib{display:none!important}
 body.reader-mode .library-only{display:none!important}
 .lib-cover-text{width:100%;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;overflow:hidden}
 .lib-book .book-title{display:block;width:100%;max-width:104px;max-height:3.55em;overflow:hidden;white-space:normal;overflow-wrap:anywhere;word-break:break-word;hyphens:auto;font-family:Georgia,serif;font-size:13px;line-height:1.18;font-weight:800;text-wrap:balance}
 .lib-book .book-author{display:block;width:100%;max-width:104px;max-height:2.45em;overflow:hidden;white-space:normal;overflow-wrap:anywhere;word-break:break-word;hyphens:auto;font-family:Georgia,serif;font-size:10px;line-height:1.15;font-weight:700;opacity:.82;text-wrap:balance}
+
+/* === ALWAYS-VISIBLE READING QUICK ACTIONS === */
+#readerQuickActions{display:flex;position:sticky;top:0;z-index:2147480000;max-width:56rem;margin:0 auto;padding:7px 10px;gap:7px;align-items:center;justify-content:center;flex-wrap:wrap;background:rgba(2,6,23,.96);border-bottom:1px solid rgba(255,255,255,.14);box-shadow:0 5px 18px rgba(0,0,0,.28);backdrop-filter:blur(10px)}
+#readerQuickActions .rq{appearance:none;border:1px solid rgba(255,255,255,.22);background:#1e293b;color:#f8fafc;border-radius:9px;padding:8px 12px;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap}
+#readerQuickActions .rq:hover{background:#334155}
+#readerQuickActions .rq.primary{border-color:#2dd4bf;background:#0f766e;color:#ecfeff}
+#readerQuickActions .rq.scene{border-color:#a78bfa}
+#readerQuickActions .rq.active{box-shadow:0 0 0 2px rgba(45,212,191,.25);border-color:#2dd4bf;color:#5eead4}
+#readerQuickActions .rq select{background:transparent;color:inherit;border:0;font:inherit;outline:0;cursor:pointer}
+@media(max-width:650px){#readerQuickActions{top:0;padding:6px 5px;gap:4px}#readerQuickActions .rq{padding:7px 8px;font-size:11px}}
+
 .reader-heading{max-width:56rem;margin:0 auto;padding:12px 12px 0}
 .reader-heading h1{margin:0;color:#f8fafc;font-family:Georgia,serif;font-size:clamp(20px,3vw,30px);line-height:1.15;overflow-wrap:anywhere}
 .reader-heading .reader-author{margin:5px 0 0;color:#94a3b8;font-size:12px}
@@ -3975,6 +3943,14 @@ body.reader-mode .library-only{display:none!important}
       </div>
     </div>
   </div>
+<div id="readerQuickActions" aria-label="Reading controls">
+  <button type="button" class="rq primary" id="rqRead">👼 Read</button>
+  <button type="button" class="rq" id="rqPrev">‹ Prev</button>
+  <button type="button" class="rq" id="rqNext">Next ›</button>
+  <button type="button" class="rq scene" id="rq3d">✨ 3D Animation</button>
+  <button type="button" class="rq" id="rqFullscreen">⛶ Full screen</button>
+  <button type="button" class="rq" id="rqSettings">⚙ Settings</button>
+</div>
 <button type="button" id="readMenuFab" aria-label="Reading settings" title="Reading settings" onclick="var b=document.getElementById('btnTools'); if(b) b.click(); else { var t=document.getElementById('panelTools'); if(t){ t.dataset.open='1'; t.style.setProperty('display','block','important'); } }">⚙</button>
   <div id="fsControls">
   <select id="fsScenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
@@ -4006,14 +3982,44 @@ body.reader-mode .library-only{display:none!important}
         <button type="button" class="chip" id="btnArrange">Arrange</button>
         <button type="button" class="chip on" id="btnTools" aria-expanded="true" title="Reading settings">⚙ Settings</button>
         <button type="button" class="chip" id="btnMusic"><span id="bgmDot" class="off"></span> Music</button>
-        <!-- All detailed settings live in the always-visible Settings Dashboard below. -->
+        <button type="button" class="chip" id="btnScene" title="Reading ambience animation">Scene</button>
+        <select id="sceneMix" class="ctl" style="max-width:8rem;font-size:11px" title="Scene mode"><option value="one">One 3D</option><option value="mix">Mix all</option></select>
+          <select id="scenePick" class="ctl" style="max-width:14rem;font-size:11px;" title="Ambience">
+          <option value="clock">Knowsoft wall clock</option>
+          <option value="giants">Five giant stars</option>
+          <option value="sun">Sunrise to sunset</option>
+          <option value="orbit">Earth around the Sun</option>
+          <option value="voyage">Earth revelation</option>
+          <option value="planets">Planets around the Sun</option>
+          <option value="milkyway">Milky Way galaxy</option>
+          <option value="wavelength">Energy wavelength</option>
+          <option value="fishes3d">Ocean fishes</option>
+          <option value="jupiter">Jupiter close pass-by</option>
+          <option value="neptune">Neptune close pass-by</option>
+          <option value="earth">Earth close pass-by</option>
+          <option value="desert">Trees growing from the desert</option>
+          <option value="matrix">Matrix AI</option>
+          <option value="star_bypass">Giant star flyby</option>
+        </select>
+        <button type="button" class="chip" id="btnSceneFs" title="Full screen book (captions while reading)">Full screen</button>
+        <select id="wordStyle" class="ctl" style="max-width:8rem;font-size:11px;" title="Word style">
+          <option value="fill">Fill colour</option>
+          <option value="write">Writing</option>
+          <option value="glow">Glow</option>
+          <option value="underline">Underline</option>
+        </select>
+        <select id="bookSelect" class="ctl" style="display:block;max-width:45%;margin-left:auto;width:auto;">
+          {% for b in books %}
+          <option value="{{ b.id }}" {% if book and b.id==book.id %}selected{% endif %}>{{ b.title }}</option>
+          {% endfor %}
+        </select>
       </div>
 
       
     
 
       {% if book %}<div class="reader-heading"><h1>{{ book.title }}</h1><p class="reader-author">{{ book.author or book.writer or '' }}</p></div><div id="panelTools" class="rr-settings-panel" data-open="1" style="display:block !important;">
-        <div class="reader-nav"><a href="/member/kwealth/books" class="reader-back">← Back to Book Library</a><a href="/member/kwealth" class="reader-back secondary">← Kwealth</a></div><p class="rr-settings-title">ALL READING SETTINGS — ALWAYS VISIBLE</p>
+        <div class="reader-nav"><a href="/member/kwealth/books" class="reader-back">← Back to Book Library</a><a href="/member/kwealth" class="reader-back secondary">← Kwealth</a></div><p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Book settings (theme · font · flip · jump)</p>
         <div class="grid-tools">
           <div>
             <span class="lbl">Theme</span>
@@ -4084,55 +4090,10 @@ body.reader-mode .library-only{display:none!important}
             <p style="color:#64748b;font-size:11px;margin:6px 0 0;">Voice rests between paragraphs while background music can continue.</p>
           </div>
         </div>
-
-        <div class="settings-section">
-          <p class="settings-section-title">SCENE, HIGHLIGHTING & FULLSCREEN</p>
-          <div class="settings-actions">
-            <button type="button" class="chip" id="btnScene" title="Reading ambience animation">Scene ON / OFF</button>
-            <select id="sceneMix" class="ctl" title="Scene mode">
-              <option value="one">One 3D scene</option>
-              <option value="mix">Mix all scenes</option>
-            </select>
-            <select id="scenePick" class="ctl" title="Ambience">
-              <option value="clock">Knowsoft wall clock</option>
-              <option value="giants">Five giant stars</option>
-              <option value="sun">Sunrise to sunset</option>
-              <option value="orbit">Earth around the Sun</option>
-              <option value="voyage">Earth revelation</option>
-              <option value="planets">Planets around the Sun</option>
-              <option value="milkyway">Milky Way galaxy</option>
-              <option value="wavelength">Energy wavelength</option>
-              <option value="fishes3d">Ocean fishes</option>
-              <option value="jupiter">Jupiter close pass-by</option>
-              <option value="neptune">Neptune close pass-by</option>
-              <option value="earth">Earth close pass-by</option>
-              <option value="desert">Trees growing from the desert</option>
-              <option value="matrix">Matrix AI</option>
-              <option value="star_bypass">Giant star flyby</option>
-            </select>
-            <select id="wordStyle" class="ctl" title="Word style">
-              <option value="fill">Fill colour</option>
-              <option value="write">Writing</option>
-              <option value="glow">Glow</option>
-              <option value="underline">Underline</option>
-            </select>
-            <button type="button" class="chip" id="btnSceneFs" title="Full screen book">Full screen</button>
-          </div>
-        </div>
-
-        <div class="settings-section">
-          <p class="settings-section-title">CURRENT BOOK</p>
-          <select id="bookSelect" class="ctl">
-            {% for b in books %}
-            <option value="{{ b.id }}" {% if book and b.id==book.id %}selected{% endif %}>{{ b.title }}</option>
-            {% endfor %}
-          </select>
-        </div>
       </div>
 
-      <div id="panelMusic">
-        <p class="settings-section-title">BACKGROUND MUSIC — ALWAYS VISIBLE</p>
-        <p style="color:#6ee7b7;font-size:12px;font-weight:700;margin:0 0 6px;">Memories track is always on. Admin may add up to 9 more.</p>
+      <div id="panelMusic" style="display:none;max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
+        <p style="color:#6ee7b7;font-size:12px;font-weight:700;margin:0 0 6px;">Background music — Memories track is always on. Admin may add up to 9 more.</p>
         <p style="color:#64748b;font-size:11px;margin:0 0 8px;">Upload calm tracks from your device. They stay in your list for reading sessions.</p>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
           <button type="button" class="chip on" id="btnLoadBgm" style="display:none">+ Upload / sync from device</button>
@@ -5006,20 +4967,28 @@ id="fsBookMeta" aria-hidden="true">
       var p = document.getElementById('panelTools');
       var b = document.getElementById('btnTools');
       if (!p) return;
-      p.dataset.open = '1';
-      p.hidden = false;
-      p.removeAttribute('hidden');
-      p.style.setProperty('display', 'block', 'important');
-      p.style.setProperty('visibility', 'visible', 'important');
-      p.style.setProperty('opacity', '1', 'important');
-      if (b) { b.classList.add('on'); b.setAttribute('aria-expanded', 'true'); }
+      if (open) {
+        p.dataset.open = '1';
+        p.style.setProperty('display', 'block', 'important');
+        p.hidden = false;
+        p.removeAttribute('hidden');
+        if (b) { b.classList.add('on'); b.setAttribute('aria-expanded', 'true'); }
+      } else {
+        p.dataset.open = '0';
+        p.style.setProperty('display', 'none', 'important');
+        if (b) { b.classList.remove('on'); b.setAttribute('aria-expanded', 'false'); }
+      }
     }
     on('btnTools', 'onclick', function(ev) {
       if (ev) { ev.preventDefault(); ev.stopPropagation(); }
       var p = document.getElementById('panelTools');
-      if (!p) return;
-      setReadingSettings(true);
-      try { p.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(e) {}
+      if (!p) { console.warn('panelTools missing'); return; }
+      var isOpen = p.dataset.open === '1' || (p.style.display !== 'none' && p.offsetParent !== null);
+      setReadingSettings(!isOpen);
+      // Scroll panel into view when opening
+      if (!isOpen) {
+        try { p.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch(e) {}
+      }
     });
     // Force settings open in Reading Room when a book is present
     (function forceSettingsOpen() {
@@ -5053,11 +5022,19 @@ id="fsBookMeta" aria-hidden="true">
     on('btnMusic', 'onclick', () => {
       const p = $('panelMusic');
       if (!p) return;
-      p.style.setProperty('display', 'block', 'important');
-      try { p.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(e) {}
-      loadBgmList();
+      const show = p.style.display === 'none' || !p.style.display;
+      p.style.display = show ? 'block' : 'none';
+      var chip = $('btnMusic');
+      if (chip) {
+        var dot = $('bgmDot');
+        chip.innerHTML = (dot ? dot.outerHTML + ' ' : '') + (show ? 'Close' : 'Play');
+      }
+      if (show) loadBgmList();
+      if (!show) {
+        try { if (state.bgmAudio) { state.bgmAudio.pause(); } } catch(e) {}
+      }
     });
-    (function(){ var c=$('btnMusic'); if(c){ var d=$('bgmDot'); c.innerHTML=(d?d.outerHTML+' ':'')+'Music'; } })();
+    (function(){ var c=$('btnMusic'); if(c && c.innerHTML.indexOf('Play')<0){ var d=$('bgmDot'); c.innerHTML=(d?d.outerHTML+' ':'')+'Play'; } })();
 
     document.querySelectorAll('.theme-btn').forEach(b => {
       b.onclick = () => { state.theme = b.dataset.theme; localStorage.setItem('kw_book_theme', state.theme); applyTheme(); };
@@ -5358,9 +5335,9 @@ id="fsBookMeta" aria-hidden="true">
         if (btn) btn.classList.toggle('is-on', on);
         return;
       }
-      // 3D only when Full screen AND Scene on — otherwise completely hidden
-      var show3d = !!(state.sceneFs && on);
-      // scene-on class only when both are true (used by CSS)
+      // 3D animation is available whenever Scene is ON; fullscreen is an independent control
+      var show3d = !!on;
+      // scene-on class marks an active 3D scene
       if (show3d) {
         stage.classList.add('scene-on');
         document.body.classList.add('scene-on');
@@ -5763,7 +5740,7 @@ id="fsBookMeta" aria-hidden="true">
     <div id="fsDock">
       <button type="button" class="chip" id="fsStop">Stop</button>
       <button type="button" class="chip" id="fsAll">All 3D</button>
-      <select id="fsScenePick" class="ctl" style="width:auto">
+      <select id="fsScenePickDock" class="ctl" style="width:auto">
         <option value="clock">Wall clock</option>
         <option value="giants">Five giant stars</option>
         <option value="sun">Sunrise</option>
@@ -5833,6 +5810,26 @@ id="fsBookMeta" aria-hidden="true">
   if(ex) ex.onclick=function(){ var b=document.getElementById("sceneFsExit")||document.getElementById("btnSceneFs"); if(b) b.click(); };
   var fp=document.getElementById("fsScenePick");
   if(fp) fp.onchange=function(){ if(this.value==="off"){ try{ state.sceneOn=false; }catch(e){} } else { try{ state.sceneName=this.value; state.sceneOn=true; state.sceneFs=true; }catch(e){} var p=document.getElementById("scenePick"); if(p){ p.value=this.value; p.dispatchEvent(new Event("change")); } } };
+})();
+</script>
+
+<script>
+(function(){
+  function el(id){return document.getElementById(id)}
+  function click(id){var x=el(id);if(x)x.click()}
+  var r=el('rqRead'), p=el('rqPrev'), n=el('rqNext'), s=el('rq3d'), f=el('rqFullscreen'), t=el('rqSettings');
+  if(r) r.onclick=function(){click('btnRead')};
+  if(p) p.onclick=function(){click('btnPrev')};
+  if(n) n.onclick=function(){click('btnNext')};
+  if(s) s.onclick=function(){click('btnScene')};
+  if(f) f.onclick=function(){click('btnSceneFs')};
+  if(t) t.onclick=function(){var x=el('panelTools');if(x)x.scrollIntoView({behavior:'smooth',block:'start'});};
+  setInterval(function(){
+    var rb=el('btnRead'), sb=el('btnScene'), fb=el('btnSceneFs');
+    if(r&&rb){r.textContent=rb.textContent||'👼 Read';r.classList.toggle('active', rb.textContent.indexOf('Stop')>=0)}
+    if(s&&sb)s.classList.toggle('active',sb.classList.contains('is-on'));
+    if(f&&fb)f.classList.toggle('active',fb.classList.contains('is-on'));
+  },250);
 })();
 </script>
 </body>
