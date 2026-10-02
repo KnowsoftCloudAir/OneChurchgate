@@ -4939,14 +4939,48 @@ id="fsBookMeta" aria-hidden="true">
         var title = this.getAttribute('data-book-title') || 'this book';
         if (!bookId) return;
         if (!confirm('Delete "' + title + '" from your personal library?\n\nThis cannot be undone.')) return;
-        var fd = new FormData();
-        fd.append('book_id', bookId);
+
+        btn.disabled = true;
+        btn.textContent = '…';
+
+        async function tryDelete() {
+          // 1) Preferred: form-style POST used by the rest of the app
+          var fd = new FormData();
+          fd.append('book_id', bookId);
+          var r = await fetch('/member/kwealth/books/delete', {
+            method: 'POST',
+            body: fd,
+            credentials: 'same-origin',
+            redirect: 'follow'
+          });
+          if (r.ok || r.redirected || r.status === 303 || r.status === 302) {
+            location.href = r.url && r.url.indexOf('/member/') >= 0 ? r.url : '/member/kwealth/books?deleted=1';
+            return true;
+          }
+          // 2) Fallback: path-style (mirrors admin route pattern)
+          r = await fetch('/member/kwealth/books/' + encodeURIComponent(bookId) + '/delete', {
+            method: 'POST',
+            credentials: 'same-origin',
+            redirect: 'follow'
+          });
+          if (r.ok || r.redirected || r.status === 303 || r.status === 302) {
+            location.href = r.url && r.url.indexOf('/member/') >= 0 ? r.url : '/member/kwealth/books?deleted=1';
+            return true;
+          }
+          return { status: r.status, text: await r.text().catch(function(){return '';}) };
+        }
+
         try {
-          var r = await fetch('/member/kwealth/books/delete', { method: 'POST', body: fd, credentials: 'same-origin' });
-          if (r.redirected) { location.href = r.url; return; }
-          location.href = '/member/kwealth/books?deleted=1';
+          var result = await tryDelete();
+          if (result === true) return;
+          console.warn('Delete failed', result);
+          alert('Could not delete the book (server returned ' + (result && result.status) + ').\n\nThe delete endpoint may be missing on the server. Please ask the administrator to add the member book-delete route.');
         } catch (e) {
+          console.error(e);
           alert('Could not delete the book. Please try again.');
+        } finally {
+          btn.disabled = false;
+          btn.textContent = '✕';
         }
       });
     });
@@ -4956,9 +4990,21 @@ id="fsBookMeta" aria-hidden="true">
       if (!confirm('Delete this book from your library? (Shared admin books cannot be removed here.)')) return;
       const fd = new FormData();
       fd.append('book_id', state.bookId);
-      const r = await fetch('/member/kwealth/books/delete', { method: 'POST', body: fd, credentials: 'same-origin' });
-      if (r.redirected) { location.href = r.url; return; }
-      location.href = '/member/kwealth/books?deleted=1';
+      try {
+        let r = await fetch('/member/kwealth/books/delete', { method: 'POST', body: fd, credentials: 'same-origin', redirect: 'follow' });
+        if (r.ok || r.redirected || r.status === 303 || r.status === 302) {
+          location.href = r.url && r.url.indexOf('/member/') >= 0 ? r.url : '/member/kwealth/books?deleted=1';
+          return;
+        }
+        r = await fetch('/member/kwealth/books/' + encodeURIComponent(state.bookId) + '/delete', { method: 'POST', credentials: 'same-origin', redirect: 'follow' });
+        if (r.ok || r.redirected || r.status === 303 || r.status === 302) {
+          location.href = r.url && r.url.indexOf('/member/') >= 0 ? r.url : '/member/kwealth/books?deleted=1';
+          return;
+        }
+        alert('Could not delete the book (server returned ' + r.status + '). The delete endpoint may be missing.');
+      } catch (e) {
+        alert('Could not delete the book. Please try again.');
+      }
     });
 
     on('btnLoad', 'onclick', () => { const f = $('filePick'); if (f) f.click(); });
