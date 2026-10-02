@@ -102,6 +102,37 @@
     }
     .bgm-row.active { border-color: #2dd4bf; background: rgba(13,148,136,.2); }
     .bgm-row button { flex-shrink: 0; }
+
+
+    /* Single clickable reading-settings icon */
+    #btnTools.rr-settings-icon {
+      width: 36px; height: 36px; padding: 0; border-radius: 999px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 18px; line-height: 1; gap: 0;
+    }
+    #btnTools.rr-settings-icon.on { box-shadow: 0 0 0 2px rgba(45,212,191,.55); }
+    #panelTools.rr-settings-pop {
+      display: none;
+      position: absolute;
+      top: calc(100% + 6px);
+      right: 10px;
+      z-index: 80;
+      width: min(34rem, calc(100vw - 20px));
+      max-height: min(72vh, 640px);
+      overflow: auto;
+      margin: 0;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(15,23,42,.97);
+      box-shadow: 0 18px 40px rgba(0,0,0,.45);
+    }
+    #panelTools.rr-settings-pop[data-open="1"] { display: block; }
+    #panelTools.rr-settings-pop .grid-tools { grid-template-columns: 1fr; }
+    @media (min-width: 640px) {
+      #panelTools.rr-settings-pop .grid-tools { grid-template-columns: 1fr 1fr; }
+    }
+    .bar { position: relative; }
   
 
     /* —— Reading ambience scenes —— */
@@ -3843,7 +3874,7 @@ body.reader-mode .library-only{display:none!important}
       </div>
     </div>
   </div>
-<button type="button" id="readMenuFab" onclick="document.querySelector('.bar')&&document.querySelector('.bar').scrollIntoView({behavior:'smooth',block:'start'});var t=document.getElementById('toolsPanel');if(t){t.style.display='block';}window.scrollTo({top:0,behavior:'smooth'});">☰ Menu</button>
+<button type="button" id="readMenuFab" aria-label="Reading settings" title="Reading settings" onclick="var b=document.getElementById('btnTools'); if(b) b.click();">⚙</button>
   <div id="fsControls">
   <select id="fsScenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
           <option value="sun">Sunrise → Sunset</option>
@@ -3872,7 +3903,7 @@ body.reader-mode .library-only{display:none!important}
         <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" style="height:28px;width:auto" onerror="this.src='/static/img/knowsoft-icon.svg'"> <strong style="color:#f1f5f9;font-size:14px;">{% if book %}Reading Room{% else %}Book Library{% endif %}</strong>
                                 <button type="button" class="chip" id="btnRead">👼 Read</button>
         <button type="button" class="chip" id="btnArrange">Arrange</button>
-        <button type="button" class="chip on" id="btnTools">⚙ Settings</button>
+        <button type="button" class="chip rr-settings-icon" id="btnTools" aria-label="Reading settings" aria-expanded="false" title="Reading settings">⚙</button>
         <button type="button" class="chip" id="btnMusic"><span id="bgmDot" class="off"></span> Music</button>
         <button type="button" class="chip" id="btnScene" title="Reading ambience animation">Scene</button>
         <select id="sceneMix" class="ctl" style="max-width:8rem;font-size:11px" title="Scene mode"><option value="one">One 3D</option><option value="mix">Mix all</option></select>
@@ -3910,8 +3941,8 @@ body.reader-mode .library-only{display:none!important}
       
     
 
-      {% if book %}<div class="reader-heading"><h1>{{ book.title }}</h1><p class="reader-author">{{ book.author or book.writer or '' }}</p></div><div id="panelTools" style="max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
-        <div class="reader-nav"><a href="/member/kwealth/books" class="reader-back">← Back to Book Library</a><a href="/member/kwealth" class="reader-back secondary">← Kwealth</a></div><p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Book settings (theme · font · flip · jump)</p>
+      {% if book %}<div class="reader-heading"><h1>{{ book.title }}</h1><p class="reader-author">{{ book.author or book.writer or '' }}</p></div><div id="panelTools" class="rr-settings-pop" data-open="0" hidden>
+        <p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Reading settings</p>
         <div class="grid-tools">
           <div>
             <span class="lbl">Theme</span>
@@ -4855,14 +4886,35 @@ id="fsBookMeta" aria-hidden="true">
       ev.target.value = '';
     });
     if ($('bookSelect')) on('bookSelect', 'onchange', () => { location.href = '/member/kwealth/books?book_id=' + $('bookSelect').value; });
-    on('btnTools', 'onclick', () => {
+    function setReadingSettings(open) {
+      const p = $('panelTools');
+      const b = $('btnTools');
+      if (!p) return;
+      p.hidden = !open;
+      p.dataset.open = open ? '1' : '0';
+      p.style.display = open ? 'block' : 'none';
+      if (b) {
+        b.classList.toggle('on', open);
+        b.setAttribute('aria-expanded', open ? 'true' : 'false');
+      }
+    }
+    on('btnTools', 'onclick', (ev) => {
+      if (ev && ev.stopPropagation) ev.stopPropagation();
       const p = $('panelTools');
       if (!p) return;
-      if (p.dataset.open === '1') { p.style.display = 'none'; p.dataset.open = '0'; }
-      else { p.style.display = 'block'; p.dataset.open = '1'; }
+      setReadingSettings(p.dataset.open !== '1');
     });
-    $('panelTools').style.display = 'block';
-    $('panelTools').dataset.open = '1';
+    setReadingSettings(false);
+    document.addEventListener('click', (ev) => {
+      const p = $('panelTools');
+      const b = $('btnTools');
+      if (!p || p.dataset.open !== '1') return;
+      if (p.contains(ev.target) || (b && b.contains(ev.target))) return;
+      setReadingSettings(false);
+    });
+    document.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Escape') setReadingSettings(false);
+    });
     
     document.addEventListener('keydown', function(ev){
       var tag = (ev.target && ev.target.tagName || '').toLowerCase();
