@@ -102,38 +102,6 @@
     }
     .bgm-row.active { border-color: #2dd4bf; background: rgba(13,148,136,.2); }
     .bgm-row button { flex-shrink: 0; }
-
-
-    /* Single clickable reading-settings icon */
-    #btnTools.rr-settings-icon {
-      width: 36px; height: 36px; padding: 0; border-radius: 999px;
-      display: inline-flex; align-items: center; justify-content: center;
-      font-size: 18px; line-height: 1; gap: 0;
-    }
-    #btnTools.rr-settings-icon.on { box-shadow: 0 0 0 2px rgba(45,212,191,.55); }
-    .rr-settings-wrap { position: relative; display: inline-flex; align-items: center; }
-    #panelTools.rr-settings-pop {
-      display: none;
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      z-index: 80;
-      width: min(34rem, calc(100vw - 20px));
-      max-height: min(72vh, 640px);
-      overflow: auto;
-      margin: 0;
-      padding: 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.16);
-      background: rgba(15,23,42,.97);
-      box-shadow: 0 18px 40px rgba(0,0,0,.45);
-    }
-    #panelTools.rr-settings-pop[data-open="1"] { display: block; }
-    #panelTools.rr-settings-pop .grid-tools { grid-template-columns: 1fr; }
-    @media (min-width: 640px) {
-      #panelTools.rr-settings-pop .grid-tools { grid-template-columns: 1fr 1fr; }
-    }
-    .bar { position: relative; }
   
 
     /* —— Reading ambience scenes —— */
@@ -1447,8 +1415,8 @@
     body:not(.scene-fs-on) .bar a {
       pointer-events: auto !important;
     }
-    body:not(.scene-fs-on) #panelTools,
-    body:not(.scene-fs-on) #panelTools * {
+    body:not(.scene-fs-on) #toolsPanel,
+    body:not(.scene-fs-on) #toolsPanel * {
       pointer-events: auto !important;
     }
     body.kw-speaking:not(.scene-fs-on) {
@@ -3799,9 +3767,93 @@
 }
 
     #panelTools, .bar { position: sticky; top: 0; z-index: 40; }
-    /* Permanent Reading Room fix: keep settings visible when open */
-    body.reader-mode #panelTools[data-open="1"]{display:block!important;}
-    body.reader-mode #panelTools.rr-settings-pop[data-open="1"]{display:block!important;}
+
+    /* ===== REDESIGNED READING SETTINGS PANEL (forced visible) ===== */
+    #panelTools {
+      display: block !important;
+      max-width: 56rem;
+      margin: 0 auto 12px;
+      padding: 14px 14px 16px;
+      border-top: 1px solid rgba(255,255,255,.12);
+      background: rgba(15,23,42,.92);
+      border: 1px solid rgba(45,212,191,.35);
+      border-radius: 14px;
+      box-shadow: 0 12px 40px rgba(0,0,0,.45);
+      position: relative;
+      z-index: 50;
+    }
+    #panelTools[data-open="0"] {
+      display: none !important;
+    }
+    #panelTools[data-open="1"],
+    #panelTools:not([data-open]) {
+      display: block !important;
+    }
+    body.reader-mode #panelTools[data-open="1"] {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+    #panelTools .rr-settings-title {
+      color: #fbbf24;
+      font-size: 13px;
+      font-weight: 800;
+      margin: 0 0 10px;
+      letter-spacing: .02em;
+    }
+    #panelTools .grid-tools {
+      display: grid !important;
+      grid-template-columns: repeat(2, minmax(0,1fr));
+      gap: 12px 14px;
+    }
+    @media (min-width: 720px) {
+      #panelTools .grid-tools { grid-template-columns: repeat(3, minmax(0,1fr)); }
+    }
+    #panelTools .lbl {
+      font-size: 11px;
+      color: #94a3b8;
+      font-weight: 700;
+      display: block;
+      margin-bottom: 5px;
+    }
+    #panelTools select.ctl,
+    #panelTools input.ctl {
+      width: 100%;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 13px;
+      color: #0f172a;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+    }
+    #panelTools input[type=range] {
+      accent-color: #14b8a6;
+      width: 100%;
+    }
+    #btnTools.on {
+      background: #0d9488 !important;
+      border-color: #2dd4bf !important;
+      color: #fff !important;
+      box-shadow: 0 0 0 2px rgba(45,212,191,.45);
+    }
+    /* Floating gear always reachable */
+    #readMenuFab {
+      display: block !important;
+      position: fixed !important;
+      top: 12px;
+      right: 12px;
+      z-index: 10060;
+      padding: 10px 14px;
+      border-radius: 999px;
+      background: rgba(15,23,42,.92);
+      border: 1px solid rgba(45,212,191,.5);
+      color: #5eead4;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    }
+
     body.reading-on { overflow-y: auto !important; }
     #bookLib { padding: 18px 16px 40px; }
     #bookLib h2 { color:#f8fafc; font-size:1.4rem; margin:0 0 8px; }
@@ -3873,8 +3925,80 @@ body.reader-mode .library-only{display:none!important}
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
       <div style="color:#f8fafc;font-family:Georgia,serif;font-size:15px;font-weight:800;">📖 Reading Room</div>
       <div class="reader-nav" style="margin:0;">
-        <div class="rr-settings-wrap"><button type="button" class="chip rr-settings-icon on" id="btnTools" aria-label="Reading settings" aria-expanded="true" title="Reading settings">⚙</button><div id="panelTools" class="rr-settings-pop" data-open="1" style="display:block;">
-        <p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Reading settings</p>
+        <a href="/member/kwealth/books" class="reader-back">← Back to Book Library</a>
+        <a href="/member/kwealth" class="reader-back secondary">← Kwealth</a>
+      </div>
+    </div>
+  </div>
+<button type="button" id="readMenuFab" aria-label="Reading settings" title="Reading settings" onclick="var b=document.getElementById('btnTools'); if(b) b.click(); else { var t=document.getElementById('panelTools'); if(t){ t.dataset.open='1'; t.style.setProperty('display','block','important'); } }">⚙</button>
+  <div id="fsControls">
+  <select id="fsScenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
+          <option value="sun">Sunrise → Sunset</option>
+          <option value="orbit">Earth around the Sun</option>
+          <option value="voyage">Earth revelation</option>
+          <option value="planets">Planets around the Sun</option>
+          <option value="milkyway">Milky Way galaxy</option>
+          <option value="wavelength">Energy wavelength</option>
+          <option value="fishes3d">Ocean fishes</option>
+          <option value="jupiter">Jupiter close pass-by</option>
+          <option value="neptune">Neptune close pass-by</option>
+          <option value="earth">Earth close pass-by</option>
+          <option value="desert">Trees growing from the desert</option>
+          <option value="matrix">Matrix AI (matter chains)</option>
+          <option value="glasses">Eyeglasses — man reading</option>
+                  </select>
+  <button type="button" class="chip on" id="fsRead">👼 Read</button>
+  <button type="button" class="chip" id="fsSceneToggle">Scene on/off</button>
+</div>
+<button type="button" id="sceneFsExit" aria-label="Exit full screen">✕ Exit full screen</button>
+
+  <div id="app">
+    <div class="bar sticky top-0 z-30">
+      <div style="max-width:56rem;margin:0 auto;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+        <a href="/member/kwealth" class="nav-back">← Kwealth</a><a href="/member/kwealth/books" class="nav-back">📚 Library</a>
+        <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" style="height:28px;width:auto" onerror="this.src='/static/img/knowsoft-icon.svg'"> <strong style="color:#f1f5f9;font-size:14px;">{% if book %}Reading Room{% else %}Book Library{% endif %}</strong>
+                                <button type="button" class="chip" id="btnRead">👼 Read</button>
+        <button type="button" class="chip" id="btnArrange">Arrange</button>
+        <button type="button" class="chip on" id="btnTools" aria-expanded="true" title="Reading settings">⚙ Settings</button>
+        <button type="button" class="chip" id="btnMusic"><span id="bgmDot" class="off"></span> Music</button>
+        <button type="button" class="chip" id="btnScene" title="Reading ambience animation">Scene</button>
+        <select id="sceneMix" class="ctl" style="max-width:8rem;font-size:11px" title="Scene mode"><option value="one">One 3D</option><option value="mix">Mix all</option></select>
+          <select id="scenePick" class="ctl" style="max-width:14rem;font-size:11px;" title="Ambience">
+          <option value="clock">Knowsoft wall clock</option>
+          <option value="giants">Five giant stars</option>
+          <option value="sun">Sunrise to sunset</option>
+          <option value="orbit">Earth around the Sun</option>
+          <option value="voyage">Earth revelation</option>
+          <option value="planets">Planets around the Sun</option>
+          <option value="milkyway">Milky Way galaxy</option>
+          <option value="wavelength">Energy wavelength</option>
+          <option value="fishes3d">Ocean fishes</option>
+          <option value="jupiter">Jupiter close pass-by</option>
+          <option value="neptune">Neptune close pass-by</option>
+          <option value="earth">Earth close pass-by</option>
+          <option value="desert">Trees growing from the desert</option>
+          <option value="matrix">Matrix AI</option>
+          <option value="star_bypass">Giant star flyby</option>
+        </select>
+        <button type="button" class="chip" id="btnSceneFs" title="Full screen book (captions while reading)">Full screen</button>
+        <select id="wordStyle" class="ctl" style="max-width:8rem;font-size:11px;" title="Word style">
+          <option value="fill">Fill colour</option>
+          <option value="write">Writing</option>
+          <option value="glow">Glow</option>
+          <option value="underline">Underline</option>
+        </select>
+        <select id="bookSelect" class="ctl" style="display:none;max-width:45%;margin-left:auto;width:auto;">
+          {% for b in books %}
+          <option value="{{ b.id }}" {% if book and b.id==book.id %}selected{% endif %}>{{ b.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      
+    
+
+      {% if book %}<div class="reader-heading"><h1>{{ book.title }}</h1><p class="reader-author">{{ book.author or book.writer or '' }}</p></div><div id="panelTools" class="rr-settings-panel" data-open="1" style="display:block !important;">
+        <div class="reader-nav"><a href="/member/kwealth/books" class="reader-back">← Back to Book Library</a><a href="/member/kwealth" class="reader-back secondary">← Kwealth</a></div><p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Book settings (theme · font · flip · jump)</p>
         <div class="grid-tools">
           <div>
             <span class="lbl">Theme</span>
@@ -3946,78 +4070,8 @@ body.reader-mode .library-only{display:none!important}
           </div>
         </div>
       </div>
-</div>
-        <a href="/member/kwealth" class="reader-back secondary">← Kwealth</a>
-      </div>
-    </div>
-  </div>
-<button type="button" id="readMenuFab" aria-label="Reading settings" title="Reading settings" onclick="var b=document.getElementById('btnTools'); if(b) b.click();">⚙</button>
-  <div id="fsControls">
-  <select id="fsScenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
-          <option value="sun">Sunrise → Sunset</option>
-          <option value="orbit">Earth around the Sun</option>
-          <option value="voyage">Earth revelation</option>
-          <option value="planets">Planets around the Sun</option>
-          <option value="milkyway">Milky Way galaxy</option>
-          <option value="wavelength">Energy wavelength</option>
-          <option value="fishes3d">Ocean fishes</option>
-          <option value="jupiter">Jupiter close pass-by</option>
-          <option value="neptune">Neptune close pass-by</option>
-          <option value="earth">Earth close pass-by</option>
-          <option value="desert">Trees growing from the desert</option>
-          <option value="matrix">Matrix AI (matter chains)</option>
-          <option value="glasses">Eyeglasses — man reading</option>
-                  </select>
-  <button type="button" class="chip on" id="fsRead">👼 Read</button>
-  <button type="button" class="chip" id="fsSceneToggle">Scene on/off</button>
-</div>
-<button type="button" id="sceneFsExit" aria-label="Exit full screen">✕ Exit full screen</button>
 
-  <div id="app">
-    <div class="bar sticky top-0 z-30">
-      <div style="max-width:56rem;margin:0 auto;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
-        <a href="/member/kwealth" class="nav-back">← Kwealth</a><a href="/member/kwealth/books" class="nav-back">📚 Library</a>
-        <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" style="height:28px;width:auto" onerror="this.src='/static/img/knowsoft-icon.svg'"> <strong style="color:#f1f5f9;font-size:14px;">{% if book %}Reading Room{% else %}Book Library{% endif %}</strong>
-                                <button type="button" class="chip" id="btnRead">👼 Read</button>
-        <button type="button" class="chip" id="btnArrange">Arrange</button>
-        <button type="button" class="chip" id="btnMusic"><span id="bgmDot" class="off"></span> Music</button>
-        <button type="button" class="chip" id="btnScene" title="Reading ambience animation">Scene</button>
-        <select id="sceneMix" class="ctl" style="max-width:8rem;font-size:11px" title="Scene mode"><option value="one">One 3D</option><option value="mix">Mix all</option></select>
-          <select id="scenePick" class="ctl" style="max-width:14rem;font-size:11px;" title="Ambience">
-          <option value="clock">Knowsoft wall clock</option>
-          <option value="giants">Five giant stars</option>
-          <option value="sun">Sunrise to sunset</option>
-          <option value="orbit">Earth around the Sun</option>
-          <option value="voyage">Earth revelation</option>
-          <option value="planets">Planets around the Sun</option>
-          <option value="milkyway">Milky Way galaxy</option>
-          <option value="wavelength">Energy wavelength</option>
-          <option value="fishes3d">Ocean fishes</option>
-          <option value="jupiter">Jupiter close pass-by</option>
-          <option value="neptune">Neptune close pass-by</option>
-          <option value="earth">Earth close pass-by</option>
-          <option value="desert">Trees growing from the desert</option>
-          <option value="matrix">Matrix AI</option>
-          <option value="star_bypass">Giant star flyby</option>
-        </select>
-        <button type="button" class="chip" id="btnSceneFs" title="Full screen book (captions while reading)">Full screen</button>
-        <select id="wordStyle" class="ctl" style="max-width:8rem;font-size:11px;" title="Word style">
-          <option value="fill">Fill colour</option>
-          <option value="write">Writing</option>
-          <option value="glow">Glow</option>
-          <option value="underline">Underline</option>
-        </select>
-        <select id="bookSelect" class="ctl" style="display:none;max-width:45%;margin-left:auto;width:auto;">
-          {% for b in books %}
-          <option value="{{ b.id }}" {% if book and b.id==book.id %}selected{% endif %}>{{ b.title }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      
-    
-
-      {% if book %}<div class="reader-heading"><h1>{{ book.title }}</h1><p class="reader-author">{{ book.author or book.writer or '' }}</p></div><div id="panelMusic" style="display:none;max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
+      <div id="panelMusic" style="display:none;max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
         <p style="color:#6ee7b7;font-size:12px;font-weight:700;margin:0 0 6px;">Background music — Memories track is always on. Admin may add up to 9 more.</p>
         <p style="color:#64748b;font-size:11px;margin:0 0 8px;">Upload calm tracks from your device. They stay in your list for reading sessions.</p>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
@@ -4889,37 +4943,38 @@ id="fsBookMeta" aria-hidden="true">
     });
     if ($('bookSelect')) on('bookSelect', 'onchange', () => { location.href = '/member/kwealth/books?book_id=' + $('bookSelect').value; });
     function setReadingSettings(open) {
-      const p = $('panelTools');
-      const b = $('btnTools');
+      var p = document.getElementById('panelTools');
+      var b = document.getElementById('btnTools');
       if (!p) return;
-      p.hidden = !open;
-      p.dataset.open = open ? '1' : '0';
-      p.style.display = open ? 'block' : 'none';
-      if (b) {
-        b.classList.toggle('on', open);
-        b.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) {
+        p.dataset.open = '1';
+        p.style.setProperty('display', 'block', 'important');
+        p.hidden = false;
+        p.removeAttribute('hidden');
+        if (b) { b.classList.add('on'); b.setAttribute('aria-expanded', 'true'); }
+      } else {
+        p.dataset.open = '0';
+        p.style.setProperty('display', 'none', 'important');
+        if (b) { b.classList.remove('on'); b.setAttribute('aria-expanded', 'false'); }
       }
     }
-    on('btnTools', 'onclick', (ev) => {
-      if (ev && ev.stopPropagation) ev.stopPropagation();
-      const p = $('panelTools');
-      if (!p) return;
-      setReadingSettings(p.dataset.open !== '1');
+    on('btnTools', 'onclick', function(ev) {
+      if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+      var p = document.getElementById('panelTools');
+      if (!p) { console.warn('panelTools missing'); return; }
+      var isOpen = p.dataset.open === '1' || (p.style.display !== 'none' && p.offsetParent !== null);
+      setReadingSettings(!isOpen);
+      // Scroll panel into view when opening
+      if (!isOpen) {
+        try { p.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch(e) {}
+      }
     });
-    // Permanent fix: in Reading Room, open the full settings panel by default when a book is loaded.
-    // User can still close it with the ⚙ button, outside click, or Escape.
-    var hasBook = /book_id=/.test(location.search) || !!(window.B && window.B.id);
-    setReadingSettings(!!hasBook);
-    document.addEventListener('click', (ev) => {
-      const p = $('panelTools');
-      const b = $('btnTools');
-      if (!p || p.dataset.open !== '1') return;
-      if (p.contains(ev.target) || (b && b.contains(ev.target))) return;
-      setReadingSettings(false);
-    });
-    document.addEventListener('keydown', (ev) => {
-      if (ev.key === 'Escape') setReadingSettings(false);
-    });
+    // Force settings open in Reading Room when a book is present
+    (function forceSettingsOpen() {
+      var hasBook = /book_id=/.test(location.search) || !!(window.B && window.B.id) || !!document.querySelector('#stage .page-sheet, #sheetText');
+      if (hasBook) setReadingSettings(true);
+      else setReadingSettings(false);
+    })();
     
     document.addEventListener('keydown', function(ev){
       var tag = (ev.target && ev.target.tagName || '').toLowerCase();
@@ -5716,13 +5771,16 @@ id="fsBookMeta" aria-hidden="true">
   if(lib && /book_id=/.test(location.search)) lib.style.display="none";
   var tools=document.getElementById("panelTools");
   if(tools && /book_id=/.test(location.search)){
-    tools.style.display="block";
     tools.dataset.open="1";
+    tools.style.setProperty("display","block","important");
     tools.hidden=false;
     var tb=document.getElementById("btnTools");
     if(tb){ tb.classList.add("on"); tb.setAttribute("aria-expanded","true"); }
   }
-  if(tools && !/book_id=/.test(location.search)) tools.style.display="none";
+  if(tools && !/book_id=/.test(location.search)) {
+    tools.dataset.open="0";
+    tools.style.setProperty("display","none","important");
+  }
   var stop=document.getElementById("fsStop");
   if(stop) stop.onclick=function(){ var b=document.getElementById("btnRead"); if(b) b.click(); };
   var all=document.getElementById("fsAll");
