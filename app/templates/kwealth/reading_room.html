@@ -41,44 +41,96 @@
     @media(max-width:650px){.grid{grid-template-columns:1fr}.field.full{grid-column:auto}.hero h1{font-size:23px}.caption{bottom:14%;font-size:25px}}
   
 
-/* SELF-CONTAINED 3D AMBIENCE LIBRARY — does not depend on another HTML file. */
-#sceneStage{position:absolute;inset:0;overflow:hidden;perspective:900px;background:#020617}
+
+/* SELF-CONTAINED 3D AMBIENCE LIBRARY — upgraded from reading_room d.html (advanced pure-CSS scenes) */
+#sceneStage{position:absolute;inset:0;overflow:hidden;perspective:1200px;background:#020617}
 #sceneStage *{transform-style:preserve-3d}
-.amb{position:absolute;inset:0;overflow:hidden;background:radial-gradient(circle at 50% 50%,#172554 0,#020617 72%)}
-.amb .stars{opacity:.9}
-.a-sun{background:linear-gradient(180deg,#07111f 0%,#183b61 45%,#f59e0b 100%)}
-.a-sun .sun3{position:absolute;width:18vmin;height:18vmin;border-radius:50%;left:50%;top:18%;transform:translate(-50%,-50%);background:radial-gradient(circle at 35% 35%,#fffbd1,#fde047 35%,#f97316 68%,transparent 73%);box-shadow:0 0 60px 28px rgba(251,191,36,.45);animation:sunMove 18s ease-in-out infinite alternate}
-.a-sun .horizon{position:absolute;left:-10%;right:-10%;bottom:-10%;height:48%;background:linear-gradient(180deg,rgba(251,191,36,.12),rgba(2,6,23,.96));transform:perspective(500px) rotateX(60deg);transform-origin:bottom}
-@keyframes sunMove{to{top:67%;transform:translate(-50%,-50%) scale(.72)}}
-.a-orbit .sun3,.a-planets .sun3{position:absolute;width:15vmin;height:15vmin;border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%);background:radial-gradient(circle,#fff7a8,#f59e0b 45%,#ea580c 75%);box-shadow:0 0 80px 30px rgba(245,158,11,.4)}
-.orbit3{position:absolute;left:50%;top:50%;width:55vmin;height:55vmin;border:1px solid rgba(148,163,184,.25);border-radius:50%;transform:translate(-50%,-50%) rotateX(68deg) rotateZ(-15deg);animation:spin 18s linear infinite}
-.orbit3.o2{width:76vmin;height:76vmin;animation-duration:28s}.orbit3.o3{width:96vmin;height:96vmin;animation-duration:40s}
-.earth3{position:absolute;width:7vmin;height:7vmin;border-radius:50%;background:radial-gradient(circle at 30% 25%,#bfdbfe,#2563eb 42%,#0f172a 78%);box-shadow:0 0 20px rgba(59,130,246,.55)}
-.orbit3 .earth3{left:50%;top:-3.5vmin;transform:translateX(-50%) rotateX(-68deg)}
-@keyframes spin{to{transform:translate(-50%,-50%) rotateX(68deg) rotateZ(345deg)}}
-.a-voyage .earthBig{position:absolute;width:34vmin;height:34vmin;border-radius:50%;left:72%;top:55%;background:radial-gradient(circle at 35% 28%,#93c5fd,#2563eb 43%,#0f172a 75%);box-shadow:-35px 0 80px rgba(59,130,246,.3),inset -30px -10px 50px rgba(0,0,0,.55);animation:earthReveal 14s ease-in-out infinite alternate}
-.a-voyage .moon3{position:absolute;width:9vmin;height:9vmin;border-radius:50%;left:25%;top:28%;background:radial-gradient(circle at 35% 30%,#f8fafc,#94a3b8 70%,#334155);animation:moonFloat 10s ease-in-out infinite alternate}
-@keyframes earthReveal{to{left:38%;top:45%;transform:scale(1.25) rotate(12deg)}}@keyframes moonFloat{to{transform:translate(18vmin,12vmin) rotate(25deg)}}
-.a-moon{background:radial-gradient(circle at 50% 50%,#172554,#020617 72%)}
-.a-moon .moon3{position:absolute;width:25vmin;height:25vmin;border-radius:50%;left:50%;top:38%;transform:translate(-50%,-50%);background:radial-gradient(circle at 32% 28%,#fff,#cbd5e1 50%,#475569 85%);box-shadow:0 0 45px 10px rgba(226,232,240,.2);animation:moonPulse 8s ease-in-out infinite alternate}
-@keyframes moonPulse{to{transform:translate(-50%,-50%) scale(1.08)}}
-.a-planets .p3{position:absolute;border-radius:50%;left:50%;top:50%;animation:planetSpin 16s linear infinite}
-.p3.p1{width:3vmin;height:3vmin;background:#fb923c}.p3.p2{width:4vmin;height:4vmin;background:#fde68a}.p3.p3{width:5vmin;height:5vmin;background:#60a5fa}.p3.p4{width:3.5vmin;height:3.5vmin;background:#ef4444}
-.p3.p1{transform-origin:-16vmin 0}.p3.p2{transform-origin:-27vmin 0}.p3.p3{transform-origin:-39vmin 0}.p3.p4{transform-origin:-52vmin 0}
-@keyframes planetSpin{to{transform:rotate(360deg)}}
-.a-milkyway{background:radial-gradient(ellipse at 50% 50%,rgba(148,163,184,.22),transparent 45%),#020617}.galaxy3{position:absolute;width:150vmax;height:45vmax;left:50%;top:50%;border-radius:50%;transform:translate(-50%,-50%) rotate(-18deg);background:repeating-radial-gradient(ellipse,rgba(255,255,255,.18) 0 1px,transparent 2px 10px);filter:blur(.3px);animation:galaxy 25s linear infinite}
-@keyframes galaxy{to{transform:translate(-50%,-50%) rotate(342deg) scale(1.15)}}
-.a-wave .wave3{position:absolute;left:-10%;right:-10%;top:45%;height:20%;border-top:3px solid #38bdf8;border-radius:50%;box-shadow:0 -25px 0 rgba(34,211,238,.25),0 25px 0 rgba(59,130,246,.18);animation:waveMove 5s linear infinite}
-.wave3.w2{top:55%;animation-delay:-2s}.wave3.w3{top:65%;animation-delay:-4s}@keyframes waveMove{to{transform:translateX(12%) scaleY(1.3)}}
-.a-fish{background:linear-gradient(180deg,#082f49,#0369a1 48%,#020617)}.fish3{position:absolute;width:9vmin;height:4vmin;border-radius:55% 45% 55% 45%;background:linear-gradient(90deg,#fbbf24,#f97316);box-shadow:0 0 15px rgba(251,191,36,.2);animation:fishSwim 13s linear infinite}.fish3:after{content:'';position:absolute;right:-3vmin;top:.5vmin;border-left:3vmin solid #f97316;border-top:1.5vmin solid transparent;border-bottom:1.5vmin solid transparent}.fish3.f2{top:60%;animation-duration:17s;animation-delay:-7s;transform:scale(.7)}.fish3.f3{top:38%;animation-duration:11s;animation-delay:-3s;transform:scale(.5)}@keyframes fishSwim{from{left:-15vmin;top:48%}to{left:115%;top:42%}}
-.a-jupiter .jup{position:absolute;width:38vmin;height:38vmin;border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%);background:repeating-linear-gradient(0deg,#7c2d12 0 8px,#fed7aa 9px 18px,#b45309 19px 28px);box-shadow:inset -35px -15px 45px #111827,0 0 45px rgba(245,158,11,.2);animation:jup 18s ease-in-out infinite alternate}.jup:after{content:'';position:absolute;width:10vmin;height:5vmin;border-radius:50%;background:#b45309;right:4vmin;top:57%}@keyframes jup{to{transform:translate(-50%,-50%) scale(1.45) rotate(8deg)}}
-.a-neptune{background:radial-gradient(circle at 70% 45%,#1d4ed8,#020617 65%)}.nep{position:absolute;width:32vmin;height:32vmin;border-radius:50%;left:62%;top:50%;transform:translate(-50%,-50%);background:radial-gradient(circle at 35% 30%,#60a5fa,#1e40af 60%,#020617 85%);box-shadow:0 0 55px rgba(37,99,235,.5);animation:nep 16s ease-in-out infinite alternate}@keyframes nep{to{left:42%;transform:translate(-50%,-50%) scale(1.35) rotate(8deg)}}
-.a-earth{background:radial-gradient(circle at 40% 40%,#1e3a8a,#020617 65%)}.earthHero{position:absolute;width:42vmin;height:42vmin;border-radius:50%;left:50%;top:50%;transform:translate(-50%,-50%);background:radial-gradient(circle at 35% 28%,#60a5fa,#2563eb 35%,#166534 48%,#0f172a 78%);box-shadow:0 0 80px rgba(59,130,246,.35),inset -30px -20px 50px rgba(0,0,0,.45);animation:earthHero 22s ease-in-out infinite alternate}@keyframes earthHero{to{transform:translate(-50%,-50%) rotate(18deg) scale(1.18)}}
-.a-desert{background:linear-gradient(#f59e0b,#78350f 60%,#1c1917)}.sand3{position:absolute;inset:40% -10% -10%;background:linear-gradient(175deg,#fbbf24,#92400e);transform:rotateX(55deg);transform-origin:top;animation:sandMove 10s ease-in-out infinite alternate}.sprout{position:absolute;left:50%;bottom:25%;width:2vmin;height:18vmin;background:#16a34a;border-radius:100% 0 100% 0;transform-origin:bottom;animation:grow 8s ease-in-out infinite alternate}.sprout:after{content:'';position:absolute;left:2vmin;top:3vmin;width:7vmin;height:4vmin;border-radius:100% 0;background:#22c55e;transform:rotate(-25deg)}@keyframes sandMove{to{transform:rotateX(55deg) translateX(-5%)}}@keyframes grow{to{height:30vmin;transform:scale(1.2)}}
-.a-matrix{background:#000}.matrixRain{position:absolute;inset:-10%;background:repeating-linear-gradient(90deg,transparent 0 22px,rgba(34,197,94,.14) 23px 24px),repeating-linear-gradient(0deg,transparent 0 16px,rgba(34,197,94,.12) 17px 18px);transform:perspective(500px) rotateX(45deg);animation:matrixMove 4s linear infinite}.matrixWord{position:absolute;inset:0;display:grid;place-items:center;font:700 9vmin monospace;color:#22c55e;text-shadow:0 0 20px #16a34a;animation:matrixPulse 3s ease-in-out infinite}@keyframes matrixMove{to{background-position:0 400px,400px 0}}@keyframes matrixPulse{50%{opacity:.45;transform:scale(1.12)}}
-.a-glasses{background:linear-gradient(135deg,#0f172a,#334155)}.glasses3{position:absolute;left:50%;top:50%;width:55vmin;height:18vmin;transform:translate(-50%,-50%);animation:glassesFloat 8s ease-in-out infinite alternate}.lens{position:absolute;width:22vmin;height:14vmin;border:1vmin solid #cbd5e1;border-radius:45%}.lens.l{left:0}.lens.r{right:0}.bridge{position:absolute;left:50%;top:6vmin;width:12vmin;border-top:1vmin solid #cbd5e1;transform:translateX(-50%)}@keyframes glassesFloat{to{transform:translate(-50%,-50%) rotateY(25deg) rotateX(10deg) scale(1.12)}}
-.a-star{background:#020617}.star3{position:absolute;width:5vmin;height:5vmin;border-radius:50%;left:50%;top:50%;background:#fff;box-shadow:0 0 30px 10px #60a5fa;animation:starBy 9s ease-in-out infinite alternate}.star3:before,.star3:after{content:'';position:absolute;left:50%;top:50%;background:#fff;transform:translate(-50%,-50%)}.star3:before{width:25vmin;height:1px}.star3:after{height:25vmin;width:1px}@keyframes starBy{to{transform:translate(25vmin,-12vmin) scale(.45)}}
+.amb{position:absolute;inset:0;overflow:hidden}
+.amb .stars{position:absolute;inset:0;background-image:radial-gradient(1.5px 1.5px at 12% 20%,#fff,transparent),radial-gradient(1px 1px at 35% 55%,#fff,transparent),radial-gradient(2px 2px at 70% 15%,#fff,transparent),radial-gradient(1px 1px at 88% 65%,#fff,transparent),radial-gradient(1.5px 1.5px at 22% 80%,#fff,transparent),radial-gradient(1px 1px at 55% 40%,#fff,transparent);animation:starTwinkle 4s ease-in-out infinite alternate;opacity:.9}
+@keyframes starTwinkle{0%{opacity:.55}100%{opacity:.95}}
+.scene-vignette{position:absolute;inset:0;background:radial-gradient(ellipse at center,transparent 40%,rgba(0,0,0,.55) 100%);pointer-events:none;z-index:2}
+
+/* 1. SUNRISE → SUNSET (from draft) */
+.a-sun{background:linear-gradient(180deg,#0c1445 0%,#7c2d12 40%,#fb923c 70%,#fef3c7 100%);animation:skyCycle 22s ease-in-out infinite alternate}
+.a-sun .sun3{position:absolute;left:50%;width:18vmin;height:18vmin;margin-left:-9vmin;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fef9c3,#fbbf24 45%,#f97316 75%,transparent 78%);box-shadow:0 0 60px 20px rgba(251,191,36,.55),0 0 120px 40px rgba(249,115,22,.35);animation:sunPath 22s ease-in-out infinite alternate}
+.a-sun .horizon{position:absolute;left:0;right:0;bottom:0;height:32%;background:linear-gradient(180deg,transparent,rgba(28,25,23,.55) 40%,rgba(15,23,42,.75))}
+.a-sun .rays{position:absolute;inset:-20%;background:conic-gradient(from 0deg at 50% 55%,transparent 0deg,rgba(254,243,199,.12) 20deg,transparent 40deg,rgba(254,243,199,.1) 80deg,transparent 100deg);animation:raySpin 28s linear infinite;opacity:.55}
+@keyframes skyCycle{0%{filter:hue-rotate(0deg) brightness(.85)}50%{filter:hue-rotate(12deg) brightness(1.1)}100%{filter:hue-rotate(-8deg) brightness(.7)}}
+@keyframes sunPath{0%{top:55%;transform:scale(.9)}50%{top:16%;transform:scale(1.12)}100%{top:50%;transform:scale(.95)}}
+@keyframes raySpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* 2. EARTH ORBIT AROUND THE SUN (from draft) */
+.a-orbit{background:radial-gradient(ellipse at center,#1e293b 0%,#020617 75%)}
+.a-orbit .sun3{position:absolute;left:50%;top:48%;width:16vmin;height:16vmin;margin:-8vmin 0 0 -8vmin;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fef9c3,#fbbf24 40%,#f59e0b 70%,#ea580c);box-shadow:0 0 55px 20px rgba(251,191,36,.65),0 0 110px 35px rgba(245,158,11,.3);animation:softPulse 3.5s ease-in-out infinite}
+.a-orbit .orbit3{position:absolute;left:50%;top:48%;width:60vmin;height:38vmin;margin:-19vmin 0 0 -30vmin;border:1px solid rgba(148,163,184,.3);border-radius:50%}
+.a-orbit .earth-arm{position:absolute;left:50%;top:48%;width:0;height:0;animation:earthOrbit 14s linear infinite}
+.a-orbit .earth3{position:absolute;left:28vmin;top:-4vmin;width:8vmin;height:8vmin;border-radius:50%;background:radial-gradient(circle at 30% 30%,rgba(125,211,252,.9),transparent 45%),radial-gradient(circle at 65% 55%,rgba(34,197,94,.85),transparent 40%),radial-gradient(circle at 50% 50%,#1d4ed8,#0f172a);box-shadow:0 0 18px rgba(56,189,248,.55);animation:earthSpin 5s linear infinite}
+@keyframes softPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes earthOrbit{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes earthSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* 3. EARTH REVELATION / VOYAGE (from draft) */
+.a-voyage{background:#020617;overflow:hidden}
+.a-voyage .earthBig{position:absolute;left:50%;top:50%;width:70vmin;height:70vmin;margin:-35vmin 0 0 -35vmin;border-radius:50%;background:radial-gradient(circle at 32% 28%,#7dd3fc 0%,#2563eb 35%,#0f172a 70%);box-shadow:inset -12vmin -6vmin 30vmin rgba(0,0,0,.55),0 0 40px rgba(56,189,248,.35);animation:voyageZoom 22s ease-in-out infinite;overflow:hidden}
+.a-voyage .earthBig::before{content:'';position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 70% 40%,transparent 40%,rgba(0,0,0,.45) 100%)}
+.a-voyage .moon3{position:absolute;width:10vmin;height:10vmin;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f1f5f9,#94a3b8 60%,#475569);box-shadow:0 0 20px rgba(148,163,184,.4);animation:moonOrbit 18s linear infinite}
+@keyframes voyageZoom{0%{transform:scale(2.2) rotate(0deg)}25%{transform:scale(1.1) rotate(40deg)}50%{transform:scale(.55) rotate(90deg)}75%{transform:scale(.9) rotate(140deg)}100%{transform:scale(2.2) rotate(180deg)}}
+@keyframes moonOrbit{from{left:15%;top:20%;transform:scale(.6)}50%{left:70%;top:60%;transform:scale(1)}to{left:15%;top:20%;transform:scale(.6)}}
+
+/* 4. NIGHT MOON (from draft) */
+.a-moon{background:radial-gradient(ellipse at 50% 80%,#0f172a 0%,#020617 70%)}
+.a-moon .moon3{position:absolute;left:50%;width:42vmin;height:42vmin;margin-left:-21vmin;border-radius:50%;background:radial-gradient(circle at 32% 28%,#e0f2fe 0%,#7dd3fc 25%,#38bdf8 50%,#0284c7 75%,#0c4a6e 100%);box-shadow:0 0 60px 20px rgba(56,189,248,.45),0 0 120px 40px rgba(14,165,233,.25),inset -8vmin -4vmin 20vmin rgba(12,74,110,.4);animation:moonPath 24s ease-in-out infinite;overflow:hidden}
+.a-moon .moon3 .crater{position:absolute;border-radius:50%;background:rgba(12,74,110,.28);box-shadow:inset 1px 1px 3px rgba(2,6,23,.25)}
+.a-moon .horizon{position:absolute;left:0;right:0;bottom:0;height:28%;background:linear-gradient(180deg,transparent,rgba(15,23,42,.75) 45%,rgba(2,6,23,.95));z-index:2}
+@keyframes moonPath{0%{top:72%;transform:scale(.55);opacity:.6}15%{top:35%;transform:scale(1.05);opacity:1}35%{top:12%;transform:scale(1.25);opacity:1}55%{top:20%;transform:scale(1.1);opacity:.95}75%{top:55%;transform:scale(.7);opacity:.75}90%,100%{top:78%;transform:scale(.45);opacity:.4}}
+
+/* 5. PLANETS AROUND THE SUN (from draft) */
+.a-planets{background:radial-gradient(ellipse at center,#0f172a 0%,#020617 75%);overflow:hidden}
+.a-planets .sun3{position:absolute;left:50%;top:50%;width:14vmin;height:14vmin;margin:-7vmin 0 0 -7vmin;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fef9c3,#fbbf24 40%,#f59e0b 70%,#ea580c);box-shadow:0 0 50px 18px rgba(251,191,36,.6);animation:softPulse 3.5s ease-in-out infinite}
+.a-planets .orbit3{position:absolute;left:50%;top:50%;border:1px solid rgba(148,163,184,.22);border-radius:50%;transform:translate(-50%,-50%) rotateX(65deg)}
+.a-planets .orbit3.o1{width:28vmin;height:20vmin;animation:planetOrbit 12s linear infinite}
+.a-planets .orbit3.o2{width:42vmin;height:30vmin;animation:planetOrbit 20s linear infinite}
+.a-planets .orbit3.o3{width:58vmin;height:40vmin;animation:planetOrbit 32s linear infinite}
+.a-planets .orbit3.o4{width:76vmin;height:52vmin;animation:planetOrbit 48s linear infinite}
+.a-planets .p3{position:absolute;width:4.5vmin;height:4.5vmin;border-radius:50%;top:-2.25vmin;left:50%;margin-left:-2.25vmin}
+.a-planets .p1{background:radial-gradient(circle at 30% 30%,#fcd34d,#b45309);box-shadow:0 0 10px #f59e0b}
+.a-planets .p2{background:radial-gradient(circle at 30% 30%,#fda4af,#be123c);width:5.5vmin;height:5.5vmin}
+.a-planets .p3p{background:radial-gradient(circle at 30% 30%,#93c5fd,#1d4ed8);width:6vmin;height:6vmin;box-shadow:0 0 12px #38bdf8}
+.a-planets .p4{background:radial-gradient(circle at 30% 30%,#fca5a5,#9f1239);width:4vmin;height:4vmin}
+@keyframes planetOrbit{from{transform:translate(-50%,-50%) rotateX(65deg) rotateZ(0deg)}to{transform:translate(-50%,-50%) rotateX(65deg) rotateZ(360deg)}}
+
+/* Extra scenes kept for compatibility with existing SCENE_LABELS */
+.a-milkyway{background:#020617}.a-milkyway .galaxy3{position:absolute;left:50%;top:50%;width:90vmin;height:50vmin;margin:-25vmin 0 0 -45vmin;background:radial-gradient(ellipse,rgba(167,139,250,.35) 0%,rgba(99,102,241,.15) 40%,transparent 70%);filter:blur(2px);animation:drift 30s ease-in-out infinite alternate}
+.a-wave{background:#0c1222}.a-wave .wave3{position:absolute;left:0;right:0;height:30%;bottom:10%;background:linear-gradient(90deg,transparent,rgba(56,189,248,.25),transparent);animation:waveMove 6s ease-in-out infinite}
+.a-fish{background:linear-gradient(180deg,#0c4a6e,#082f49)}.a-fish .fish3{position:absolute;width:12vmin;height:6vmin;background:#22d3ee;border-radius:50% 40% 40% 50%;animation:swim 8s ease-in-out infinite}
+.a-jupiter{background:#020617}.a-jupiter .jup{position:absolute;left:50%;top:50%;width:45vmin;height:45vmin;margin:-22.5vmin;border-radius:50%;background:radial-gradient(circle at 30% 30%,#fde68a,#d97706 40%,#78350f);box-shadow:0 0 40px rgba(217,119,6,.4);animation:softPulse 5s ease-in-out infinite}
+.a-neptune{background:#020617}.a-neptune .nep{position:absolute;left:50%;top:50%;width:40vmin;height:40vmin;margin:-20vmin;border-radius:50%;background:radial-gradient(circle at 30% 30%,#7dd3fc,#0284c7 50%,#0c4a6e);box-shadow:0 0 40px rgba(14,165,233,.4);animation:softPulse 5s ease-in-out infinite}
+.a-earth{background:#020617}.a-earth .earthHero{position:absolute;left:50%;top:50%;width:50vmin;height:50vmin;margin:-25vmin;border-radius:50%;background:radial-gradient(circle at 30% 25%,#93c5fd,#2563eb 40%,#0f172a);box-shadow:0 0 50px rgba(37,99,235,.4);animation:softPulse 6s ease-in-out infinite}
+.a-desert{background:linear-gradient(180deg,#fef3c7 0%,#f59e0b 40%,#78350f 100%)}.a-desert .sand3{position:absolute;bottom:0;left:0;right:0;height:40%;background:#d97706}.a-desert .sprout{position:absolute;bottom:30%;left:50%;width:2vmin;height:12vmin;background:#166534;animation:grow 8s ease-in-out infinite alternate}
+.a-matrix{background:#000}.a-matrix .grid{position:absolute;inset:0;background:linear-gradient(rgba(0,255,65,.08) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,65,.08) 1px,transparent 1px);background-size:4vmin 4vmin;animation:matrixScroll 12s linear infinite}
+.a-glasses{background:#0f172a}.a-glasses .reader-g{position:absolute;left:50%;top:40%;width:40vmin;height:20vmin;margin-left:-20vmin;border:3px solid #94a3b8;border-radius:8px;background:rgba(15,23,42,.6);box-shadow:0 0 30px rgba(148,163,184,.3)}
+.a-star_bypass{background:#020617}.a-star_bypass .star3{position:absolute;width:6vmin;height:6vmin;border-radius:50%;left:50%;top:50%;background:#fff;box-shadow:0 0 40px 15px #60a5fa;animation:starBy 9s ease-in-out infinite alternate}
 @keyframes drift{to{transform:translate3d(4vmin,-3vmin,0) rotate(8deg)}}
+@keyframes waveMove{0%,100%{transform:translateY(0)}50%{transform:translateY(-3vmin)}}
+@keyframes swim{0%,100%{left:10%;top:40%}50%{left:70%;top:55%}}
+@keyframes grow{from{height:4vmin}to{height:18vmin}}
+@keyframes matrixScroll{to{background-position:0 20vmin}}
+@keyframes starBy{to{transform:translate(25vmin,-12vmin) scale(.45)}}
+
+    
+/* 🕐 Knowsoft Clock (exactly as in the draft) */
+.a-clock{background:radial-gradient(ellipse at center,#1e293b 0%,#0f172a 60%,#020617 100%)}
+.a-clock .kw-clock{position:absolute;left:50%;top:46%;width:min(70vmin,420px);height:min(70vmin,420px);margin:-35vmin 0 0 -35vmin;animation:clockGrow 16s ease-in-out infinite;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f8fafc,#cbd5e1 40%,#64748b 78%);box-shadow:0 20px 50px rgba(0,0,0,.45),inset 0 0 0 10px #0f172a,inset 0 0 0 14px #e2e8f0}
+.a-clock .kw-clock-logo{position:absolute;left:50%;top:42%;width:28%;transform:translate(-50%,-50%);opacity:.9}
+.a-clock .kw-hand{position:absolute;left:50%;bottom:50%;transform-origin:bottom center;background:#0f172a;border-radius:4px}
+.a-clock .kw-hour{width:2.2%;height:22%;margin-left:-1.1%;animation:hourHand 60s linear infinite}
+.a-clock .kw-min{width:1.6%;height:30%;margin-left:-.8%;background:#1e293b;animation:minHand 10s linear infinite}
+.a-clock .kw-sec{width:.8%;height:34%;margin-left:-.4%;background:#ef4444;animation:secHand 1s linear infinite}
+.a-clock .kw-cap{position:absolute;left:50%;top:50%;width:8%;height:8%;margin:-4%;border-radius:50%;background:#0f172a;box-shadow:0 0 0 3px #e2e8f0}
+@keyframes clockGrow{0%{transform:scale(.45)}70%{transform:scale(2.4)}100%{transform:scale(6)}}
+@keyframes hourHand{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes minHand{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes secHand{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
     /* Imported Kwealth ambience scene styles are injected after page load. */
     #sceneStageImported{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden}
@@ -132,7 +184,24 @@
         <div class="field"><label>Voice</label><select id="voiceName"><option value="">Default voice</option></select></div>
         <div class="field"><label>Reading speed: <span id="rateLabel">0.95</span></label><input id="rate" type="range" min="0.7" max="1.15" step="0.05" value="0.95"></div>
         <div class="field"><label>Pause between paragraphs</label><select id="paraPause"><option value="0">0 sec</option><option value="3">3 sec</option><option value="5" selected>5 sec</option><option value="7">7 sec</option><option value="10">10 sec</option><option value="15">15 sec</option><option value="20">20 sec</option><option value="30">30 sec</option></select></div>
-        <div class="field"><label>3D ambience</label><select id="scenePick"><option value="sun">Sunrise → Sunset</option><option value="orbit">Earth around the Sun</option><option value="voyage">Earth revelation</option><option value="moon">Night Moon</option><option value="planets">Planets around the Sun</option></select></div>
+        <div class="field"><label>3D ambience</label><select id="scenePick">
+          <option value="sun">☀️ Sunrise → Sunset</option>
+          <option value="orbit">🌍 Earth orbiting the Sun</option>
+          <option value="voyage">🌎 Earth revelation</option>
+          <option value="moon">🌙 Night Moon</option>
+          <option value="planets">🪐 Planets around the Sun</option>
+          <option value="milkyway">🌌 Milky Way</option>
+          <option value="wavelength">〰️ Energy/Wavelength</option>
+          <option value="fishes3d">🐟 Ocean Life</option>
+          <option value="jupiter">🟠 Jupiter fly-by</option>
+          <option value="neptune">🔵 Neptune fly-by</option>
+          <option value="earth">🌎 Earth from space</option>
+          <option value="desert">🌱 Desert growth</option>
+          <option value="matrix">💚 Matrix/AI</option>
+          <option value="glasses">👓 Glasses/Reader</option>
+          <option value="star_bypass">⭐ Star bypass</option>
+          <option value="clock">🕐 Knowsoft Clock</option>
+        </select></div>
         <div class="field"><label>Ambience mode</label><select id="sceneMix"><option value="one">One selected scene</option><option value="mix">Mix all scenes automatically</option></select></div>
       </div>
       <div class="music-box">
@@ -198,29 +267,48 @@
 
   /* Self-contained 3D scene renderer. This is intentionally local so the reader never
      depends on fetching another HTML document or on cross-origin GitHub access. */
-  const SCENE_LABELS={sun:'Sunrise → Sunset',orbit:'Earth around the Sun',voyage:'Earth revelation',moon:'Night Moon',planets:'Planets around the Sun',milkyway:'Milky Way',wavelength:'Energy / Wavelength',fishes3d:'Ocean Life',jupiter:'Jupiter fly-by',neptune:'Neptune fly-by',earth:'Earth from space',desert:'Desert growth',matrix:'Matrix / AI',glasses:'Glasses / Reader',star_bypass:'Star bypass'};
+  const SCENE_LABELS={
+    sun:'☀️ Sunrise → Sunset',
+    orbit:'🌍 Earth orbiting the Sun',
+    voyage:'🌎 Earth revelation',
+    moon:'🌙 Night Moon',
+    planets:'🪐 Planets around the Sun',
+    milkyway:'🌌 Milky Way',
+    wavelength:'〰️ Energy/Wavelength',
+    fishes3d:'🐟 Ocean Life',
+    jupiter:'🟠 Jupiter fly-by',
+    neptune:'🔵 Neptune fly-by',
+    earth:'🌎 Earth from space',
+    desert:'🌱 Desert growth',
+    matrix:'💚 Matrix/AI',
+    glasses:'👓 Glasses/Reader',
+    star_bypass:'⭐ Star bypass',
+    clock:'🕐 Knowsoft Clock'
+  };
   function sceneMarkup(name){
     const stars='<div class="stars"></div>';
     const common='<div class="scene-vignette"></div>';
     switch(name){
-      case 'sun': return `<div class="amb a-sun">${stars}<div class="sun3"></div><div class="horizon"></div>${common}</div>`;
-      case 'orbit': return `<div class="amb a-orbit">${stars}<div class="sun3"></div><div class="orbit3"><div class="earth3"></div></div><div class="orbit3 o2"><div class="earth3"></div></div><div class="orbit3 o3"><div class="earth3"></div></div></div>`;
-      case 'voyage': return `<div class="amb a-voyage">${stars}<div class="earthBig"></div><div class="moon3"></div></div>`;
-      case 'moon': return `<div class="amb a-moon">${stars}<div class="moon3"></div></div>`;
-      case 'planets': return `<div class="amb a-planets">${stars}<div class="sun3"></div><div class="orbit3"><div class="p3 p1"></div></div><div class="orbit3 o2"><div class="p3 p2"></div></div><div class="orbit3 o3"><div class="p3 p3"></div></div><div class="orbit3" style="width:115vmin;height:115vmin"><div class="p3 p4"></div></div></div>`;
-      case 'milkyway': return `<div class="amb a-milkyway">${stars}<div class="galaxy3"></div></div>`;
-      case 'wavelength': return `<div class="amb a-wave">${stars}<div class="wave3"></div><div class="wave3 w2"></div><div class="wave3 w3"></div></div>`;
-      case 'fishes3d': return `<div class="amb a-fish"><div class="fish3"></div><div class="fish3 f2"></div><div class="fish3 f3"></div></div>`;
-      case 'jupiter': return `<div class="amb a-jupiter">${stars}<div class="jup"></div></div>`;
-      case 'neptune': return `<div class="amb a-neptune">${stars}<div class="nep"></div></div>`;
-      case 'earth': return `<div class="amb a-earth">${stars}<div class="earthHero"></div></div>`;
-      case 'desert': return `<div class="amb a-desert"><div class="sand3"></div><div class="sprout"></div></div>`;
-      case 'matrix': return `<div class="amb a-matrix"><div class="matrixRain"></div><div class="matrixWord">KNOWLEDGE</div></div>`;
-      case 'glasses': return `<div class="amb a-glasses"><div class="glasses3"><div class="lens l"></div><div class="lens r"></div><div class="bridge"></div></div></div>`;
-      default: return `<div class="amb a-star">${stars}<div class="star3"></div></div>`;
+      case 'sun': return `<div class="amb a-sun">${stars}<div class="rays"></div><div class="sun3"></div><div class="horizon"></div>${common}</div>`;
+      case 'orbit': return `<div class="amb a-orbit">${stars}<div class="sun3"></div><div class="orbit3"></div><div class="earth-arm"><div class="earth3"></div></div>${common}</div>`;
+      case 'voyage': return `<div class="amb a-voyage">${stars}<div class="earthBig"></div><div class="moon3"></div>${common}</div>`;
+      case 'moon': return `<div class="amb a-moon">${stars}<div class="moon3"><span class="crater" style="width:18%;height:18%;top:22%;left:28%"></span><span class="crater" style="width:12%;height:12%;top:48%;left:55%"></span><span class="crater" style="width:22%;height:22%;top:55%;left:25%"></span><span class="crater" style="width:10%;height:10%;top:30%;left:62%"></span></div><div class="horizon"></div>${common}</div>`;
+      case 'planets': return `<div class="amb a-planets">${stars}<div class="sun3"></div><div class="orbit3 o1"><div class="p3 p1"></div></div><div class="orbit3 o2"><div class="p3 p2"></div></div><div class="orbit3 o3"><div class="p3 p3p"></div></div><div class="orbit3 o4"><div class="p3 p4"></div></div>${common}</div>`;
+      case 'milkyway': return `<div class="amb a-milkyway">${stars}<div class="galaxy3"></div>${common}</div>`;
+      case 'wavelength': return `<div class="amb a-wave">${stars}<div class="wave3"></div><div class="wave3" style="bottom:25%;animation-delay:1s"></div><div class="wave3" style="bottom:5%;animation-delay:2s"></div>${common}</div>`;
+      case 'fishes3d': return `<div class="amb a-fish"><div class="fish3"></div><div class="fish3" style="animation-delay:2s;top:55%"></div><div class="fish3" style="animation-delay:4s;top:30%"></div>${common}</div>`;
+      case 'jupiter': return `<div class="amb a-jupiter">${stars}<div class="jup"></div>${common}</div>`;
+      case 'neptune': return `<div class="amb a-neptune">${stars}<div class="nep"></div>${common}</div>`;
+      case 'earth': return `<div class="amb a-earth">${stars}<div class="earthHero"></div>${common}</div>`;
+      case 'desert': return `<div class="amb a-desert"><div class="sand3"></div><div class="sprout"></div>${common}</div>`;
+      case 'matrix': return `<div class="amb a-matrix"><div class="grid"></div>${common}</div>`;
+      case 'glasses': return `<div class="amb a-glasses"><div class="reader-g"></div>${common}</div>`;
+      case 'star_bypass': return `<div class="amb a-star_bypass">${stars}<div class="star3"></div>${common}</div>`;
+      case 'clock': return `<div class="amb a-clock"><div class="kw-clock"><img class="kw-clock-logo" src="/static/img/knowsoft-logo.png" alt="Knowsoft" onerror="this.style.display='none'"><div class="kw-hand kw-hour"></div><div class="kw-hand kw-min"></div><div class="kw-hand kw-sec"></div><div class="kw-cap"></div></div>${common}</div>`;
+      default: return `<div class="amb a-sun">${stars}<div class="sun3"></div><div class="horizon"></div>${common}</div>`;
     }
   }
-  function loadAnimations(){
+    function loadAnimations(){
     const stage=$('sceneStage'); if(!stage)return;
     const pick=$('scenePick');
     const current=state.scene;
