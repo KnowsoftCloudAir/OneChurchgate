@@ -16,7 +16,7 @@ from app.models import (
 from app.activity import log_activity
 from app.auth import (
     get_current_user, require_user, get_password_hash, create_access_token,
-    ACCESS_TOKEN_EXPIRE_MINUTES, verify_password
+    ACCESS_TOKEN_EXPIRE_MINUTES, verify_password, role_val
 )
 
 router = APIRouter(tags=["members"])
@@ -490,6 +490,13 @@ async def member_portal(
         "focus_latest_at": focus_latest_at,
         "is_preview": bool(is_preview),
         "is_awaiting_payment": bool(is_awaiting_payment),
+        "features_locked": bool(
+            role_val(user.role) == "member"
+            and not (
+                (sub_active and (sub_secs_left or 0) > 0)
+                or (is_sample and sample_info and not sample_info.get("expired") and not sample_info.get("locked"))
+            )
+        ),
         "promo_code": promo_code,
         "ref_stats": ref_stats,
     }

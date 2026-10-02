@@ -1,13 +1,30 @@
-<!DOCTYPE html><html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Forgot password — Churchgate</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head><body class="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
-<form method="post" class="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl p-6 space-y-4">
-  <h1 class="text-xl font-bold">Reset password</h1>
-  {% if sent %}<p class="text-teal-300 text-sm">If that email exists, a reset code was sent.</p>{% endif %}
-  {% if error %}<p class="text-rose-300 text-sm">{{ error }}</p>{% endif %}
-  <input name="email" type="email" required placeholder="you@email.com" class="w-full rounded-lg px-3 py-2 text-slate-900">
-  <button class="w-full py-2.5 rounded-xl bg-teal-600 font-semibold">Send code</button>
-  <a class="block text-center text-sm text-slate-400" href="/auth/reset">I already have a code</a>
-</form></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Forgot password — Churchgate</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
+  <div class="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 space-y-4">
+    <h1 class="text-xl font-bold">Reset your password</h1>
+    <p class="text-sm text-slate-300">Enter the email on your Churchgate account. If it is registered, we will email a code and a link.</p>
+    {% if error %}
+      <p class="text-sm rounded-lg bg-rose-950 border border-rose-700 text-rose-200 px-3 py-2">{{ error }}</p>
+    {% endif %}
+    {% if sent %}
+      <p class="text-sm rounded-lg bg-emerald-950 border border-emerald-700 text-emerald-200 px-3 py-2">
+        Check your email for a code and a link. The code expires in 5 minutes. Open the link, then enter your email, a new password, the same password again, and the code.
+      </p>
+    {% endif %}
+    <form method="post" action="/auth/forgot" class="space-y-3">
+      <label class="block text-sm font-medium">Email</label>
+      <input name="email" type="email" required value="{{ email or '' }}" autocomplete="email"
+             class="w-full rounded-lg px-3 py-2 text-slate-900" placeholder="name@example.com">
+      <button class="w-full py-2.5 rounded-xl bg-teal-600 font-semibold">Send reset code</button>
+    </form>
+    <a href="/auth/login" class="block text-center text-sm text-teal-300 font-semibold">Back to sign in</a>
+  </div>
+</body>
+</html>

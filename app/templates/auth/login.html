@@ -85,7 +85,7 @@
           {% if error %}
           <div class="mb-4 p-3 rounded-lg bg-red-50 border border-red-100 text-red-700 text-sm">
             {{ error }}
-            <p class="mt-2 text-xs">After several attempts, wait 2 minutes. Then <a href="/auth/forgot-password" class="font-bold underline">reset your password</a>.</p>
+            <p class="mt-2 text-xs">After several attempts, wait 2 minutes. Then <a href="/auth/forgot" class="font-bold underline">reset your password</a>.</p>
           </div>
           {% endif %}
           <form method="post" action="/auth/login" class="space-y-4">
@@ -113,7 +113,7 @@
           </form>
 
           <p class="text-center text-sm mt-4">
-            <a href="/auth/forgot-password" class="text-navy-900 font-semibold hover:underline">Forgot password?</a>
+            <a href="/auth/forgot" class="text-navy-900 font-semibold hover:underline">Forgot password?</a>
           </p>
           <div class="mt-6 pt-5 border-t border-slate-100 space-y-3">
             <p class="text-xs font-bold uppercase tracking-wide text-slate-400 text-center">New here?</p>

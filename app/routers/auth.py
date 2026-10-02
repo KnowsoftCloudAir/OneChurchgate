@@ -84,42 +84,7 @@ async def login(
                 user = u
                 break
 
-    # Always heal sample angel credentials
-    if user and email == "angel@churchgate.com" and password == "ilovechurhgate":
-        try:
-            user.hashed_password = get_password_hash("ilovechurhgate")
-            user.is_active = True
-            user.is_sample_account = True
-            user.role = UserRole.member
-            session.add(user)
-            session.commit()
-            session.refresh(user)
-        except Exception as _ah:
-            print("angel heal:", _ah)
-            try:
-                session.rollback()
-            except Exception:
-                pass
-
-    # Auto-heal sample account if missing password match on known demo credentials
-    if user and getattr(user, "is_sample_account", False):
-        if not verify_password(password, user.hashed_password):
-            if password in ("ilovechurhgate", "Church@12345", "Member@12345"):
-                user.hashed_password = get_password_hash(password)
-                user.is_active = True
-                session.add(user)
-                session.commit()
-                session.refresh(user)
     if not user or not verify_password(password, user.hashed_password):
-        # Last chance: create/heal angel sample on the fly when credentials match
-        if email == "angel@churchgate.com" and password == "ilovechurhgate":
-            try:
-                from app.seed_sample import seed_sample_member
-                seed_sample_member(session)
-                user = session.exec(select(User).where(User.email == email)).first()
-            except Exception as _se:
-                print("on-login sample seed:", _se)
-        if not user or not verify_password(password, user.hashed_password):
             record_login_failure(email)
             return templates.TemplateResponse("auth/login.html", {
                 "request": request, "error": "Invalid email or password"
@@ -134,7 +99,7 @@ async def login(
     try:
         import os
         mail_on = bool(os.getenv("MAIL_HOST") or os.getenv("SMTP_HOST"))
-        require_otp = os.getenv("REQUIRE_EMAIL_OTP", "1" if mail_on else "0").strip() not in ("0", "false", "off")
+        require_otp = os.getenv("REQUIRE_EMAIL_OTP", "0").strip() not in ("0", "false", "off")
         if require_otp and mail_on and not getattr(user, "is_sample_account", False):
             from app.routers.mail_auth import _issue
             from app.mailer import send_mail, branded
@@ -763,52 +728,9 @@ async def force_password_submit(
 
 @router.get("/forgot-password", response_class=HTMLResponse)
 async def forgot_password_page(request: Request):
-    return templates.TemplateResponse("auth/forgot_password.html", {
-        "request": request, "error": None, "success": None,
-    })
+    return RedirectResponse("/auth/forgot", status_code=303)
 
 
 @router.post("/forgot-password", response_class=HTMLResponse)
-async def forgot_password_submit(
-    request: Request,
-    email: str = Form(...),
-    new_password: str = Form(...),
-    confirm_password: str = Form(...),
-    phone: str = Form(""),
-    session: Session = Depends(get_session),
-):
-    email = (email or "").strip().lower()
-    lock = login_lockout_seconds(email)
-    if lock > 0:
-        return templates.TemplateResponse("auth/forgot_password.html", {
-            "request": request,
-            "error": f"Too many attempts. Please wait about {max(1, lock // 60)} minute(s) and try again.",
-            "success": None,
-        }, status_code=429)
-    user = session.exec(select(User).where(User.email == email)).first()
-    if not user:
-        record_login_failure(email)
-        return templates.TemplateResponse("auth/forgot_password.html", {
-            "request": request, "error": "No account found for that email.", "success": None,
-        }, status_code=400)
-    err = validate_password_strength(new_password)
-    if err:
-        return templates.TemplateResponse("auth/forgot_password.html", {
-            "request": request, "error": err, "success": None,
-        }, status_code=400)
-    if new_password != confirm_password:
-        return templates.TemplateResponse("auth/forgot_password.html", {
-            "request": request, "error": "Passwords do not match.", "success": None,
-        }, status_code=400)
-    user.hashed_password = get_password_hash(new_password)
-    user.must_change_password = False
-    if phone.strip():
-        user.phone = phone.strip()
-    session.add(user)
-    session.commit()
-    clear_login_failures(email)
-    _notify_password_changed(user.phone or phone, user.email)
-    return templates.TemplateResponse("auth/forgot_password.html", {
-        "request": request, "error": None,
-        "success": "Password updated. A confirmation was sent to your phone when SMS is configured. You can sign in now.",
-    })
+async def forgot_password_submit(request: Request):
+    return RedirectResponse("/auth/forgot", status_code=303)

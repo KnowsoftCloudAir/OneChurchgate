@@ -247,7 +247,26 @@ app = FastAPI(
 
 
 @app.middleware("http")
-async def security_headers(request: Request, call_next):
+async def trial_feature_gate(request: Request, call_next):
+    path = request.url.path
+    if path.startswith("/member/") and not path.startswith("/member/subscription") and path != "/member/portal":
+        try:
+            from jose import jwt
+            from app.auth import SECRET_KEY, ALGORITHM, get_user_by_email, role_val
+            from app.database import engine
+            from app.member_access import features_open
+            from sqlmodel import Session as _S
+            token = request.cookies.get("access_token")
+            if token:
+                payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+                email = payload.get("sub")
+                with _S(engine) as session:
+                    user = get_user_by_email(session, email) if email else None
+                    if user and role_val(user.role) == "member" and not features_open(session, user):
+                        from fastapi.responses import RedirectResponse
+                        return RedirectResponse("/member/subscription?expired=1", status_code=303)
+        except Exception as _gate:
+            print("trial gate:", _gate)
     response = await call_next(request)
     response.headers.setdefault("X-Content-Type-Options", "nosniff")
     response.headers.setdefault("X-Frame-Options", "SAMEORIGIN")

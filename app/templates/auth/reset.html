@@ -1,13 +1,39 @@
-<!DOCTYPE html><html lang="en"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>New password — Churchgate</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head><body class="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
-<form method="post" class="w-full max-w-sm bg-slate-900 border border-slate-700 rounded-2xl p-6 space-y-4">
-  <h1 class="text-xl font-bold">Set a new password</h1>
-  {% if error %}<p class="text-rose-300 text-sm">{{ error }}</p>{% endif %}
-  <input name="email" type="email" value="{{ email or '' }}" required class="w-full rounded-lg px-3 py-2 text-slate-900">
-  <input name="code" placeholder="Email code" required class="w-full rounded-lg px-3 py-2 text-slate-900">
-  <input name="password" type="password" placeholder="New password" required class="w-full rounded-lg px-3 py-2 text-slate-900">
-  <button class="w-full py-2.5 rounded-xl bg-teal-600 font-semibold">Update password</button>
-</form></body></html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>New password — Churchgate</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center p-6">
+  <div class="w-full max-w-md bg-slate-900 border border-slate-700 rounded-2xl p-6 space-y-4">
+    <h1 class="text-xl font-bold">Set a new password</h1>
+    <p class="text-sm text-slate-300">Enter the email, the code from the message, and your new password twice.</p>
+    {% if error %}
+      <p class="text-sm rounded-lg bg-rose-950 border border-rose-700 text-rose-200 px-3 py-2">{{ error }}</p>
+    {% endif %}
+    {% if success %}
+      <p class="text-sm rounded-lg bg-emerald-950 border border-emerald-700 text-emerald-200 px-3 py-2">{{ success }}</p>
+      <a href="/auth/login" class="block text-center py-2.5 rounded-xl bg-teal-600 font-semibold">Sign in</a>
+    {% else %}
+    <form method="post" action="/auth/reset" class="space-y-3">
+      <label class="block text-sm font-medium">Email</label>
+      <input name="email" type="email" required value="{{ email or '' }}" autocomplete="email"
+             class="w-full rounded-lg px-3 py-2 text-slate-900">
+      <label class="block text-sm font-medium">New password</label>
+      <input name="password" type="password" required minlength="10" autocomplete="new-password"
+             class="w-full rounded-lg px-3 py-2 text-slate-900" placeholder="At least 10 characters, upper, lower, number">
+      <label class="block text-sm font-medium">Repeat new password</label>
+      <input name="password2" type="password" required minlength="10" autocomplete="new-password"
+             class="w-full rounded-lg px-3 py-2 text-slate-900">
+      <label class="block text-sm font-medium">Code from email</label>
+      <input name="code" inputmode="numeric" required autocomplete="one-time-code"
+             class="w-full rounded-lg px-3 py-2 text-slate-900" placeholder="6-digit code">
+      <button class="w-full py-2.5 rounded-xl bg-teal-600 font-semibold">Send</button>
+    </form>
+    {% endif %}
+    <a href="/auth/forgot" class="block text-center text-sm text-teal-300 font-semibold">Send a new code</a>
+  </div>
+</body>
+</html>

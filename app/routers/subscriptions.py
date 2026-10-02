@@ -44,7 +44,7 @@ def _settings(session: Session) -> SubscriptionSettings:
 
 
 def ensure_welcome_trial(session: Session, user: User):
-    """After district approval, first portal login starts a 7-minute welcome subscription."""
+    """After district approval, first portal login starts a 5-minute welcome subscription."""
     from typing import Optional
     if getattr(user, "is_sample_account", False):
         return None
@@ -75,7 +75,7 @@ def ensure_welcome_trial(session: Session, user: User):
         if not getattr(user, "welcome_started_at", None):
             user.welcome_started_at = now
             session.add(user)
-        ends = now + timedelta(minutes=7)
+        ends = now + timedelta(minutes=5)
         welcome = MemberSubscription(
             user_id=user.id,
             member_id=user.member_id,
@@ -84,10 +84,10 @@ def ensure_welcome_trial(session: Session, user: User):
             currency="NGN",
             duration_days=0,
             status="active",
-            payment_reference="WELCOME-7MIN",
+            payment_reference="WELCOME-5MIN",
             starts_at=now,
             ends_at=ends,
-            note="Complimentary 7-minute welcome access after approval",
+            note="Complimentary 5-minute welcome access after approval",
         )
         session.add(welcome)
         if mem.approval_status != "approved":
@@ -149,7 +149,7 @@ def expire_due_subscriptions(session: Session) -> int:
 
 def check_sample_member(session: Session, user: User) -> dict:
     """Sample account: 5 minutes from first use, then deactivate. Cannot subscribe."""
-    SAMPLE_SECONDS = 3 * 60  # 3 minutes per login (shared sample account)
+    SAMPLE_SECONDS = 5 * 60  # 5 minutes, then member features lock
     info = {
         "is_sample": bool(getattr(user, "is_sample_account", False)),
         "show_warning": False,
@@ -180,7 +180,7 @@ def check_sample_member(session: Session, user: User) -> dict:
     mins = left // 60
     secs = left % 60
     info["message"] = (
-        f"Sample membership (3-min session): {mins}m {secs:02d}s left. "
+        f"Sample membership (5-min session): {mins}m {secs:02d}s left. "
         "Sample accounts cannot subscribe — please register as a full member for perpetual access."
     )
     info["show_warning"] = True  # always show while sample is active
@@ -188,7 +188,7 @@ def check_sample_member(session: Session, user: User) -> dict:
         info["expired"] = True
         info["locked"] = True
         info["message"] = (
-            "Sample 3-minute session ended. Register as a member of a church to continue. "
+            "Sample 5-minute session ended. Register as a member of a church to continue. "
             "Resources and Angel are locked until you join as a full member."
         )
         # Do NOT log out — same as paid members: waiting_approval style lock
