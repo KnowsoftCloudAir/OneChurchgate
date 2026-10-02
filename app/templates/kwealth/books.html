@@ -3804,8 +3804,41 @@
 #bookLib{max-width:1200px;margin:0 auto;padding:26px 18px 60px;min-height:72vh}
 #bookLib h2{font-size:2rem;letter-spacing:.02em;text-align:center;margin:0 0 6px;color:#fff}
 .lib-subtitle{text-align:center;color:#94a3b8;font-size:13px;margin:0 auto 18px;max-width:720px}
-.lib-upload-card{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 16px;margin:0 auto 22px;max-width:900px;border:1px solid rgba(148,163,184,.2);border-radius:18px;background:rgba(15,23,42,.78);box-shadow:0 12px 35px rgba(0,0,0,.2)}
-.lib-upload-help{color:#94a3b8;font-size:11px;line-height:1.45;margin-top:4px}
+.lib-upload-card{
+  display:flex;align-items:center;justify-content:space-between;gap:18px;
+  padding:18px 20px;margin:0 auto 26px;max-width:900px;
+  border:1px solid rgba(45,212,191,.35);
+  border-radius:18px;
+  background:linear-gradient(145deg,rgba(15,23,42,.95),rgba(13,148,136,.12));
+  box-shadow:0 14px 40px rgba(0,0,0,.3), 0 0 0 1px rgba(45,212,191,.08);
+}
+.lib-upload-help{color:#94a3b8;font-size:12px;line-height:1.5;margin-top:6px}
+.lib-upload-help b{color:#5eead4}
+/* Big visible upload button */
+#btnLoadLib, .btn-upload-big{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  min-width:180px;padding:14px 22px !important;
+  font-size:15px !important;font-weight:700 !important;
+  border-radius:14px !important;
+  background:linear-gradient(135deg,#0d9488,#14b8a6) !important;
+  border:1px solid #2dd4bf !important;
+  color:#fff !important;
+  box-shadow:0 8px 24px rgba(13,148,136,.4);
+  cursor:pointer;
+  transition:transform .15s ease, box-shadow .15s ease;
+}
+#btnLoadLib:hover, .btn-upload-big:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 28px rgba(13,148,136,.55);
+}
+#btnLoadLib:active{transform:translateY(0)}
+.upload-icon{
+  font-size:22px;line-height:1;
+}
+@media(max-width:650px){
+  .lib-upload-card{flex-direction:column;align-items:stretch;text-align:center}
+  #btnLoadLib, .btn-upload-big{width:100%;min-width:0}
+}
 .lib-section-title{max-width:1080px;margin:22px auto 10px;padding-left:4px;font-size:15px;letter-spacing:.04em}
 .knowsoft-title{color:#fde68a}.personal-title{color:#93c5fd}
 .lib-wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:34px 28px;padding:32px 30px 38px;max-width:1080px;margin:0 auto;background:linear-gradient(180deg,#3b3028,#211c19 55%,#171310);border:1px solid rgba(255,255,255,.08);border-radius:20px;box-shadow:inset 0 18px 50px rgba(0,0,0,.35),0 18px 50px rgba(0,0,0,.22);perspective:1200px}
@@ -3906,8 +3939,18 @@ body.reader-mode .library-only{display:none!important}
       <h2>📚 Book Library</h2>
       <p class="lib-subtitle">A clean 3D library wall. Click any book to open the reading room and all reading settings.</p>
       <div class="lib-upload-card">
-        <div><strong>Personal Books</strong><div class="lib-upload-help">Upload up to <b>3 books</b>. PDF, TXT and DOCX are supported. For faster upload and smoother reading, remove pictures/images before uploading. <b>Maximum 4 MB per book.</b></div></div>
-        <button type="button" class="chip on" id="btnLoadLib" onclick="document.getElementById('filePick').click()">＋ Upload Personal Book</button>
+        <div style="flex:1;min-width:0">
+          <strong style="font-size:16px;color:#f0fdfa">📤 Upload Personal Book</strong>
+          <div class="lib-upload-help">
+            You may upload up to <b>3 personal books</b>.<br>
+            Accepted formats: <b>PDF, DOCX, TXT</b> &nbsp;•&nbsp; <b>Max 4 MB per book</b>.<br>
+            <span style="color:#fbbf24">⚠ Important:</span> Please remove all pictures/images from the book before uploading. This makes the file smaller, faster to upload, and much smoother to read.
+          </div>
+        </div>
+        <button type="button" class="btn-upload-big" id="btnLoadLib" onclick="document.getElementById('filePick').click()" title="Upload PDF, DOCX or TXT (max 3 books, 4 MB each)">
+          <span class="upload-icon">📁</span>
+          <span>Upload Book</span>
+        </button>
       </div>
       <h3 class="lib-section-title knowsoft-title">Knowsoft Books</h3>
       <div class="lib-wall" id="libKnowsoft">
@@ -4872,7 +4915,7 @@ id="fsBookMeta" aria-hidden="true">
       }
       const bad = files.find(f => !allowed.test(f.name) || f.size > maxBytes);
       if (bad) {
-        alert('Each personal book must be PDF, TXT or DOCX and no more than 4 MB. Remove pictures/images before uploading to make the book easier to upload and read.');
+        alert('Each personal book must be PDF, TXT or DOCX and no more than 4 MB.\n\nPlease remove all pictures/images from the book before uploading. This keeps the file small and makes reading much smoother.');
         ev.target.value = ''; return;
       }
       $('btnLoad').textContent = 'Uploading…';
