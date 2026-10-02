@@ -84,19 +84,6 @@
 .a-moon .horizon{position:absolute;left:0;right:0;bottom:0;height:28%;background:linear-gradient(180deg,transparent,rgba(15,23,42,.75) 45%,rgba(2,6,23,.95));z-index:2}
 @keyframes moonPath{0%{top:72%;transform:scale(.55);opacity:.6}15%{top:35%;transform:scale(1.05);opacity:1}35%{top:12%;transform:scale(1.25);opacity:1}55%{top:20%;transform:scale(1.1);opacity:.95}75%{top:55%;transform:scale(.7);opacity:.75}90%,100%{top:78%;transform:scale(.45);opacity:.4}}
 
-/* 5. PLANETS AROUND THE SUN (from draft) */
-.a-planets{background:radial-gradient(ellipse at center,#0f172a 0%,#020617 75%);overflow:hidden}
-.a-planets .sun3{position:absolute;left:50%;top:50%;width:14vmin;height:14vmin;margin:-7vmin 0 0 -7vmin;border-radius:50%;background:radial-gradient(circle at 35% 35%,#fef9c3,#fbbf24 40%,#f59e0b 70%,#ea580c);box-shadow:0 0 50px 18px rgba(251,191,36,.6);animation:softPulse 3.5s ease-in-out infinite}
-.a-planets .orbit3{position:absolute;left:50%;top:50%;border:1px solid rgba(148,163,184,.22);border-radius:50%;transform:translate(-50%,-50%) rotateX(65deg)}
-.a-planets .orbit3.o1{width:28vmin;height:20vmin;animation:planetOrbit 12s linear infinite}
-.a-planets .orbit3.o2{width:42vmin;height:30vmin;animation:planetOrbit 20s linear infinite}
-.a-planets .orbit3.o3{width:58vmin;height:40vmin;animation:planetOrbit 32s linear infinite}
-.a-planets .orbit3.o4{width:76vmin;height:52vmin;animation:planetOrbit 48s linear infinite}
-.a-planets .p3{position:absolute;width:4.5vmin;height:4.5vmin;border-radius:50%;top:-2.25vmin;left:50%;margin-left:-2.25vmin}
-.a-planets .p1{background:radial-gradient(circle at 30% 30%,#fcd34d,#b45309);box-shadow:0 0 10px #f59e0b}
-.a-planets .p2{background:radial-gradient(circle at 30% 30%,#fda4af,#be123c);width:5.5vmin;height:5.5vmin}
-.a-planets .p3p{background:radial-gradient(circle at 30% 30%,#93c5fd,#1d4ed8);width:6vmin;height:6vmin;box-shadow:0 0 12px #38bdf8}
-.a-planets .p4{background:radial-gradient(circle at 30% 30%,#fca5a5,#9f1239);width:4vmin;height:4vmin}
 @keyframes planetOrbit{from{transform:translate(-50%,-50%) rotateX(65deg) rotateZ(0deg)}to{transform:translate(-50%,-50%) rotateX(65deg) rotateZ(360deg)}}
 
 /* Extra scenes kept for compatibility with existing SCENE_LABELS */
@@ -120,7 +107,7 @@
     
 /* 🕐 Knowsoft Clock (exactly as in the draft) */
 .a-clock{background:radial-gradient(ellipse at center,#1e293b 0%,#0f172a 60%,#020617 100%)}
-.a-clock .kw-clock{position:absolute;left:50%;top:46%;width:min(70vmin,420px);height:min(70vmin,420px);margin:-35vmin 0 0 -35vmin;animation:clockGrow 16s ease-in-out infinite;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f8fafc,#cbd5e1 40%,#64748b 78%);box-shadow:0 20px 50px rgba(0,0,0,.45),inset 0 0 0 10px #0f172a,inset 0 0 0 14px #e2e8f0}
+.a-clock .kw-clock{position:absolute;left:50%;top:46%;width:min(70vmin,420px);height:min(70vmin,420px);margin:-35vmin 0 0 -35vmin;animation:clockGrow 38s ease-in-out infinite;border-radius:50%;background:radial-gradient(circle at 35% 30%,#f8fafc,#cbd5e1 40%,#64748b 78%);box-shadow:0 20px 50px rgba(0,0,0,.45),inset 0 0 0 10px #0f172a,inset 0 0 0 14px #e2e8f0}
 .a-clock .kw-clock-logo{position:absolute;left:50%;top:42%;width:28%;transform:translate(-50%,-50%);opacity:.9}
 .a-clock .kw-hand{position:absolute;left:50%;bottom:50%;transform-origin:bottom center;background:#0f172a;border-radius:4px}
 .a-clock .kw-hour{width:2.2%;height:22%;margin-left:-1.1%;animation:hourHand 60s linear infinite}
@@ -133,6 +120,145 @@
 @keyframes secHand{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
     
+
+/* ========== REALISTIC PLANETS AROUND THE SUN ========== */
+.a-planets {
+  background: radial-gradient(ellipse at center, #0f172a 0%, #020617 70%, #000 100%);
+  overflow: hidden;
+}
+.a-planets .stars {
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%, #fff, transparent),
+    radial-gradient(1px 1px at 28% 52%, #fff, transparent),
+    radial-gradient(2px 2px at 65% 12%, #e0e7ff, transparent),
+    radial-gradient(1px 1px at 82% 60%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 45% 78%, #fff, transparent),
+    radial-gradient(1px 1px at 90% 30%, #cbd5e1, transparent);
+  animation: starTwinkle 4s ease-in-out infinite alternate; opacity: .85;
+}
+.a-planets .sun3 {
+  position: absolute; left: 50%; top: 50%;
+  width: 14vmin; height: 14vmin; margin: -7vmin 0 0 -7vmin;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 32%, #fffbeb 0%, #fde047 35%, #f59e0b 70%, #ea580c 100%);
+  box-shadow: 0 0 50px 18px rgba(251,191,36,.55), 0 0 100px 30px rgba(245,158,11,.25);
+  animation: softPulse 3.5s ease-in-out infinite; z-index: 5;
+}
+/* Orbital rings (visual guides) */
+.a-planets .orbit-ring {
+  position: absolute; left: 50%; top: 50%;
+  border: 1px solid rgba(148,163,184,.18);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) rotateX(68deg);
+  pointer-events: none;
+}
+.a-planets .orbit-ring.r1 { width: 26vmin; height: 18vmin; }
+.a-planets .orbit-ring.r2 { width: 38vmin; height: 26vmin; }
+.a-planets .orbit-ring.r3 { width: 52vmin; height: 35vmin; }
+.a-planets .orbit-ring.r4 { width: 68vmin; height: 46vmin; }
+.a-planets .orbit-ring.r5 { width: 90vmin; height: 60vmin; }
+.a-planets .orbit-ring.r6 { width: 115vmin; height: 76vmin; }
+.a-planets .orbit-ring.r7 { width: 140vmin; height: 92vmin; }
+.a-planets .orbit-ring.r8 { width: 165vmin; height: 108vmin; }
+
+/* Planet arms – each has correct relative period */
+.a-planets .planet-arm {
+  position: absolute; left: 50%; top: 50%; width: 0; height: 0;
+  transform-style: preserve-3d;
+}
+.a-planets .planet-arm .pl {
+  position: absolute; border-radius: 50%;
+  top: -50%; left: 50%; transform: translateX(-50%);
+  box-shadow: 0 0 8px rgba(255,255,255,.15);
+}
+/* Mercury – small grey-brown, closest */
+.a-planets .arm-me { animation: planetOrbit 8s linear infinite; }
+.a-planets .arm-me .pl {
+  width: 2.8vmin; height: 2.8vmin; margin-left: -1.4vmin;
+  left: 13vmin;
+  background: radial-gradient(circle at 35% 30%, #d4d4d8, #78716c 55%, #44403c);
+}
+/* Venus – yellowish-white, thick atmosphere */
+.a-planets .arm-ve { animation: planetOrbit 14s linear infinite; }
+.a-planets .arm-ve .pl {
+  width: 4.2vmin; height: 4.2vmin; margin-left: -2.1vmin;
+  left: 19vmin;
+  background: radial-gradient(circle at 35% 28%, #fef3c7, #fbbf24 45%, #d97706 80%);
+  box-shadow: 0 0 12px rgba(251,191,36,.35);
+}
+/* Earth – blue + green continents */
+.a-planets .arm-ea { animation: planetOrbit 20s linear infinite; }
+.a-planets .arm-ea .pl {
+  width: 4.6vmin; height: 4.6vmin; margin-left: -2.3vmin;
+  left: 26vmin;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(125,211,252,.9), transparent 45%),
+    radial-gradient(circle at 65% 55%, rgba(34,197,94,.85), transparent 40%),
+    radial-gradient(circle at 50% 50%, #1d4ed8, #0f172a);
+  box-shadow: 0 0 14px rgba(56,189,248,.45);
+}
+/* Mars – rusty red */
+.a-planets .arm-ma { animation: planetOrbit 28s linear infinite; }
+.a-planets .arm-ma .pl {
+  width: 3.4vmin; height: 3.4vmin; margin-left: -1.7vmin;
+  left: 34vmin;
+  background: radial-gradient(circle at 35% 30%, #fca5a5, #dc2626 50%, #7f1d1d);
+  box-shadow: 0 0 10px rgba(239,68,68,.3);
+}
+/* Jupiter – large banded gas giant */
+.a-planets .arm-ju { animation: planetOrbit 40s linear infinite; }
+.a-planets .arm-ju .pl {
+  width: 9vmin; height: 9vmin; margin-left: -4.5vmin;
+  left: 45vmin;
+  background:
+    radial-gradient(ellipse 20% 12% at 60% 55%, #b91c1c 0%, transparent 60%),
+    repeating-linear-gradient(180deg, #f5d4a8 0%, #e8b86d 12%, #c48a4e 25%, #e0a860 40%, #d4a050 55%, #c48a4e 70%, #a86a3a 100%);
+  box-shadow: 0 0 18px rgba(232,184,109,.35);
+}
+/* Saturn – with rings */
+.a-planets .arm-sa { animation: planetOrbit 55s linear infinite; }
+.a-planets .arm-sa .pl {
+  width: 7.5vmin; height: 7.5vmin; margin-left: -3.75vmin;
+  left: 57.5vmin;
+  background: radial-gradient(circle at 35% 30%, #fde68a, #d97706 55%, #92400e);
+  box-shadow: 0 0 16px rgba(217,119,6,.3);
+  position: relative;
+}
+.a-planets .arm-sa .pl::before {
+  content: '';
+  position: absolute; left: 50%; top: 50%;
+  width: 160%; height: 28%;
+  margin: -14% 0 0 -80%;
+  border-radius: 50%;
+  border: 1.5px solid rgba(253,230,138,.7);
+  box-shadow: 0 0 0 1px rgba(217,119,6,.35), inset 0 0 0 1px rgba(253,230,138,.3);
+  transform: rotateX(68deg);
+  pointer-events: none;
+}
+/* Uranus – pale cyan, tilted */
+.a-planets .arm-ur { animation: planetOrbit 70s linear infinite; }
+.a-planets .arm-ur .pl {
+  width: 5.5vmin; height: 5.5vmin; margin-left: -2.75vmin;
+  left: 70vmin;
+  background: radial-gradient(circle at 35% 30%, #a5f3fc, #22d3ee 50%, #0e7490);
+  box-shadow: 0 0 12px rgba(34,211,238,.35);
+  transform: rotate(-15deg);
+}
+/* Neptune – deep blue */
+.a-planets .arm-ne { animation: planetOrbit 85s linear infinite; }
+.a-planets .arm-ne .pl {
+  width: 5.2vmin; height: 5.2vmin; margin-left: -2.6vmin;
+  left: 82.5vmin;
+  background: radial-gradient(circle at 35% 28%, #7dd3fc, #0284c7 50%, #0c4a6e);
+  box-shadow: 0 0 12px rgba(14,165,233,.4);
+}
+
+@keyframes planetOrbit {
+  from { transform: rotateX(68deg) rotateZ(0deg); }
+  to   { transform: rotateX(68deg) rotateZ(360deg); }
+}
+
 /* ========== HIGH-QUALITY SCENES FROM DRAFT ========== */
 
 /* --- JUPITER / NEPTUNE / EARTH FLY-BY (orbital approach from right, grow, fill, exit left) --- */
@@ -161,30 +287,63 @@
 }
 /* Jupiter body */
 .a-jupiter .jup {
-  position: absolute; left: 50%; top: 50%; width: 38vmin; height: 38vmin; margin: -19vmin 0 0 -19vmin;
+  position: absolute; left: 50%; top: 50%; width: 40vmin; height: 40vmin; margin: -20vmin 0 0 -20vmin;
   border-radius: 50%; overflow: hidden; isolation: isolate;
-  background: #c48a4e;
+  /* Highly polished Jupiter – creamy zones, rich belts, Great Red Spot */
+  background: #e8b86d;
   background-image:
-    radial-gradient(ellipse 17% 10% at 58% 54%, #b91c1c 0%, #7f1d1d 45%, transparent 70%),
-    repeating-linear-gradient(180deg, #f5d4a8 0%, #e8b86d 7%, #d4a060 12%, #c48a4e 17%, #f0c898 23%, #e0a860 29%, #c17a48 35%, #a65d38 41%, #e8b86d 50%, #f5d0a9 56%, #d4a574 63%, #c48a4e 70%, #a85d3a 100%);
-  box-shadow: inset -8vmin -5vmin 14vmin rgba(0,0,0,.55), inset 4vmin 3vmin 10vmin rgba(255,255,255,.12);
+    /* Great Red Spot */
+    radial-gradient(ellipse 19% 12% at 62% 52%, #c2410c 0%, #9a3412 40%, transparent 68%),
+    /* Equatorial Zone (bright) */
+    linear-gradient(180deg, transparent 38%, rgba(255,245,220,.55) 44%, rgba(255,245,220,.55) 50%, transparent 56%),
+    /* North Equatorial Belt */
+    linear-gradient(180deg, transparent 28%, rgba(180,83,9,.55) 32%, rgba(146,64,14,.6) 36%, transparent 41%),
+    /* South Equatorial Belt */
+    linear-gradient(180deg, transparent 56%, rgba(180,83,9,.5) 60%, rgba(146,64,14,.55) 64%, transparent 69%),
+    /* Polar regions darker */
+    radial-gradient(ellipse 90% 35% at 50% 8%, rgba(120,53,15,.45) 0%, transparent 70%),
+    radial-gradient(ellipse 90% 35% at 50% 92%, rgba(120,53,15,.45) 0%, transparent 70%),
+    /* Base creamy atmosphere */
+    repeating-linear-gradient(180deg,
+      #f8e4b8 0%, #f0d090 6%,
+      #e0b060 11%, #d4a050 16%,
+      #f0d090 22%, #e8b86d 28%,
+      #d4a050 34%, #c48a4e 40%,
+      #e8b86d 48%, #f5d4a8 54%,
+      #e0b060 62%, #d4a050 70%,
+      #c48a4e 80%, #a86a3a 100%);
+  box-shadow:
+    inset -10vmin -6vmin 18vmin rgba(0,0,0,.6),
+    inset 5vmin 4vmin 12vmin rgba(255,255,255,.18),
+    0 0 40px rgba(232,184,109,.25);
   animation: jupiterOrbital 48s linear infinite; z-index: 20; will-change: transform;
 }
 .a-jupiter .jup .bands {
   position: absolute; inset: 0; border-radius: 50%;
-  background: linear-gradient(180deg, transparent 20%, rgba(120,53,15,.2) 27%, transparent 33%),
-              linear-gradient(180deg, transparent 50%, rgba(154,52,18,.16) 56%, transparent 62%);
-  animation: planetSpin 22s linear infinite;
+  background:
+    linear-gradient(180deg, transparent 18%, rgba(146,64,14,.22) 24%, transparent 30%),
+    linear-gradient(180deg, transparent 48%, rgba(180,83,9,.18) 54%, transparent 60%),
+    linear-gradient(180deg, transparent 68%, rgba(120,53,15,.2) 74%, transparent 80%);
+  animation: planetSpin 26s linear infinite;
+  pointer-events: none;
+}
+.a-jupiter .jup::after {
+  content: '';
+  position: absolute; inset: 0; border-radius: 50%;
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,.09) 48%, transparent 56%);
+  pointer-events: none;
 }
 @keyframes jupiterOrbital {
-  0%   { transform: translate(70vw, 10vh) scale(0.08) rotate(-10deg); }
-  18%  { transform: translate(40vw, 5vh) scale(0.35) rotate(20deg); }
-  32%  { transform: translate(15vw, 0) scale(0.9) rotate(55deg); }
-  45%  { transform: translate(0, -2vh) scale(2.4) rotate(100deg); }
-  52%  { transform: translate(-5vw, -3vh) scale(3.1) rotate(140deg); }
-  65%  { transform: translate(-30vw, -10vh) scale(1.6) rotate(200deg); }
-  82%  { transform: translate(-60vw, -25vh) scale(0.5) rotate(280deg); }
-  100% { transform: translate(-90vw, -40vh) scale(0.08) rotate(350deg); }
+  /* LEFT → RIGHT fly-by: starts small left, grows, fills screen, exits right */
+  0%   { transform: translate(-80vw, 15vh) scale(0.08) rotate(10deg); }
+  15%  { transform: translate(-45vw, 8vh) scale(0.32) rotate(25deg); }
+  28%  { transform: translate(-18vw, 2vh) scale(0.85) rotate(50deg); }
+  42%  { transform: translate(0, -2vh) scale(2.5) rotate(90deg); }
+  50%  { transform: translate(6vw, -4vh) scale(3.2) rotate(120deg); }
+  58%  { transform: translate(14vw, -6vh) scale(3.15) rotate(150deg); }
+  72%  { transform: translate(40vw, -15vh) scale(1.5) rotate(210deg); }
+  88%  { transform: translate(70vw, -28vh) scale(0.4) rotate(290deg); }
+  100% { transform: translate(95vw, -40vh) scale(0.08) rotate(350deg); }
 }
 /* Neptune body */
 .a-neptune .nep {
@@ -375,7 +534,7 @@
   position: absolute; left: 50%; top: 46%;
   width: min(70vmin,420px); height: min(70vmin,420px);
   margin: -35vmin 0 0 -35vmin;
-  animation: clockGrow 22s ease-in-out infinite;
+  animation: clockGrow 38s ease-in-out infinite;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #f8fafc, #cbd5e1 40%, #64748b 78%);
   box-shadow: 0 20px 50px rgba(0,0,0,.45), inset 0 0 0 10px #0f172a, inset 0 0 0 14px #e2e8f0;
@@ -396,10 +555,11 @@
 }
 @keyframes clockGrow {
   0%   { transform: scale(0.45); }
-  25%  { transform: scale(1.0); }
-  55%  { transform: scale(2.8); }
-  70%  { transform: scale(5.5); }   /* fills screen – logo only visible */
-  85%  { transform: scale(2.2); }
+  20%  { transform: scale(0.9); }
+  40%  { transform: scale(1.8); }
+  58%  { transform: scale(3.4); }
+  72%  { transform: scale(5.8); }   /* fills screen – logo only visible */
+  88%  { transform: scale(2.0); }
   100% { transform: scale(0.45); }
 }
 
@@ -535,15 +695,11 @@
           <option value="voyage">🌎 Earth revelation</option>
           <option value="moon">🌙 Night Moon</option>
           <option value="planets">🪐 Planets around the Sun</option>
-          <option value="milkyway">🌌 Milky Way</option>
-          <option value="wavelength">〰️ Energy/Wavelength</option>
           <option value="fishes3d">🐟 Ocean Life</option>
           <option value="jupiter">🟠 Jupiter fly-by</option>
           <option value="neptune">🔵 Neptune fly-by</option>
           <option value="earth">🌎 Earth from space</option>
           <option value="desert">🌱 Desert growth</option>
-          <option value="matrix">💚 Matrix/AI</option>
-          <option value="glasses">👓 Glasses/Reader</option>
           <option value="star_bypass">⭐ Star bypass</option>
           <option value="clock">🕐 Knowsoft Clock</option>
           <option value="giants">🌟 Giant Stars fly-by</option>
@@ -619,15 +775,11 @@
     voyage:'🌎 Earth revelation',
     moon:'🌙 Night Moon',
     planets:'🪐 Planets around the Sun',
-    milkyway:'🌌 Milky Way',
-    wavelength:'〰️ Energy/Wavelength',
     fishes3d:'🐟 Ocean Life',
     jupiter:'🟠 Jupiter fly-by',
     neptune:'🔵 Neptune fly-by',
     earth:'🌎 Earth from space',
     desert:'🌱 Desert growth',
-    matrix:'💚 Matrix/AI',
-    glasses:'👓 Glasses/Reader',
     star_bypass:'⭐ Star bypass',
     clock:'🕐 Knowsoft Clock',
     giants:'🌟 Giant Stars fly-by'
@@ -640,9 +792,19 @@
       case 'orbit': return `<div class="amb a-orbit">${stars}<div class="sun3"></div><div class="orbit3"></div><div class="earth-arm"><div class="earth3"></div></div>${common}</div>`;
       case 'voyage': return `<div class="amb a-voyage">${stars}<div class="earthBig"></div><div class="moon3"></div>${common}</div>`;
       case 'moon': return `<div class="amb a-moon">${stars}<div class="moon3"><span class="crater" style="width:18%;height:18%;top:22%;left:28%"></span><span class="crater" style="width:12%;height:12%;top:48%;left:55%"></span><span class="crater" style="width:22%;height:22%;top:55%;left:25%"></span><span class="crater" style="width:10%;height:10%;top:30%;left:62%"></span></div><div class="horizon"></div>${common}</div>`;
-      case 'planets': return `<div class="amb a-planets">${stars}<div class="sun3"></div><div class="orbit3 o1"><div class="p3 p1"></div></div><div class="orbit3 o2"><div class="p3 p2"></div></div><div class="orbit3 o3"><div class="p3 p3p"></div></div><div class="orbit3 o4"><div class="p3 p4"></div></div>${common}</div>`;
-      case 'milkyway': return `<div class="amb a-milkyway">${stars}<div class="galaxy3"></div>${common}</div>`;
-      case 'wavelength': return `<div class="amb a-wave">${stars}<div class="wave3"></div><div class="wave3" style="bottom:25%;animation-delay:1s"></div><div class="wave3" style="bottom:5%;animation-delay:2s"></div>${common}</div>`;
+      case 'planets': return `<div class="amb a-planets"><div class="stars"></div><div class="sun3"></div>
+        <div class="orbit-ring r1"></div><div class="orbit-ring r2"></div><div class="orbit-ring r3"></div>
+        <div class="orbit-ring r4"></div><div class="orbit-ring r5"></div><div class="orbit-ring r6"></div>
+        <div class="orbit-ring r7"></div><div class="orbit-ring r8"></div>
+        <div class="planet-arm arm-me"><div class="pl"></div></div>
+        <div class="planet-arm arm-ve"><div class="pl"></div></div>
+        <div class="planet-arm arm-ea"><div class="pl"></div></div>
+        <div class="planet-arm arm-ma"><div class="pl"></div></div>
+        <div class="planet-arm arm-ju"><div class="pl"></div></div>
+        <div class="planet-arm arm-sa"><div class="pl"></div></div>
+        <div class="planet-arm arm-ur"><div class="pl"></div></div>
+        <div class="planet-arm arm-ne"><div class="pl"></div></div>
+        ${common}</div>`;animation-delay:1s"></div><div class="wave3" style="bottom:5%;animation-delay:2s"></div>${common}</div>`;
       case 'fishes3d': return `<div class="amb a-fish"><div class="fish3"></div><div class="fish3" style="animation-delay:2s;top:55%"></div><div class="fish3" style="animation-delay:4s;top:30%"></div>${common}</div>`;
       case 'jupiter': return `<div class="amb a-jupiter"><div class="stars"></div><div class="distant-sun"></div><div class="jup"><div class="bands"></div></div>${common}</div>`;
       case 'neptune': return `<div class="amb a-neptune"><div class="stars"></div><div class="distant-sun"></div><div class="nep"><div class="storm"></div></div>${common}</div>`;
@@ -661,8 +823,6 @@
         <div class="kw-star s3" data-name="Arcturus"></div>
         <div class="kw-star s4" data-name="Betelgeuse"></div>
         <div class="kw-star s5" data-name="UY Scuti"></div>${common}</div>`;
-      case 'matrix': return `<div class="amb a-matrix"><div class="grid"></div>${common}</div>`;
-      case 'glasses': return `<div class="amb a-glasses"><div class="reader-g"></div>${common}</div>`;
       case 'star_bypass': return `<div class="amb a-star_bypass">${stars}<div class="star3"></div>${common}</div>`;
       case 'clock': return `<div class="amb a-clock"><div class="kw-clock"><img class="kw-clock-logo" src="/static/img/knowsoft-logo.png" alt="Knowsoft" onerror="this.style.display='none'"><div class="kw-hand kw-hour" id="kwHour"></div><div class="kw-hand kw-min" id="kwMin"></div><div class="kw-hand kw-sec" id="kwSec"></div><div class="kw-cap"></div></div>${common}</div>`;
       default: return `<div class="amb a-sun">${stars}<div class="sun3"></div><div class="horizon"></div>${common}</div>`;
