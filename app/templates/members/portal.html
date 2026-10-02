@@ -1,9 +1,11 @@
 {% extends "base.html" %}
-{% block title %}My Space – Churchgate<script src="/static/js/wallet_badge.js"></script>
+{% block title %}My Space – Churchgate{% endblock %}
+{% block content %}
+<script src="/static/js/wallet_badge.js"></script>
 
 <style>
-#kwDashClock{display:none;position:fixed;right:18px;bottom:96px;z-index:9999;width:230px;touch-action:none}
-#kwDashClock.on{display:block}
+#kwDashClock{display:block!important;position:fixed;right:18px;bottom:96px;z-index:2147483647;width:230px;touch-action:none;pointer-events:auto}
+#kwDashClock.on{display:block!important}
 #kwDashClock .face{width:190px;height:190px;margin:0 auto;border-radius:50%;position:relative;background:radial-gradient(circle at 35% 30%,#fff,#cbd5e1 40%,#64748b 76%);box-shadow:0 18px 36px rgba(0,0,0,.45),inset 0 0 0 9px #0f172a}
 #kwDashClock .logo{position:absolute;left:50%;top:40%;transform:translate(-50%,-50%);font-weight:800;font-size:12px;color:#0f172a}
 #kwDashClock .hand{position:absolute;left:50%;bottom:50%;transform-origin:50% 100%;background:#0f172a}
@@ -18,11 +20,11 @@
 (function(){
   var box=document.getElementById("kwDashClock");
   var btn=document.getElementById("cg-clock-btn");
-  if(!box||!btn) return;
-  btn.addEventListener("click", function(e){ e.preventDefault(); e.stopPropagation(); box.classList.add("on"); });
-  var last=0;
-  box.addEventListener("dblclick", function(){ box.classList.remove("on"); });
-  box.addEventListener("click", function(){ var n=Date.now(); if(n-last<400) box.classList.remove("on"); last=n; });
+  if(!box) return;
+  box.classList.add("on");
+  if(btn) btn.addEventListener("click", function(e){ e.preventDefault(); e.stopPropagation(); box.classList.add("on"); });
+  // Clock is intentionally persistent; double-click no longer hides it.
+  box.addEventListener("click", function(e){ e.stopPropagation(); });
   var drag=null;
   function pt(e){ return e.touches?e.touches[0]:e; }
   box.addEventListener("mousedown", function(e){ var p=pt(e); drag={x:p.clientX-box.getBoundingClientRect().left,y:p.clientY-box.getBoundingClientRect().top}; });
@@ -52,9 +54,6 @@
   tick();
 })();
 </script>
-
-{% endblock %}
-{% block content %}
 
 
 {# Invite & earn — extra panel only; original dashboard unchanged below #}
