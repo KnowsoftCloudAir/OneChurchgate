@@ -39,6 +39,17 @@
     .reader-controls .btn{background:rgba(15,23,42,.85);backdrop-filter:blur(10px)}
     .mini{font-size:12px;padding:8px 10px}.scene-label{position:absolute;left:15px;bottom:15px;z-index:7;color:#cbd5e1;font-size:11px;background:rgba(0,0,0,.4);padding:6px 9px;border-radius:8px}
     @media(max-width:650px){.grid{grid-template-columns:1fr}.field.full{grid-column:auto}.hero h1{font-size:23px}.caption{bottom:14%;font-size:25px}}
+  
+    /* Imported Kwealth ambience scene styles are injected after page load. */
+    #sceneStageImported{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden}
+    #sceneStageImported .scene-loading{position:absolute;inset:0;display:grid;place-items:center;color:#cbd5e1;background:radial-gradient(circle,#172554,#020617 70%);font-size:13px}
+    #reader .scene-stage-wrap{position:absolute;inset:0;z-index:1;overflow:hidden}
+    #reader .reader-content-layer{position:absolute;inset:0;z-index:3;pointer-events:none}
+    #reader .reader-content-layer *{pointer-events:auto}
+    .music-box{margin-top:16px;padding:14px;border:1px solid rgba(45,212,191,.25);border-radius:12px;background:rgba(2,6,23,.35)}
+    .music-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.music-row select{flex:1;min-width:220px}.music-row input[type=range]{max-width:180px}
+    .music-status{font-size:11px;color:#94a3b8;margin-top:7px}
+    body.music-playing #btnMusicToggle{box-shadow:0 0 0 2px rgba(45,212,191,.35)}
   </style>
 </head>
 <body>
@@ -74,6 +85,18 @@
         <div class="field"><label>Reading speed: <span id="rateLabel">0.95</span></label><input id="rate" type="range" min="0.7" max="1.15" step="0.05" value="0.95"></div>
         <div class="field"><label>Pause between paragraphs</label><select id="paraPause"><option value="0">0 sec</option><option value="3">3 sec</option><option value="5" selected>5 sec</option><option value="7">7 sec</option><option value="10">10 sec</option><option value="15">15 sec</option><option value="20">20 sec</option><option value="30">30 sec</option></select></div>
         <div class="field"><label>3D ambience</label><select id="scenePick"><option value="sun">Sunrise → Sunset</option><option value="orbit">Earth around the Sun</option><option value="voyage">Earth revelation</option><option value="moon">Night Moon</option><option value="planets">Planets around the Sun</option></select></div>
+        <div class="field"><label>Ambience mode</label><select id="sceneMix"><option value="one">One selected scene</option><option value="mix">Mix all scenes automatically</option></select></div>
+      </div>
+      <div class="music-box">
+        <h2 style="margin:0 0 10px;color:#fbbf24;font-size:16px">Background music</h2>
+        <div class="music-row">
+          <select id="musicTrack"><option value="">Loading music…</option></select>
+          <button class="btn" id="btnMusicToggle" type="button">▶ Music</button>
+          <button class="btn" id="btnMusicStop" type="button">■ Stop</button>
+          <label style="display:flex;align-items:center;gap:7px;margin:0;color:#94a3b8;font-size:12px">Volume <input id="musicVolume" type="range" min="0" max="0.6" step="0.01" value="0.18"></label>
+        </div>
+        <div class="music-status" id="musicStatus">Music starts automatically when Read aloud starts.</div>
+        <audio id="bgmAudio" loop preload="auto"></audio>
       </div>
       <div class="actions">
         <button class="btn green" id="btnRead" type="button">👼 Read aloud</button>
@@ -86,64 +109,123 @@
   </main>
 
   <section id="reader" aria-hidden="true">
-    <div class="reader-bg" id="readerBg"><div class="stars"></div><div class="sun"></div></div>
-    <div class="reader-head"><div class="reader-title" id="readerTitle">Reading</div><div class="reader-page" id="readerPage">Page 1 / 1</div></div>
-    <div class="caption" id="caption">Ready to read…</div>
-    <div class="scene-label" id="sceneLabel">Sunrise → Sunset</div>
-    <div class="reader-controls"><button class="btn mini" id="prevBtn">‹ Previous</button><button class="btn mini green" id="readerRead">⏹ Stop</button><button class="btn mini" id="nextBtn">Next ›</button><button class="btn mini" id="exitBtn">✕ Settings</button></div>
+    <div class="reader-bg" id="readerBg">
+      <div class="scene-stage-wrap"><div id="sceneStage"><div class="scene-loading">Loading ambience…</div></div></div>
+    </div>
+    <div class="reader-content-layer">
+      <div class="reader-head"><div class="reader-title" id="readerTitle">Reading</div><div class="reader-page" id="readerPage">Page 1 / 1</div></div>
+      <div class="caption" id="caption">Ready to read…</div>
+      <div class="scene-label" id="sceneLabel">Sunrise → Sunset</div>
+      <div class="reader-controls"><button class="btn mini" id="prevBtn">‹ Previous</button><button class="btn mini green" id="readerRead">👼 Read</button><button class="btn mini" id="nextBtn">Next ›</button><button class="btn mini" id="readerMusic">♪ Music</button><button class="btn mini" id="exitBtn">✕ Settings</button></div>
+    </div>
   </section>
 
 <script>
 (function(){
   'use strict';
   const BOOK = { id: {% if book %}{{ book.id }}{% else %}null{% endif %}, title: {% if book %}{{ book.title|tojson }}{% else %}"Reading"{% endif %}, pages: {% if book %}{{ pages|tojson }}{% else %}[]{% endif %}, pageIndex: {% if book %}{{ page_index|default(0) }}{% else %}0{% endif %} };
-  const $=id=>document.getElementById(id);
-  const state={pages:Array.isArray(BOOK.pages)?BOOK.pages:[],pageIndex:Number(BOOK.pageIndex)||0,reading:false,voice:'',rate:.95,pause:5,scene:'sun'};
-  let pauseTimer=null;
+  const $ = id => document.getElementById(id);
+  const state = {pages:Array.isArray(BOOK.pages)?BOOK.pages:[],pageIndex:Number(BOOK.pageIndex)||0,reading:false,rate:.95,pause:5,scene:'sun',bgmId:'',bgmVol:.18,bgmPlaying:false,musicDuringReading:true};
+  let pauseTimer=null, animationCSSLoaded=false, sceneTimer=null, sceneFading=false;
+  const SCENE_FALLBACKS=['sun','orbit','voyage','planets','milkyway','wavelength','fishes3d','jupiter','neptune','earth','desert','matrix','glasses','star_bypass'];
 
   function loadVoices(){
-    const list=window.speechSynthesis?window.speechSynthesis.getVoices():[]; const sel=$('voiceName'); if(!sel)return;
+    const list=window.speechSynthesis?window.speechSynthesis.getVoices():[], sel=$('voiceName'); if(!sel)return;
     const current=localStorage.getItem('kw_book_voice')||''; sel.innerHTML='<option value="">Default voice</option>';
     list.forEach((v,i)=>{const o=document.createElement('option');o.value=String(i);o.textContent=v.name+' — '+v.lang;sel.appendChild(o)}); if(current)sel.value=current;
   }
   if(window.speechSynthesis){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
 
   function save(){
-    localStorage.setItem('kw_book_fontSize',$('fontSize').value);localStorage.setItem('kw_book_fontFamily',$('fontFamily').value);localStorage.setItem('kw_book_flip',$('flipStyle').value);localStorage.setItem('kw_book_voice',$('voiceName').value);localStorage.setItem('kw_book_rate',$('rate').value);localStorage.setItem('kw_book_paraPause',$('paraPause').value);localStorage.setItem('kw_scene',$('scenePick').value);
-    $('status').textContent='Settings saved on this device.';
+    const vals={fontSize:$('fontSize').value,fontFamily:$('fontFamily').value,flip:$('flipStyle').value,voice:$('voiceName').value,rate:$('rate').value,pause:$('paraPause').value,scene:$('scenePick').value,bgmId:$('musicTrack').value,bgmVol:$('musicVolume').value};
+    localStorage.setItem('kw_book_fontSize',vals.fontSize);localStorage.setItem('kw_book_fontFamily',vals.fontFamily);localStorage.setItem('kw_book_flip',vals.flip);localStorage.setItem('kw_book_voice',vals.voice);localStorage.setItem('kw_book_rate',vals.rate);localStorage.setItem('kw_book_paraPause',vals.pause);localStorage.setItem('kw_scene',vals.scene);localStorage.setItem('kw_scene_mix',$('sceneMix')?.value||'one');localStorage.setItem('kw_book_bgm_id',vals.bgmId);localStorage.setItem('kw_book_bgm_vol',vals.bgmVol);
+    state.rate=Number(vals.rate);state.pause=Number(vals.pause);state.scene=vals.scene;state.bgmVol=Number(vals.bgmVol); if($('bgmAudio'))$('bgmAudio').volume=state.bgmVol; $('status').textContent='Settings saved on this device.';
   }
   function load(){
-    const get=(k,d)=>localStorage.getItem(k)||d;$('fontSize').value=get('kw_book_fontSize','18');$('fontFamily').value=get('kw_book_fontFamily','Georgia,serif');$('flipStyle').value=get('kw_book_flip','curl');$('voiceName').value=get('kw_book_voice','');$('rate').value=get('kw_book_rate','.95');$('paraPause').value=get('kw_book_paraPause','5');$('scenePick').value=get('kw_scene','sun');$('fontSizeLabel').textContent=$('fontSize').value;$('rateLabel').textContent=$('rate').value;state.rate=Number($('rate').value);state.pause=Number($('paraPause').value);state.scene=$('scenePick').value;
+    const get=(k,d)=>localStorage.getItem(k)||d;$('fontSize').value=get('kw_book_fontSize','18');$('fontFamily').value=get('kw_book_fontFamily','Georgia,serif');$('flipStyle').value=get('kw_book_flip','curl');$('voiceName').value=get('kw_book_voice','');$('rate').value=get('kw_book_rate','.95');$('paraPause').value=get('kw_book_paraPause','5');$('scenePick').value=get('kw_scene','sun');$('musicVolume').value=get('kw_book_bgm_vol','.18');$('fontSizeLabel').textContent=$('fontSize').value;$('rateLabel').textContent=$('rate').value;state.rate=Number($('rate').value);state.pause=Number($('paraPause').value);state.scene=$('scenePick').value;$('sceneMix').value=get('kw_scene_mix','one');state.bgmId=get('kw_book_bgm_id','');state.bgmVol=Number($('musicVolume').value);$('bgmAudio').volume=state.bgmVol;
   }
-  function selectedVoice(){const vs=speechSynthesis.getVoices();const i=parseInt($('voiceName').value,10);return Number.isFinite(i)?vs[i]:null}
-  function split(text){return String(text||'').replace(/\s+/g,' ').trim().split(/(?<=[.!?])\s+/).filter(Boolean)}
+  function selectedVoice(){const vs=speechSynthesis.getVoices(),i=parseInt($('voiceName').value,10);return Number.isFinite(i)?vs[i]:null}
+  function split(text){const t=String(text||'').replace(/\s+/g,' ').trim();return t.match(/[^.!?]+[.!?]+|[^.!?]+$/g)?.map(x=>x.trim()).filter(Boolean)||[]}
   function clean(t){return String(t||'').replace(/https?:\/\/\S+/g,' ').replace(/\s+/g,' ').trim()}
+
+  /* Import the complete ambience animation library from reading_room d.html.
+     The source contains the scene CSS, keyframes and scene DOM. This avoids duplicating
+     thousands of animation lines and keeps this settings/reader template maintainable. */
+  function extractAnimationCSS(css){
+    let out='',i=0,n=css.length;
+    while(i<n){
+      const open=css.indexOf('{',i); if(open<0)break;
+      let depth=1,j=open+1; while(j<n&&depth){if(css[j]==='{')depth++;else if(css[j]==='}')depth--;j++;}
+      const head=css.slice(i,open).trim(), block=css.slice(i,j);
+      if(/^@keyframes\s+/i.test(head) || /#sceneStage|\.sc-[a-z0-9_-]+/i.test(head) || (/^@media/i.test(head)&&/#sceneStage|\.sc-/i.test(block))) out+='\n'+block+'\n';
+      i=j;
+    }
+    return out;
+  }
+  async function loadAnimations(){
+    const stage=$('sceneStage'); if(!stage)return;
+    try{
+      let r; let html='';
+      const sources=['/reading_room%20d.html','https://raw.githubusercontent.com/KnowsoftCloudAir/OneChurchgate/main/reading_room%20d.html'];
+      for(const url of sources){try{r=await fetch(url,{credentials:url.indexOf('github.com')>=0?'omit':'same-origin',cache:'no-store'});if(r.ok){html=await r.text();break}}catch(e){}}
+      if(!html)throw new Error('Animation source unavailable'); const doc=new DOMParser().parseFromString(html,'text/html');
+      let css=''; doc.querySelectorAll('style').forEach(x=>{css+='\n'+x.textContent});
+      const anim=extractAnimationCSS(css);
+      if(anim){const st=document.createElement('style');st.id='kwImportedAnimationCSS';st.textContent=anim;document.head.appendChild(st);animationCSSLoaded=true;}
+      const src=doc.querySelector('#sceneStage'); if(src&&src.innerHTML.trim())stage.innerHTML=src.innerHTML; else stage.innerHTML='<div class="scene-loading">Choose an ambience scene.</div>';
+      const sourcePick=doc.querySelector('#scenePick'); const names=[];
+      if(sourcePick){[...sourcePick.options].forEach(o=>{if(o.value&&o.value!=='off'&&!names.some(x=>x.value===o.value))names.push({value:o.value,text:o.textContent.trim()})});}
+      if(!names.length)SCENE_FALLBACKS.forEach(v=>names.push({value:v,text:v}));
+      const pick=$('scenePick'); pick.innerHTML=''; names.forEach(x=>{const o=document.createElement('option');o.value=x.value;o.textContent=x.text;pick.appendChild(o)});
+      if(!names.some(x=>x.value===state.scene))state.scene=names[0]?.value||'sun'; pick.value=state.scene; applyScene();
+    }catch(e){
+      stage.innerHTML='<div class="scene-loading">Ambience library could not be loaded. Reading will still work.</div>'; $('status').textContent='Animation library could not be loaded; voice and music are still available.';
+      const pick=$('scenePick'); if(!pick.options.length)SCENE_FALLBACKS.forEach(v=>{const o=document.createElement('option');o.value=v;o.textContent=v;pick.appendChild(o)});
+      applyScene();
+    }
+  }
+  function scheduleScenes(){clearTimeout(sceneTimer);if($('sceneMix')?.value!=='mix'||!state.reading)return;const names=SCENE_FALLBACKS;const i=Math.max(0,names.indexOf(state.scene));const seconds={sun:22,orbit:16,voyage:28,planets:20,milkyway:20,wavelength:16,fishes3d:16,jupiter:48,neptune:50,earth:46,desert:60,matrix:18,glasses:18,star_bypass:40}[state.scene]||20;sceneTimer=setTimeout(()=>{if(!state.reading)return;const next=names[(i+1)%names.length];const stage=$('sceneStage');if(stage){sceneFading=true;stage.style.transition='opacity 1.1s ease';stage.style.opacity='0';setTimeout(()=>{state.scene=next;$('scenePick').value=next;applyScene();stage.style.opacity='1';sceneFading=false;scheduleScenes()},1150)}else scheduleScenes()},seconds*1000)}
+  function applyScene(){
+    const stage=$('sceneStage'); if(!stage)return; const old=[...stage.classList].filter(x=>x.indexOf('sc-')===0); old.forEach(x=>stage.classList.remove(x)); stage.classList.add('sc-'+(state.scene||'sun')); $('sceneLabel').textContent=$('scenePick').selectedOptions[0]?.text||state.scene; renderReaderBackground(); if(!sceneFading)scheduleScenes();
+  }
+  function renderReaderBackground(){ $('readerBg').style.background='transparent'; }
+
+  /* Background music */
+  async function loadMusic(){
+    const sel=$('musicTrack'); let items=[];
+    try{const r=await fetch('/member/api/kwealth/bgm',{credentials:'same-origin'});const j=await r.json();items=((j&&j.items)||[]).filter(x=>x&&x.url&&x.url.indexOf('nature_ambient.mp3')<0).slice(0,9)}catch(e){}
+    items=[{id:'memories-default',title:'Memories (default)',url:'/static/uploads/kwealth_bgm/admin_global/nature_ambient.mp3'},...items];
+    sel.innerHTML=''; items.forEach(item=>{const o=document.createElement('option');o.value=item.id;o.textContent=item.title; o.dataset.url=item.url;sel.appendChild(o)});
+    if(state.bgmId&&items.some(x=>x.id===state.bgmId))sel.value=state.bgmId;else {state.bgmId=items[0]?.id||'';sel.value=state.bgmId}
+  }
+  function currentTrack(){const o=$('musicTrack').selectedOptions[0];return o?{id:o.value,title:o.textContent,url:o.dataset.url}:null}
+  async function playMusic(){const a=$('bgmAudio'),t=currentTrack();if(!a||!t)return false;a.src=t.url;a.volume=state.bgmVol;a.loop=true;try{await a.play();state.bgmPlaying=true;state.bgmId=t.id;document.body.classList.add('music-playing');$('btnMusicToggle').textContent='❚❚ Music';$('readerMusic').textContent='❚❚ Music';$('musicStatus').textContent='Playing: '+t.title;localStorage.setItem('kw_book_bgm_id',t.id);return true}catch(e){$('musicStatus').textContent='Music is ready. Click Music once if your browser blocked automatic playback.';return false}}
+  function stopMusic(){const a=$('bgmAudio');if(a){a.pause();a.currentTime=0}state.bgmPlaying=false;document.body.classList.remove('music-playing');$('btnMusicToggle').textContent='▶ Music';$('readerMusic').textContent='♪ Music';$('musicStatus').textContent='Music stopped.'}
+  async function toggleMusic(){if(state.bgmPlaying)stopMusic();else await playMusic()}
+
   function speakPage(){
     if(!state.pages.length){$('status').textContent='No book content is available. Select a book first.';return}
     speechSynthesis.cancel();const sentences=split(clean(state.pages[state.pageIndex]));let i=0;
-    function nextSentence(){if(!state.reading)return;if(i>=sentences.length){if(state.pageIndex<state.pages.length-1){pauseTimer=setTimeout(()=>{state.pageIndex++;speakPage()},state.pause*1000)}else{state.reading=false;$('btnRead').textContent='👼 Read aloud';$('readerRead').textContent='👼 Read';}return}
+    function nextSentence(){
+      if(!state.reading)return;
+      if(i>=sentences.length){if(state.pageIndex<state.pages.length-1){pauseTimer=setTimeout(()=>{state.pageIndex++;renderReader();speakPage()},state.pause*1000)}else{state.reading=false;$('btnRead').textContent='👼 Read aloud';$('readerRead').textContent='👼 Read';if(state.musicDuringReading)stopMusic()}return}
       $('caption').textContent=sentences[i];const u=new SpeechSynthesisUtterance(sentences[i]);u.rate=state.rate;const v=selectedVoice();if(v)u.voice=v;u.onend=()=>{i++;nextSentence()};u.onerror=()=>{i++;nextSentence()};speechSynthesis.speak(u)
     }
     nextSentence();
   }
-  function startRead(){if(!state.pages.length){$('status').textContent='Select a book first.';return}state.reading=true;$('btnRead').textContent='⏹ Stop';speakPage()}
-  function stopRead(){state.reading=false;if(pauseTimer)clearTimeout(pauseTimer);speechSynthesis.cancel();$('btnRead').textContent='👼 Read aloud';$('readerRead').textContent='👼 Read'}
-  function openReader(){
-    if(!state.pages.length){$('status').textContent='Select a book first.';return}
-    $('readerTitle').textContent=BOOK.title||'Reading';$('reader').classList.add('on');$('reader').setAttribute('aria-hidden','false');renderReader();
-    try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{})}catch(e){}
-  }
+  async function startRead(){if(!state.pages.length){$('status').textContent='Select a book first.';return}state.reading=true;$('btnRead').textContent='⏹ Stop';$('readerRead').textContent='⏹ Stop';if(state.musicDuringReading&&!state.bgmPlaying)await playMusic();scheduleScenes();speakPage()}
+  function stopRead(){state.reading=false;clearTimeout(sceneTimer);if(pauseTimer)clearTimeout(pauseTimer);speechSynthesis.cancel();$('btnRead').textContent='👼 Read aloud';$('readerRead').textContent='👼 Read';if(state.musicDuringReading)stopMusic()}
+  function openReader(){if(!state.pages.length){$('status').textContent='Select a book first.';return}$('readerTitle').textContent=BOOK.title||'Reading';$('reader').classList.add('on');$('reader').setAttribute('aria-hidden','false');renderReader();try{document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen().catch(()=>{})}catch(e){}}
   function closeReader(){stopRead();$('reader').classList.remove('on');$('reader').setAttribute('aria-hidden','true');try{if(document.fullscreenElement)document.exitFullscreen()}catch(e){}}
-  function renderReader(){
-    $('readerPage').textContent='Page '+(state.pageIndex+1)+' / '+state.pages.length;$('caption').textContent=split(clean(state.pages[state.pageIndex]))[0]||'Ready to read…';$('sceneLabel').textContent=$('scenePick').selectedOptions[0]?.text||'Ambience';
-    const bg=$('readerBg');bg.style.background=state.scene==='sun'?'radial-gradient(circle at 50% 45%,#7c2d12,#020617 72%)':state.scene==='orbit'?'radial-gradient(circle at 50% 50%,#1e293b,#020617 72%)':state.scene==='voyage'?'linear-gradient(135deg,#020617,#0c4a6e,#020617)':'linear-gradient(180deg,#020617,#1e1b4b)';
-  }
-  $('fontSize').oninput=e=>$('fontSizeLabel').textContent=e.target.value;$('rate').oninput=e=>{state.rate=Number(e.target.value);$('rateLabel').textContent=e.target.value};$('paraPause').onchange=e=>state.pause=Number(e.target.value);$('scenePick').onchange=e=>{state.scene=e.target.value;renderReader()};
+  function renderReader(){ $('readerPage').textContent='Page '+(state.pageIndex+1)+' / '+state.pages.length;$('caption').textContent=split(clean(state.pages[state.pageIndex]))[0]||'Ready to read…';$('sceneLabel').textContent=$('scenePick').selectedOptions[0]?.text||state.scene;applyScene(); }
+
+  $('fontSize').oninput=e=>$('fontSizeLabel').textContent=e.target.value;$('rate').oninput=e=>{state.rate=Number(e.target.value);$('rateLabel').textContent=e.target.value};$('paraPause').onchange=e=>state.pause=Number(e.target.value);$('scenePick').onchange=e=>{state.scene=e.target.value;renderReader()};$('sceneMix').onchange=()=>{save();scheduleScenes()};$('musicVolume').oninput=e=>{state.bgmVol=Number(e.target.value);$('bgmAudio').volume=state.bgmVol};$('musicTrack').onchange=()=>{state.bgmId=$('musicTrack').value;if(state.bgmPlaying)playMusic()};
   $('bookSelect').onchange=e=>{location.href='/member/kwealth/books/reading-room?book_id='+encodeURIComponent(e.target.value)};
   document.querySelectorAll('.choice').forEach(b=>b.onclick=()=>{document.querySelectorAll('.choice').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.body.dataset.theme=b.dataset.theme});
-  $('btnSave').onclick=save;$('btnRead').onclick=()=>state.reading?stopRead():startRead();$('btnFullscreen').onclick=openReader;$('exitBtn').onclick=closeReader;$('readerRead').onclick=()=>state.reading?stopRead():startRead();$('prevBtn').onclick=()=>{if(state.pageIndex>0){state.pageIndex--;renderReader();if(state.reading)speakPage()}};$('nextBtn').onclick=()=>{if(state.pageIndex<state.pages.length-1){state.pageIndex++;renderReader();if(state.reading)speakPage()}};
+  $('btnSave').onclick=save;$('btnRead').onclick=()=>state.reading?stopRead():startRead();$('btnFullscreen').onclick=async()=>{openReader();if(state.reading===false)await startRead()};$('exitBtn').onclick=closeReader;$('readerRead').onclick=()=>state.reading?stopRead():startRead();$('readerMusic').onclick=toggleMusic;$('btnMusicToggle').onclick=toggleMusic;$('btnMusicStop').onclick=stopMusic;
+  $('prevBtn').onclick=()=>{if(state.pageIndex>0){if(state.reading)speechSynthesis.cancel();state.pageIndex--;renderReader();if(state.reading)speakPage()}};$('nextBtn').onclick=()=>{if(state.pageIndex<state.pages.length-1){if(state.reading)speechSynthesis.cancel();state.pageIndex++;renderReader();if(state.reading)speakPage()}};
   document.addEventListener('keydown',e=>{if(!$('reader').classList.contains('on'))return;if(e.key==='Escape')closeReader();if(e.key==='ArrowLeft')$('prevBtn').click();if(e.key==='ArrowRight')$('nextBtn').click()});
-  load();
+  load();loadMusic();loadAnimations();
 })();
 </script>
 </body>
