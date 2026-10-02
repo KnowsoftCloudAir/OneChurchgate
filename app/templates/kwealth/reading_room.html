@@ -95,14 +95,7 @@
     .live { width: 8px; height: 8px; border-radius: 50%; background: #34d399; box-shadow: 0 0 8px #34d399; display: inline-block; animation: p 1.2s infinite; }
     .off { width: 8px; height: 8px; border-radius: 50%; background: #64748b; display: inline-block; }
     @keyframes p { 50% { opacity: .4; } }
-    .bgm-row {
-      display: flex; align-items: center; gap: 8px; padding: 8px 10px;
-      border-radius: 10px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1);
-      margin-bottom: 6px;
-    }
-    .bgm-row.active { border-color: #2dd4bf; background: rgba(13,148,136,.2); }
-    .bgm-row button { flex-shrink: 0; }
-  
+
 
     /* —— Reading ambience scenes —— */
     #stage {
@@ -3906,7 +3899,7 @@
 .reader-nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.reader-back{display:inline-block;color:#5eead4;text-decoration:none;border:1px solid rgba(45,212,191,.35);border-radius:10px;padding:7px 10px;font-size:12px;font-weight:700;background:rgba(15,23,42,.7)}.reader-back.secondary{color:#cbd5e1;border-color:rgba(255,255,255,.15)}
 /* Library is clean when no book is selected. */
 body:not(.reader-mode) #app>.bar .chip,body:not(.reader-mode) #app>.bar select{display:none!important}
-body:not(.reader-mode) #panelTools,body:not(.reader-mode) #panelMusic,body:not(.reader-mode) #stage,body:not(.reader-mode) #fsControls,body:not(.reader-mode) #sceneFs,body:not(.reader-mode) #sceneFsExit{display:none!important}
+body:not(.reader-mode) #stage,body:not(.reader-mode) #fsControls,body:not(.reader-mode) #sceneFs,body:not(.reader-mode) #sceneFsExit{display:none!important}
 /* The library and reading room are separate views. The reader opens from a distinct URL state. */
 body.reader-mode #bookLib{display:none!important}
 body.reader-mode .library-only{display:none!important}
@@ -3916,22 +3909,49 @@ body.reader-mode .library-only{display:none!important}
 .reader-heading{max-width:56rem;margin:0 auto;padding:12px 12px 0}
 .reader-heading h1{margin:0;color:#f8fafc;font-family:Georgia,serif;font-size:clamp(20px,3vw,30px);line-height:1.15;overflow-wrap:anywhere}
 .reader-heading .reader-author{margin:5px 0 0;color:#94a3b8;font-size:12px}
+#panelTools{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  position:relative!important;
+  z-index:40!important;
+  max-width:56rem!important;
+  margin:0 auto!important;
+  padding:12px!important;
+  border-top:1px solid rgba(255,255,255,.12);
+  border-bottom:1px solid rgba(255,255,255,.12);
+  background:rgba(15,23,42,.98)!important;
+}
+#panelTools[hidden]{display:block!important}
+#panelTools .grid-tools{display:grid!important}
+#panelTools .ctl,#panelTools input,#panelTools button{visibility:visible!important;opacity:1!important}
+#btnTools{background:#0d9488!important;border-color:#2dd4bf!important;color:#fff!important}
+#btnSceneFs{background:#1d4ed8!important;border-color:#60a5fa!important;color:#fff!important}
+#btnRead{background:#059669!important;border-color:#34d399!important;color:#fff!important}
+
 
 @media(max-width:650px){.lib-upload-card{flex-direction:column;align-items:stretch}.lib-wall{grid-template-columns:repeat(2,minmax(0,1fr));padding:24px 12px}.lib-book{width:110px;height:155px}}
-
-/* SETTINGS-FIRST READING ROOM OVERRIDES */
-.settings-first-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px;margin:0 0 12px;border:1px solid rgba(45,212,191,.28);border-radius:14px;background:rgba(15,23,42,.94);position:sticky;top:0;z-index:120}
-.settings-first-actions strong{color:#f8fafc;font-size:13px;margin-right:4px}
-#panelTools{display:block!important;visibility:visible!important;opacity:1!important}
-#panelMusic{display:block!important;visibility:visible!important;opacity:1!important}
-#btnRead,#btnScene,#btnSceneFs,#btnMusic{font-weight:800!important}
-/* 3D animation works independently of browser fullscreen. */
-#stage.scene-on #sceneStage{display:block!important;visibility:visible!important;opacity:1!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:100%!important;z-index:3!important;overflow:hidden!important;pointer-events:none!important}
-#stage.scene-on #sceneStage .sc-layer{position:absolute!important;inset:0!important;width:100%!important;height:100%!important}
-#stage.scene-on #cgWebglHost{display:block!important;visibility:visible!important;opacity:1!important}
-#stage.scene-on .page-sheet{position:relative!important;z-index:10!important}
-@media(max-width:650px){.settings-first-actions{position:relative;top:auto}.settings-first-actions strong{width:100%}}
 </style>
+
+/* === SETTINGS VISIBILITY HARD OVERRIDE === */
+html body #panelTools,
+html body.reader-mode #panelTools,
+html body #panelTools[hidden] {
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+html body #panelTools .grid-tools {
+  display: grid !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+html body #panelTools * {
+  visibility: visible !important;
+}
 </head>
 <body class="theme-parchment reader-mode" id="bookBody">
   <div style="max-width:72rem;margin:0 auto;padding:12px 14px 0;">
@@ -3973,7 +3993,6 @@ body.reader-mode .library-only{display:none!important}
                                 <button type="button" class="chip" id="btnRead">👼 Read</button>
         <button type="button" class="chip" id="btnArrange">Arrange</button>
         <button type="button" class="chip on" id="btnTools" aria-expanded="true" title="Reading settings">⚙ Settings</button>
-        <button type="button" class="chip" id="btnMusic"><span id="bgmDot" class="off"></span> Music</button>
         <button type="button" class="chip" id="btnScene" title="Reading ambience animation">Scene</button>
         <select id="sceneMix" class="ctl" style="max-width:8rem;font-size:11px" title="Scene mode"><option value="one">One 3D</option><option value="mix">Mix all</option></select>
           <select id="scenePick" class="ctl" style="max-width:14rem;font-size:11px;" title="Ambience">
@@ -4010,15 +4029,7 @@ body.reader-mode .library-only{display:none!important}
       
     
 
-      {% if book %}<div id="panelTools" class="rr-settings-panel" data-open="1" style="display:block !important;visibility:visible!important;opacity:1!important;position:relative!important;z-index:100!important;">
-        <div class="settings-first-actions" aria-label="Primary reading controls">
-          <strong>Reading controls</strong>
-          <button type="button" class="chip on" onclick="document.getElementById('btnRead')?.click()">👼 Read</button>
-          <button type="button" class="chip" onclick="document.getElementById('btnScene')?.click()">✨ 3D Animation</button>
-          <button type="button" class="chip" onclick="document.getElementById('btnSceneFs')?.click()">⛶ Full screen</button>
-          <button type="button" class="chip" onclick="document.getElementById('btnMusic')?.click()">🎵 Music</button>
-        </div>
-        <div class="reader-heading"><h1>{{ book.title }}</h1><p class="reader-author">{{ book.author or book.writer or '' }}</p></div>
+      {% if book %}<div class="reader-heading"><h1>{{ book.title }}</h1><p class="reader-author">{{ book.author or book.writer or '' }}</p></div><div id="panelTools" class="rr-settings-panel" data-open="1" style="display:block !important;">
         <div class="reader-nav"><a href="/member/kwealth/books" class="reader-back">← Back to Book Library</a><a href="/member/kwealth" class="reader-back secondary">← Kwealth</a></div><p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Book settings (theme · font · flip · jump)</p>
         <div class="grid-tools">
           <div>
@@ -4087,37 +4098,17 @@ body.reader-mode .library-only{display:none!important}
               <option value="20">20 seconds</option>
               <option value="30">30 seconds</option>
             </select>
-            <p style="color:#64748b;font-size:11px;margin:6px 0 0;">Voice rests between paragraphs while background music can continue.</p>
+            <p style="color:#64748b;font-size:11px;margin:6px 0 0;">Voice rests between paragraphs.</p>
           </div>
         </div>
       </div>
 
-      <div id="panelMusic" style="display:block !important;max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
-        <p style="color:#6ee7b7;font-size:12px;font-weight:700;margin:0 0 6px;">Background music — Memories track is always on. Admin may add up to 9 more.</p>
-        <p style="color:#64748b;font-size:11px;margin:0 0 8px;">Upload calm tracks from your device. They stay in your list for reading sessions.</p>
-        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
-          <button type="button" class="chip on" id="btnLoadBgm" style="display:none">+ Upload / sync from device</button>
-          <input type="file" id="bgmFile" hidden accept="audio/*,.mp3,.m4a,.ogg,.wav,.aac" multiple>
-          <button type="button" class="chip" id="btnBgmStop">Stop music</button>
-          <label class="lbl" style="display:flex;align-items:center;gap:8px;margin:0;">Volume
-            <input type="range" id="bgmVol" min="0" max="0.6" step="0.01" value="0.18" style="width:7rem;">
-          </label>
-          <span id="bgmCount" style="color:#94a3b8;font-size:11px;">0 / 10</span>
-        </div>
-        <div id="bgmList"></div>
-        <p id="bgmEmpty" style="color:#64748b;font-size:12px;">No tracks yet. Upload up to 10 soft background songs.</p>
-        <audio id="bgmAudio" loop preload="auto"></audio>
-      </div>
-      </div>
-      <div class="reader-heading reader-heading-after-settings"><h1>{{ book.title }}</h1><p class="reader-author">{{ book.author or book.writer or '' }}</p></div>
+div>
     </div>
 
     <main style="max-width:48rem;margin:0 auto;padding:16px 12px 32px;">
       {% if request.query_params.get('uploaded') %}
       <p style="text-align:center;color:#6ee7b7;font-size:13px;">Added {{ request.query_params.get('uploaded') }} book(s).</p>
-      {% endif %}
-      {% if request.query_params.get('bgm') %}
-      <p style="text-align:center;color:#6ee7b7;font-size:13px;">Background music library updated.</p>
       {% endif %}
 
       <div class="stage" id="stage">
@@ -4293,6 +4284,7 @@ body.reader-mode .library-only{display:none!important}
             </div>
           </div>
 </div>
+        <div 
           <div class="sc-layer sc-star_bypass-bits" style="display:none">
             <div class="bh-disk"></div><div class="bh"></div>
             <div class="heat"></div>
@@ -4365,10 +4357,6 @@ id="fsBookMeta" aria-hidden="true">
       sceneOn: false,
       sceneName: localStorage.getItem('kw_scene') || 'sun',
       sceneFs: localStorage.getItem('kw_scene_fs') === '1',
-      bgmId: localStorage.getItem('kw_book_bgm_id') || '',
-      bgmVol: Number(localStorage.getItem('kw_book_bgmVol') || 0.18),
-      bgmPlaying: false,
-      bgmItems: [],
       _tx: null, _mx: null,
     };
 
@@ -4857,76 +4845,6 @@ id="fsBookMeta" aria-hidden="true">
       }
       speakPara(0);
     }
-    async function loadBgmList() {
-      try {
-        const r = await fetch('/member/api/kwealth/bgm', { credentials: 'same-origin' });
-        const j = await r.json();
-        var extra=((j&&j.items)||[]).filter(function(x){return x&&x.url&&x.url.indexOf('nature_ambient.mp3')<0;}).slice(0,9); state.bgmItems=[{id:'memories-default',title:'Memories (default)',url:'/static/uploads/kwealth_bgm/admin_global/nature_ambient.mp3',permanent:true}].concat(extra); if(!state.bgmId) state.bgmId='memories-default';
-      } catch (e) { state.bgmItems=[{id:'memories-default',title:'Memories (default)',url:'/static/uploads/kwealth_bgm/admin_global/nature_ambient.mp3',permanent:true}]; }
-      renderBgmList();
-    }
-    function renderBgmList() {
-      const box = $('bgmList');
-      const empty = $('bgmEmpty');
-      if ($('bgmCount')) $('bgmCount').textContent = state.bgmItems.length + ' / 10';
-      if (!box) return;
-      box.innerHTML = '';
-      if (!state.bgmItems.length) {
-        if (empty) empty.style.display = 'block';
-        return;
-      }
-      if (empty) empty.style.display = 'none';
-      state.bgmItems.forEach(item => {
-        const row = document.createElement('div');
-        row.className = 'bgm-row' + (state.bgmId === item.id ? ' active' : '');
-        row.innerHTML = '<div style="flex:1;min-width:0;"><div style="color:#e2e8f0;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div></div>';
-        row.querySelector('div div').textContent = item.title;
-        const play = document.createElement('button');
-        play.type = 'button'; play.className = 'chip on'; play.textContent = 'Play';
-        play.onclick = () => playTrack(item);
-        const del = document.createElement('button');
-        del.type = 'button'; del.className = 'chip'; del.textContent = 'Remove';
-        if (item.shared || String(item.id).indexOf('shared:') === 0) {
-          del.textContent = 'Shared';
-          del.disabled = true;
-          del.title = 'Shared by General Admin — cannot delete';
-        } else {
-          del.onclick = async () => {
-            if (!confirm('Remove this track?')) return;
-            const fd = new FormData(); fd.append('track_id', item.id);
-            await fetch('/member/kwealth/bgm/delete', { method: 'POST', body: fd, credentials: 'same-origin' });
-            if (state.bgmId === item.id) stopBgm();
-            loadBgmList();
-          };
-        }
-        row.appendChild(play);
-        row.appendChild(del);
-        box.appendChild(row);
-      });
-    }
-    function stopBgm() {
-      try { $('bgmAudio').pause(); $('bgmAudio').removeAttribute('src'); } catch (e) {}
-      state.bgmPlaying = false;
-      state.bgmId = '';
-      localStorage.removeItem('kw_book_bgm_id');
-      if ($('bgmDot')) $('bgmDot').className = 'off';
-      renderBgmList();
-    }
-    function playTrack(item) {
-      const a = $('bgmAudio');
-      if (!a) return;
-      a.src = item.url;
-      a.volume = state.bgmVol;
-      a.loop = true;
-      a.play().then(() => {
-        state.bgmPlaying = true;
-        state.bgmId = item.id;
-        localStorage.setItem('kw_book_bgm_id', item.id);
-        if ($('bgmDot')) $('bgmDot').className = 'live';
-        renderBgmList();
-      }).catch(() => alert('Could not play this track. Try another file.'));
-    }
-
     
     on('btnDelBook', 'onclick', async () => {
       if (!state.bookId) { alert('Select a book first'); return; }
@@ -4968,35 +4886,24 @@ id="fsBookMeta" aria-hidden="true">
       var p = document.getElementById('panelTools');
       var b = document.getElementById('btnTools');
       if (!p) return;
-      if (open) {
-        p.dataset.open = '1';
-        p.style.setProperty('display', 'block', 'important');
-        p.hidden = false;
-        p.removeAttribute('hidden');
-        if (b) { b.classList.add('on'); b.setAttribute('aria-expanded', 'true'); }
-      } else {
-        p.dataset.open = '0';
-        p.style.setProperty('display', 'none', 'important');
-        if (b) { b.classList.remove('on'); b.setAttribute('aria-expanded', 'false'); }
-      }
+      p.dataset.open = '1';
+      p.hidden = false;
+      p.removeAttribute('hidden');
+      p.style.setProperty('display', 'block', 'important');
+      p.style.setProperty('visibility', 'visible', 'important');
+      p.style.setProperty('opacity', '1', 'important');
+      if (b) { b.classList.add('on'); b.setAttribute('aria-expanded', 'true'); }
     }
     on('btnTools', 'onclick', function(ev) {
       if (ev) { ev.preventDefault(); ev.stopPropagation(); }
       var p = document.getElementById('panelTools');
-      if (!p) { console.warn('panelTools missing'); return; }
-      var isOpen = p.dataset.open === '1' || (p.style.display !== 'none' && p.offsetParent !== null);
-      setReadingSettings(!isOpen);
-      // Scroll panel into view when opening
-      if (!isOpen) {
-        try { p.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch(e) {}
+      if (p) {
+        setReadingSettings(true);
+        try { p.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(e) {}
       }
     });
-    // Force settings open in Reading Room when a book is present
-    (function forceSettingsOpen() {
-      var hasBook = /book_id=/.test(location.search) || !!(window.B && window.B.id) || !!document.querySelector('#stage .page-sheet, #sheetText');
-      if (hasBook) setReadingSettings(true);
-      else setReadingSettings(false);
-    })();
+    // Settings are always visible; never hide them based on book state.
+    setReadingSettings(true);
     
     document.addEventListener('keydown', function(ev){
       var tag = (ev.target && ev.target.tagName || '').toLowerCase();
@@ -5019,23 +4926,6 @@ id="fsBookMeta" aria-hidden="true">
         try { applyScene(); } catch(e) {}
       }
     });
-
-    on('btnMusic', 'onclick', () => {
-      const p = $('panelMusic');
-      if (!p) return;
-      const show = p.style.display === 'none' || !p.style.display;
-      p.style.display = show ? 'block' : 'none';
-      var chip = $('btnMusic');
-      if (chip) {
-        var dot = $('bgmDot');
-        chip.innerHTML = (dot ? dot.outerHTML + ' ' : '') + (show ? 'Close' : 'Play');
-      }
-      if (show) loadBgmList();
-      if (!show) {
-        try { if (state.bgmAudio) { state.bgmAudio.pause(); } } catch(e) {}
-      }
-    });
-    (function(){ var c=$('btnMusic'); if(c && c.innerHTML.indexOf('Play')<0){ var d=$('bgmDot'); c.innerHTML=(d?d.outerHTML+' ':'')+'Play'; } })();
 
     document.querySelectorAll('.theme-btn').forEach(b => {
       b.onclick = () => { state.theme = b.dataset.theme; localStorage.setItem('kw_book_theme', state.theme); applyTheme(); };
@@ -5113,31 +5003,6 @@ id="fsBookMeta" aria-hidden="true">
         if (dx < 0) next(); else prev();
       });
     }
-
-    on('btnLoadBgm', 'onclick', () => $('bgmFile').click());
-    on('bgmFile', 'onchange', async (ev) => {
-      const files = ev.target.files;
-      if (!files || !files.length) return;
-      if (state.bgmItems.length >= 10) { alert('Maximum 10 background tracks. Remove one first.'); return; }
-      const fd = new FormData();
-      for (const f of files) fd.append('files', f);
-      $('btnLoadBgm').textContent = 'Uploading…';
-      try {
-        const r = await fetch('/member/kwealth/bgm/upload', { method: 'POST', body: fd, credentials: 'same-origin' });
-        if (r.redirected) location.href = r.url + (r.url.includes('?') ? '&' : '?') + 'bgm=1';
-        else location.href = '/member/kwealth/books?bgm=1';
-      } catch (e) { alert('Upload failed'); }
-      $('btnLoadBgm').textContent = '+ Upload / sync from device';
-      ev.target.value = '';
-    });
-    on('btnBgmStop', 'onclick', stopBgm);
-    on('bgmVol', 'oninput', () => {
-      state.bgmVol = Number($('bgmVol').value);
-      localStorage.setItem('kw_book_bgmVol', state.bgmVol);
-      if ($('bgmAudio')) $('bgmAudio').volume = state.bgmVol;
-    });
-
-    
     (function clearStuckFullscreen() {
       try {
         if (!state.sceneFs && !document.fullscreenElement) {
@@ -5156,7 +5021,6 @@ id="fsBookMeta" aria-hidden="true">
     if ($('fontFamily')) $('fontFamily').value = state.fontFamily;
     if ($('flipStyle')) $('flipStyle').value = state.flipStyle;
     if ($('rate')) $('rate').value = state.rate;
-    if ($('bgmVol')) $('bgmVol').value = state.bgmVol;
     renderPage();
     loadVoices();
     // Store book on device for offline reading
@@ -5309,7 +5173,7 @@ id="fsBookMeta" aria-hidden="true">
       if (fsExit) {
         fsExit.style.setProperty('display', on ? 'block' : 'none', 'important');
       }
-      /* Fullscreen stays on the book; Scene is optional — do not force sceneOn */
+      /* Fullscreen stays on the book; Scene remains independently controlled. */
       try { localStorage.setItem('kw_scene_fs', on ? '1' : '0'); } catch (e) {}
       // Re-evaluate 3D visibility (only when FS + Scene)
       try { applyScene(); } catch (e) {}
@@ -5336,9 +5200,9 @@ id="fsBookMeta" aria-hidden="true">
         if (btn) btn.classList.toggle('is-on', on);
         return;
       }
-      // 3D animation is controlled independently from Full screen; Scene on is sufficient
+      // 3D visibility is independent of Full Screen.
+      // Scene controls the 3D animation; Full Screen is a separate feature.
       var show3d = !!on;
-      // scene-on class only when both are true (used by CSS)
       if (show3d) {
         stage.classList.add('scene-on');
         document.body.classList.add('scene-on');
@@ -5454,10 +5318,6 @@ id="fsBookMeta" aria-hidden="true">
       scenePick.addEventListener('change', function () {
         state.sceneName = scenePick.value || 'sun';
         state.sceneOn = true;
-        if (!state.sceneFs) {
-          state.sceneFs = true;
-          try { applySceneFs(true); } catch (e) {}
-        }
         try { applyScene(); } catch (e) { console.warn(e); }
       });
     }
@@ -5501,49 +5361,31 @@ id="fsBookMeta" aria-hidden="true">
     try {
       if (state.sceneFs) applySceneFs(true);
     } catch (e) {}
-
-    try {
-      loadBgmList().then(() => {
-        if (state.bgmId) {
-          const item = state.bgmItems.find(x => x.id === state.bgmId);
-        }
-      }).catch(function () {});
-    } catch (e) { console.warn(e); }
-
-    
-    // Force-hide 3D panel unless FS+Scene
-    (function hide3dUnlessFsScene() {
+    // 3D visibility is controlled only by the Scene button. 
+    (function keep3dAvailable() {
       function sync() {
         var stage = document.getElementById('stage');
         var surface = document.getElementById('sceneStage');
-        var show = !!(state.sceneFs && state.sceneOn);
-        if (stage) {
-          if (show) stage.classList.add('scene-on');
-          else stage.classList.remove('scene-on');
-        }
-        if (surface) {
-          if (show) {
-            surface.style.setProperty('display', 'block', 'important');
-            surface.style.setProperty('visibility', 'visible', 'important');
-            surface.style.setProperty('opacity', '1', 'important');
-          } else {
-            surface.style.setProperty('display', 'none', 'important');
-            surface.style.setProperty('visibility', 'hidden', 'important');
-            surface.style.setProperty('opacity', '0', 'important');
-            surface.style.setProperty('height', '0', 'important');
-          }
-        }
         var gl = document.getElementById('cgWebglHost');
-        if (gl && !show) {
-          gl.style.setProperty('display', 'none', 'important');
-          gl.style.setProperty('opacity', '0', 'important');
+        var show = !!state.sceneOn;
+        if (stage) stage.classList.toggle('scene-on', show);
+        if (surface) {
+          surface.style.setProperty('display', show ? 'block' : 'none', 'important');
+          surface.style.setProperty('visibility', show ? 'visible' : 'hidden', 'important');
+          surface.style.setProperty('opacity', show ? '1' : '0', 'important');
+          surface.style.setProperty('height', '100%', 'important');
+        }
+        if (gl) {
+          gl.style.setProperty('display', show ? 'block' : 'none', 'important');
+          gl.style.setProperty('visibility', show ? 'visible' : 'hidden', 'important');
+          gl.style.setProperty('opacity', show ? '1' : '0', 'important');
         }
       }
       sync();
-      setInterval(sync, 800);
+      window.addEventListener('kw:scene-changed', sync);
+      setInterval(sync, 1000);
     })();
 
-    
     // Keep FS book meta on top inside stage
     (function placeFsMeta() {
       function go() {
@@ -5741,7 +5583,7 @@ id="fsBookMeta" aria-hidden="true">
     <div id="fsDock">
       <button type="button" class="chip" id="fsStop">Stop</button>
       <button type="button" class="chip" id="fsAll">All 3D</button>
-      <select id="fsScenePickDock" class="ctl" style="width:auto">
+      <select id="fsScenePick" class="ctl" style="width:auto">
         <option value="clock">Wall clock</option>
         <option value="giants">Five giant stars</option>
         <option value="sun">Sunrise</option>
@@ -5764,53 +5606,12 @@ id="fsBookMeta" aria-hidden="true">
 
 <script>
 (function(){
-  
-  var memAudio="/static/uploads/kwealth_bgm/admin_global/nature_ambient.mp3";
-  document.querySelectorAll("audio").forEach(function(a){ if(!a.getAttribute("src")) a.src=memAudio; });
-  var bg=document.getElementById("bgmAudio")||document.querySelector("audio");
-  if(bg && !bg.src) bg.src=memAudio;
   document.querySelectorAll("[data-book-page]").forEach(function(el){
     var id=el.getAttribute("data-book-page");
     var n=1;
     try{ n=(JSON.parse(localStorage.getItem("kw_book_page_"+id)||"1")); }catch(e){}
     el.textContent="Page "+(n||1);
   });
-  });
-
-  function tick(){
-    var d=new Date();
-    var s=d.getSeconds()+d.getMilliseconds()/1000;
-    var m=d.getMinutes()+s/60;
-    var h=(d.getHours()%12)+m/60;
-    var hs=document.getElementById("kwHour"), ms=document.getElementById("kwMin"), ss=document.getElementById("kwSec");
-    if(hs) hs.style.transform="rotate("+(h*30)+"deg)";
-    if(ms) ms.style.transform="rotate("+(m*6)+"deg)";
-    if(ss) ss.style.transform="rotate("+(s*6)+"deg)";
-    requestAnimationFrame(tick);
-  }
-  tick();
-  var lib=document.getElementById("bookLib");
-  if(lib && /book_id=/.test(location.search)) lib.style.display="none";
-  var tools=document.getElementById("panelTools");
-  if(tools && /book_id=/.test(location.search)){
-    tools.dataset.open="1";
-    tools.style.setProperty("display","block","important");
-    tools.hidden=false;
-    var tb=document.getElementById("btnTools");
-    if(tb){ tb.classList.add("on"); tb.setAttribute("aria-expanded","true"); }
-  }
-  if(tools && !/book_id=/.test(location.search)) {
-    tools.dataset.open="0";
-    tools.style.setProperty("display","none","important");
-  }
-  var stop=document.getElementById("fsStop");
-  if(stop) stop.onclick=function(){ var b=document.getElementById("btnRead"); if(b) b.click(); };
-  var all=document.getElementById("fsAll");
-  if(all) all.onclick=function(){ try{ state.sceneOn=true; state.sceneFs=true; if(window.__kwSceneSchedule) window.__kwSceneSchedule(); }catch(e){} };
-  var ex=document.getElementById("fsExit");
-  if(ex) ex.onclick=function(){ var b=document.getElementById("sceneFsExit")||document.getElementById("btnSceneFs"); if(b) b.click(); };
-  var fp=document.getElementById("fsScenePick");
-  if(fp) fp.onchange=function(){ if(this.value==="off"){ try{ state.sceneOn=false; }catch(e){} } else { try{ state.sceneName=this.value; state.sceneOn=true; state.sceneFs=true; }catch(e){} var p=document.getElementById("scenePick"); if(p){ p.value=this.value; p.dispatchEvent(new Event("change")); } } };
 })();
 </script>
 </body>
