@@ -3846,6 +3846,39 @@
 .lib-book:nth-child(even){transform:rotateY(8deg) rotateZ(1.5deg)}
 .lib-book:hover{transform:translateY(-12px) rotateY(0deg) rotateZ(0deg) scale(1.04);filter:brightness(1.08);z-index:5}
 .lib-book:after{content:"";position:absolute;right:-18px;top:5px;width:18px;height:calc(100% - 10px);background:linear-gradient(90deg,#d6d3d1,#fafaf9,#a8a29e);transform:skewY(-8deg);opacity:.8}
+
+/* Per-book delete button on personal books */
+.lib-book { position: relative; }
+.lib-book .book-delete {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 20;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(15,23,42,.82);
+  color: #f87171;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,.35);
+  opacity: 0.85;
+  transition: opacity .15s, background .15s, transform .15s;
+}
+.lib-book .book-delete:hover {
+  opacity: 1;
+  background: #b91c1c;
+  color: #fff;
+  transform: scale(1.1);
+}
+.lib-book .book-delete:active { transform: scale(0.95); }
+
 .lib-book b{display:block;font-family:Georgia,serif;font-size:14px;line-height:1.25;font-weight:800;max-width:95px}.lib-page{display:block;margin-top:9px;font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#44403c}
 .lib-book span{position:absolute;left:0;top:0;bottom:0;width:9px;background:rgba(0,0,0,.3);border-radius:3px 0 0 3px}
 .nav-back{color:#5eead4;font-size:12px;text-decoration:none;padding:5px 7px;border-radius:8px;background:rgba(20,184,166,.08)}
@@ -3970,14 +4003,17 @@ body.reader-mode .library-only{display:none!important}
       <div class="lib-wall" id="libPersonal">
         {% for b in my_books %}
         {% set colors = ['#fbcfe8','#c4b5fd','#a5f3fc','#fde68a'] %}
-        <a class="lib-book" style="background:{{ colors[loop.index0 % 4] }}" href="/member/kwealth/books/reading-room?book_id={{ b.id }}" aria-label="Open {{ b.title }} in Reading Room">
-          <span></span>
-          <div class="lib-cover-text">
-            <b class="book-title">{{ b.title }}</b>
-            <small class="book-author">{{ b.author or b.writer or 'Personal Book' }}</small>
-            <small class="lib-page">Open to read</small>
-          </div>
-        </a>
+        <div class="lib-book" style="background:{{ colors[loop.index0 % 4] }};position:relative">
+          <button type="button" class="book-delete" title="Delete this book" data-book-id="{{ b.id }}" data-book-title="{{ b.title|e }}" aria-label="Delete {{ b.title }}">✕</button>
+          <a href="/member/kwealth/books/reading-room?book_id={{ b.id }}" aria-label="Open {{ b.title }} in Reading Room" style="display:block;width:100%;height:100%;text-decoration:none;color:inherit">
+            <span></span>
+            <div class="lib-cover-text">
+              <b class="book-title">{{ b.title }}</b>
+              <small class="book-author">{{ b.author or b.writer or 'Personal Book' }}</small>
+              <small class="lib-page">Open to read</small>
+            </div>
+          </a>
+        </div>
         {% else %}
         <p style="color:#94a3b8;font-size:12px">No personal books yet. Upload one.</p>
         {% endfor %}
@@ -4893,6 +4929,28 @@ id="fsBookMeta" aria-hidden="true">
     }
 
     
+    
+    // Delete personal book directly from the shelf
+    document.querySelectorAll('.book-delete').forEach(function(btn) {
+      btn.addEventListener('click', async function(ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        var bookId = this.getAttribute('data-book-id');
+        var title = this.getAttribute('data-book-title') || 'this book';
+        if (!bookId) return;
+        if (!confirm('Delete "' + title + '" from your personal library?\n\nThis cannot be undone.')) return;
+        var fd = new FormData();
+        fd.append('book_id', bookId);
+        try {
+          var r = await fetch('/member/kwealth/books/delete', { method: 'POST', body: fd, credentials: 'same-origin' });
+          if (r.redirected) { location.href = r.url; return; }
+          location.href = '/member/kwealth/books?deleted=1';
+        } catch (e) {
+          alert('Could not delete the book. Please try again.');
+        }
+      });
+    });
+
     on('btnDelBook', 'onclick', async () => {
       if (!state.bookId) { alert('Select a book first'); return; }
       if (!confirm('Delete this book from your library? (Shared admin books cannot be removed here.)')) return;
