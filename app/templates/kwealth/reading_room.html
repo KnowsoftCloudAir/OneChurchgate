@@ -132,6 +132,351 @@
 @keyframes minHand{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 @keyframes secHand{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
+    
+/* ========== HIGH-QUALITY SCENES FROM DRAFT ========== */
+
+/* --- JUPITER / NEPTUNE / EARTH FLY-BY (orbital approach from right, grow, fill, exit left) --- */
+.a-jupiter, .a-neptune, .a-earth {
+  background: radial-gradient(ellipse at 50% 42%, #0c1428 0%, #060b18 45%, #01040c 100%);
+  overflow: hidden; perspective: 1400px;
+}
+.a-jupiter .stars, .a-neptune .stars, .a-earth .stars {
+  position: absolute; inset: -20%;
+  background-image:
+    radial-gradient(1.5px 1.5px at 8% 12%, #fff, transparent),
+    radial-gradient(1px 1px at 22% 38%, #fff, transparent),
+    radial-gradient(2px 2px at 48% 16%, #e0e7ff, transparent),
+    radial-gradient(1px 1px at 72% 52%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 88% 24%, #fff, transparent),
+    radial-gradient(1px 1px at 15% 78%, #fff, transparent),
+    radial-gradient(2px 2px at 55% 82%, #fff, transparent);
+  animation: starTwinkle 6s ease-in-out infinite alternate; opacity: .9;
+}
+.a-jupiter .distant-sun, .a-neptune .distant-sun, .a-earth .distant-sun {
+  position: absolute; left: 50%; top: 42%; width: 4vmin; height: 4vmin; margin: -2vmin 0 0 -2vmin;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 32%, #fffbeb 0%, #fde047 45%, #f59e0b 100%);
+  box-shadow: 0 0 14px 4px rgba(253,224,71,.55), 0 0 36px 12px rgba(245,158,11,.2);
+  z-index: 0;
+}
+/* Jupiter body */
+.a-jupiter .jup {
+  position: absolute; left: 50%; top: 50%; width: 38vmin; height: 38vmin; margin: -19vmin 0 0 -19vmin;
+  border-radius: 50%; overflow: hidden; isolation: isolate;
+  background: #c48a4e;
+  background-image:
+    radial-gradient(ellipse 17% 10% at 58% 54%, #b91c1c 0%, #7f1d1d 45%, transparent 70%),
+    repeating-linear-gradient(180deg, #f5d4a8 0%, #e8b86d 7%, #d4a060 12%, #c48a4e 17%, #f0c898 23%, #e0a860 29%, #c17a48 35%, #a65d38 41%, #e8b86d 50%, #f5d0a9 56%, #d4a574 63%, #c48a4e 70%, #a85d3a 100%);
+  box-shadow: inset -8vmin -5vmin 14vmin rgba(0,0,0,.55), inset 4vmin 3vmin 10vmin rgba(255,255,255,.12);
+  animation: jupiterOrbital 48s linear infinite; z-index: 20; will-change: transform;
+}
+.a-jupiter .jup .bands {
+  position: absolute; inset: 0; border-radius: 50%;
+  background: linear-gradient(180deg, transparent 20%, rgba(120,53,15,.2) 27%, transparent 33%),
+              linear-gradient(180deg, transparent 50%, rgba(154,52,18,.16) 56%, transparent 62%);
+  animation: planetSpin 22s linear infinite;
+}
+@keyframes jupiterOrbital {
+  0%   { transform: translate(70vw, 10vh) scale(0.08) rotate(-10deg); }
+  18%  { transform: translate(40vw, 5vh) scale(0.35) rotate(20deg); }
+  32%  { transform: translate(15vw, 0) scale(0.9) rotate(55deg); }
+  45%  { transform: translate(0, -2vh) scale(2.4) rotate(100deg); }
+  52%  { transform: translate(-5vw, -3vh) scale(3.1) rotate(140deg); }
+  65%  { transform: translate(-30vw, -10vh) scale(1.6) rotate(200deg); }
+  82%  { transform: translate(-60vw, -25vh) scale(0.5) rotate(280deg); }
+  100% { transform: translate(-90vw, -40vh) scale(0.08) rotate(350deg); }
+}
+/* Neptune body */
+.a-neptune .nep {
+  position: absolute; left: 50%; top: 50%; width: 36vmin; height: 36vmin; margin: -18vmin 0 0 -18vmin;
+  border-radius: 50%; overflow: hidden; isolation: isolate;
+  background-color: #0369a1;
+  background-image: radial-gradient(ellipse 24% 14% at 40% 35%, #7dd3fc 0%, transparent 55%),
+                    radial-gradient(circle at 36% 28%, #38bdf8 0%, #0ea5e9 30%, #0284c7 55%, #0c4a6e 100%);
+  box-shadow: inset -8vmin -5vmin 14vmin rgba(2,6,23,.55), inset 4vmin 3vmin 10vmin rgba(186,230,253,.12);
+  animation: neptuneOrbital 50s linear infinite; z-index: 10; will-change: transform;
+}
+.a-neptune .nep .storm {
+  position: absolute; width: 18%; height: 14%; top: 40%; left: 52%; border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(30,64,175,.5), transparent 70%);
+  animation: neptuneStorm 14s ease-in-out infinite alternate;
+}
+@keyframes neptuneOrbital {
+  0%   { transform: translate(70vw, -5vh) scale(0.1) rotate(0deg); }
+  20%  { transform: translate(40vw, -2vh) scale(0.4) rotate(-30deg); }
+  38%  { transform: translate(12vw, 0) scale(0.95) rotate(-60deg); }
+  48%  { transform: translate(0, 0) scale(2.5) rotate(-95deg); }
+  55%  { transform: translate(-6vw, 1vh) scale(3.15) rotate(-130deg); }
+  70%  { transform: translate(-35vw, 5vh) scale(1.5) rotate(-210deg); }
+  88%  { transform: translate(-70vw, 10vh) scale(0.4) rotate(-300deg); }
+  100% { transform: translate(-95vw, 15vh) scale(0.08) rotate(-360deg); }
+}
+@keyframes neptuneStorm { from { transform: translateX(-3%) scale(1); } to { transform: translateX(5%) scale(1.1); } }
+/* Earth body */
+.a-earth .earthHero {
+  position: absolute; left: 50%; top: 50%; width: 38vmin; height: 38vmin; margin: -19vmin 0 0 -19vmin;
+  border-radius: 50%; overflow: hidden; isolation: isolate;
+  background-image:
+    radial-gradient(ellipse 30% 20% at 30% 35%, #4ade80 0%, #16a34a 42%, transparent 70%),
+    radial-gradient(ellipse 26% 32% at 55% 42%, #22c55e 0%, #15803d 48%, transparent 70%),
+    radial-gradient(ellipse 18% 14% at 72% 55%, #4ade80 0%, transparent 65%),
+    radial-gradient(ellipse 24% 12% at 40% 68%, #86efac 0%, #166534 50%, transparent 70%),
+    radial-gradient(ellipse 38% 11% at 50% 6%, rgba(248,250,252,.85) 0%, transparent 70%),
+    radial-gradient(circle at 50% 50%, #0ea5e9 0%, #0369a1 42%, #0c4a6e 70%, #082f49 100%);
+  box-shadow: inset -9vmin -5vmin 16vmin rgba(0,0,0,.5), inset 4vmin 3vmin 10vmin rgba(255,255,255,.1);
+  animation: earthOrbital 46s linear infinite; z-index: 15; will-change: transform;
+}
+@keyframes earthOrbital {
+  0%   { transform: translate(75vw, 8vh) scale(0.08) rotate(10deg); }
+  18%  { transform: translate(42vw, 3vh) scale(0.38) rotate(30deg); }
+  35%  { transform: translate(12vw, -1vh) scale(0.95) rotate(70deg); }
+  48%  { transform: translate(0, -2vh) scale(2.55) rotate(110deg); }
+  55%  { transform: translate(-6vw, -3vh) scale(3.2) rotate(150deg); }
+  70%  { transform: translate(-32vw, -12vh) scale(1.5) rotate(220deg); }
+  86%  { transform: translate(-65vw, -28vh) scale(0.45) rotate(300deg); }
+  100% { transform: translate(-95vw, -40vh) scale(0.08) rotate(360deg); }
+}
+@keyframes planetSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* --- DESERT GROWTH (trees grow, hero tree fills screen + shadow) --- */
+.a-desert {
+  background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 25%, #d97706 45%, #b45309 65%, #78350f 100%);
+  overflow: hidden; perspective: 900px;
+}
+.a-desert .sky {
+  position: absolute; left: 0; right: 0; top: 0; height: 48%;
+  background: linear-gradient(180deg, #7dd3fc 0%, #fde68a 55%, #fbbf24 100%);
+  animation: desertSkyDarken 60s ease-in-out infinite;
+}
+.a-desert .sun-disk {
+  position: absolute; left: 70%; top: 12%; width: 14vmin; height: 14vmin; margin-left: -7vmin;
+  border-radius: 50%;
+  background: radial-gradient(circle at 40% 40%, #fef9c3, #fbbf24 50%, #f59e0b);
+  box-shadow: 0 0 40px 15px rgba(251,191,36,.55);
+  animation: desertSunDim 60s ease-in-out infinite; z-index: 1;
+}
+.a-desert .ground {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 55%;
+  background: radial-gradient(ellipse 80% 40% at 50% 0%, #d97706 0%, transparent 60%),
+              linear-gradient(180deg, #b45309 0%, #92400e 40%, #78350f 100%); z-index: 2;
+}
+.a-desert .dune {
+  position: absolute; bottom: 42%; left: -5%; right: -5%; height: 18%;
+  background: radial-gradient(ellipse 50% 100% at 30% 100%, #a16207 0%, transparent 70%),
+              radial-gradient(ellipse 45% 100% at 70% 100%, #92400e 0%, transparent 70%); z-index: 2;
+}
+.a-desert .tree { position: absolute; bottom: 38%; width: 0; height: 0; transform-origin: bottom center; z-index: 5; }
+.a-desert .tree .trunk {
+  position: absolute; left: 50%; bottom: 0; width: 1.2vmin; margin-left: -0.6vmin; height: 0;
+  background: linear-gradient(180deg, #78350f, #451a03); border-radius: 2px 2px 0 0;
+  transform-origin: bottom center; animation: trunkGrow 60s ease-out infinite;
+}
+.a-desert .tree .canopy {
+  position: absolute; left: 50%; width: 0; height: 0; margin-left: 0;
+  border-radius: 50% 50% 40% 40%;
+  background: radial-gradient(circle at 40% 35%, #4ade80, #166534 60%, #14532d);
+  box-shadow: 0 0 12px rgba(22,101,52,.35); transform-origin: center bottom; opacity: 0;
+  animation: canopyGrow 60s ease-out infinite;
+}
+.a-desert .tree.t1 { left: 18%; }
+.a-desert .tree.t2 { left: 35%; }
+.a-desert .tree.t2 .trunk { animation-delay: 1.2s; width: 1.4vmin; }
+.a-desert .tree.t2 .canopy { animation-delay: 1.2s; }
+.a-desert .tree.t3 { left: 55%; }
+.a-desert .tree.t3 .trunk { animation-delay: 0.6s; width: 1vmin; }
+.a-desert .tree.t3 .canopy { animation-delay: 0.6s; }
+.a-desert .tree.t4 { left: 72%; }
+.a-desert .tree.t4 .trunk { animation-delay: 1.8s; }
+.a-desert .tree.t4 .canopy { animation-delay: 1.8s; }
+/* Hero tree — grows past camera and fills screen */
+.a-desert .tree.hero { left: 48%; bottom: 30%; z-index: 8; }
+.a-desert .tree.hero .trunk {
+  width: 4vmin; margin-left: -2vmin;
+  animation: heroTrunk 60s ease-in-out infinite;
+  background: linear-gradient(180deg, #92400e, #451a03 80%, #1c0a00);
+}
+.a-desert .tree.hero .canopy {
+  animation: heroCanopy 60s ease-in-out infinite;
+  background: radial-gradient(circle at 42% 30%, #86efac, #16a34a 45%, #14532d 80%);
+  box-shadow: 0 0 30px rgba(22,101,52,.4);
+}
+.a-desert .tree.hero .branch {
+  position: absolute; left: 50%; width: 0; height: 1.2vmin; background: #78350f;
+  transform-origin: left center; opacity: 0; animation: branchGrow 60s ease-in-out infinite;
+}
+.a-desert .tree.hero .branch.b1 { bottom: 40%; margin-left: 1vmin; animation-delay: 0.5s; }
+.a-desert .tree.hero .branch.b2 { bottom: 55%; margin-left: -1vmin; transform-origin: right center; animation-delay: 0.8s; }
+.a-desert .tree-shadow {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 55%;
+  background: radial-gradient(ellipse 60% 80% at 50% 0%, rgba(0,0,0,.75) 0%, transparent 70%);
+  opacity: 0; z-index: 6; animation: shadowFall 60s ease-in-out infinite; pointer-events: none;
+}
+.a-desert .vignette {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,.15) 100%);
+  z-index: 10; pointer-events: none; animation: vignetteDark 60s ease-in-out infinite;
+}
+@keyframes trunkGrow { 0%,5%{height:0} 25%{height:8vmin} 100%{height:10vmin} }
+@keyframes canopyGrow {
+  0%,8%{width:0;height:0;opacity:0;bottom:0}
+  30%{width:6vmin;height:5vmin;margin-left:-3vmin;opacity:1;bottom:7vmin}
+  100%{width:7vmin;height:6vmin;margin-left:-3.5vmin;opacity:1;bottom:9vmin}
+}
+@keyframes heroTrunk {
+  0%,5%{height:0}
+  20%{height:18vmin}
+  40%{height:45vmin}
+  55%{height:90vmin}
+  70%{height:140vmin}
+  85%{height:90vmin}
+  100%{height:18vmin}
+}
+@keyframes heroCanopy {
+  0%,8%{width:0;height:0;opacity:0;bottom:0}
+  25%{width:20vmin;height:16vmin;margin-left:-10vmin;opacity:1;bottom:16vmin}
+  45%{width:55vmin;height:45vmin;margin-left:-27.5vmin;opacity:1;bottom:40vmin}
+  60%{width:110vmin;height:90vmin;margin-left:-55vmin;opacity:1;bottom:80vmin}
+  80%{width:55vmin;height:45vmin;margin-left:-27.5vmin;opacity:1;bottom:40vmin}
+  100%{width:20vmin;height:16vmin;margin-left:-10vmin;opacity:1;bottom:16vmin}
+}
+@keyframes branchGrow {
+  0%,15%{width:0;opacity:0}
+  35%{width:12vmin;opacity:1}
+  60%{width:28vmin;opacity:1}
+  85%{width:12vmin;opacity:1}
+  100%{width:0;opacity:0}
+}
+@keyframes shadowFall {
+  0%,15%{opacity:0}
+  40%{opacity:.3}
+  55%{opacity:.85}
+  75%{opacity:.4}
+  100%{opacity:0}
+}
+@keyframes desertSkyDarken {
+  0%,20%{filter:brightness(1)}
+  50%{filter:brightness(.55)}
+  80%{filter:brightness(1)}
+}
+@keyframes desertSunDim {
+  0%,20%{opacity:1;transform:scale(1)}
+  50%{opacity:.4;transform:scale(.7)}
+  80%{opacity:1;transform:scale(1)}
+}
+@keyframes vignetteDark {
+  0%,20%{opacity:.3}
+  55%{opacity:1}
+  80%{opacity:.3}
+}
+
+/* --- KNOWSOFT CLOCK (real-time + expand to fill screen revealing logo) --- */
+.a-clock { background: radial-gradient(ellipse at center, #1e293b 0%, #0f172a 60%, #020617 100%); }
+.a-clock .kw-clock {
+  position: absolute; left: 50%; top: 46%;
+  width: min(70vmin,420px); height: min(70vmin,420px);
+  margin: -35vmin 0 0 -35vmin;
+  animation: clockGrow 22s ease-in-out infinite;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f8fafc, #cbd5e1 40%, #64748b 78%);
+  box-shadow: 0 20px 50px rgba(0,0,0,.45), inset 0 0 0 10px #0f172a, inset 0 0 0 14px #e2e8f0;
+}
+.a-clock .kw-clock-logo {
+  position: absolute; left: 50%; top: 42%; width: 28%; transform: translate(-50%,-50%); opacity: .95; z-index: 5;
+}
+.a-clock .kw-hand {
+  position: absolute; left: 50%; bottom: 50%; transform-origin: 50% 100%;
+  background: #0f172a; border-radius: 4px; z-index: 3;
+}
+.a-clock .kw-hour { width: 8px; height: 22%; margin-left: -4px; }
+.a-clock .kw-min { width: 5px; height: 32%; margin-left: -2.5px; background: #1e293b; }
+.a-clock .kw-sec { width: 2px; height: 38%; margin-left: -1px; background: #b91c1c; }
+.a-clock .kw-cap {
+  position: absolute; left: 50%; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px;
+  border-radius: 50%; background: #0f172a; z-index: 4;
+}
+@keyframes clockGrow {
+  0%   { transform: scale(0.45); }
+  25%  { transform: scale(1.0); }
+  55%  { transform: scale(2.8); }
+  70%  { transform: scale(5.5); }   /* fills screen – logo only visible */
+  85%  { transform: scale(2.2); }
+  100% { transform: scale(0.45); }
+}
+
+/* --- MILKY WAY (more beautiful & captivating) --- */
+.a-milkyway {
+  background: radial-gradient(ellipse at 50% 50%, #0f172a 0%, #020617 50%, #000 100%);
+  overflow: hidden;
+}
+.a-milkyway .galaxy {
+  position: absolute; left: 50%; top: 50%;
+  width: 140vmin; height: 55vmin; margin: -27.5vmin 0 0 -70vmin;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse 35% 28% at 50% 50%, rgba(224,231,255,.45) 0%, transparent 65%),
+    radial-gradient(ellipse 55% 38% at 50% 50%, rgba(165,180,252,.28) 0%, transparent 70%),
+    radial-gradient(ellipse 80% 50% at 50% 50%, rgba(129,140,248,.15) 0%, transparent 75%),
+    radial-gradient(ellipse 100% 60% at 50% 50%, rgba(99,102,241,.08) 0%, transparent 80%);
+  animation: galaxySpin 80s linear infinite;
+  box-shadow: 0 0 100px rgba(165,180,252,.2);
+  filter: contrast(1.15);
+}
+.a-milkyway .starfield {
+  position: absolute; inset: 0;
+  background-image:
+    radial-gradient(2.5px 2.5px at 10% 20%, #fff, transparent),
+    radial-gradient(1.5px 1.5px at 25% 45%, #e0e7ff, transparent),
+    radial-gradient(2px 2px at 40% 15%, #fff, transparent),
+    radial-gradient(1px 1px at 55% 70%, #fff, transparent),
+    radial-gradient(3px 3px at 70% 30%, #c7d2fe, transparent),
+    radial-gradient(1.5px 1.5px at 85% 55%, #fff, transparent),
+    radial-gradient(2px 2px at 15% 80%, #a5b4fc, transparent),
+    radial-gradient(1px 1px at 60% 40%, #fff, transparent),
+    radial-gradient(2.5px 2.5px at 90% 15%, #e0e7ff, transparent),
+    radial-gradient(1.5px 1.5px at 35% 60%, #fff, transparent),
+    radial-gradient(2px 2px at 48% 85%, #c7d2fe, transparent),
+    radial-gradient(1px 1px at 75% 75%, #fff, transparent);
+  animation: starTwinkle 3.5s ease-in-out infinite alternate;
+}
+.a-milkyway .core {
+  position: absolute; left: 50%; top: 50%;
+  width: 10vmin; height: 10vmin; margin: -5vmin 0 0 -5vmin;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff 0%, #c7d2fe 25%, #818cf8 55%, transparent 70%);
+  box-shadow: 0 0 50px rgba(165,180,252,.7), 0 0 100px rgba(99,102,241,.35);
+  animation: softPulse 4s ease-in-out infinite;
+}
+@keyframes galaxySpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* --- GIANT STARS FLY-BY (succession every ~3s, right→left, true colours, captivating) --- */
+.a-giants { background: #020617; overflow: hidden; }
+.a-giants .kw-void {
+  position: absolute; inset: 0;
+  background: radial-gradient(circle at 70% 40%, #1e1b4b, #020617 60%);
+}
+.a-giants .kw-star {
+  position: absolute; top: 42%; border-radius: 50%;
+  animation: starPass 18s linear infinite;
+  box-shadow: 0 0 40px currentColor;
+}
+.a-giants .kw-star:after {
+  content: attr(data-name);
+  position: absolute; left: 50%; top: 110%; transform: translateX(-50%);
+  color: #fff; font-size: 13px; font-weight: 800; white-space: nowrap;
+  text-shadow: 0 0 8px #000; letter-spacing: .03em;
+}
+.a-giants .s1 { width: 18vmin; height: 18vmin; background: radial-gradient(circle, #fff7ed, #fbbf24 40%, #f97316); color: #fbbf24; animation-delay: 0s; }
+.a-giants .s2 { width: 24vmin; height: 24vmin; background: radial-gradient(circle, #eff6ff, #93c5fd 40%, #2563eb); color: #60a5fa; animation-delay: 3.6s; }
+.a-giants .s3 { width: 32vmin; height: 32vmin; background: radial-gradient(circle, #fff7ed, #fb923c 40%, #c2410c); color: #fb923c; animation-delay: 7.2s; }
+.a-giants .s4 { width: 42vmin; height: 42vmin; background: radial-gradient(circle, #fee2e2, #ef4444 40%, #7f1d1d); color: #f87171; animation-delay: 10.8s; }
+.a-giants .s5 { width: 56vmin; height: 56vmin; background: radial-gradient(circle, #fef9c3, #f59e0b 35%, #9a3412); color: #fbbf24; animation-delay: 14.4s; }
+@keyframes starPass {
+  0%   { left: -35%; opacity: 0; transform: scale(0.6); }
+  12%  { opacity: 1; transform: scale(1); }
+  45%  { left: 42%; transform: scale(1.15); }
+  100% { left: 130%; opacity: 0.15; transform: scale(0.7); }
+}
+
     /* Imported Kwealth ambience scene styles are injected after page load. */
     #sceneStageImported{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden}
     #sceneStageImported .scene-loading{position:absolute;inset:0;display:grid;place-items:center;color:#cbd5e1;background:radial-gradient(circle,#172554,#020617 70%);font-size:13px}
@@ -201,6 +546,7 @@
           <option value="glasses">👓 Glasses/Reader</option>
           <option value="star_bypass">⭐ Star bypass</option>
           <option value="clock">🕐 Knowsoft Clock</option>
+          <option value="giants">🌟 Giant Stars fly-by</option>
         </select></div>
         <div class="field"><label>Ambience mode</label><select id="sceneMix"><option value="one">One selected scene</option><option value="mix">Mix all scenes automatically</option></select></div>
       </div>
@@ -283,7 +629,8 @@
     matrix:'💚 Matrix/AI',
     glasses:'👓 Glasses/Reader',
     star_bypass:'⭐ Star bypass',
-    clock:'🕐 Knowsoft Clock'
+    clock:'🕐 Knowsoft Clock',
+    giants:'🌟 Giant Stars fly-by'
   };
   function sceneMarkup(name){
     const stars='<div class="stars"></div>';
@@ -297,14 +644,27 @@
       case 'milkyway': return `<div class="amb a-milkyway">${stars}<div class="galaxy3"></div>${common}</div>`;
       case 'wavelength': return `<div class="amb a-wave">${stars}<div class="wave3"></div><div class="wave3" style="bottom:25%;animation-delay:1s"></div><div class="wave3" style="bottom:5%;animation-delay:2s"></div>${common}</div>`;
       case 'fishes3d': return `<div class="amb a-fish"><div class="fish3"></div><div class="fish3" style="animation-delay:2s;top:55%"></div><div class="fish3" style="animation-delay:4s;top:30%"></div>${common}</div>`;
-      case 'jupiter': return `<div class="amb a-jupiter">${stars}<div class="jup"></div>${common}</div>`;
-      case 'neptune': return `<div class="amb a-neptune">${stars}<div class="nep"></div>${common}</div>`;
-      case 'earth': return `<div class="amb a-earth">${stars}<div class="earthHero"></div>${common}</div>`;
-      case 'desert': return `<div class="amb a-desert"><div class="sand3"></div><div class="sprout"></div>${common}</div>`;
+      case 'jupiter': return `<div class="amb a-jupiter"><div class="stars"></div><div class="distant-sun"></div><div class="jup"><div class="bands"></div></div>${common}</div>`;
+      case 'neptune': return `<div class="amb a-neptune"><div class="stars"></div><div class="distant-sun"></div><div class="nep"><div class="storm"></div></div>${common}</div>`;
+      case 'earth': return `<div class="amb a-earth"><div class="stars"></div><div class="distant-sun"></div><div class="earthHero"></div>${common}</div>`;
+      case 'desert': return `<div class="amb a-desert"><div class="sky"></div><div class="sun-disk"></div><div class="ground"></div><div class="dune"></div>
+        <div class="tree t1"><div class="trunk"></div><div class="canopy"></div></div>
+        <div class="tree t2"><div class="trunk"></div><div class="canopy"></div></div>
+        <div class="tree t3"><div class="trunk"></div><div class="canopy"></div></div>
+        <div class="tree t4"><div class="trunk"></div><div class="canopy"></div></div>
+        <div class="tree hero"><div class="trunk"></div><div class="branch b1"></div><div class="branch b2"></div><div class="canopy"></div></div>
+        <div class="tree-shadow"></div><div class="vignette"></div>${common}</div>`;
+      case 'milkyway': return `<div class="amb a-milkyway"><div class="starfield"></div><div class="galaxy"></div><div class="core"></div>${common}</div>`;
+      case 'giants': return `<div class="amb a-giants"><div class="kw-void"></div>
+        <div class="kw-star s1" data-name="Sun"></div>
+        <div class="kw-star s2" data-name="Sirius"></div>
+        <div class="kw-star s3" data-name="Arcturus"></div>
+        <div class="kw-star s4" data-name="Betelgeuse"></div>
+        <div class="kw-star s5" data-name="UY Scuti"></div>${common}</div>`;
       case 'matrix': return `<div class="amb a-matrix"><div class="grid"></div>${common}</div>`;
       case 'glasses': return `<div class="amb a-glasses"><div class="reader-g"></div>${common}</div>`;
       case 'star_bypass': return `<div class="amb a-star_bypass">${stars}<div class="star3"></div>${common}</div>`;
-      case 'clock': return `<div class="amb a-clock"><div class="kw-clock"><img class="kw-clock-logo" src="/static/img/knowsoft-logo.png" alt="Knowsoft" onerror="this.style.display='none'"><div class="kw-hand kw-hour"></div><div class="kw-hand kw-min"></div><div class="kw-hand kw-sec"></div><div class="kw-cap"></div></div>${common}</div>`;
+      case 'clock': return `<div class="amb a-clock"><div class="kw-clock"><img class="kw-clock-logo" src="/static/img/knowsoft-logo.png" alt="Knowsoft" onerror="this.style.display='none'"><div class="kw-hand kw-hour" id="kwHour"></div><div class="kw-hand kw-min" id="kwMin"></div><div class="kw-hand kw-sec" id="kwSec"></div><div class="kw-cap"></div></div>${common}</div>`;
       default: return `<div class="amb a-sun">${stars}<div class="sun3"></div><div class="horizon"></div>${common}</div>`;
     }
   }
@@ -362,6 +722,24 @@
   $('btnSave').onclick=save;$('btnRead').onclick=()=>state.reading?stopRead():startRead();$('btnFullscreen').onclick=async()=>{openReader();if(state.reading===false)await startRead()};$('exitBtn').onclick=closeReader;$('readerRead').onclick=()=>state.reading?stopRead():startRead();$('readerMusic').onclick=toggleMusic;$('btnMusicToggle').onclick=toggleMusic;$('btnMusicStop').onclick=stopMusic;
   $('prevBtn').onclick=()=>{if(state.pageIndex>0){if(state.reading)speechSynthesis.cancel();state.pageIndex--;renderReader();if(state.reading)speakPage()}};$('nextBtn').onclick=()=>{if(state.pageIndex<state.pages.length-1){if(state.reading)speechSynthesis.cancel();state.pageIndex++;renderReader();if(state.reading)speakPage()}};
   document.addEventListener('keydown',e=>{if(!$('reader').classList.contains('on'))return;if(e.key==='Escape')closeReader();if(e.key==='ArrowLeft')$('prevBtn').click();if(e.key==='ArrowRight')$('nextBtn').click()});
+
+  // Accurate real-time hands for Knowsoft Clock
+  function updateClockHands(){
+    const hour = document.getElementById('kwHour');
+    const min  = document.getElementById('kwMin');
+    const sec  = document.getElementById('kwSec');
+    if(!hour || !min || !sec) return;
+    const now = new Date();
+    const h = now.getHours() % 12;
+    const m = now.getMinutes();
+    const s = now.getSeconds();
+    const ms = now.getMilliseconds();
+    hour.style.transform = `rotate(${(h*30) + (m*0.5)}deg)`;
+    min.style.transform  = `rotate(${(m*6) + (s*0.1)}deg)`;
+    sec.style.transform  = `rotate(${(s*6) + (ms*0.006)}deg)`;
+  }
+  setInterval(updateClockHands, 50);
+
   load();loadMusic();loadAnimations();
 })();
 </script>
