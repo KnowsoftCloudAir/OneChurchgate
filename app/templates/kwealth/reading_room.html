@@ -804,7 +804,7 @@
         <div class="planet-arm arm-sa"><div class="pl"></div></div>
         <div class="planet-arm arm-ur"><div class="pl"></div></div>
         <div class="planet-arm arm-ne"><div class="pl"></div></div>
-        ${common}</div>`;animation-delay:1s"></div><div class="wave3" style="bottom:5%;animation-delay:2s"></div>${common}</div>`;
+        ${common}</div>`;
       case 'fishes3d': return `<div class="amb a-fish"><div class="fish3"></div><div class="fish3" style="animation-delay:2s;top:55%"></div><div class="fish3" style="animation-delay:4s;top:30%"></div>${common}</div>`;
       case 'jupiter': return `<div class="amb a-jupiter"><div class="stars"></div><div class="distant-sun"></div><div class="jup"><div class="bands"></div></div>${common}</div>`;
       case 'neptune': return `<div class="amb a-neptune"><div class="stars"></div><div class="distant-sun"></div><div class="nep"><div class="storm"></div></div>${common}</div>`;
@@ -816,7 +816,6 @@
         <div class="tree t4"><div class="trunk"></div><div class="canopy"></div></div>
         <div class="tree hero"><div class="trunk"></div><div class="branch b1"></div><div class="branch b2"></div><div class="canopy"></div></div>
         <div class="tree-shadow"></div><div class="vignette"></div>${common}</div>`;
-      case 'milkyway': return `<div class="amb a-milkyway"><div class="starfield"></div><div class="galaxy"></div><div class="core"></div>${common}</div>`;
       case 'giants': return `<div class="amb a-giants"><div class="kw-void"></div>
         <div class="kw-star s1" data-name="Sun"></div>
         <div class="kw-star s2" data-name="Sirius"></div>
@@ -828,7 +827,7 @@
       default: return `<div class="amb a-sun">${stars}<div class="sun3"></div><div class="horizon"></div>${common}</div>`;
     }
   }
-    function loadAnimations(){
+  function loadAnimations(){
     const stage=$('sceneStage'); if(!stage)return;
     const pick=$('scenePick');
     const current=state.scene;
@@ -836,7 +835,7 @@
     state.scene=SCENE_LABELS[current]?current:'sun';pick.value=state.scene;applyScene();
     $('status').textContent='3D ambience ready.';
   }
-  function scheduleScenes(){clearTimeout(sceneTimer);if($('sceneMix')?.value!=='mix'||!state.reading)return;const names=Object.keys(SCENE_LABELS);const i=Math.max(0,names.indexOf(state.scene));const seconds={sun:22,orbit:18,voyage:22,moon:18,planets:20,milkyway:22,wavelength:16,fishes3d:16,jupiter:22,neptune:22,earth:22,desert:20,matrix:18,glasses:18,star_bypass:20}[state.scene]||20;sceneTimer=setTimeout(()=>{if(!state.reading)return;const next=names[(i+1)%names.length];const stage=$('sceneStage');if(stage){sceneFading=true;stage.style.transition='opacity 1.1s ease';stage.style.opacity='0';setTimeout(()=>{state.scene=next;$('scenePick').value=next;applyScene();stage.style.opacity='1';sceneFading=false;scheduleScenes()},1150)}},seconds*1000)}
+  function scheduleScenes(){clearTimeout(sceneTimer);if($('sceneMix')?.value!=='mix'||!state.reading)return;const names=Object.keys(SCENE_LABELS);const i=Math.max(0,names.indexOf(state.scene));const seconds={sun:22,orbit:18,voyage:22,moon:18,planets:25,fishes3d:16,jupiter:48,neptune:50,earth:46,desert:60,star_bypass:20,clock:38,giants:18}[state.scene]||20;sceneTimer=setTimeout(()=>{if(!state.reading)return;const next=names[(i+1)%names.length];const stage=$('sceneStage');if(stage){sceneFading=true;stage.style.transition='opacity 1.1s ease';stage.style.opacity='0';setTimeout(()=>{state.scene=next;$('scenePick').value=next;applyScene();stage.style.opacity='1';sceneFading=false;scheduleScenes()},1150)}},seconds*1000)}
   function applyScene(){
     const stage=$('sceneStage');if(!stage)return;
     stage.innerHTML=sceneMarkup(state.scene||'sun');
