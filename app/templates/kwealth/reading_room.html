@@ -111,11 +111,12 @@
       font-size: 18px; line-height: 1; gap: 0;
     }
     #btnTools.rr-settings-icon.on { box-shadow: 0 0 0 2px rgba(45,212,191,.55); }
+    .rr-settings-wrap { position: relative; display: inline-flex; align-items: center; }
     #panelTools.rr-settings-pop {
       display: none;
       position: absolute;
-      top: calc(100% + 6px);
-      right: 10px;
+      top: calc(100% + 8px);
+      right: 0;
       z-index: 80;
       width: min(34rem, calc(100vw - 20px));
       max-height: min(72vh, 640px);
@@ -3869,79 +3870,7 @@ body.reader-mode .library-only{display:none!important}
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
       <div style="color:#f8fafc;font-family:Georgia,serif;font-size:15px;font-weight:800;">📖 Reading Room</div>
       <div class="reader-nav" style="margin:0;">
-        <a href="/member/kwealth/books" class="reader-back">← Back to Book Library</a>
-        <a href="/member/kwealth" class="reader-back secondary">← Kwealth</a>
-      </div>
-    </div>
-  </div>
-<button type="button" id="readMenuFab" aria-label="Reading settings" title="Reading settings" onclick="var b=document.getElementById('btnTools'); if(b) b.click();">⚙</button>
-  <div id="fsControls">
-  <select id="fsScenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
-          <option value="sun">Sunrise → Sunset</option>
-          <option value="orbit">Earth around the Sun</option>
-          <option value="voyage">Earth revelation</option>
-          <option value="planets">Planets around the Sun</option>
-          <option value="milkyway">Milky Way galaxy</option>
-          <option value="wavelength">Energy wavelength</option>
-          <option value="fishes3d">Ocean fishes</option>
-          <option value="jupiter">Jupiter close pass-by</option>
-          <option value="neptune">Neptune close pass-by</option>
-          <option value="earth">Earth close pass-by</option>
-          <option value="desert">Trees growing from the desert</option>
-          <option value="matrix">Matrix AI (matter chains)</option>
-          <option value="glasses">Eyeglasses — man reading</option>
-                  </select>
-  <button type="button" class="chip on" id="fsRead">👼 Read</button>
-  <button type="button" class="chip" id="fsSceneToggle">Scene on/off</button>
-</div>
-<button type="button" id="sceneFsExit" aria-label="Exit full screen">✕ Exit full screen</button>
-
-  <div id="app">
-    <div class="bar sticky top-0 z-30">
-      <div style="max-width:56rem;margin:0 auto;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
-        <a href="/member/kwealth" class="nav-back">← Kwealth</a><a href="/member/kwealth/books" class="nav-back">📚 Library</a>
-        <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" style="height:28px;width:auto" onerror="this.src='/static/img/knowsoft-icon.svg'"> <strong style="color:#f1f5f9;font-size:14px;">{% if book %}Reading Room{% else %}Book Library{% endif %}</strong>
-                                <button type="button" class="chip" id="btnRead">👼 Read</button>
-        <button type="button" class="chip" id="btnArrange">Arrange</button>
-        <button type="button" class="chip rr-settings-icon" id="btnTools" aria-label="Reading settings" aria-expanded="false" title="Reading settings">⚙</button>
-        <button type="button" class="chip" id="btnMusic"><span id="bgmDot" class="off"></span> Music</button>
-        <button type="button" class="chip" id="btnScene" title="Reading ambience animation">Scene</button>
-        <select id="sceneMix" class="ctl" style="max-width:8rem;font-size:11px" title="Scene mode"><option value="one">One 3D</option><option value="mix">Mix all</option></select>
-          <select id="scenePick" class="ctl" style="max-width:14rem;font-size:11px;" title="Ambience">
-          <option value="clock">Knowsoft wall clock</option>
-          <option value="giants">Five giant stars</option>
-          <option value="sun">Sunrise to sunset</option>
-          <option value="orbit">Earth around the Sun</option>
-          <option value="voyage">Earth revelation</option>
-          <option value="planets">Planets around the Sun</option>
-          <option value="milkyway">Milky Way galaxy</option>
-          <option value="wavelength">Energy wavelength</option>
-          <option value="fishes3d">Ocean fishes</option>
-          <option value="jupiter">Jupiter close pass-by</option>
-          <option value="neptune">Neptune close pass-by</option>
-          <option value="earth">Earth close pass-by</option>
-          <option value="desert">Trees growing from the desert</option>
-          <option value="matrix">Matrix AI</option>
-          <option value="star_bypass">Giant star flyby</option>
-        </select>
-        <button type="button" class="chip" id="btnSceneFs" title="Full screen book (captions while reading)">Full screen</button>
-        <select id="wordStyle" class="ctl" style="max-width:8rem;font-size:11px;" title="Word style">
-          <option value="fill">Fill colour</option>
-          <option value="write">Writing</option>
-          <option value="glow">Glow</option>
-          <option value="underline">Underline</option>
-        </select>
-        <select id="bookSelect" class="ctl" style="display:none;max-width:45%;margin-left:auto;width:auto;">
-          {% for b in books %}
-          <option value="{{ b.id }}" {% if book and b.id==book.id %}selected{% endif %}>{{ b.title }}</option>
-          {% endfor %}
-        </select>
-      </div>
-
-      
-    
-
-      {% if book %}<div class="reader-heading"><h1>{{ book.title }}</h1><p class="reader-author">{{ book.author or book.writer or '' }}</p></div><div id="panelTools" class="rr-settings-pop" data-open="0" hidden>
+        <div class="rr-settings-wrap"><button type="button" class="chip rr-settings-icon" id="btnTools" aria-label="Reading settings" aria-expanded="false" title="Reading settings">⚙</button><div id="panelTools" class="rr-settings-pop" data-open="0" hidden>
         <p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Reading settings</p>
         <div class="grid-tools">
           <div>
@@ -4014,8 +3943,78 @@ body.reader-mode .library-only{display:none!important}
           </div>
         </div>
       </div>
+</div>
+        <a href="/member/kwealth" class="reader-back secondary">← Kwealth</a>
+      </div>
+    </div>
+  </div>
+<button type="button" id="readMenuFab" aria-label="Reading settings" title="Reading settings" onclick="var b=document.getElementById('btnTools'); if(b) b.click();">⚙</button>
+  <div id="fsControls">
+  <select id="fsScenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
+          <option value="sun">Sunrise → Sunset</option>
+          <option value="orbit">Earth around the Sun</option>
+          <option value="voyage">Earth revelation</option>
+          <option value="planets">Planets around the Sun</option>
+          <option value="milkyway">Milky Way galaxy</option>
+          <option value="wavelength">Energy wavelength</option>
+          <option value="fishes3d">Ocean fishes</option>
+          <option value="jupiter">Jupiter close pass-by</option>
+          <option value="neptune">Neptune close pass-by</option>
+          <option value="earth">Earth close pass-by</option>
+          <option value="desert">Trees growing from the desert</option>
+          <option value="matrix">Matrix AI (matter chains)</option>
+          <option value="glasses">Eyeglasses — man reading</option>
+                  </select>
+  <button type="button" class="chip on" id="fsRead">👼 Read</button>
+  <button type="button" class="chip" id="fsSceneToggle">Scene on/off</button>
+</div>
+<button type="button" id="sceneFsExit" aria-label="Exit full screen">✕ Exit full screen</button>
 
-      <div id="panelMusic" style="display:none;max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
+  <div id="app">
+    <div class="bar sticky top-0 z-30">
+      <div style="max-width:56rem;margin:0 auto;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+        <a href="/member/kwealth" class="nav-back">← Kwealth</a><a href="/member/kwealth/books" class="nav-back">📚 Library</a>
+        <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" style="height:28px;width:auto" onerror="this.src='/static/img/knowsoft-icon.svg'"> <strong style="color:#f1f5f9;font-size:14px;">{% if book %}Reading Room{% else %}Book Library{% endif %}</strong>
+                                <button type="button" class="chip" id="btnRead">👼 Read</button>
+        <button type="button" class="chip" id="btnArrange">Arrange</button>
+        <button type="button" class="chip" id="btnMusic"><span id="bgmDot" class="off"></span> Music</button>
+        <button type="button" class="chip" id="btnScene" title="Reading ambience animation">Scene</button>
+        <select id="sceneMix" class="ctl" style="max-width:8rem;font-size:11px" title="Scene mode"><option value="one">One 3D</option><option value="mix">Mix all</option></select>
+          <select id="scenePick" class="ctl" style="max-width:14rem;font-size:11px;" title="Ambience">
+          <option value="clock">Knowsoft wall clock</option>
+          <option value="giants">Five giant stars</option>
+          <option value="sun">Sunrise to sunset</option>
+          <option value="orbit">Earth around the Sun</option>
+          <option value="voyage">Earth revelation</option>
+          <option value="planets">Planets around the Sun</option>
+          <option value="milkyway">Milky Way galaxy</option>
+          <option value="wavelength">Energy wavelength</option>
+          <option value="fishes3d">Ocean fishes</option>
+          <option value="jupiter">Jupiter close pass-by</option>
+          <option value="neptune">Neptune close pass-by</option>
+          <option value="earth">Earth close pass-by</option>
+          <option value="desert">Trees growing from the desert</option>
+          <option value="matrix">Matrix AI</option>
+          <option value="star_bypass">Giant star flyby</option>
+        </select>
+        <button type="button" class="chip" id="btnSceneFs" title="Full screen book (captions while reading)">Full screen</button>
+        <select id="wordStyle" class="ctl" style="max-width:8rem;font-size:11px;" title="Word style">
+          <option value="fill">Fill colour</option>
+          <option value="write">Writing</option>
+          <option value="glow">Glow</option>
+          <option value="underline">Underline</option>
+        </select>
+        <select id="bookSelect" class="ctl" style="display:none;max-width:45%;margin-left:auto;width:auto;">
+          {% for b in books %}
+          <option value="{{ b.id }}" {% if book and b.id==book.id %}selected{% endif %}>{{ b.title }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      
+    
+
+      {% if book %}<div class="reader-heading"><h1>{{ book.title }}</h1><p class="reader-author">{{ book.author or book.writer or '' }}</p></div><div id="panelMusic" style="display:none;max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
         <p style="color:#6ee7b7;font-size:12px;font-weight:700;margin:0 0 6px;">Background music — Memories track is always on. Admin may add up to 9 more.</p>
         <p style="color:#64748b;font-size:11px;margin:0 0 8px;">Upload calm tracks from your device. They stay in your list for reading sessions.</p>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
