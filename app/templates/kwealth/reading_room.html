@@ -3817,15 +3817,33 @@
 .lib-book span{position:absolute;left:0;top:0;bottom:0;width:9px;background:rgba(0,0,0,.3);border-radius:3px 0 0 3px}
 .nav-back{color:#5eead4;font-size:12px;text-decoration:none;padding:5px 7px;border-radius:8px;background:rgba(20,184,166,.08)}
 .reader-nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.reader-back{display:inline-block;color:#5eead4;text-decoration:none;border:1px solid rgba(45,212,191,.35);border-radius:10px;padding:7px 10px;font-size:12px;font-weight:700;background:rgba(15,23,42,.7)}.reader-back.secondary{color:#cbd5e1;border-color:rgba(255,255,255,.15)}
-/* Dedicated Reading Room: the library itself is hidden; settings are opened by the Settings button. */
-body.reader-mode #bookLib{display:none!important;}
+/* Library is clean when no book is selected. */
 body:not(.reader-mode) #app>.bar .chip,body:not(.reader-mode) #app>.bar select{display:none!important}
 body:not(.reader-mode) #panelTools,body:not(.reader-mode) #panelMusic,body:not(.reader-mode) #stage,body:not(.reader-mode) #fsControls,body:not(.reader-mode) #sceneFs,body:not(.reader-mode) #sceneFsExit{display:none!important}
+/* The library and reading room are separate views. The reader opens from a distinct URL state. */
+body.reader-mode #bookLib{display:none!important}
+body.reader-mode .library-only{display:none!important}
+.lib-cover-text{width:100%;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;overflow:hidden}
+.lib-book .book-title{display:block;width:100%;max-width:104px;max-height:3.55em;overflow:hidden;white-space:normal;overflow-wrap:anywhere;word-break:break-word;hyphens:auto;font-family:Georgia,serif;font-size:13px;line-height:1.18;font-weight:800;text-wrap:balance}
+.lib-book .book-author{display:block;width:100%;max-width:104px;max-height:2.45em;overflow:hidden;white-space:normal;overflow-wrap:anywhere;word-break:break-word;hyphens:auto;font-family:Georgia,serif;font-size:10px;line-height:1.15;font-weight:700;opacity:.82;text-wrap:balance}
+.reader-heading{max-width:56rem;margin:0 auto;padding:12px 12px 0}
+.reader-heading h1{margin:0;color:#f8fafc;font-family:Georgia,serif;font-size:clamp(20px,3vw,30px);line-height:1.15;overflow-wrap:anywhere}
+.reader-heading .reader-author{margin:5px 0 0;color:#94a3b8;font-size:12px}
+
 @media(max-width:650px){.lib-upload-card{flex-direction:column;align-items:stretch}.lib-wall{grid-template-columns:repeat(2,minmax(0,1fr));padding:24px 12px}.lib-book{width:110px;height:155px}}
 </style>
 </head>
 <body class="theme-parchment reader-mode" id="bookBody">
-<button type="button" id="readMenuFab" onclick="var t=document.getElementById('panelTools');if(t){var o=t.dataset.open==='1';t.style.display=o?'none':'block';t.dataset.open=o?'0':'1';var b=document.getElementById('btnTools');if(b){b.classList.toggle('on',!o);b.setAttribute('aria-expanded',String(!o));}t.scrollIntoView({behavior:'smooth',block:'start'});}">⚙ Reading Settings</button>
+  <div style="max-width:72rem;margin:0 auto;padding:12px 14px 0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+      <div style="color:#f8fafc;font-family:Georgia,serif;font-size:15px;font-weight:800;">📖 Reading Room</div>
+      <div class="reader-nav" style="margin:0;">
+        <a href="/member/kwealth/books" class="reader-back">← Back to Book Library</a>
+        <a href="/member/kwealth" class="reader-back secondary">← Kwealth</a>
+      </div>
+    </div>
+  </div>
+<button type="button" id="readMenuFab" onclick="document.querySelector('.bar')&&document.querySelector('.bar').scrollIntoView({behavior:'smooth',block:'start'});var t=document.getElementById('toolsPanel');if(t){t.style.display='block';}window.scrollTo({top:0,behavior:'smooth'});">☰ Menu</button>
   <div id="fsControls">
   <select id="fsScenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
           <option value="sun">Sunrise → Sunset</option>
@@ -3851,13 +3869,10 @@ body:not(.reader-mode) #panelTools,body:not(.reader-mode) #panelMusic,body:not(.
     <div class="bar sticky top-0 z-30">
       <div style="max-width:56rem;margin:0 auto;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
         <a href="/member/kwealth" class="nav-back">← Kwealth</a><a href="/member/kwealth/books" class="nav-back">📚 Library</a>
-        <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" style="height:28px;width:auto" onerror="this.src='/static/img/knowsoft-icon.svg'"> <strong style="color:#f1f5f9;font-size:14px;">Books</strong>
-        <input type="file" id="filePick" hidden accept=".pdf,.txt,.text,.md,.doc,.docx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple>
-        <button type="button" class="chip" id="btnLoad">Load</button>
-        <button type="button" class="chip" id="btnDelBook" title="Delete selected book you uploaded">Delete book</button>
-        <button type="button" class="chip" id="btnRead">👼 Read</button>
+        <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" style="height:28px;width:auto" onerror="this.src='/static/img/knowsoft-icon.svg'"> <strong style="color:#f1f5f9;font-size:14px;">{% if book %}Reading Room{% else %}Book Library{% endif %}</strong>
+                                <button type="button" class="chip" id="btnRead">👼 Read</button>
         <button type="button" class="chip" id="btnArrange">Arrange</button>
-        <button type="button" class="chip on" id="btnTools" aria-expanded="false">⚙ Reading Settings</button>
+        <button type="button" class="chip on" id="btnTools">⚙ Settings</button>
         <button type="button" class="chip" id="btnMusic"><span id="bgmDot" class="off"></span> Music</button>
         <button type="button" class="chip" id="btnScene" title="Reading ambience animation">Scene</button>
         <select id="sceneMix" class="ctl" style="max-width:8rem;font-size:11px" title="Scene mode"><option value="one">One 3D</option><option value="mix">Mix all</option></select>
@@ -3893,40 +3908,9 @@ body:not(.reader-mode) #panelTools,body:not(.reader-mode) #panelMusic,body:not(.
       </div>
 
       
-    <section id="bookLib">
-      <h2>📚 Book Library</h2>
-      <p class="lib-subtitle">A clean 3D library wall. Click any book to open the reading room and all reading settings.</p>
-      <div class="lib-upload-card">
-        <div><strong>Personal Books</strong><div class="lib-upload-help">Upload up to <b>3 books</b>. PDF, TXT and DOCX are supported. For faster upload and smoother reading, remove pictures/images before uploading. <b>Maximum 4 MB per book.</b></div></div>
-        <button type="button" class="chip on" id="btnLoadLib" onclick="document.getElementById('filePick').click()">＋ Upload Personal Book</button>
-      </div>
-      <h3 class="lib-section-title knowsoft-title">Knowsoft Books</h3>
-      <div class="lib-wall" id="libKnowsoft">
-        {% for b in admin_books %}
-        {% set colors = ['#bae6fd','#bbf7d0','#fecdd3','#ddd6fe','#fed7aa'] %}
-        <a class="lib-book" style="background:{{ colors[loop.index0 % 5] }}" href="/member/kwealth/books/reading-room?book_id={{ b.id }}">
-          <span></span>
-          <b>{{ b.title }}</b>
-          <small class="lib-page">Page 1</small>
-        </a>
-        {% endfor %}
-      </div>
-      <h3 class="lib-section-title personal-title">Personal Books</h3>
-      <div class="lib-wall" id="libPersonal">
-        {% for b in my_books %}
-        {% set colors = ['#fbcfe8','#c4b5fd','#a5f3fc','#fde68a'] %}
-        <a class="lib-book" style="background:{{ colors[loop.index0 % 4] }}" href="/member/kwealth/books/reading-room?book_id={{ b.id }}">
-          <span></span>
-          <b>{{ b.title }}</b>
-          <small class="lib-page">Page 1</small>
-        </a>
-        {% else %}
-        <p style="color:#94a3b8;font-size:12px">No personal books yet. Upload one.</p>
-        {% endfor %}
-      </div>
-    </section>
+    
 
-      {% if book %}<div id="panelTools" style="max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
+      {% if book %}<div class="reader-heading"><h1>{{ book.title }}</h1><p class="reader-author">{{ book.author or book.writer or '' }}</p></div><div id="panelTools" style="max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
         <div class="reader-nav"><a href="/member/kwealth/books" class="reader-back">← Back to Book Library</a><a href="/member/kwealth" class="reader-back secondary">← Kwealth</a></div><p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Book settings (theme · font · flip · jump)</p>
         <div class="grid-tools">
           <div>
@@ -4877,8 +4861,8 @@ id="fsBookMeta" aria-hidden="true">
       if (p.dataset.open === '1') { p.style.display = 'none'; p.dataset.open = '0'; }
       else { p.style.display = 'block'; p.dataset.open = '1'; }
     });
-    if ($('panelTools')) { $('panelTools').style.display = 'none'; $('panelTools').dataset.open = '0'; }
-    if ($('btnTools')) { $('btnTools').classList.remove('on'); $('btnTools').setAttribute('aria-expanded','false'); }
+    $('panelTools').style.display = 'block';
+    $('panelTools').dataset.open = '1';
     
     document.addEventListener('keydown', function(ev){
       var tag = (ev.target && ev.target.tagName || '').toLowerCase();

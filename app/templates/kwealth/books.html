@@ -3798,8 +3798,42 @@
 
 </style>
   <script src="/static/js/bg-animations.js"></script>
+
+<style>
+/* Clean 3D Book Library */
+#bookLib{max-width:1200px;margin:0 auto;padding:26px 18px 60px;min-height:72vh}
+#bookLib h2{font-size:2rem;letter-spacing:.02em;text-align:center;margin:0 0 6px;color:#fff}
+.lib-subtitle{text-align:center;color:#94a3b8;font-size:13px;margin:0 auto 18px;max-width:720px}
+.lib-upload-card{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 16px;margin:0 auto 22px;max-width:900px;border:1px solid rgba(148,163,184,.2);border-radius:18px;background:rgba(15,23,42,.78);box-shadow:0 12px 35px rgba(0,0,0,.2)}
+.lib-upload-help{color:#94a3b8;font-size:11px;line-height:1.45;margin-top:4px}
+.lib-section-title{max-width:1080px;margin:22px auto 10px;padding-left:4px;font-size:15px;letter-spacing:.04em}
+.knowsoft-title{color:#fde68a}.personal-title{color:#93c5fd}
+.lib-wall{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:34px 28px;padding:32px 30px 38px;max-width:1080px;margin:0 auto;background:linear-gradient(180deg,#3b3028,#211c19 55%,#171310);border:1px solid rgba(255,255,255,.08);border-radius:20px;box-shadow:inset 0 18px 50px rgba(0,0,0,.35),0 18px 50px rgba(0,0,0,.22);perspective:1200px}
+.lib-book{display:flex!important;align-items:center;justify-content:center;text-align:center;text-decoration:none;color:#17120e;width:126px;height:174px;margin:auto;padding:16px 12px 16px 18px;border-radius:4px 11px 11px 4px;position:relative;box-shadow:9px 10px 0 rgba(0,0,0,.3),18px 20px 28px rgba(0,0,0,.38),inset 5px 0 0 rgba(0,0,0,.22);transform:rotateY(-8deg) rotateZ(-1deg);transform-style:preserve-3d;transition:transform .28s ease,filter .28s ease;overflow:hidden}
+.lib-book:nth-child(even){transform:rotateY(8deg) rotateZ(1.5deg)}
+.lib-book:hover{transform:translateY(-12px) rotateY(0deg) rotateZ(0deg) scale(1.04);filter:brightness(1.08);z-index:5}
+.lib-book:after{content:"";position:absolute;right:-18px;top:5px;width:18px;height:calc(100% - 10px);background:linear-gradient(90deg,#d6d3d1,#fafaf9,#a8a29e);transform:skewY(-8deg);opacity:.8}
+.lib-book b{display:block;font-family:Georgia,serif;font-size:14px;line-height:1.25;font-weight:800;max-width:95px}.lib-page{display:block;margin-top:9px;font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#44403c}
+.lib-book span{position:absolute;left:0;top:0;bottom:0;width:9px;background:rgba(0,0,0,.3);border-radius:3px 0 0 3px}
+.nav-back{color:#5eead4;font-size:12px;text-decoration:none;padding:5px 7px;border-radius:8px;background:rgba(20,184,166,.08)}
+.reader-nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}.reader-back{display:inline-block;color:#5eead4;text-decoration:none;border:1px solid rgba(45,212,191,.35);border-radius:10px;padding:7px 10px;font-size:12px;font-weight:700;background:rgba(15,23,42,.7)}.reader-back.secondary{color:#cbd5e1;border-color:rgba(255,255,255,.15)}
+/* Library is clean when no book is selected. */
+body:not(.reader-mode) #app>.bar .chip,body:not(.reader-mode) #app>.bar select{display:none!important}
+body:not(.reader-mode) #panelTools,body:not(.reader-mode) #panelMusic,body:not(.reader-mode) #stage,body:not(.reader-mode) #fsControls,body:not(.reader-mode) #sceneFs,body:not(.reader-mode) #sceneFsExit{display:none!important}
+/* The library and reading room are separate views. The reader opens from a distinct URL state. */
+body.reader-mode #bookLib{display:none!important}
+body.reader-mode .library-only{display:none!important}
+.lib-cover-text{width:100%;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;overflow:hidden}
+.lib-book .book-title{display:block;width:100%;max-width:104px;max-height:3.55em;overflow:hidden;white-space:normal;overflow-wrap:anywhere;word-break:break-word;hyphens:auto;font-family:Georgia,serif;font-size:13px;line-height:1.18;font-weight:800;text-wrap:balance}
+.lib-book .book-author{display:block;width:100%;max-width:104px;max-height:2.45em;overflow:hidden;white-space:normal;overflow-wrap:anywhere;word-break:break-word;hyphens:auto;font-family:Georgia,serif;font-size:10px;line-height:1.15;font-weight:700;opacity:.82;text-wrap:balance}
+.reader-heading{max-width:56rem;margin:0 auto;padding:12px 12px 0}
+.reader-heading h1{margin:0;color:#f8fafc;font-family:Georgia,serif;font-size:clamp(20px,3vw,30px);line-height:1.15;overflow-wrap:anywhere}
+.reader-heading .reader-author{margin:5px 0 0;color:#94a3b8;font-size:12px}
+
+@media(max-width:650px){.lib-upload-card{flex-direction:column;align-items:stretch}.lib-wall{grid-template-columns:repeat(2,minmax(0,1fr));padding:24px 12px}.lib-book{width:110px;height:155px}}
+</style>
 </head>
-<body class="theme-parchment" id="bookBody">
+<body class="theme-parchment{% if book %} reader-mode{% endif %}" id="bookBody">
 <button type="button" id="readMenuFab" onclick="document.querySelector('.bar')&&document.querySelector('.bar').scrollIntoView({behavior:'smooth',block:'start'});var t=document.getElementById('toolsPanel');if(t){t.style.display='block';}window.scrollTo({top:0,behavior:'smooth'});">☰ Menu</button>
   <div id="fsControls">
   <select id="fsScenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
@@ -3825,8 +3859,8 @@
   <div id="app">
     <div class="bar sticky top-0 z-30">
       <div style="max-width:56rem;margin:0 auto;padding:8px 10px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
-        <a href="/member/kwealth" style="color:#5eead4;font-size:12px;text-decoration:none;">← Kwealth</a>
-        <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" style="height:28px;width:auto" onerror="this.src='/static/img/knowsoft-icon.svg'"> <strong style="color:#f1f5f9;font-size:14px;">Books</strong>
+        <a href="/member/kwealth" class="nav-back">← Kwealth</a><a href="/member/kwealth/books" class="nav-back">📚 Library</a>
+        <img src="/static/img/knowsoft-logo.png" alt="Knowsoft" style="height:28px;width:auto" onerror="this.src='/static/img/knowsoft-icon.svg'"> <strong style="color:#f1f5f9;font-size:14px;">{% if book %}Reading Room{% else %}Book Library{% endif %}</strong>
         <input type="file" id="filePick" hidden accept=".pdf,.txt,.text,.md,.doc,.docx,application/pdf,text/plain,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple>
         <button type="button" class="chip" id="btnLoad">Load</button>
         <button type="button" class="chip" id="btnDelBook" title="Delete selected book you uploaded">Delete book</button>
@@ -3869,50 +3903,46 @@
 
       
     <section id="bookLib">
-      <h2>Book Lib</h2>
-      <p style="color:#94a3b8;font-size:13px;margin:0 0 12px">Tap a cover to open the reading page. Music and settings stay. The book picker is hidden once a book is open.</p>
-      <button type="button" class="chip" id="btnLoadLib" onclick="var b=document.getElementById('btnLoad'); if(b) b.click();">Upload books</button>
-      <h3 style="color:#fde68a;margin:16px 0 8px">Knowsoft uploaded</h3>
+      <h2>📚 Book Library</h2>
+      <p class="lib-subtitle">A clean 3D library wall. Click any book to open the reading room and all reading settings.</p>
+      <div class="lib-upload-card">
+        <div><strong>Personal Books</strong><div class="lib-upload-help">Upload up to <b>3 books</b>. PDF, TXT and DOCX are supported. For faster upload and smoother reading, remove pictures/images before uploading. <b>Maximum 4 MB per book.</b></div></div>
+        <button type="button" class="chip on" id="btnLoadLib" onclick="document.getElementById('filePick').click()">＋ Upload Personal Book</button>
+      </div>
+      <h3 class="lib-section-title knowsoft-title">Knowsoft Books</h3>
       <div class="lib-wall" id="libKnowsoft">
-        <a class="lib-book" id="sampleMagi" style="background:#fde68a" href="#" data-sample="magi">
-          <span></span>
-          <b>The Gift of the Magi</b>
-          <small class="lib-page">Page 1</small>
-        </a>
         {% for b in admin_books %}
         {% set colors = ['#bae6fd','#bbf7d0','#fecdd3','#ddd6fe','#fed7aa'] %}
-        <a class="lib-book" style="background:{{ colors[loop.index0 % 5] }}" href="/member/kwealth/books?book_id={{ b.id }}">
+        <a class="lib-book" style="background:{{ colors[loop.index0 % 5] }}" href="/member/kwealth/books/reading-room?book_id={{ b.id }}" aria-label="Open {{ b.title }} in Reading Room">
           <span></span>
-          <b>{{ b.title }}</b>
-          <small class="lib-page">Page 1</small>
+          <div class="lib-cover-text">
+            <b class="book-title">{{ b.title }}</b>
+            <small class="book-author">{{ b.author or b.writer or 'Knowsoft' }}</small>
+            <small class="lib-page">Open to read</small>
+          </div>
         </a>
         {% endfor %}
       </div>
-      <h3 style="color:#93c5fd;margin:16px 0 8px">Personal</h3>
+      <h3 class="lib-section-title personal-title">Personal Books</h3>
       <div class="lib-wall" id="libPersonal">
         {% for b in my_books %}
         {% set colors = ['#fbcfe8','#c4b5fd','#a5f3fc','#fde68a'] %}
-        <a class="lib-book" style="background:{{ colors[loop.index0 % 4] }}" href="/member/kwealth/books?book_id={{ b.id }}">
+        <a class="lib-book" style="background:{{ colors[loop.index0 % 4] }}" href="/member/kwealth/books/reading-room?book_id={{ b.id }}" aria-label="Open {{ b.title }} in Reading Room">
           <span></span>
-          <b>{{ b.title }}</b>
-          <small class="lib-page">Page 1</small>
+          <div class="lib-cover-text">
+            <b class="book-title">{{ b.title }}</b>
+            <small class="book-author">{{ b.author or b.writer or 'Personal Book' }}</small>
+            <small class="lib-page">Open to read</small>
+          </div>
         </a>
         {% else %}
         <p style="color:#94a3b8;font-size:12px">No personal books yet. Upload one.</p>
         {% endfor %}
       </div>
-      <pre id="magiText" style="display:none">The Gift of the Magi
-by O. Henry
-
-One dollar and eighty-seven cents. That was all. And sixty cents of it was in pennies. Three times Della counted it. And the next day would be Christmas. There was clearly nothing to do but flop down on the shabby little couch and howl. So Della did it. Life is made up of sobs, sniffles, and smiles, with sniffles predominating.
-
-Tomorrow would be Christmas Day, and she had only $1.87 with which to buy Jim a present. She had been saving every penny she could for months. Twenty dollars a week does not go far. Only $1.87 to buy a present for Jim. Her Jim.
-
-There were two possessions of which they were proud. One was Jim's gold watch. The other was Della's hair. She sold her hair for twenty dollars and bought him a platinum fob chain. Jim sold the watch to buy her the combs she had wanted. Of all who give gifts, these two were the wisest. They are the magi.</pre>
     </section>
 
-      {% if book %}<div id="panelTools" style="max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
-        <p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Book settings (theme · font · flip · jump)</p>
+      {% if book %}<div class="reader-heading"><h1>{{ book.title }}</h1><p class="reader-author">{{ book.author or book.writer or '' }}</p></div><div id="panelTools" style="max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
+        <div class="reader-nav"><a href="/member/kwealth/books" class="reader-back">← Back to Book Library</a><a href="/member/kwealth" class="reader-back secondary">← Kwealth</a></div><p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Book settings (theme · font · flip · jump)</p>
         <div class="grid-tools">
           <div>
             <span class="lbl">Theme</span>
@@ -4832,15 +4862,26 @@ id="fsBookMeta" aria-hidden="true">
 
     on('btnLoad', 'onclick', () => { const f = $('filePick'); if (f) f.click(); });
     on('filePick', 'onchange', async (ev) => {
-      const files = ev.target.files;
-      if (!files || !files.length) return;
-      $('btnLoad').textContent = 'Scanning…';
+      const files = Array.from(ev.target.files || []);
+      if (!files.length) return;
+      const allowed = /\.(pdf|txt|docx)$/i;
+      const maxBytes = 4 * 1024 * 1024;
+      const currentPersonal = {{ my_books|length if my_books else 0 }};
+      if (files.length > 3 || currentPersonal + files.length > 3) {
+        alert('You can have a maximum of 3 personal books.'); ev.target.value = ''; return;
+      }
+      const bad = files.find(f => !allowed.test(f.name) || f.size > maxBytes);
+      if (bad) {
+        alert('Each personal book must be PDF, TXT or DOCX and no more than 4 MB. Remove pictures/images before uploading to make the book easier to upload and read.');
+        ev.target.value = ''; return;
+      }
+      $('btnLoad').textContent = 'Uploading…';
       const fd = new FormData();
-      for (const f of files) fd.append('files', f);
+      files.forEach(f => fd.append('files', f));
       try {
         const r = await fetch('/member/kwealth/books/upload', { method: 'POST', body: fd, credentials: 'same-origin' });
         location.href = r.redirected ? r.url : '/member/kwealth/books';
-      } catch (e) { alert('Could not load books'); }
+      } catch (e) { alert('Could not upload books'); }
       $('btnLoad').textContent = 'Load';
       ev.target.value = '';
     });
@@ -5631,23 +5672,6 @@ id="fsBookMeta" aria-hidden="true">
     try{ n=(JSON.parse(localStorage.getItem("kw_book_page_"+id)||"1")); }catch(e){}
     el.textContent="Page "+(n||1);
   });
-  var magi=document.getElementById("sampleMagi");
-  function openMagi(ev){ if(ev) ev.preventDefault();
-
-    ev.preventDefault();
-    var lib=document.getElementById("bookLib");
-    if(lib) lib.style.display="none";
-    var tools=document.getElementById("panelTools");
-    if(tools) tools.style.display="block";
-    var stage=document.getElementById("stage");
-    if(stage) stage.style.display="block";
-    var text=(document.getElementById("magiText")||{}).textContent||"";
-    var pages=[]; var chunk=700;
-    for(var i=0;i<text.length;i+=chunk) pages.push(text.slice(i,i+chunk));
-    try{ state.pages=pages; state.pageIndex=0; state.title="The Gift of the Magi"; if(typeof renderPage==="function") renderPage(); var st=document.getElementById("sheetText"); if(st) st.textContent=pages[0]||text; }catch(e){}
-    var ft=document.getElementById("fsBookTitle"); if(ft) ft.textContent="The Gift of the Magi"; }
-  if(magi) magi.addEventListener("click", openMagi);
-  if(/sample=1/.test(location.search)) openMagi();
   });
 
   function tick(){
