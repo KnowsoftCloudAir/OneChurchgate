@@ -1240,11 +1240,9 @@
       box-shadow: 0 8px 32px rgba(0,0,0,.5);
     }
     body.scene-fs-on #fsControls,
-    .scene-fs-on #fsControls,
-    body.scene-fs-on > #fsControls {
+    #stage.scene-fs ~ #fsControls,
+    .scene-fs-on #fsControls {
       display: flex !important;
-      visibility: visible !important;
-      opacity: 1 !important;
     }
     #fsControls .chip, #fsControls select, #fsControls button {
       font-size: 13px;
@@ -3915,22 +3913,24 @@ body.reader-mode .library-only{display:none!important}
 .lib-cover-text{width:100%;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;overflow:hidden}
 .lib-book .book-title{display:block;width:100%;max-width:104px;max-height:3.55em;overflow:hidden;white-space:normal;overflow-wrap:anywhere;word-break:break-word;hyphens:auto;font-family:Georgia,serif;font-size:13px;line-height:1.18;font-weight:800;text-wrap:balance}
 .lib-book .book-author{display:block;width:100%;max-width:104px;max-height:2.45em;overflow:hidden;white-space:normal;overflow-wrap:anywhere;word-break:break-word;hyphens:auto;font-family:Georgia,serif;font-size:10px;line-height:1.15;font-weight:700;opacity:.82;text-wrap:balance}
-
-/* === ALWAYS-VISIBLE READING QUICK ACTIONS === */
-#readerQuickActions{display:flex;position:sticky;top:0;z-index:2147480000;max-width:56rem;margin:0 auto;padding:7px 10px;gap:7px;align-items:center;justify-content:center;flex-wrap:wrap;background:rgba(2,6,23,.96);border-bottom:1px solid rgba(255,255,255,.14);box-shadow:0 5px 18px rgba(0,0,0,.28);backdrop-filter:blur(10px)}
-#readerQuickActions .rq{appearance:none;border:1px solid rgba(255,255,255,.22);background:#1e293b;color:#f8fafc;border-radius:9px;padding:8px 12px;font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap}
-#readerQuickActions .rq:hover{background:#334155}
-#readerQuickActions .rq.primary{border-color:#2dd4bf;background:#0f766e;color:#ecfeff}
-#readerQuickActions .rq.scene{border-color:#a78bfa}
-#readerQuickActions .rq.active{box-shadow:0 0 0 2px rgba(45,212,191,.25);border-color:#2dd4bf;color:#5eead4}
-#readerQuickActions .rq select{background:transparent;color:inherit;border:0;font:inherit;outline:0;cursor:pointer}
-@media(max-width:650px){#readerQuickActions{top:0;padding:6px 5px;gap:4px}#readerQuickActions .rq{padding:7px 8px;font-size:11px}}
-
 .reader-heading{max-width:56rem;margin:0 auto;padding:12px 12px 0}
 .reader-heading h1{margin:0;color:#f8fafc;font-family:Georgia,serif;font-size:clamp(20px,3vw,30px);line-height:1.15;overflow-wrap:anywhere}
 .reader-heading .reader-author{margin:5px 0 0;color:#94a3b8;font-size:12px}
 
 @media(max-width:650px){.lib-upload-card{flex-direction:column;align-items:stretch}.lib-wall{grid-template-columns:repeat(2,minmax(0,1fr));padding:24px 12px}.lib-book{width:110px;height:155px}}
+
+/* SETTINGS-FIRST READING ROOM OVERRIDES */
+.settings-first-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:12px;margin:0 0 12px;border:1px solid rgba(45,212,191,.28);border-radius:14px;background:rgba(15,23,42,.94);position:sticky;top:0;z-index:120}
+.settings-first-actions strong{color:#f8fafc;font-size:13px;margin-right:4px}
+#panelTools{display:block!important;visibility:visible!important;opacity:1!important}
+#panelMusic{display:block!important;visibility:visible!important;opacity:1!important}
+#btnRead,#btnScene,#btnSceneFs,#btnMusic{font-weight:800!important}
+/* 3D animation works independently of browser fullscreen. */
+#stage.scene-on #sceneStage{display:block!important;visibility:visible!important;opacity:1!important;position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-height:100%!important;z-index:3!important;overflow:hidden!important;pointer-events:none!important}
+#stage.scene-on #sceneStage .sc-layer{position:absolute!important;inset:0!important;width:100%!important;height:100%!important}
+#stage.scene-on #cgWebglHost{display:block!important;visibility:visible!important;opacity:1!important}
+#stage.scene-on .page-sheet{position:relative!important;z-index:10!important}
+@media(max-width:650px){.settings-first-actions{position:relative;top:auto}.settings-first-actions strong{width:100%}}
 </style>
 </head>
 <body class="theme-parchment reader-mode" id="bookBody">
@@ -3943,14 +3943,6 @@ body.reader-mode .library-only{display:none!important}
       </div>
     </div>
   </div>
-<div id="readerQuickActions" aria-label="Reading controls">
-  <button type="button" class="rq primary" id="rqRead">👼 Read</button>
-  <button type="button" class="rq" id="rqPrev">‹ Prev</button>
-  <button type="button" class="rq" id="rqNext">Next ›</button>
-  <button type="button" class="rq scene" id="rq3d">✨ 3D Animation</button>
-  <button type="button" class="rq" id="rqFullscreen">⛶ Full screen</button>
-  <button type="button" class="rq" id="rqSettings">⚙ Settings</button>
-</div>
 <button type="button" id="readMenuFab" aria-label="Reading settings" title="Reading settings" onclick="var b=document.getElementById('btnTools'); if(b) b.click(); else { var t=document.getElementById('panelTools'); if(t){ t.dataset.open='1'; t.style.setProperty('display','block','important'); } }">⚙</button>
   <div id="fsControls">
   <select id="fsScenePick" class="ctl" style="max-width:12rem;font-size:11px;" title="Ambience">
@@ -4008,7 +4000,7 @@ body.reader-mode .library-only{display:none!important}
           <option value="glow">Glow</option>
           <option value="underline">Underline</option>
         </select>
-        <select id="bookSelect" class="ctl" style="display:block;max-width:45%;margin-left:auto;width:auto;">
+        <select id="bookSelect" class="ctl" style="display:none;max-width:45%;margin-left:auto;width:auto;">
           {% for b in books %}
           <option value="{{ b.id }}" {% if book and b.id==book.id %}selected{% endif %}>{{ b.title }}</option>
           {% endfor %}
@@ -4018,7 +4010,15 @@ body.reader-mode .library-only{display:none!important}
       
     
 
-      {% if book %}<div class="reader-heading"><h1>{{ book.title }}</h1><p class="reader-author">{{ book.author or book.writer or '' }}</p></div><div id="panelTools" class="rr-settings-panel" data-open="1" style="display:block !important;">
+      {% if book %}<div id="panelTools" class="rr-settings-panel" data-open="1" style="display:block !important;visibility:visible!important;opacity:1!important;position:relative!important;z-index:100!important;">
+        <div class="settings-first-actions" aria-label="Primary reading controls">
+          <strong>Reading controls</strong>
+          <button type="button" class="chip on" onclick="document.getElementById('btnRead')?.click()">👼 Read</button>
+          <button type="button" class="chip" onclick="document.getElementById('btnScene')?.click()">✨ 3D Animation</button>
+          <button type="button" class="chip" onclick="document.getElementById('btnSceneFs')?.click()">⛶ Full screen</button>
+          <button type="button" class="chip" onclick="document.getElementById('btnMusic')?.click()">🎵 Music</button>
+        </div>
+        <div class="reader-heading"><h1>{{ book.title }}</h1><p class="reader-author">{{ book.author or book.writer or '' }}</p></div>
         <div class="reader-nav"><a href="/member/kwealth/books" class="reader-back">← Back to Book Library</a><a href="/member/kwealth" class="reader-back secondary">← Kwealth</a></div><p style="color:#fbbf24;font-size:12px;font-weight:700;margin:0 0 8px;">Book settings (theme · font · flip · jump)</p>
         <div class="grid-tools">
           <div>
@@ -4092,7 +4092,7 @@ body.reader-mode .library-only{display:none!important}
         </div>
       </div>
 
-      <div id="panelMusic" style="display:none;max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
+      <div id="panelMusic" style="display:block !important;max-width:56rem;margin:0 auto;padding:10px 12px 14px;border-top:1px solid rgba(255,255,255,.1);">
         <p style="color:#6ee7b7;font-size:12px;font-weight:700;margin:0 0 6px;">Background music — Memories track is always on. Admin may add up to 9 more.</p>
         <p style="color:#64748b;font-size:11px;margin:0 0 8px;">Upload calm tracks from your device. They stay in your list for reading sessions.</p>
         <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
@@ -4108,6 +4108,8 @@ body.reader-mode .library-only{display:none!important}
         <p id="bgmEmpty" style="color:#64748b;font-size:12px;">No tracks yet. Upload up to 10 soft background songs.</p>
         <audio id="bgmAudio" loop preload="auto"></audio>
       </div>
+      </div>
+      <div class="reader-heading reader-heading-after-settings"><h1>{{ book.title }}</h1><p class="reader-author">{{ book.author or book.writer or '' }}</p></div>
     </div>
 
     <main style="max-width:48rem;margin:0 auto;padding:16px 12px 32px;">
@@ -4291,7 +4293,6 @@ body.reader-mode .library-only{display:none!important}
             </div>
           </div>
 </div>
-        <div 
           <div class="sc-layer sc-star_bypass-bits" style="display:none">
             <div class="bh-disk"></div><div class="bh"></div>
             <div class="heat"></div>
@@ -5335,9 +5336,9 @@ id="fsBookMeta" aria-hidden="true">
         if (btn) btn.classList.toggle('is-on', on);
         return;
       }
-      // 3D animation is available whenever Scene is ON; fullscreen is an independent control
+      // 3D animation is controlled independently from Full screen; Scene on is sufficient
       var show3d = !!on;
-      // scene-on class marks an active 3D scene
+      // scene-on class only when both are true (used by CSS)
       if (show3d) {
         stage.classList.add('scene-on');
         document.body.classList.add('scene-on');
@@ -5810,26 +5811,6 @@ id="fsBookMeta" aria-hidden="true">
   if(ex) ex.onclick=function(){ var b=document.getElementById("sceneFsExit")||document.getElementById("btnSceneFs"); if(b) b.click(); };
   var fp=document.getElementById("fsScenePick");
   if(fp) fp.onchange=function(){ if(this.value==="off"){ try{ state.sceneOn=false; }catch(e){} } else { try{ state.sceneName=this.value; state.sceneOn=true; state.sceneFs=true; }catch(e){} var p=document.getElementById("scenePick"); if(p){ p.value=this.value; p.dispatchEvent(new Event("change")); } } };
-})();
-</script>
-
-<script>
-(function(){
-  function el(id){return document.getElementById(id)}
-  function click(id){var x=el(id);if(x)x.click()}
-  var r=el('rqRead'), p=el('rqPrev'), n=el('rqNext'), s=el('rq3d'), f=el('rqFullscreen'), t=el('rqSettings');
-  if(r) r.onclick=function(){click('btnRead')};
-  if(p) p.onclick=function(){click('btnPrev')};
-  if(n) n.onclick=function(){click('btnNext')};
-  if(s) s.onclick=function(){click('btnScene')};
-  if(f) f.onclick=function(){click('btnSceneFs')};
-  if(t) t.onclick=function(){var x=el('panelTools');if(x)x.scrollIntoView({behavior:'smooth',block:'start'});};
-  setInterval(function(){
-    var rb=el('btnRead'), sb=el('btnScene'), fb=el('btnSceneFs');
-    if(r&&rb){r.textContent=rb.textContent||'👼 Read';r.classList.toggle('active', rb.textContent.indexOf('Stop')>=0)}
-    if(s&&sb)s.classList.toggle('active',sb.classList.contains('is-on'));
-    if(f&&fb)f.classList.toggle('active',fb.classList.contains('is-on'));
-  },250);
 })();
 </script>
 </body>
