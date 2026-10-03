@@ -16,7 +16,11 @@ from typing import Optional, Tuple
 
 
 def public_base() -> str:
-    return (os.getenv("PUBLIC_BASE_URL") or "https://knowsoft.org.uk").rstrip("/")
+    """Public URL of this app. knowsoft.org.uk does not serve Churchgate routes."""
+    raw = (os.getenv("PUBLIC_BASE_URL") or "https://onechurchgate1.onrender.com").rstrip("/")
+    if "knowsoft.org.uk" in raw:
+        return "https://onechurchgate1.onrender.com"
+    return raw
 
 
 def from_addr() -> Tuple[str, str]:

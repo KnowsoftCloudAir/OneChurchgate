@@ -221,6 +221,13 @@ async def forgot_page(request: Request):
 async def forgot_post(request: Request, email: str = Form(...), session: Session = Depends(get_session)):
     from urllib.parse import quote
     email = email.strip().lower()
+    # Email link must hit the app host. knowsoft.org.uk returns 404 for /auth/reset.
+    proto = (request.headers.get("x-forwarded-proto") or request.url.scheme or "https").split(",")[0].strip()
+    host = (request.headers.get("x-forwarded-host") or request.headers.get("host") or "").split(",")[0].strip()
+    if host and "knowsoft.org.uk" not in host and not host.startswith("localhost") and not host.startswith("127."):
+        app_base = f"{proto}://{host}".rstrip("/")
+    else:
+        app_base = public_base()
     user = session.exec(select(User).where(User.email == email)).first()
     if not user:
         return _page(
@@ -231,7 +238,7 @@ async def forgot_post(request: Request, email: str = Form(...), session: Session
             email=email,
         )
     code = _issue(session, email, "reset", user.id)
-    link = f"{public_base()}/auth/reset?email={quote(email)}"
+    link = f"{app_base}/auth/reset?email={quote(email)}"
     mailed = send_mail(
         email,
         "Reset your Churchgate password",
