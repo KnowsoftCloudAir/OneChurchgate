@@ -238,7 +238,7 @@ async def forgot_post(request: Request, email: str = Form(...), session: Session
             email=email,
         )
     code = _issue(session, email, "reset", user.id)
-    link = f"{app_base}/auth/reset?email={quote(email)}"
+    link = f"{app_base}/auth/reset-password?email={quote(email)}&code={quote(code)}"
     mailed = send_mail(
         email,
         "Reset your Churchgate password",
@@ -257,34 +257,40 @@ async def forgot_post(request: Request, email: str = Form(...), session: Session
     return _page(request, "auth/forgot.html", error=None, sent=True, email=email)
 
 
+def _reset_post_url() -> str:
+    return f"{public_base()}/auth/reset-password"
+
+
 @router.get("/reset", response_class=HTMLResponse)
-async def reset_page(request: Request, email: str = ""):
-    return _page(request, "auth/reset.html", email=email, error=None, success=None)
+@router.get("/reset-password", response_class=HTMLResponse)
+async def reset_page(request: Request, email: str = "", code: str = ""):
+    return _page(
+        request, "auth/reset.html",
+        email=email, code=code, error=None, success=None, post_url=_reset_post_url(),
+    )
 
 
-@router.post("/reset")
-async def reset_post(
-    request: Request,
-    email: str = Form(...),
-    code: str = Form(...),
-    password: str = Form(...),
-    password2: str = Form(...),
-    session: Session = Depends(get_session),
-):
-    email = email.strip().lower()
+async def _do_reset(request: Request, email: str, code: str, password: str, password2: str, session: Session):
+    email = (email or "").strip().lower()
+    code = (code or "").strip()
+    page = lambda **kw: _page(request, "auth/reset.html", post_url=_reset_post_url(), code=code, **kw)
     if password != password2:
-        return _page(request, "auth/reset.html", email=email, error="New password and repeat password do not match.", success=None)
+        return page(email=email, error="New password and repeat password do not match.", success=None)
     err = validate_password_strength(password) if callable(validate_password_strength) else None
     if err:
-        return _page(request, "auth/reset.html", email=email, error=err, success=None)
+        return page(email=email, error=err, success=None)
     row = _check(session, email, "reset", code)
     if not row:
-        return _page(request, "auth/reset.html", email=email, error="Invalid or expired code. Request a new code.", success=None)
+        return page(
+            email=email,
+            error="This reset link has expired. Request a new code. Links expire 5 minutes after they are sent.",
+            success=None,
+        )
     user = session.get(User, row.pending_user_id) if row.pending_user_id else None
     if not user:
         user = session.exec(select(User).where(User.email == email)).first()
     if not user:
-        return _page(request, "auth/reset.html", email=email, error="this email is not registered with churchgate", success=None)
+        return page(email=email, error="this email is not registered with churchgate", success=None)
     user.hashed_password = get_password_hash(password)
     user.must_change_password = False
     try:
@@ -293,24 +299,44 @@ async def reset_post(
         pass
     session.add(user)
     session.commit()
-    send_mail(
-        email,
-        "Your Churchgate password has been changed",
-        "Your password has been changed successfully. If you did not do this, contact info@knowsoft.org.uk.",
-        branded(
-            "Password changed",
-            "<p>Your password has been changed successfully.</p>"
-            "<p>You can sign in with the new password.</p>"
-            "<p style='font-size:13px'>If you did not do this, contact info@knowsoft.org.uk.</p>",
-        ),
-    )
-    return _page(
-        request,
-        "auth/reset.html",
+    try:
+        send_mail(
+            email,
+            "Your Churchgate password has been reset",
+            "Your password has been reset. This reset link has expired and cannot be used again.",
+            branded(
+                "Password reset",
+                "<p>Your password has been reset.</p><p>This reset link has expired and cannot be used again.</p>",
+            ),
+        )
+    except Exception as _me:
+        print("reset confirm mail:", _me)
+    return page(
         email=email,
         error=None,
-        success="Your password has been changed successfully.",
+        success="Your password has been reset. This link has expired.",
     )
+
+
+@router.post("/reset", response_class=HTMLResponse)
+@router.post("/reset-password", response_class=HTMLResponse)
+async def reset_post(
+    request: Request,
+    email: str = Form(...),
+    code: str = Form(...),
+    password: str = Form(...),
+    password2: str = Form(...),
+    session: Session = Depends(get_session),
+):
+    try:
+        return await _do_reset(request, email, code, password, password2, session)
+    except Exception as exc:
+        print("reset failed:", exc)
+        return _page(
+            request, "auth/reset.html",
+            email=(email or "").strip().lower(), code=code, success=None, post_url=_reset_post_url(),
+            error="Password was not reset. Please request a new link and try again.",
+        )
 
 
 @router.get("/admin-mail", response_class=HTMLResponse)
